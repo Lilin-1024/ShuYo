@@ -167,13 +167,19 @@ class _MessageDetailPage extends StatefulWidget {
 }
 
 class _MessageDetailPageState extends State<_MessageDetailPage> {
+  static const _minRefreshIndicatorDuration = Duration(milliseconds: 800);
+
   late Future<TopicDetail?> _detailFuture;
   bool _submitting = false;
+  bool _refreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _detailFuture = widget.repository.fetchTopicDetail(widget.topic.id);
+    _detailFuture = widget.repository.fetchTopicDetail(
+      widget.topic.id,
+      forceRefresh: true,
+    );
   }
 
   @override
@@ -186,6 +192,8 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
             _MessageDetailHeader(
               title: widget.topic.title,
               onBack: () => Navigator.of(context).pop(),
+              onRefresh: _refreshDetail,
+              refreshing: _refreshing,
             ),
             Expanded(
               child: FutureBuilder<TopicDetail?>(
@@ -254,12 +262,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _detailFuture = widget.repository.fetchTopicDetail(
-          widget.topic.id,
-          forceRefresh: true,
-        );
-      });
+      unawaited(_refreshDetail());
       unawaited(_warmPrivateMessageList());
     } on Object catch (error) {
       if (mounted) {
@@ -270,6 +273,37 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
         setState(() => _submitting = false);
       }
     }
+  }
+
+  Future<void> _refreshDetail() async {
+    if (_refreshing) {
+      return;
+    }
+    final startedAt = DateTime.now();
+    final future = _fetchLatestDetail();
+    setState(() {
+      _refreshing = true;
+      _detailFuture = future;
+    });
+    try {
+      await future;
+      final elapsed = DateTime.now().difference(startedAt);
+      final remaining = _minRefreshIndicatorDuration - elapsed;
+      if (remaining > Duration.zero) {
+        await Future<void>.delayed(remaining);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _refreshing = false);
+      }
+    }
+  }
+
+  Future<TopicDetail?> _fetchLatestDetail() {
+    return widget.repository.fetchTopicDetail(
+      widget.topic.id,
+      forceRefresh: true,
+    );
   }
 
   void _showSnack(String message) {
@@ -300,10 +334,14 @@ class _MessageDetailHeader extends StatelessWidget {
   const _MessageDetailHeader({
     required this.title,
     required this.onBack,
+    required this.onRefresh,
+    required this.refreshing,
   });
 
   final String title;
   final VoidCallback onBack;
+  final Future<void> Function() onRefresh;
+  final bool refreshing;
 
   @override
   Widget build(BuildContext context) {
@@ -328,6 +366,17 @@ class _MessageDetailHeader extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
+          ),
+          IconButton(
+            tooltip: '刷新',
+            onPressed: refreshing ? null : onRefresh,
+            icon: refreshing
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.refresh),
           ),
         ],
       ),
