@@ -194,6 +194,7 @@ class _AppShellState extends State<AppShell> {
           busyDeletePostIds: _deletingPostIds,
           onLikePost: _likePost,
           onDeletePost: _deletePost,
+          onUploadImage: _repo.uploadImage,
           onCreateReply: _createReply,
           onOpenUser: _openUserProfile,
           onLoginRequired: _login,
@@ -254,10 +255,19 @@ class _AppShellState extends State<AppShell> {
         }
         final topics = snapshot.data ?? const <TopicListItem>[];
         if (topics.isEmpty) {
-          return EmptyState(
-            icon: Icons.inbox_outlined,
-            title: '暂无内容',
-            message: _repo.isOnline ? '论坛暂时没有返回主题。' : '本地样例中没有主题数据。',
+          return RefreshIndicator(
+            onRefresh: refresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                const SizedBox(height: 96),
+                EmptyState(
+                  icon: Icons.inbox_outlined,
+                  title: '暂无内容',
+                  message: _repo.isOnline ? '论坛暂时没有返回主题。' : '本地样例中没有主题数据。',
+                ),
+              ],
+            ),
           );
         }
         return RefreshIndicator(

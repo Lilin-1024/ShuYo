@@ -677,9 +677,15 @@ class OnlineForumRepository implements ForumRepository {
     if (postJson is! JsonMap) {
       throw const ForumApiException('评论已提交，但返回内容无法解析');
     }
-    _topicDetails.remove(draft.topicId);
+    final post = Post.fromJson(postJson);
+    final cached = _topicDetails[draft.topicId];
+    if (cached == null) {
+      _topicDetails.remove(draft.topicId);
+    } else {
+      _topicDetails[draft.topicId] = cached.mergedWithPosts([post]);
+    }
     _privateMessages = null;
-    return Post.fromJson(postJson);
+    return post;
   }
 
   @override
@@ -696,8 +702,10 @@ class OnlineForumRepository implements ForumRepository {
     final messages = FixtureForumRepository._parseTopics(json);
     if (forceRefresh) {
       for (final message in messages) {
-        _topicDetails.remove(message.id);
         _pendingTopicDetails.remove(message.id);
+        if (_shouldInvalidatePrivateMessageDetail(message)) {
+          _topicDetails.remove(message.id);
+        }
       }
     }
     return _privateMessages = messages;
@@ -721,6 +729,49 @@ class OnlineForumRepository implements ForumRepository {
     NotificationFeedFilter filter, {
     bool forceRefresh = false,
   }) async {
+    if (filter == NotificationFeedFilter.all) {
+      if (!forceRefresh && _notifications[filter] != null) {
+        return _notifications[filter]!;
+      }
+      final lists = await Future.wait([
+        fetchNotifications(
+          NotificationFeedFilter.replies,
+          forceRefresh: forceRefresh,
+        ),
+        fetchNotifications(
+          NotificationFeedFilter.likes,
+          forceRefresh: forceRefresh,
+        ),
+        fetchNotifications(
+          NotificationFeedFilter.mentions,
+          forceRefresh: forceRefresh,
+        ),
+      ]);
+      final seen = <String>{};
+      final merged = [
+        for (final list in lists)
+          for (final item in list)
+            if (seen.add(
+              '${item.kind}:${item.topicId ?? 0}:${item.postNumber ?? 0}:${item.id}',
+            ))
+              item,
+      ];
+      merged.sort((a, b) {
+        final aTime = a.createdAt;
+        final bTime = b.createdAt;
+        if (aTime == null && bTime == null) {
+          return b.id.compareTo(a.id);
+        }
+        if (aTime == null) {
+          return 1;
+        }
+        if (bTime == null) {
+          return -1;
+        }
+        return bTime.compareTo(aTime);
+      });
+      return _notifications[filter] = merged;
+    }
     if (!forceRefresh && _notifications[filter] != null) {
       return _notifications[filter]!;
     }
@@ -754,9 +805,82 @@ class OnlineForumRepository implements ForumRepository {
 
   Future<TopicDetail?> _fetchTopicDetail(int id) async {
     final json = await _apiClient.getJson('/t/topic/$id.json');
-    final detail = TopicDetail.fromJson(json);
+    final detail = await _hydrateMissingPosts(TopicDetail.fromJson(json));
     _topicDetails[id] = detail;
     return detail;
+  }
+
+  Future<TopicDetail> _hydrateMissingPosts(TopicDetail detail) async {
+    final loadedPostIds = detail.posts.map((post) => post.id).toSet();
+    final missingIds = detail.postStreamIds
+        .where((id) => !loadedPostIds.contains(id))
+        .toList(growable: false);
+    if (missingIds.isEmpty) {
+      return detail;
+    }
+    try {
+      final posts = await _fetchPostsByIds(detail, missingIds);
+      return posts.isEmpty ? detail : detail.mergedWithPosts(posts);
+    } on ForumApiException {
+      return detail;
+    }
+  }
+
+  Future<List<Post>> _fetchPostsByIds(
+    TopicDetail detail,
+    List<int> postIds,
+  ) async {
+    final posts = <Post>[];
+    for (var start = 0; start < postIds.length; start += 20) {
+      final end = start + 20 > postIds.length ? postIds.length : start + 20;
+      final batch = postIds.sublist(start, end);
+      final json = await _getPostBatch(detail, batch);
+      final stream = json['post_stream'];
+      final postsJson = stream is JsonMap ? stream['posts'] : json['posts'];
+      if (postsJson is List) {
+        posts.addAll(postsJson.whereType<JsonMap>().map(Post.fromJson));
+      }
+    }
+    return posts;
+  }
+
+  Future<JsonMap> _getPostBatch(TopicDetail detail, List<int> postIds) async {
+    final query = postIds.map((id) => 'post_ids%5B%5D=$id').join('&');
+    final slug = detail.slug.isEmpty ? 'topic' : detail.slug;
+    try {
+      return await _apiClient.getJson(
+        '/t/${Uri.encodeComponent(slug)}/${detail.id}/posts.json?$query',
+      );
+    } on ForumApiException {
+      return _apiClient.getJson('/t/${detail.id}/posts.json?$query');
+    }
+  }
+
+  bool _shouldInvalidatePrivateMessageDetail(TopicListItem message) {
+    final detail = _topicDetails[message.id];
+    if (detail == null) {
+      return false;
+    }
+    final topicTime = message.lastPostedAt ?? message.createdAt;
+    final detailTime = _latestPostTime(detail);
+    if (topicTime == null || detailTime == null) {
+      return true;
+    }
+    return topicTime.difference(detailTime) > const Duration(seconds: 1);
+  }
+
+  DateTime? _latestPostTime(TopicDetail detail) {
+    DateTime? latest;
+    for (final post in detail.posts) {
+      final createdAt = post.createdAt;
+      if (createdAt == null) {
+        continue;
+      }
+      if (latest == null || createdAt.isAfter(latest)) {
+        latest = createdAt;
+      }
+    }
+    return latest;
   }
 
   void _mergeUsers(JsonMap json) {

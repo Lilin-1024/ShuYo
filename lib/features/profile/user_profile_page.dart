@@ -7,6 +7,7 @@ import '../../data/services/local_image_picker.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/emoji_picker.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({
@@ -320,6 +321,16 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
                     : const Icon(Icons.image_outlined, size: 18),
                 label: const Text('添加图片'),
                 onPressed: _uploading ? null : _pickAndUpload,
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.emoji_emotions_outlined, size: 18),
+                label: const Text('Emoji'),
+                onPressed: _submitting
+                    ? null
+                    : () => showEmojiPicker(
+                          context: context,
+                          controller: _rawController,
+                        ),
               ),
             ],
           ),

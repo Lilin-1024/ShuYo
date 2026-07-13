@@ -1,4 +1,5 @@
 import 'common.dart';
+import '../services/emoji_text.dart';
 
 class TopicPoster {
   const TopicPoster({required this.userId, required this.description});
@@ -54,7 +55,7 @@ class TopicListItem {
     final postersJson = json['posters'];
     return TopicListItem(
       id: intValue(json['id']),
-      title: stringValue(json['title']),
+      title: EmojiText.render(stringValue(json['title'])),
       postsCount: intValue(json['posts_count']),
       replyCount: intValue(json['reply_count']),
       highestPostNumber: intValue(json['highest_post_number']),

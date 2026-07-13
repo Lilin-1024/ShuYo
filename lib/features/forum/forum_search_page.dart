@@ -475,6 +475,7 @@ class _SearchTopicPageState extends State<_SearchTopicPage> {
             busyDeletePostIds: _deletingPostIds,
             onLikePost: _likePost,
             onDeletePost: _deletePost,
+            onUploadImage: widget.repository.uploadImage,
             onCreateReply: _createReply,
             onLoginRequired: widget.onLoginRequired,
             onOpenUser: _openUser,

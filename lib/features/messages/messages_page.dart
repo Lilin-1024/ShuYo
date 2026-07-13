@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../data/models/composer.dart';
+import '../../data/models/discourse_user.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
@@ -13,6 +14,7 @@ import '../../data/services/payload_factory.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/emoji_picker.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 
 class MessagesPage extends StatefulWidget {
@@ -30,12 +32,28 @@ class MessagesPage extends StatefulWidget {
 }
 
 class _MessagesPageState extends State<MessagesPage> {
-  Future<List<TopicListItem>>? _listFuture;
+  final _previewFutures = <int, Future<_MessageTopicPreview>>{};
+  List<TopicListItem>? _topics;
+  Object? _error;
+  bool _loading = true;
+  bool _refreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _listFuture = widget.repository.fetchPrivateMessages();
+    unawaited(_loadInitial());
+  }
+
+  @override
+  void didUpdateWidget(covariant MessagesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _previewFutures.clear();
+      _topics = null;
+      _error = null;
+      _loading = true;
+      unawaited(_loadInitial());
+    }
   }
 
   @override
@@ -56,100 +74,261 @@ class _MessagesPageState extends State<MessagesPage> {
         ),
       );
     }
-    return FutureBuilder<List<TopicListItem>>(
-      future: _listFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return EmptyState(
-            icon: Icons.error_outline,
-            title: '私信加载失败',
-            message: snapshot.error.toString(),
-            action: TextButton.icon(
-              onPressed: _refreshList,
-              icon: const Icon(Icons.refresh),
-              label: const Text('重试'),
+    if (_loading && _topics == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final error = _error;
+    if (error != null && _topics == null) {
+      return EmptyState(
+        icon: Icons.error_outline,
+        title: '私信加载失败',
+        message: error.toString(),
+        action: TextButton.icon(
+          onPressed: () => unawaited(_refreshList()),
+          icon: const Icon(Icons.refresh),
+          label: const Text('重试'),
+        ),
+      );
+    }
+
+    final groups = _conversationGroups(_topics ?? const []);
+    if (groups.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _refreshList,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(height: 96),
+            EmptyState(
+              icon: Icons.mark_chat_unread_outlined,
+              title: '暂无私信',
+              message: '从用户主页可以发起新的私信会话',
             ),
-          );
-        }
-        final messages = snapshot.data ?? const <TopicListItem>[];
-        if (messages.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: _refreshList,
-            child: ListView(
-              children: const [
-                SizedBox(height: 96),
-                EmptyState(
-                  icon: Icons.mark_chat_unread_outlined,
-                  title: '暂无私信',
-                  message: '从用户主页可以发起新的私信会话',
-                ),
-              ],
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _refreshList,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 16),
+        itemCount: groups.length,
+        separatorBuilder: (context, index) =>
+            const Divider(height: 1, color: Color(0xFF202020)),
+        itemBuilder: (context, index) {
+          final group = groups[index];
+          return ListTile(
+            leading: ForumAvatar(url: group.avatarUrl(size: 96), size: 42),
+            title: Text(
+              group.displayName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
+            subtitle: _TopicPreviewLine(
+              future: _previewForTopic(group.latestTopic),
+            ),
+            trailing: Text(
+              TimeFormat.compact(group.latestTime),
+              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
+            ),
+            onTap: () => _openGroup(group),
           );
-        }
-        return RefreshIndicator(
-          onRefresh: _refreshList,
-          child: ListView.separated(
-            padding: const EdgeInsets.only(bottom: 16),
-            itemCount: messages.length,
-            separatorBuilder: (context, index) =>
-                const Divider(height: 1, color: Color(0xFF202020)),
-            itemBuilder: (context, index) {
-              final topic = messages[index];
-              final user = widget.repository.users[topic.originalPosterId];
-              return ListTile(
-                leading: ForumAvatar(
-                  url: user?.avatarUrl(size: 96) ?? '',
-                  size: 38,
-                ),
-                title: Text(
-                  topic.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  topic.lastPosterLabel,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: Text(
-                  TimeFormat.compact(topic.lastPostedAt ?? topic.createdAt),
-                  style: const TextStyle(
-                    color: Color(0xFF8A8A8A),
-                    fontSize: 12,
-                  ),
-                ),
-                onTap: () => _openMessage(topic),
-              );
-            },
-          ),
-        );
-      },
+        },
+      ),
     );
   }
 
-  Future<void> _refreshList() async {
-    final future = widget.repository.fetchPrivateMessages(forceRefresh: true);
-    setState(() => _listFuture = future);
-    await future;
+  Future<void> _loadInitial() async {
+    try {
+      final topics = await widget.repository.fetchPrivateMessages();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _topics = topics;
+        _error = null;
+        _loading = false;
+      });
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error;
+        _loading = false;
+      });
+    }
   }
 
-  Future<void> _openMessage(TopicListItem topic) async {
-    await Navigator.of(context).push<void>(
+  Future<void> _refreshList() async {
+    if (_refreshing) {
+      return;
+    }
+    setState(() => _refreshing = true);
+    try {
+      final topics = await widget.repository.fetchPrivateMessages(
+        forceRefresh: true,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _topics = topics;
+        _previewFutures.clear();
+        _error = null;
+      });
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      if (_topics == null) {
+        setState(() => _error = error);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('私信刷新失败：$error')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _refreshing = false);
+      }
+    }
+  }
+
+  List<_PrivateConversationGroup> _conversationGroups(
+    List<TopicListItem> topics,
+  ) {
+    final grouped = <String, List<TopicListItem>>{};
+    final groupUsers = <String, List<int>>{};
+    for (final topic in topics) {
+      final userIds = _otherUserIds(topic);
+      final key = userIds.isEmpty ? 'topic:${topic.id}' : userIds.join(':');
+      grouped.putIfAbsent(key, () => []).add(topic);
+      groupUsers[key] = userIds;
+    }
+    final groups = [
+      for (final entry in grouped.entries)
+        _PrivateConversationGroup(
+          userIds: groupUsers[entry.key] ?? const [],
+          users: widget.repository.users,
+          topics: entry.value
+            ..sort((a, b) => _topicTime(b).compareTo(_topicTime(a))),
+        ),
+    ];
+    groups.sort((a, b) => _topicTime(b.latestTopic).compareTo(
+          _topicTime(a.latestTopic),
+        ));
+    return groups;
+  }
+
+  List<int> _otherUserIds(TopicListItem topic) {
+    final currentUserId = widget.repository.profile.id;
+    final ids = topic.posters.map((poster) => poster.userId).toSet()
+      ..remove(currentUserId);
+    if (ids.isEmpty) {
+      final originalPosterId = topic.originalPosterId;
+      if (originalPosterId != null && originalPosterId != currentUserId) {
+        ids.add(originalPosterId);
+      }
+    }
+    final sorted = ids.toList()..sort();
+    return sorted;
+  }
+
+  Future<_MessageTopicPreview> _previewForTopic(TopicListItem topic) {
+    return _previewFutures[topic.id] ??= _loadPreview(topic);
+  }
+
+  Future<_MessageTopicPreview> _loadPreview(TopicListItem topic) async {
+    final detail = await widget.repository.fetchTopicDetail(topic.id);
+    return _MessageTopicPreview.fromDetail(detail, topic);
+  }
+
+  Future<void> _openGroup(_PrivateConversationGroup group) async {
+    if (group.topics.length == 1) {
+      await _openMessage(group.topics.first, group.displayName);
+    } else {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (context) => _MessageTopicSelectionPage(
+            repository: widget.repository,
+            group: group,
+            previewForTopic: _previewForTopic,
+          ),
+        ),
+      );
+    }
+    if (mounted) {
+      await _refreshList();
+    }
+  }
+
+  Future<void> _openMessage(TopicListItem topic, String counterpartTitle) {
+    return Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => _MessageDetailPage(
           repository: widget.repository,
           topic: topic,
+          counterpartTitle: counterpartTitle,
         ),
       ),
     );
-    if (mounted) {
-      await _refreshList();
-    }
+  }
+}
+
+class _MessageTopicSelectionPage extends StatelessWidget {
+  const _MessageTopicSelectionPage({
+    required this.repository,
+    required this.group,
+    required this.previewForTopic,
+  });
+
+  final ForumRepository repository;
+  final _PrivateConversationGroup group;
+  final Future<_MessageTopicPreview> Function(TopicListItem topic)
+      previewForTopic;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(title: Text(group.displayName)),
+      body: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: group.topics.length,
+        separatorBuilder: (context, index) =>
+            const Divider(height: 1, color: Color(0xFF202020)),
+        itemBuilder: (context, index) {
+          final topic = group.topics[index];
+          return ListTile(
+            title: Text(
+              topic.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            subtitle: _TopicPreviewLine(future: previewForTopic(topic)),
+            trailing: Text(
+              TimeFormat.compact(topic.lastPostedAt ?? topic.createdAt),
+              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
+            ),
+            onTap: () {
+              Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (context) => _MessageDetailPage(
+                    repository: repository,
+                    topic: topic,
+                    counterpartTitle: group.displayName,
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -157,10 +336,12 @@ class _MessageDetailPage extends StatefulWidget {
   const _MessageDetailPage({
     required this.repository,
     required this.topic,
+    required this.counterpartTitle,
   });
 
   final ForumRepository repository;
   final TopicListItem topic;
+  final String counterpartTitle;
 
   @override
   State<_MessageDetailPage> createState() => _MessageDetailPageState();
@@ -169,17 +350,17 @@ class _MessageDetailPage extends StatefulWidget {
 class _MessageDetailPageState extends State<_MessageDetailPage> {
   static const _minRefreshIndicatorDuration = Duration(milliseconds: 800);
 
-  late Future<TopicDetail?> _detailFuture;
+  TopicDetail? _detail;
+  Object? _error;
+  bool _loadingInitial = true;
   bool _submitting = false;
   bool _refreshing = false;
+  Set<int> _animatedPostIds = const {};
 
   @override
   void initState() {
     super.initState();
-    _detailFuture = widget.repository.fetchTopicDetail(
-      widget.topic.id,
-      forceRefresh: true,
-    );
+    unawaited(_loadInitial());
   }
 
   @override
@@ -190,49 +371,13 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
         child: Column(
           children: [
             _MessageDetailHeader(
-              title: widget.topic.title,
+              title: widget.counterpartTitle,
+              subtitle: widget.topic.title,
               onBack: () => Navigator.of(context).pop(),
               onRefresh: _refreshDetail,
               refreshing: _refreshing,
             ),
-            Expanded(
-              child: FutureBuilder<TopicDetail?>(
-                future: _detailFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return EmptyState(
-                      icon: Icons.error_outline,
-                      title: '会话加载失败',
-                      message: snapshot.error.toString(),
-                    );
-                  }
-                  final detail = snapshot.data;
-                  if (detail == null || detail.posts.isEmpty) {
-                    return const EmptyState(
-                      icon: Icons.forum_outlined,
-                      title: '暂无内容',
-                      message: '这个私信会话没有返回消息',
-                    );
-                  }
-                  return ListView.builder(
-                    reverse: true,
-                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                    itemCount: detail.posts.length,
-                    itemBuilder: (context, index) {
-                      final post =
-                          detail.posts[detail.posts.length - index - 1];
-                      return _MessageBubble(
-                        post: post,
-                        onOpenImage: _openImagePreview,
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
+            Expanded(child: _messageBody()),
             _MessageReplyBar(
               submitting: _submitting,
               repository: widget.repository,
@@ -244,13 +389,82 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     );
   }
 
+  Widget _messageBody() {
+    if (_loadingInitial) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final error = _error;
+    if (error != null && _detail == null) {
+      return EmptyState(
+        icon: Icons.error_outline,
+        title: '会话加载失败',
+        message: error.toString(),
+        action: TextButton.icon(
+          onPressed: () => unawaited(_loadInitial()),
+          icon: const Icon(Icons.refresh),
+          label: const Text('重试'),
+        ),
+      );
+    }
+    final detail = _detail;
+    final posts = detail?.posts ?? const <Post>[];
+    if (detail == null || posts.isEmpty) {
+      return const EmptyState(
+        icon: Icons.forum_outlined,
+        title: '暂无内容',
+        message: '这个私信会话没有返回消息',
+      );
+    }
+    return ListView.builder(
+      reverse: true,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      itemCount: posts.length,
+      itemBuilder: (context, index) {
+        final post = posts[posts.length - index - 1];
+        return _AnimatedMessageBubble(
+          key: ValueKey(post.id),
+          animate: _animatedPostIds.contains(post.id),
+          child: _MessageBubble(
+            post: post,
+            onOpenImage: _openImagePreview,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _loadInitial() async {
+    setState(() {
+      _loadingInitial = true;
+      _error = null;
+    });
+    try {
+      final detail = await _fetchLatestDetail();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _detail = detail;
+        _loadingInitial = false;
+      });
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _error = error;
+        _loadingInitial = false;
+      });
+    }
+  }
+
   Future<void> _reply(String raw, List<UploadedImage> images) async {
     if (_submitting) {
       return;
     }
     setState(() => _submitting = true);
     try {
-      await widget.repository.createReply(
+      final post = await widget.repository.createReply(
         ReplyDraft(
           topicId: widget.topic.id,
           categoryId: 0,
@@ -262,7 +476,8 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       if (!mounted) {
         return;
       }
-      unawaited(_refreshDetail());
+      _applyLocalPost(post);
+      await _refreshDetail();
       unawaited(_warmPrivateMessageList());
     } on Object catch (error) {
       if (mounted) {
@@ -280,17 +495,37 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       return;
     }
     final startedAt = DateTime.now();
-    final future = _fetchLatestDetail();
-    setState(() {
-      _refreshing = true;
-      _detailFuture = future;
-    });
+    final previousIds = _detail?.posts.map((post) => post.id).toSet() ?? {};
+    setState(() => _refreshing = true);
     try {
-      await future;
+      final fetched = await _fetchLatestDetail();
+      final detail = _mergeWithCurrentDetail(fetched);
+      final nextIds = detail?.posts.map((post) => post.id).toSet() ?? {};
+      final newIds = nextIds.difference(previousIds);
+      final changed = !_sameIntSet(previousIds, nextIds);
       final elapsed = DateTime.now().difference(startedAt);
       final remaining = _minRefreshIndicatorDuration - elapsed;
       if (remaining > Duration.zero) {
         await Future<void>.delayed(remaining);
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        if (changed || _detail == null) {
+          _detail = detail;
+          _animatedPostIds = newIds;
+        }
+        _error = null;
+      });
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      if (_detail == null) {
+        setState(() => _error = error);
+      } else {
+        _showSnack('刷新失败：$error');
       }
     } finally {
       if (mounted) {
@@ -304,6 +539,45 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       widget.topic.id,
       forceRefresh: true,
     );
+  }
+
+  void _applyLocalPost(Post post) {
+    final current = _detail;
+    if (current == null) {
+      setState(() {
+        _detail = TopicDetail(
+          id: widget.topic.id,
+          title: widget.topic.title,
+          categoryId: widget.topic.categoryId,
+          postsCount: 1,
+          highestPostNumber: post.postNumber,
+          canCreatePost: true,
+          posts: [post],
+          postStreamIds: [post.id],
+          archetype: 'private_message',
+        );
+        _animatedPostIds = {post.id};
+        _error = null;
+      });
+      return;
+    }
+    setState(() {
+      _detail = current.mergedWithPosts([post]);
+      _animatedPostIds = {post.id};
+      _error = null;
+    });
+  }
+
+  TopicDetail? _mergeWithCurrentDetail(TopicDetail? fetched) {
+    final current = _detail;
+    if (current == null || fetched == null) {
+      return fetched ?? current;
+    }
+    final fetchedIds = fetched.posts.map((post) => post.id).toSet();
+    final missingLocalPosts = current.posts.where(
+      (post) => !fetchedIds.contains(post.id),
+    );
+    return fetched.mergedWithPosts(missingLocalPosts);
   }
 
   void _showSnack(String message) {
@@ -320,11 +594,14 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     }
   }
 
-  void _openImagePreview(String url) {
+  void _openImagePreview(List<String> urls, int initialIndex) {
     Navigator.of(context).push<void>(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (context) => FullscreenImagePage(url: url),
+        builder: (context) => FullscreenImagePage(
+          urls: urls,
+          initialIndex: initialIndex,
+        ),
       ),
     );
   }
@@ -333,12 +610,14 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
 class _MessageDetailHeader extends StatelessWidget {
   const _MessageDetailHeader({
     required this.title,
+    required this.subtitle,
     required this.onBack,
     required this.onRefresh,
     required this.refreshing,
   });
 
   final String title;
+  final String subtitle;
   final VoidCallback onBack;
   final Future<void> Function() onRefresh;
   final bool refreshing;
@@ -346,7 +625,7 @@ class _MessageDetailHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 52,
+      height: 62,
       padding: const EdgeInsets.only(right: 12),
       decoration: const BoxDecoration(
         color: Colors.black,
@@ -360,11 +639,27 @@ class _MessageDetailHeader extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
           ),
           Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF8A8A8A),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
           ),
           IconButton(
@@ -384,12 +679,71 @@ class _MessageDetailHeader extends StatelessWidget {
   }
 }
 
-extension on TopicListItem {
-  String get lastPosterLabel {
-    if (lastPostedAt == null) {
-      return '$postsCount 条消息';
+class _AnimatedMessageBubble extends StatefulWidget {
+  const _AnimatedMessageBubble({
+    super.key,
+    required this.animate,
+    required this.child,
+  });
+
+  final bool animate;
+  final Widget child;
+
+  @override
+  State<_AnimatedMessageBubble> createState() => _AnimatedMessageBubbleState();
+}
+
+class _AnimatedMessageBubbleState extends State<_AnimatedMessageBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _offset;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 260),
+      value: widget.animate ? 0 : 1,
+    );
+    _opacity = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _offset = Tween<Offset>(
+      begin: const Offset(0, 0.18),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    );
+    if (widget.animate) {
+      _controller.forward();
     }
-    return '$postsCount 条消息';
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedMessageBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animate && !oldWidget.animate) {
+      _controller
+        ..value = 0
+        ..forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: SlideTransition(
+        position: _offset,
+        child: widget.child,
+      ),
+    );
   }
 }
 
@@ -400,7 +754,7 @@ class _MessageBubble extends StatelessWidget {
   });
 
   final Post post;
-  final ValueChanged<String> onOpenImage;
+  final void Function(List<String> urls, int initialIndex) onOpenImage;
 
   @override
   Widget build(BuildContext context) {
@@ -523,6 +877,16 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                         )
                       : const Icon(Icons.image_outlined),
                 ),
+                IconButton(
+                  tooltip: 'Emoji',
+                  onPressed: widget.submitting
+                      ? null
+                      : () => showEmojiPicker(
+                            context: context,
+                            controller: _controller,
+                          ),
+                  icon: const Icon(Icons.emoji_emotions_outlined),
+                ),
                 Expanded(
                   child: TextField(
                     controller: _controller,
@@ -608,7 +972,7 @@ class _MessageCookedContent extends StatelessWidget {
 
   final String cooked;
   final Color textColor;
-  final ValueChanged<String> onOpenImage;
+  final void Function(List<String> urls, int initialIndex) onOpenImage;
 
   @override
   Widget build(BuildContext context) {
@@ -616,41 +980,174 @@ class _MessageCookedContent extends StatelessWidget {
     if (segments.isEmpty) {
       return Text(' ', style: TextStyle(color: textColor));
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final segment in segments)
-          if (segment.isImage)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: GestureDetector(
-                onTap: () => onOpenImage(segment.value),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.network(
-                    segment.value,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 130,
-                        alignment: Alignment.center,
-                        color: const Color(0xFF252525),
-                        child: const Text('图片加载失败'),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text(
+    final imageUrls = [
+      for (final segment in segments)
+        if (segment.isImage) segment.value,
+    ];
+    final contentWidgets = <Widget>[];
+    var imageIndex = 0;
+    for (final segment in segments) {
+      if (!segment.isImage) {
+        contentWidgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              segment.value,
+              style: TextStyle(color: textColor, height: 1.38),
+            ),
+          ),
+        );
+        continue;
+      }
+      final currentImageIndex = imageIndex++;
+      contentWidgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: GestureDetector(
+            onTap: () => onOpenImage(imageUrls, currentImageIndex),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(
                 segment.value,
-                style: TextStyle(color: textColor, height: 1.38),
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 130,
+                    alignment: Alignment.center,
+                    color: const Color(0xFF252525),
+                    child: const Text('图片加载失败'),
+                  );
+                },
               ),
             ),
-      ],
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: contentWidgets,
     );
   }
+}
+
+class _TopicPreviewLine extends StatelessWidget {
+  const _TopicPreviewLine({required this.future});
+
+  final Future<_MessageTopicPreview> future;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<_MessageTopicPreview>(
+      future: future,
+      builder: (context, snapshot) {
+        final text = snapshot.data?.text ?? '摘要加载中...';
+        return Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Color(0xFFBDBDBD)),
+        );
+      },
+    );
+  }
+}
+
+class _MessageTopicPreview {
+  const _MessageTopicPreview({required this.text, required this.createdAt});
+
+  final String text;
+  final DateTime? createdAt;
+
+  factory _MessageTopicPreview.fromDetail(
+    TopicDetail? detail,
+    TopicListItem fallback,
+  ) {
+    final posts = detail?.posts.where((post) => !post.isDeleted).toList();
+    final post = posts == null || posts.isEmpty ? null : posts.last;
+    if (post == null) {
+      return _MessageTopicPreview(
+        text: fallback.title,
+        createdAt: fallback.lastPostedAt ?? fallback.createdAt,
+      );
+    }
+    return _MessageTopicPreview(
+      text: _previewForCooked(post.cooked),
+      createdAt: post.createdAt,
+    );
+  }
+
+  static String _previewForCooked(String cooked) {
+    final segments = HtmlText.parseSegments(cooked);
+    final hasImages = segments.any((segment) => segment.isImage);
+    final text = segments
+        .where((segment) => !segment.isImage)
+        .map((segment) => segment.value)
+        .join(' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (text.isEmpty) {
+      return hasImages ? '[图片]' : '暂无内容';
+    }
+    final clipped = text.length > 48 ? '${text.substring(0, 48)}...' : text;
+    return hasImages ? '$clipped [图片]' : clipped;
+  }
+}
+
+class _PrivateConversationGroup {
+  const _PrivateConversationGroup({
+    required this.userIds,
+    required this.users,
+    required this.topics,
+  });
+
+  final List<int> userIds;
+  final Map<int, DiscourseUser> users;
+  final List<TopicListItem> topics;
+
+  TopicListItem get latestTopic => topics.first;
+  DateTime? get latestTime => latestTopic.lastPostedAt ?? latestTopic.createdAt;
+
+  String get displayName {
+    final names = userIds
+        .map((id) => users[id]?.username)
+        .whereType<String>()
+        .where((name) => name.isNotEmpty)
+        .toList();
+    if (names.isEmpty) {
+      return latestTopic.title;
+    }
+    if (names.length <= 2) {
+      return names.join('、');
+    }
+    return '${names.take(2).join('、')} 等 ${names.length} 人';
+  }
+
+  String avatarUrl({int size = 96}) {
+    for (final id in userIds) {
+      final user = users[id];
+      if (user != null) {
+        return user.avatarUrl(size: size);
+      }
+    }
+    return '';
+  }
+}
+
+DateTime _topicTime(TopicListItem topic) {
+  return topic.lastPostedAt ??
+      topic.createdAt ??
+      DateTime.fromMillisecondsSinceEpoch(0);
+}
+
+bool _sameIntSet(Set<int> a, Set<int> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (final value in a) {
+    if (!b.contains(value)) {
+      return false;
+    }
+  }
+  return true;
 }

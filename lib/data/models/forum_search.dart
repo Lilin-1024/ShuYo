@@ -1,6 +1,7 @@
 import 'common.dart';
 import 'discourse_user.dart';
 import 'topic.dart';
+import '../services/html_text.dart';
 
 enum ForumSearchMode { posts, users }
 
@@ -54,7 +55,7 @@ class SearchPostResult {
       postNumber: intValue(json['post_number']),
       username: stringValue(json['username']),
       avatarTemplate: stringValue(json['avatar_template']),
-      blurb: stringValue(json['blurb']),
+      blurb: HtmlText.toPlainText(stringValue(json['blurb'])),
       likeCount: intValue(json['like_count']),
       createdAt: dateValue(json['created_at']),
     );

@@ -1,5 +1,6 @@
 import 'common.dart';
 import 'discourse_user.dart';
+import '../services/html_text.dart';
 
 class UserProfile {
   const UserProfile({
@@ -27,7 +28,7 @@ class UserProfile {
     final userJson = user is JsonMap ? user : const <String, dynamic>{};
     return UserProfile(
       user: DiscourseUser.fromJson(userJson),
-      bioExcerpt: stringValue(userJson['bio_excerpt']),
+      bioExcerpt: HtmlText.toPlainText(stringValue(userJson['bio_excerpt'])),
       canSendPrivateMessage:
           boolValue(userJson['can_send_private_message_to_user']) ||
               boolValue(userJson['can_send_private_messages']),
