@@ -1,14 +1,18 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lehu_client/data/models/category.dart';
 import 'package:lehu_client/data/models/common.dart';
+import 'package:lehu_client/data/models/composer.dart';
+import 'package:lehu_client/data/models/forum_notification.dart';
 import 'package:lehu_client/data/models/post.dart';
 import 'package:lehu_client/data/models/topic.dart';
 import 'package:lehu_client/data/models/topic_detail.dart';
 import 'package:lehu_client/data/services/html_text.dart';
 import 'package:lehu_client/data/services/payload_factory.dart';
+import 'package:lehu_client/data/services/sha1_hash.dart';
 import 'package:lehu_client/features/topic/threaded_posts.dart';
 import 'package:lehu_client/shared/time_format.dart';
 
@@ -60,6 +64,46 @@ void main() {
     expect(reply.body, contains('reply_to_post_number=3'));
     expect(PayloadFactory.decodeForm(reply.body)['raw'], 'test test');
     expect(like.body, 'id=654&post_action_type_id=2&flag_topic=false');
+  });
+
+  test('builds topic and private message payloads', () {
+    const image = UploadedImage(
+      url: 'https://bbs.shu.edu.cn/uploads/default/original/1X/a.jpeg',
+      shortUrl: 'upload://a.jpeg',
+      filename: 'a.jpeg',
+      width: 1460,
+      height: 1002,
+      thumbnailWidth: 690,
+      thumbnailHeight: 473,
+    );
+    final topic = PayloadFactory.createTopic(
+      const CreateTopicDraft(
+        title: '这是一个测试标题',
+        raw: '这是一个测试内容',
+        categoryId: 9,
+        draftKey: 'new_topic_1',
+        images: [image],
+      ),
+    );
+    final message = PayloadFactory.createPrivateMessage(
+      const PrivateMessageDraft(
+        title: '这是一条私信',
+        raw: '这是一条发给自己的私信',
+        recipients: 'Lilin',
+        draftKey: 'new_private_message_1',
+      ),
+    );
+
+    final topicFields = PayloadFactory.decodeForm(topic.body);
+    expect(topicFields['archetype'], 'regular');
+    expect(topicFields['category'], '9');
+    expect(topicFields['image_sizes[${image.url}][width]'], '1460');
+    expect(image.markdown, '![a.jpeg|690x473](upload://a.jpeg)');
+
+    final messageFields = PayloadFactory.decodeForm(message.body);
+    expect(messageFields['archetype'], 'private_message');
+    expect(messageFields['target_recipients'], 'Lilin');
+    expect(messageFields['category'], '');
   });
 
   test('builds delete payload from post id and post number context', () {
@@ -136,6 +180,27 @@ void main() {
       TimeFormat.compact(DateTime(2025, 12, 31, 23, 59), now: now),
       '2025/12/31 23:59',
     );
+  });
+
+  test('parses notifications and computes sha1', () {
+    final notification = ForumNotification.fromNotificationJson({
+      'id': 1,
+      'notification_type': 6,
+      'read': false,
+      'created_at': '2026-07-13T06:39:02.810Z',
+      'post_number': 6,
+      'topic_id': 811,
+      'fancy_title': '欢迎！',
+      'data': {
+        'display_username': '上大论坛',
+        'topic_title': '欢迎！',
+      },
+    });
+
+    expect(notification.kind, '回复');
+    expect(notification.canOpenTopic, isTrue);
+    expect(Sha1Hash.hex(Uint8List.fromList(utf8.encode('abc'))),
+        'a9993e364706816aba3e25717850c26c9cd0d89d');
   });
 }
 

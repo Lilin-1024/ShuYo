@@ -177,6 +177,7 @@ class _TopicPageState extends State<TopicPage> {
                 categoryId: detail.categoryId,
                 raw: raw,
                 replyToPostNumber: replyToPostNumber,
+                archetype: detail.archetype,
               ),
             );
           },

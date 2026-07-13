@@ -1,0 +1,101 @@
+import 'common.dart';
+
+enum NotificationFeedFilter { all, replies, likes, mentions }
+
+class ForumNotification {
+  const ForumNotification({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.kind,
+    required this.read,
+    this.topicId,
+    this.postNumber,
+    this.createdAt,
+  });
+
+  final int id;
+  final String title;
+  final String message;
+  final String kind;
+  final bool read;
+  final int? topicId;
+  final int? postNumber;
+  final DateTime? createdAt;
+
+  bool get canOpenTopic => topicId != null && topicId! > 0;
+
+  factory ForumNotification.fromNotificationJson(JsonMap json) {
+    final data = json['data'];
+    final map = data is JsonMap ? data : const <String, dynamic>{};
+    final type = intValue(json['notification_type']);
+    final actor = stringValue(
+      map['display_username'] ?? map['username'] ?? map['original_username'],
+    );
+    final title = stringValue(
+      json['fancy_title'] ?? map['topic_title'] ?? map['badge_name'],
+      '通知',
+    );
+    return ForumNotification(
+      id: intValue(json['id']),
+      title: title,
+      message: _messageForNotification(type, actor, map),
+      kind: _kindForNotification(type),
+      read: boolValue(json['read']),
+      topicId: _nullableInt(json['topic_id']),
+      postNumber: _nullableInt(json['post_number']),
+      createdAt: dateValue(json['created_at']),
+    );
+  }
+
+  factory ForumNotification.fromUserActionJson(JsonMap json, String kind) {
+    final title = stringValue(json['title'], '通知');
+    final actor = stringValue(
+      json['acting_username'] ?? json['username'] ?? json['name'],
+    );
+    return ForumNotification(
+      id: intValue(json['id'] ?? json['post_id']),
+      title: title,
+      message: actor.isEmpty ? stringValue(json['excerpt']) : actor,
+      kind: kind,
+      read: true,
+      topicId: _nullableInt(json['topic_id']),
+      postNumber: _nullableInt(json['post_number']),
+      createdAt: dateValue(json['created_at']),
+    );
+  }
+
+  static String _messageForNotification(
+    int type,
+    String actor,
+    JsonMap data,
+  ) {
+    if (type == 12) {
+      return '获得徽章 ${stringValue(data['badge_name'], '新徽章')}';
+    }
+    if (actor.isEmpty) {
+      return _kindForNotification(type);
+    }
+    return '$actor · ${_kindForNotification(type)}';
+  }
+
+  static String _kindForNotification(int type) {
+    return switch (type) {
+      1 => '提及',
+      2 => '回复',
+      5 => '赞',
+      6 => '回复',
+      9 => '引用',
+      12 => '徽章',
+      _ => '通知',
+    };
+  }
+
+  static int? _nullableInt(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    final parsed = intValue(value);
+    return parsed == 0 ? null : parsed;
+  }
+}

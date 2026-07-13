@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
@@ -81,6 +82,27 @@ class DiscourseApiClient {
       body: body,
     );
     return _decode(response);
+  }
+
+  Future<JsonMap> postMultipart({
+    required String path,
+    required Map<String, String> fields,
+    required String fileField,
+    required Uint8List fileBytes,
+    required String filename,
+  }) async {
+    final request = http.MultipartRequest('POST', _uri(path));
+    request.headers.addAll(await _headers(csrfToken: await _csrf()));
+    request.fields.addAll(fields);
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        fileField,
+        fileBytes,
+        filename: filename,
+      ),
+    );
+    final streamed = await _httpClient.send(request);
+    return _decode(await http.Response.fromStream(streamed));
   }
 
   Future<Map<String, String>> _headers({

@@ -8,20 +8,28 @@ class AppHeader extends StatelessWidget {
     this.showBack = false,
     this.showSettings = false,
     this.showMore = false,
+    this.showSearch = false,
+    this.showCreate = false,
     this.notificationCount = 0,
     this.onBack,
     this.onSettings,
     this.onMore,
+    this.onSearch,
+    this.onCreate,
   });
 
   final String title;
   final bool showBack;
   final bool showSettings;
   final bool showMore;
+  final bool showSearch;
+  final bool showCreate;
   final int notificationCount;
   final VoidCallback? onBack;
   final VoidCallback? onSettings;
   final VoidCallback? onMore;
+  final VoidCallback? onSearch;
+  final VoidCallback? onCreate;
   final VoidCallback onNotification;
 
   @override
@@ -31,15 +39,20 @@ class AppHeader extends StatelessWidget {
       child: Row(
         children: [
           SizedBox(
-            width: showBack ? 56 : 16,
+            width: 56,
             child: showBack
                 ? IconButton(
                     tooltip: '返回',
                     onPressed: onBack,
                     icon: const Icon(Icons.arrow_back),
                   )
-                : null,
+                : IconButton(
+                    tooltip: '通知',
+                    onPressed: onNotification,
+                    icon: _NotificationIcon(count: notificationCount),
+                  ),
           ),
+          const SizedBox(width: 2),
           Expanded(
             child: Text(
               title,
@@ -54,18 +67,26 @@ class AppHeader extends StatelessWidget {
               onPressed: onSettings,
               icon: const Icon(Icons.settings_outlined),
             ),
+          if (showSearch)
+            IconButton(
+              tooltip: '搜索',
+              onPressed: onSearch,
+              icon: const Icon(Icons.search),
+            ),
+          if (showCreate)
+            IconButton(
+              tooltip: '发帖',
+              onPressed: onCreate,
+              icon: const Icon(Icons.add),
+            ),
           if (showMore)
             IconButton(
               tooltip: '更多',
               onPressed: onMore,
               icon: const Icon(Icons.more_horiz),
             )
-          else
-            IconButton(
-              tooltip: '通知',
-              onPressed: onNotification,
-              icon: _NotificationIcon(count: notificationCount),
-            ),
+          else if (!showSettings && !showSearch && !showCreate)
+            const SizedBox(width: 48),
           const SizedBox(width: 4),
         ],
       ),
