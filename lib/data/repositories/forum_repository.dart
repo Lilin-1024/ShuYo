@@ -693,7 +693,14 @@ class OnlineForumRepository implements ForumRepository {
         '/topics/private-messages/${profile.username.toLowerCase()}.json';
     final json = await _apiClient.getJson(path);
     _mergeUsers(json);
-    return _privateMessages = FixtureForumRepository._parseTopics(json);
+    final messages = FixtureForumRepository._parseTopics(json);
+    if (forceRefresh) {
+      for (final message in messages) {
+        _topicDetails.remove(message.id);
+        _pendingTopicDetails.remove(message.id);
+      }
+    }
+    return _privateMessages = messages;
   }
 
   @override
