@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+
+class ForumAvatar extends StatelessWidget {
+  const ForumAvatar({
+    super.key,
+    required this.url,
+    this.size = 36,
+  });
+
+  final String url;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    if (url.isEmpty) {
+      return _AvatarFallback(size: size);
+    }
+    return ClipOval(
+      child: Image.network(
+        url,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _AvatarFallback(size: size);
+        },
+      ),
+    );
+  }
+}
+
+class _AvatarFallback extends StatelessWidget {
+  const _AvatarFallback({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: Container(
+        width: size,
+        height: size,
+        color: const Color(0xFF2A2A2A),
+        alignment: Alignment.center,
+        child: Icon(
+          Icons.person,
+          size: size * 0.56,
+          color: const Color(0xFFBDBDBD),
+        ),
+      ),
+    );
+  }
+}

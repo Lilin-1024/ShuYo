@@ -1,0 +1,33 @@
+name: lehu_client
+description: A Flutter MVP client for the LEHU Discourse forum.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.6.0
+  webview_flutter: ^4.14.1
+  webview_flutter_android: ^4.12.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/fixtures/api/site.json
+    - assets/fixtures/api/latest/latest.json
+    - assets/fixtures/api/hot/hot.json
+    - assets/fixtures/api/topic/topic-normal.json
+    - assets/fixtures/api/topic/topic-image.json
+    - assets/fixtures/api/topic/topic-long.json
+    - assets/fixtures/api/user/user-profile.json
+    - assets/fixtures/api/user/user-summary.json
+    - assets/fixtures/network/
