@@ -2,9 +2,21 @@ import 'common.dart';
 import 'discourse_user.dart';
 
 class UserProfile {
-  const UserProfile({required this.user});
+  const UserProfile({
+    required this.user,
+    this.bioExcerpt = '',
+    this.canSendPrivateMessage = false,
+    this.admin = false,
+    this.moderator = false,
+    this.createdAt,
+  });
 
   final DiscourseUser user;
+  final String bioExcerpt;
+  final bool canSendPrivateMessage;
+  final bool admin;
+  final bool moderator;
+  final DateTime? createdAt;
 
   int get id => user.id;
   String get username => user.username;
@@ -12,8 +24,16 @@ class UserProfile {
 
   factory UserProfile.fromJson(JsonMap json) {
     final user = json['user'];
+    final userJson = user is JsonMap ? user : const <String, dynamic>{};
     return UserProfile(
-      user: DiscourseUser.fromJson(user is JsonMap ? user : const {}),
+      user: DiscourseUser.fromJson(userJson),
+      bioExcerpt: stringValue(userJson['bio_excerpt']),
+      canSendPrivateMessage:
+          boolValue(userJson['can_send_private_message_to_user']) ||
+              boolValue(userJson['can_send_private_messages']),
+      admin: boolValue(userJson['admin']),
+      moderator: boolValue(userJson['moderator']),
+      createdAt: dateValue(userJson['created_at']),
     );
   }
 }

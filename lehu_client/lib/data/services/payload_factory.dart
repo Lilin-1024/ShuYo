@@ -8,6 +8,7 @@ class ReplyDraft {
     required this.categoryId,
     required this.raw,
     this.replyToPostNumber,
+    this.images = const [],
     this.archetype = 'regular',
     this.typingDurationMs = 1000,
     this.composerOpenDurationMs = 3000,
@@ -17,6 +18,7 @@ class ReplyDraft {
   final int categoryId;
   final String raw;
   final int? replyToPostNumber;
+  final List<UploadedImage> images;
   final String archetype;
   final int typingDurationMs;
   final int composerOpenDurationMs;
@@ -61,6 +63,10 @@ class PayloadFactory {
     final replyTo = draft.replyToPostNumber;
     if (replyTo != null) {
       fields['reply_to_post_number'] = '$replyTo';
+    }
+    for (final image in draft.images) {
+      fields['image_sizes[${image.url}][width]'] = '${image.width}';
+      fields['image_sizes[${image.url}][height]'] = '${image.height}';
     }
 
     return RequestPayload(
@@ -116,6 +122,10 @@ class PayloadFactory {
         'shared_draft': 'false',
         'draft_key': draft.draftKey,
         'nested_post': 'true',
+        for (final image in draft.images) ...{
+          'image_sizes[${image.url}][width]': '${image.width}',
+          'image_sizes[${image.url}][height]': '${image.height}',
+        },
       }),
     );
   }

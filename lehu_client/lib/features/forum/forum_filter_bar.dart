@@ -20,33 +20,42 @@ class ForumFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 46,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-        children: [
-          _FilterChipButton(
-            label: isHot ? '最热' : '最新',
-            selected: true,
-            icon: isHot ? Icons.local_fire_department : Icons.schedule,
-            onTap: onToggleMode,
-          ),
-          const SizedBox(width: 8),
-          _FilterChipButton(
-            label: '全部',
-            selected: selectedCategoryId == null,
-            onTap: () => onSelectCategory(null),
-          ),
-          for (final category in categories) ...[
-            const SizedBox(width: 8),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 0, 8),
+      child: SizedBox(
+        height: 32,
+        child: Row(
+          children: [
             _FilterChipButton(
-              label: category.name,
-              selected: selectedCategoryId == category.id,
-              onTap: () => onSelectCategory(category.id),
+              label: isHot ? '最热' : '最新',
+              selected: true,
+              icon: isHot ? Icons.local_fire_department : Icons.schedule,
+              onTap: onToggleMode,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(right: 16),
+                children: [
+                  _FilterChipButton(
+                    label: '全部',
+                    selected: selectedCategoryId == null,
+                    onTap: () => onSelectCategory(null),
+                  ),
+                  for (final category in categories) ...[
+                    const SizedBox(width: 8),
+                    _FilterChipButton(
+                      label: category.name,
+                      selected: selectedCategoryId == category.id,
+                      onTap: () => onSelectCategory(category.id),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }

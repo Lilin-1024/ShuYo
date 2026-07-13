@@ -17,6 +17,7 @@ class TopicListPage extends StatefulWidget {
     required this.onOpenTopic,
     required this.canLoadMore,
     required this.isLoadingMore,
+    this.onOpenUser,
     this.onLoadMore,
   });
 
@@ -25,6 +26,7 @@ class TopicListPage extends StatefulWidget {
   final Future<TopicPreview> Function(int id) previewForTopic;
   final ForumCategory? Function(int id) categoryById;
   final ValueChanged<TopicListItem> onOpenTopic;
+  final ValueChanged<DiscourseUser>? onOpenUser;
   final bool canLoadMore;
   final bool isLoadingMore;
   final Future<void> Function()? onLoadMore;
@@ -75,6 +77,7 @@ class _TopicListPageState extends State<TopicListPage> {
           category: widget.categoryById(topic.categoryId),
           previewFuture: widget.previewForTopic(topic.id),
           onTap: () => widget.onOpenTopic(topic),
+          onOpenUser: user == null ? null : () => widget.onOpenUser?.call(user),
         );
       },
     );
@@ -147,6 +150,7 @@ class _TopicListRow extends StatelessWidget {
     required this.topic,
     required this.previewFuture,
     required this.onTap,
+    this.onOpenUser,
     this.user,
     this.category,
   });
@@ -156,6 +160,7 @@ class _TopicListRow extends StatelessWidget {
   final ForumCategory? category;
   final Future<TopicPreview> previewFuture;
   final VoidCallback onTap;
+  final VoidCallback? onOpenUser;
 
   @override
   Widget build(BuildContext context) {
@@ -167,42 +172,46 @@ class _TopicListRow extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                ForumAvatar(
-                  url: user?.avatarUrl(size: 96) ?? '',
-                  size: 34,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.username ?? '未知用户',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFD6D6D6),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (metaText.isNotEmpty) ...[
-                        const SizedBox(height: 2),
+            InkWell(
+              borderRadius: BorderRadius.circular(6),
+              onTap: onOpenUser,
+              child: Row(
+                children: [
+                  ForumAvatar(
+                    url: user?.avatarUrl(size: 96) ?? '',
+                    size: 34,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          metaText,
+                          user?.username ?? '未知用户',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Color(0xFF8A8A8A),
-                            fontSize: 12,
+                            color: Color(0xFFD6D6D6),
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        if (metaText.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            metaText,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF8A8A8A),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             Text(

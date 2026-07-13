@@ -1,5 +1,30 @@
 import 'common.dart';
+import 'discourse_user.dart';
 import 'topic.dart';
+
+enum ForumSearchMode { posts, users }
+
+enum ForumSearchSort { relevance, latest, likes, views }
+
+extension ForumSearchSortLabel on ForumSearchSort {
+  String get label {
+    return switch (this) {
+      ForumSearchSort.relevance => '相关性',
+      ForumSearchSort.latest => '最新',
+      ForumSearchSort.likes => '赞最多',
+      ForumSearchSort.views => '浏览最多',
+    };
+  }
+
+  String get querySuffix {
+    return switch (this) {
+      ForumSearchSort.relevance => '',
+      ForumSearchSort.latest => 'order:latest',
+      ForumSearchSort.likes => 'order:likes',
+      ForumSearchSort.views => 'order:views',
+    };
+  }
+}
 
 class SearchPostResult {
   const SearchPostResult({
@@ -36,14 +61,30 @@ class SearchPostResult {
   }
 }
 
+class SearchUserResult {
+  const SearchUserResult({required this.user});
+
+  final DiscourseUser user;
+
+  int get id => user.id;
+  String get username => user.username;
+  String avatarUrl({int size = 96}) => user.avatarUrl(size: size);
+
+  factory SearchUserResult.fromJson(JsonMap json) {
+    return SearchUserResult(user: DiscourseUser.fromJson(json));
+  }
+}
+
 class ForumSearchResult {
   const ForumSearchResult({
     required this.posts,
     required this.topics,
+    this.users = const [],
   });
 
   final List<SearchPostResult> posts;
   final List<TopicListItem> topics;
+  final List<SearchUserResult> users;
 
   TopicListItem? topicForPost(SearchPostResult post) {
     for (final topic in topics) {
@@ -57,6 +98,7 @@ class ForumSearchResult {
   factory ForumSearchResult.fromJson(JsonMap json) {
     final postsJson = json['posts'];
     final topicsJson = json['topics'];
+    final usersJson = json['users'];
     return ForumSearchResult(
       posts: postsJson is List
           ? postsJson
@@ -66,6 +108,12 @@ class ForumSearchResult {
           : const [],
       topics: topicsJson is List
           ? topicsJson.whereType<JsonMap>().map(TopicListItem.fromJson).toList()
+          : const [],
+      users: usersJson is List
+          ? usersJson
+              .whereType<JsonMap>()
+              .map(SearchUserResult.fromJson)
+              .toList()
           : const [],
     );
   }

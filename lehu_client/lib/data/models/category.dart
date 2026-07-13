@@ -29,7 +29,8 @@ class ForumCategory {
       color: stringValue(json['color'], '333333'),
       textColor: stringValue(json['text_color'], 'FFFFFF'),
       position: intValue(json['position']),
-      permission: json['permission'] == null ? null : intValue(json['permission']),
+      permission:
+          json['permission'] == null ? null : intValue(json['permission']),
       readRestricted: boolValue(json['read_restricted']),
     );
   }
