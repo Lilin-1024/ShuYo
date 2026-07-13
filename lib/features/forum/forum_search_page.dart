@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/forum_search.dart';
+import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
+import '../../data/models/topic_detail.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../data/services/payload_factory.dart';
+import '../../features/profile/user_profile_page.dart';
+import '../../features/topic/topic_page.dart';
 import '../../shared/time_format.dart';
+import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class ForumSearchPage extends StatefulWidget {
   const ForumSearchPage({
     super.key,
     required this.repository,
+    required this.onLoginRequired,
   });
 
   final ForumRepository repository;
+  final VoidCallback onLoginRequired;
 
   @override
   State<ForumSearchPage> createState() => _ForumSearchPageState();
@@ -20,6 +28,8 @@ class ForumSearchPage extends StatefulWidget {
 
 class _ForumSearchPageState extends State<ForumSearchPage> {
   final _controller = TextEditingController();
+  ForumSearchMode _mode = ForumSearchMode.posts;
+  ForumSearchSort _sort = ForumSearchSort.relevance;
   Future<ForumSearchResult>? _future;
 
   @override
@@ -51,17 +61,33 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
           ),
         ],
       ),
-      body: _body(),
+      body: Column(
+        children: [
+          _SearchOptions(
+            mode: _mode,
+            sort: _sort,
+            onModeChanged: (mode) {
+              setState(() => _mode = mode);
+              _repeatSearch();
+            },
+            onSortChanged: (sort) {
+              setState(() => _sort = sort);
+              _repeatSearch();
+            },
+          ),
+          Expanded(child: _body()),
+        ],
+      ),
     );
   }
 
   Widget _body() {
     final future = _future;
     if (future == null) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.search,
         title: '搜索乐乎',
-        message: '输入关键词后查看帖子和回复',
+        message: _mode == ForumSearchMode.users ? '输入用户名关键词' : '输入关键词后查看帖子和回复',
       );
     }
     return FutureBuilder<ForumSearchResult>(
@@ -78,41 +104,30 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
           );
         }
         final result = snapshot.data;
-        if (result == null || (result.posts.isEmpty && result.topics.isEmpty)) {
+        if (result == null || _isEmpty(result)) {
           return const EmptyState(
             icon: Icons.search_off,
             title: '没有结果',
             message: '换个关键词试试',
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.only(bottom: 16),
-          itemCount: result.posts.length + result.topics.length,
-          separatorBuilder: (context, index) =>
-              const Divider(height: 1, color: Color(0xFF202020)),
-          itemBuilder: (context, index) {
-            if (index < result.posts.length) {
-              final post = result.posts[index];
-              final topic = result.topicForPost(post) ??
-                  _topicFromPost(post, '主题 #${post.topicId}');
-              return _SearchRow(
-                title: topic.title,
-                subtitle: post.blurb,
-                meta: TimeFormat.compact(post.createdAt),
-                onTap: () => Navigator.of(context).pop(topic),
+        return _mode == ForumSearchMode.users
+            ? _UserResults(
+                result: result,
+                onOpenUser: _openUser,
+              )
+            : _PostResults(
+                result: result,
+                onOpenTopic: _openTopic,
               );
-            }
-            final topic = result.topics[index - result.posts.length];
-            return _SearchRow(
-              title: topic.title,
-              subtitle: '主题',
-              meta: TimeFormat.compact(topic.lastPostedAt ?? topic.createdAt),
-              onTap: () => Navigator.of(context).pop(topic),
-            );
-          },
-        );
       },
     );
+  }
+
+  bool _isEmpty(ForumSearchResult result) {
+    return _mode == ForumSearchMode.users
+        ? result.users.isEmpty
+        : result.posts.isEmpty && result.topics.isEmpty;
   }
 
   void _search(String raw) {
@@ -121,8 +136,188 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
       return;
     }
     setState(() {
-      _future = widget.repository.searchForum(query);
+      _future = widget.repository.searchForum(
+        query,
+        mode: _mode,
+        sort: _sort,
+      );
     });
+  }
+
+  void _repeatSearch() {
+    final query = _controller.text.trim();
+    if (query.isNotEmpty) {
+      _search(query);
+    }
+  }
+
+  Future<void> _openTopic(TopicListItem topic) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => _SearchTopicPage(
+          repository: widget.repository,
+          topic: topic,
+          onLoginRequired: widget.onLoginRequired,
+          onOpenUser: _openUser,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openUser(String username) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => UserProfilePage(
+          repository: widget.repository,
+          username: username,
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchOptions extends StatelessWidget {
+  const _SearchOptions({
+    required this.mode,
+    required this.sort,
+    required this.onModeChanged,
+    required this.onSortChanged,
+  });
+
+  final ForumSearchMode mode;
+  final ForumSearchSort sort;
+  final ValueChanged<ForumSearchMode> onModeChanged;
+  final ValueChanged<ForumSearchSort> onSortChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _OptionChip(
+                label: '话题/帖子',
+                selected: mode == ForumSearchMode.posts,
+                onTap: () => onModeChanged(ForumSearchMode.posts),
+              ),
+              const SizedBox(width: 8),
+              _OptionChip(
+                label: '用户',
+                selected: mode == ForumSearchMode.users,
+                onTap: () => onModeChanged(ForumSearchMode.users),
+              ),
+            ],
+          ),
+          if (mode == ForumSearchMode.posts) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 32,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  for (final item in ForumSearchSort.values) ...[
+                    _OptionChip(
+                      label: item.label,
+                      selected: sort == item,
+                      onTap: () => onSortChanged(item),
+                    ),
+                    if (item != ForumSearchSort.values.last)
+                      const SizedBox(width: 8),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _OptionChip extends StatelessWidget {
+  const _OptionChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: selected ? null : onTap,
+      child: Container(
+        height: 32,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFEDEDED) : const Color(0xFF171717),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected ? const Color(0xFFEDEDED) : const Color(0xFF303030),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? Colors.black : const Color(0xFFD6D6D6),
+            fontSize: 13,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PostResults extends StatelessWidget {
+  const _PostResults({
+    required this.result,
+    required this.onOpenTopic,
+  });
+
+  final ForumSearchResult result;
+  final ValueChanged<TopicListItem> onOpenTopic;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <_PostResultRow>[
+      for (final post in result.posts)
+        _PostResultRow(
+          topic: result.topicForPost(post) ??
+              _topicFromPost(post, '主题 #${post.topicId}'),
+          post: post,
+        ),
+      if (result.posts.isEmpty)
+        for (final topic in result.topics) _PostResultRow(topic: topic),
+    ];
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 16),
+      itemCount: rows.length,
+      separatorBuilder: (context, index) =>
+          const Divider(height: 1, color: Color(0xFF202020)),
+      itemBuilder: (context, index) {
+        final row = rows[index];
+        final post = row.post;
+        return _SearchRow(
+          title: row.topic.title,
+          subtitle: post?.blurb ?? '主题',
+          meta: TimeFormat.compact(
+            post?.createdAt ?? row.topic.lastPostedAt ?? row.topic.createdAt,
+          ),
+          onTap: () => onOpenTopic(row.topic),
+        );
+      },
+    );
   }
 
   TopicListItem _topicFromPost(SearchPostResult post, String title) {
@@ -138,6 +333,45 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
       posters: const [],
       createdAt: post.createdAt,
       lastPostedAt: post.createdAt,
+    );
+  }
+}
+
+class _PostResultRow {
+  const _PostResultRow({required this.topic, this.post});
+
+  final TopicListItem topic;
+  final SearchPostResult? post;
+}
+
+class _UserResults extends StatelessWidget {
+  const _UserResults({
+    required this.result,
+    required this.onOpenUser,
+  });
+
+  final ForumSearchResult result;
+  final ValueChanged<String> onOpenUser;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 16),
+      itemCount: result.users.length,
+      separatorBuilder: (context, index) =>
+          const Divider(height: 1, color: Color(0xFF202020)),
+      itemBuilder: (context, index) {
+        final user = result.users[index];
+        return ListTile(
+          leading: ForumAvatar(url: user.avatarUrl(size: 96), size: 38),
+          title: Text(
+            user.username,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text('ID ${user.id}'),
+          onTap: () => onOpenUser(user.username),
+        );
+      },
     );
   }
 }
@@ -176,6 +410,161 @@ class _SearchRow extends StatelessWidget {
               meta,
               style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
             ),
+    );
+  }
+}
+
+class _SearchTopicPage extends StatefulWidget {
+  const _SearchTopicPage({
+    required this.repository,
+    required this.topic,
+    required this.onLoginRequired,
+    required this.onOpenUser,
+  });
+
+  final ForumRepository repository;
+  final TopicListItem topic;
+  final VoidCallback onLoginRequired;
+  final ValueChanged<String> onOpenUser;
+
+  @override
+  State<_SearchTopicPage> createState() => _SearchTopicPageState();
+}
+
+class _SearchTopicPageState extends State<_SearchTopicPage> {
+  Future<TopicDetail?>? _future;
+  bool _submittingReply = false;
+  final _likingPostIds = <int>{};
+  final _deletingPostIds = <int>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.repository.fetchTopicDetail(widget.topic.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('帖子')),
+      body: FutureBuilder<TopicDetail?>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return EmptyState(
+              icon: Icons.error_outline,
+              title: '帖子加载失败',
+              message: snapshot.error.toString(),
+              action: TextButton.icon(
+                onPressed: _refresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('重试'),
+              ),
+            );
+          }
+          return TopicPage(
+            item: widget.topic,
+            detail: snapshot.data,
+            category: widget.repository.categoryById(widget.topic.categoryId),
+            isOnline: widget.repository.isOnline,
+            isSubmittingReply: _submittingReply,
+            busyLikePostIds: _likingPostIds,
+            busyDeletePostIds: _deletingPostIds,
+            onLikePost: _likePost,
+            onDeletePost: _deletePost,
+            onCreateReply: _createReply,
+            onLoginRequired: widget.onLoginRequired,
+            onOpenUser: _openUser,
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = widget.repository.fetchTopicDetail(
+        widget.topic.id,
+        forceRefresh: true,
+      );
+    });
+  }
+
+  Future<void> _createReply(ReplyDraft draft) async {
+    if (_submittingReply) {
+      return;
+    }
+    setState(() => _submittingReply = true);
+    try {
+      await widget.repository.createReply(draft);
+      if (mounted) {
+        await _refresh();
+      }
+    } on Object catch (error) {
+      _showSnack('评论失败：$error');
+    } finally {
+      if (mounted) {
+        setState(() => _submittingReply = false);
+      }
+    }
+  }
+
+  Future<void> _likePost(int postId) async {
+    if (_likingPostIds.contains(postId)) {
+      return;
+    }
+    setState(() => _likingPostIds.add(postId));
+    try {
+      final post = await widget.repository.likePost(postId);
+      if (mounted) {
+        setState(() {
+          _future = widget.repository.fetchTopicDetail(
+            post.topicId,
+            forceRefresh: true,
+          );
+        });
+      }
+    } on Object catch (error) {
+      _showSnack('点赞失败：$error');
+    } finally {
+      if (mounted) {
+        setState(() => _likingPostIds.remove(postId));
+      }
+    }
+  }
+
+  Future<void> _deletePost(Post post) async {
+    if (_deletingPostIds.contains(post.id)) {
+      return;
+    }
+    setState(() => _deletingPostIds.add(post.id));
+    try {
+      await widget.repository.deletePost(post);
+      if (mounted) {
+        await _refresh();
+      }
+    } on Object catch (error) {
+      _showSnack('删除失败：$error');
+    } finally {
+      if (mounted) {
+        setState(() => _deletingPostIds.remove(post.id));
+      }
+    }
+  }
+
+  void _openUser(String username) {
+    widget.onOpenUser(username);
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 }

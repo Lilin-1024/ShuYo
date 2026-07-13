@@ -9,6 +9,7 @@ import '../../data/services/payload_factory.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/time_format.dart';
+import '../../shared/widgets/fullscreen_image_page.dart';
 import 'threaded_posts.dart';
 
 class TopicPage extends StatefulWidget {
@@ -20,6 +21,7 @@ class TopicPage extends StatefulWidget {
     required this.onCreateReply,
     required this.onLikePost,
     required this.onDeletePost,
+    required this.onOpenUser,
     required this.onLoginRequired,
     required this.isOnline,
     required this.isSubmittingReply,
@@ -37,6 +39,7 @@ class TopicPage extends StatefulWidget {
   final ValueChanged<ReplyDraft> onCreateReply;
   final ValueChanged<int> onLikePost;
   final ValueChanged<Post> onDeletePost;
+  final ValueChanged<String> onOpenUser;
   final VoidCallback onLoginRequired;
 
   @override
@@ -92,6 +95,7 @@ class _TopicPageState extends State<TopicPage> {
                   onReply: _replyTo,
                   onLike: _like,
                   onDelete: _confirmDelete,
+                  onOpenUser: widget.onOpenUser,
                   onOpenImage: _openImagePreview,
                 ),
             ],
@@ -187,44 +191,11 @@ class _TopicPageState extends State<TopicPage> {
   }
 
   void _openImagePreview(String url) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.92),
-      builder: (context) {
-        return Material(
-          color: Colors.black,
-          child: Stack(
-            children: [
-              Center(
-                child: InteractiveViewer(
-                  minScale: 0.8,
-                  maxScale: 4,
-                  child: Image.network(
-                    url,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Text(
-                        '图片加载失败',
-                        style: TextStyle(color: Color(0xFFBDBDBD)),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              SafeArea(
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                    tooltip: '关闭',
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => FullscreenImagePage(url: url),
+      ),
     );
   }
 }
@@ -274,6 +245,7 @@ class _ThreadedPostView extends StatelessWidget {
     required this.onReply,
     required this.onLike,
     required this.onDelete,
+    required this.onOpenUser,
     required this.onOpenImage,
   });
 
@@ -288,6 +260,7 @@ class _ThreadedPostView extends StatelessWidget {
   final ValueChanged<Post> onReply;
   final ValueChanged<Post> onLike;
   final ValueChanged<Post> onDelete;
+  final ValueChanged<String> onOpenUser;
   final ValueChanged<String> onOpenImage;
 
   @override
@@ -311,6 +284,7 @@ class _ThreadedPostView extends StatelessWidget {
           onReply: () => onReply(post),
           onLike: () => onLike(post),
           onDelete: () => onDelete(post),
+          onOpenUser: () => onOpenUser(post.username),
           onOpenImage: onOpenImage,
         ),
         if (replies.isNotEmpty)
@@ -326,6 +300,7 @@ class _ThreadedPostView extends StatelessWidget {
             onReply: onReply,
             onLike: onLike,
             onDelete: onDelete,
+            onOpenUser: onOpenUser,
             onOpenImage: onOpenImage,
           ),
       ],
@@ -346,6 +321,7 @@ class _NestedReplies extends StatelessWidget {
     required this.onReply,
     required this.onLike,
     required this.onDelete,
+    required this.onOpenUser,
     required this.onOpenImage,
   });
 
@@ -360,6 +336,7 @@ class _NestedReplies extends StatelessWidget {
   final ValueChanged<Post> onReply;
   final ValueChanged<Post> onLike;
   final ValueChanged<Post> onDelete;
+  final ValueChanged<String> onOpenUser;
   final ValueChanged<String> onOpenImage;
 
   @override
@@ -389,6 +366,7 @@ class _NestedReplies extends StatelessWidget {
               onReply: () => onReply(reply),
               onLike: () => onLike(reply),
               onDelete: () => onDelete(reply),
+              onOpenUser: () => onOpenUser(reply.username),
               onOpenImage: onOpenImage,
             ),
           if (hiddenCount > 0 || expanded)
@@ -414,6 +392,7 @@ class _PostView extends StatelessWidget {
     required this.onReply,
     required this.onLike,
     required this.onDelete,
+    required this.onOpenUser,
     required this.onOpenImage,
     this.replyContext,
     this.compact = false,
@@ -428,6 +407,7 @@ class _PostView extends StatelessWidget {
   final VoidCallback onReply;
   final VoidCallback onLike;
   final VoidCallback onDelete;
+  final VoidCallback onOpenUser;
   final ValueChanged<String> onOpenImage;
   final String? replyContext;
   final bool compact;
@@ -447,35 +427,39 @@ class _PostView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              ForumAvatar(
-                  url: post.avatarUrl(size: 96), size: compact ? 30 : 36),
-              SizedBox(width: compact ? 8 : 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      post.username,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      metaText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF8A8A8A),
-                        fontSize: 12,
+          InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: onOpenUser,
+            child: Row(
+              children: [
+                ForumAvatar(
+                    url: post.avatarUrl(size: 96), size: compact ? 30 : 36),
+                SizedBox(width: compact ? 8 : 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.username,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        metaText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Color(0xFF8A8A8A),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (replyContext != null) ...[
             const SizedBox(height: 8),

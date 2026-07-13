@@ -20,12 +20,25 @@ class CreateTopicDraft {
   final int composerOpenDurationMs;
 }
 
+class ComposedImage {
+  const ComposedImage({
+    required this.url,
+    required this.width,
+    required this.height,
+  });
+
+  final String url;
+  final int width;
+  final int height;
+}
+
 class PrivateMessageDraft {
   const PrivateMessageDraft({
     required this.title,
     required this.raw,
     required this.recipients,
     required this.draftKey,
+    this.images = const [],
     this.typingDurationMs = 1000,
     this.composerOpenDurationMs = 3000,
   });
@@ -34,6 +47,7 @@ class PrivateMessageDraft {
   final String raw;
   final String recipients;
   final String draftKey;
+  final List<UploadedImage> images;
   final int typingDurationMs;
   final int composerOpenDurationMs;
 }
@@ -65,6 +79,12 @@ class UploadedImage {
         : '';
     return '![$filename$size]($shortUrl)';
   }
+
+  ComposedImage get composedSize => ComposedImage(
+        url: url,
+        width: width,
+        height: height,
+      );
 }
 
 class PickedImage {

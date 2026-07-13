@@ -54,7 +54,19 @@ abstract class ForumRepository {
   Future<List<TopicListItem>> fetchHotTopics({bool forceRefresh = false});
   Future<List<TopicListItem>> loadMoreLatestTopics();
   Future<List<TopicListItem>> loadMoreHotTopics();
-  Future<ForumSearchResult> searchForum(String query);
+  Future<ForumSearchResult> searchForum(
+    String query, {
+    ForumSearchMode mode = ForumSearchMode.posts,
+    ForumSearchSort sort = ForumSearchSort.relevance,
+  });
+  Future<UserProfile> fetchUserProfile(
+    String username, {
+    bool forceRefresh = false,
+  });
+  Future<UserSummary> fetchUserSummary(
+    String username, {
+    bool forceRefresh = false,
+  });
   Future<TopicDetail?> fetchTopicDetail(
     int id, {
     bool forceRefresh = false,
@@ -227,15 +239,67 @@ class FixtureForumRepository implements ForumRepository {
   }
 
   @override
-  Future<ForumSearchResult> searchForum(String query) async {
+  Future<ForumSearchResult> searchForum(
+    String query, {
+    ForumSearchMode mode = ForumSearchMode.posts,
+    ForumSearchSort sort = ForumSearchSort.relevance,
+  }) async {
     final normalized = query.trim();
     if (normalized.isEmpty) {
-      return const ForumSearchResult(posts: [], topics: []);
+      return const ForumSearchResult(posts: [], topics: [], users: []);
+    }
+    if (mode == ForumSearchMode.users) {
+      final matches = users.values
+          .where((user) => user.username.contains(normalized))
+          .map((user) => SearchUserResult(user: user))
+          .toList(growable: false);
+      return ForumSearchResult(
+          posts: const [], topics: const [], users: matches);
     }
     final topics = _latestTopics
         .where((topic) => topic.title.contains(normalized))
         .toList(growable: false);
-    return ForumSearchResult(posts: const [], topics: topics);
+    return ForumSearchResult(posts: const [], topics: topics, users: const []);
+  }
+
+  @override
+  Future<UserProfile> fetchUserProfile(
+    String username, {
+    bool forceRefresh = false,
+  }) async {
+    if (username == profile.username) {
+      return profile;
+    }
+    final match = users.values.where((user) => user.username == username);
+    if (match.isNotEmpty) {
+      return UserProfile(user: match.first);
+    }
+    return UserProfile(
+      user: DiscourseUser(
+        id: 0,
+        username: username,
+        avatarTemplate: '',
+      ),
+    );
+  }
+
+  @override
+  Future<UserSummary> fetchUserSummary(
+    String username, {
+    bool forceRefresh = false,
+  }) async {
+    return username == profile.username
+        ? userSummary
+        : const UserSummary(
+            likesGiven: 0,
+            likesReceived: 0,
+            topicsEntered: 0,
+            postsReadCount: 0,
+            daysVisited: 0,
+            topicCount: 0,
+            postCount: 0,
+            timeReadSeconds: 0,
+          );
   }
 
   @override
@@ -375,6 +439,8 @@ class OnlineForumRepository implements ForumRepository {
   final Map<int, ForumCategory> _categories;
   final Map<int, TopicDetail> _topicDetails = {};
   final Map<int, Future<TopicDetail?>> _pendingTopicDetails = {};
+  final Map<String, UserProfile> _userProfiles = {};
+  final Map<String, UserSummary> _userSummaries = {};
   final Map<String, List<TopicListItem>> _feedTopics = {};
   final Map<String, String?> _feedMorePaths = {};
   final Map<NotificationFeedFilter, List<ForumNotification>> _notifications =
@@ -499,14 +565,63 @@ class OnlineForumRepository implements ForumRepository {
   }
 
   @override
-  Future<ForumSearchResult> searchForum(String query) async {
+  Future<ForumSearchResult> searchForum(
+    String query, {
+    ForumSearchMode mode = ForumSearchMode.posts,
+    ForumSearchSort sort = ForumSearchSort.relevance,
+  }) async {
     final normalized = query.trim();
     if (normalized.isEmpty) {
-      return const ForumSearchResult(posts: [], topics: []);
+      return const ForumSearchResult(posts: [], topics: [], users: []);
     }
-    final encoded = Uri.encodeQueryComponent('$normalized order:likes');
+    if (mode == ForumSearchMode.users) {
+      final encoded = Uri.encodeQueryComponent(normalized);
+      final json = await _apiClient.getJson(
+        '/u/search/users?term=$encoded&limit=20',
+      );
+      final result = ForumSearchResult.fromJson(json);
+      for (final user in result.users) {
+        users[user.id] = user.user;
+      }
+      return result;
+    }
+    final suffix = sort.querySuffix;
+    final searchText = suffix.isEmpty ? normalized : '$normalized $suffix';
+    final encoded = Uri.encodeQueryComponent(searchText);
     final json = await _apiClient.getJson('/search?q=$encoded&page=1');
+    _mergeUsers(json);
     return ForumSearchResult.fromJson(json);
+  }
+
+  @override
+  Future<UserProfile> fetchUserProfile(
+    String username, {
+    bool forceRefresh = false,
+  }) async {
+    final key = username.toLowerCase();
+    if (!forceRefresh && _userProfiles[key] != null) {
+      return _userProfiles[key]!;
+    }
+    final json =
+        await _apiClient.getJson('/u/${Uri.encodeComponent(key)}.json');
+    final profile = UserProfile.fromJson(json);
+    users[profile.id] = profile.user;
+    return _userProfiles[key] = profile;
+  }
+
+  @override
+  Future<UserSummary> fetchUserSummary(
+    String username, {
+    bool forceRefresh = false,
+  }) async {
+    final key = username.toLowerCase();
+    if (!forceRefresh && _userSummaries[key] != null) {
+      return _userSummaries[key]!;
+    }
+    final json = await _apiClient.getJson(
+      '/u/${Uri.encodeComponent(key)}/summary.json',
+    );
+    return _userSummaries[key] = UserSummary.fromJson(json);
   }
 
   @override
@@ -563,6 +678,7 @@ class OnlineForumRepository implements ForumRepository {
       throw const ForumApiException('评论已提交，但返回内容无法解析');
     }
     _topicDetails.remove(draft.topicId);
+    _privateMessages = null;
     return Post.fromJson(postJson);
   }
 

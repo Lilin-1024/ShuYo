@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../data/models/composer.dart';
@@ -6,10 +8,12 @@ import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/html_text.dart';
+import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/fullscreen_image_page.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({
@@ -26,10 +30,7 @@ class MessagesPage extends StatefulWidget {
 }
 
 class _MessagesPageState extends State<MessagesPage> {
-  TopicListItem? _openedMessage;
   Future<List<TopicListItem>>? _listFuture;
-  Future<TopicDetail?>? _detailFuture;
-  bool _submitting = false;
 
   @override
   void initState() {
@@ -39,10 +40,6 @@ class _MessagesPageState extends State<MessagesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final opened = _openedMessage;
-    if (opened != null) {
-      return _messageDetail(opened);
-    }
     return _messageList();
   }
 
@@ -78,23 +75,30 @@ class _MessagesPageState extends State<MessagesPage> {
           );
         }
         final messages = snapshot.data ?? const <TopicListItem>[];
+        if (messages.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: _refreshList,
+            child: ListView(
+              children: const [
+                SizedBox(height: 96),
+                EmptyState(
+                  icon: Icons.mark_chat_unread_outlined,
+                  title: '暂无私信',
+                  message: '从用户主页可以发起新的私信会话',
+                ),
+              ],
+            ),
+          );
+        }
         return RefreshIndicator(
           onRefresh: _refreshList,
           child: ListView.separated(
             padding: const EdgeInsets.only(bottom: 16),
-            itemCount: messages.length + 1,
+            itemCount: messages.length,
             separatorBuilder: (context, index) =>
                 const Divider(height: 1, color: Color(0xFF202020)),
             itemBuilder: (context, index) {
-              if (index == 0) {
-                return ListTile(
-                  leading: const Icon(Icons.edit_note),
-                  title: const Text('新私信'),
-                  subtitle: const Text('发送给指定用户'),
-                  onTap: _openNewMessageSheet,
-                );
-              }
-              final topic = messages[index - 1];
+              final topic = messages[index];
               final user = widget.repository.users[topic.originalPosterId];
               return ListTile(
                 leading: ForumAvatar(
@@ -119,87 +123,12 @@ class _MessagesPageState extends State<MessagesPage> {
                     fontSize: 12,
                   ),
                 ),
-                onTap: () {
-                  setState(() {
-                    _openedMessage = topic;
-                    _detailFuture =
-                        widget.repository.fetchTopicDetail(topic.id);
-                  });
-                },
+                onTap: () => _openMessage(topic),
               );
             },
           ),
         );
       },
-    );
-  }
-
-  Widget _messageDetail(TopicListItem topic) {
-    return Column(
-      children: [
-        Container(
-          height: 46,
-          padding: const EdgeInsets.only(right: 12),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFF202020))),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                tooltip: '返回',
-                onPressed: () => setState(() => _openedMessage = null),
-                icon: const Icon(Icons.arrow_back),
-              ),
-              Expanded(
-                child: Text(
-                  topic.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: FutureBuilder<TopicDetail?>(
-            future: _detailFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return EmptyState(
-                  icon: Icons.error_outline,
-                  title: '会话加载失败',
-                  message: snapshot.error.toString(),
-                );
-              }
-              final detail = snapshot.data;
-              if (detail == null || detail.posts.isEmpty) {
-                return const EmptyState(
-                  icon: Icons.forum_outlined,
-                  title: '暂无内容',
-                  message: '这个私信会话没有返回消息',
-                );
-              }
-              return ListView.builder(
-                reverse: true,
-                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                itemCount: detail.posts.length,
-                itemBuilder: (context, index) {
-                  final post = detail.posts[detail.posts.length - index - 1];
-                  return _MessageBubble(post: post);
-                },
-              );
-            },
-          ),
-        ),
-        _MessageReplyBar(
-          submitting: _submitting,
-          onSubmit: (raw) => _reply(topic, raw),
-        ),
-      ],
     );
   }
 
@@ -209,7 +138,105 @@ class _MessagesPageState extends State<MessagesPage> {
     await future;
   }
 
-  Future<void> _reply(TopicListItem topic, String raw) async {
+  Future<void> _openMessage(TopicListItem topic) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => _MessageDetailPage(
+          repository: widget.repository,
+          topic: topic,
+        ),
+      ),
+    );
+    if (mounted) {
+      await _refreshList();
+    }
+  }
+}
+
+class _MessageDetailPage extends StatefulWidget {
+  const _MessageDetailPage({
+    required this.repository,
+    required this.topic,
+  });
+
+  final ForumRepository repository;
+  final TopicListItem topic;
+
+  @override
+  State<_MessageDetailPage> createState() => _MessageDetailPageState();
+}
+
+class _MessageDetailPageState extends State<_MessageDetailPage> {
+  late Future<TopicDetail?> _detailFuture;
+  bool _submitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _detailFuture = widget.repository.fetchTopicDetail(widget.topic.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _MessageDetailHeader(
+              title: widget.topic.title,
+              onBack: () => Navigator.of(context).pop(),
+            ),
+            Expanded(
+              child: FutureBuilder<TopicDetail?>(
+                future: _detailFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return EmptyState(
+                      icon: Icons.error_outline,
+                      title: '会话加载失败',
+                      message: snapshot.error.toString(),
+                    );
+                  }
+                  final detail = snapshot.data;
+                  if (detail == null || detail.posts.isEmpty) {
+                    return const EmptyState(
+                      icon: Icons.forum_outlined,
+                      title: '暂无内容',
+                      message: '这个私信会话没有返回消息',
+                    );
+                  }
+                  return ListView.builder(
+                    reverse: true,
+                    padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                    itemCount: detail.posts.length,
+                    itemBuilder: (context, index) {
+                      final post =
+                          detail.posts[detail.posts.length - index - 1];
+                      return _MessageBubble(
+                        post: post,
+                        onOpenImage: _openImagePreview,
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            _MessageReplyBar(
+              submitting: _submitting,
+              repository: widget.repository,
+              onSubmit: _reply,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reply(String raw, List<UploadedImage> images) async {
     if (_submitting) {
       return;
     }
@@ -217,10 +244,11 @@ class _MessagesPageState extends State<MessagesPage> {
     try {
       await widget.repository.createReply(
         ReplyDraft(
-          topicId: topic.id,
+          topicId: widget.topic.id,
           categoryId: 0,
           raw: raw,
-          archetype: 'private_message',
+          archetype: 'regular',
+          images: images,
         ),
       );
       if (!mounted) {
@@ -228,10 +256,11 @@ class _MessagesPageState extends State<MessagesPage> {
       }
       setState(() {
         _detailFuture = widget.repository.fetchTopicDetail(
-          topic.id,
+          widget.topic.id,
           forceRefresh: true,
         );
       });
+      unawaited(_warmPrivateMessageList());
     } on Object catch (error) {
       if (mounted) {
         _showSnack('发送失败：$error');
@@ -243,40 +272,65 @@ class _MessagesPageState extends State<MessagesPage> {
     }
   }
 
-  void _openNewMessageSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF111111),
-      showDragHandle: true,
-      builder: (context) {
-        return _NewMessageSheet(
-          onSubmit: (draft) {
-            Navigator.of(context).pop();
-            _createPrivateMessage(draft);
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _createPrivateMessage(PrivateMessageDraft draft) async {
-    try {
-      await widget.repository.createPrivateMessage(draft);
-      await _refreshList();
-      if (mounted) {
-        _showSnack('私信已发送');
-      }
-    } on Object catch (error) {
-      if (mounted) {
-        _showSnack('私信发送失败：$error');
-      }
-    }
-  }
-
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _warmPrivateMessageList() async {
+    try {
+      await widget.repository.fetchPrivateMessages(forceRefresh: true);
+    } on Object {
+      // 会话详情已经发送成功，列表刷新失败不应打断当前阅读/回复流程。
+    }
+  }
+
+  void _openImagePreview(String url) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (context) => FullscreenImagePage(url: url),
+      ),
+    );
+  }
+}
+
+class _MessageDetailHeader extends StatelessWidget {
+  const _MessageDetailHeader({
+    required this.title,
+    required this.onBack,
+  });
+
+  final String title;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.only(right: 12),
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: '返回',
+            onPressed: onBack,
+            icon: const Icon(Icons.arrow_back),
+          ),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -291,9 +345,13 @@ extension on TopicListItem {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.post});
+  const _MessageBubble({
+    required this.post,
+    required this.onOpenImage,
+  });
 
   final Post post;
+  final ValueChanged<String> onOpenImage;
 
   @override
   Widget build(BuildContext context) {
@@ -323,12 +381,10 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                HtmlText.preview(post.cooked),
-                style: TextStyle(
-                  color: mine ? Colors.black : const Color(0xFFE8E8E8),
-                  height: 1.35,
-                ),
+              _MessageCookedContent(
+                cooked: post.cooked,
+                textColor: mine ? Colors.black : const Color(0xFFE8E8E8),
+                onOpenImage: onOpenImage,
               ),
               const SizedBox(height: 4),
               Text(
@@ -349,11 +405,13 @@ class _MessageBubble extends StatelessWidget {
 class _MessageReplyBar extends StatefulWidget {
   const _MessageReplyBar({
     required this.submitting,
+    required this.repository,
     required this.onSubmit,
   });
 
   final bool submitting;
-  final ValueChanged<String> onSubmit;
+  final ForumRepository repository;
+  final void Function(String raw, List<UploadedImage> images) onSubmit;
 
   @override
   State<_MessageReplyBar> createState() => _MessageReplyBarState();
@@ -361,6 +419,8 @@ class _MessageReplyBar extends StatefulWidget {
 
 class _MessageReplyBarState extends State<_MessageReplyBar> {
   final _controller = TextEditingController();
+  final _images = <UploadedImage>[];
+  bool _uploading = false;
 
   @override
   void dispose() {
@@ -378,36 +438,103 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
           color: Colors.black,
           border: Border(top: BorderSide(color: Color(0xFF202020))),
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                minLines: 1,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  hintText: '写私信',
-                  border: OutlineInputBorder(),
-                  isDense: true,
+            if (_images.isNotEmpty) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    for (final image in _images)
+                      InputChip(
+                        label: Text(image.filename),
+                        onDeleted: widget.submitting
+                            ? null
+                            : () => setState(() => _images.remove(image)),
+                      ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            IconButton.filled(
-              tooltip: '发送',
-              onPressed: widget.submitting ? null : _submit,
-              icon: widget.submitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send),
+              const SizedBox(height: 8),
+            ],
+            Row(
+              children: [
+                IconButton(
+                  tooltip: '添加图片',
+                  onPressed:
+                      widget.submitting || _uploading ? null : _pickAndUpload,
+                  icon: _uploading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.image_outlined),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    minLines: 1,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      hintText: '写私信',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  tooltip: '发送',
+                  onPressed: widget.submitting ? null : _submit,
+                  icon: widget.submitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _pickAndUpload() async {
+    setState(() => _uploading = true);
+    try {
+      final picked = await LocalImagePicker.pickImage();
+      if (picked == null) {
+        return;
+      }
+      final uploaded = await widget.repository.uploadImage(picked);
+      _images.add(uploaded);
+      final current = _controller.text.trimRight();
+      _controller.text = current.isEmpty
+          ? uploaded.markdown
+          : '$current\n${uploaded.markdown}';
+      _controller.selection =
+          TextSelection.collapsed(offset: _controller.text.length);
+      if (mounted) {
+        setState(() {});
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('图片上传失败：$error')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploading = false);
+      }
+    }
   }
 
   void _submit() {
@@ -416,102 +543,65 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
       return;
     }
     _controller.clear();
-    widget.onSubmit(text);
+    final images = List<UploadedImage>.of(_images);
+    _images.clear();
+    setState(() {});
+    widget.onSubmit(text, images);
   }
 }
 
-class _NewMessageSheet extends StatefulWidget {
-  const _NewMessageSheet({required this.onSubmit});
+class _MessageCookedContent extends StatelessWidget {
+  const _MessageCookedContent({
+    required this.cooked,
+    required this.textColor,
+    required this.onOpenImage,
+  });
 
-  final ValueChanged<PrivateMessageDraft> onSubmit;
-
-  @override
-  State<_NewMessageSheet> createState() => _NewMessageSheetState();
-}
-
-class _NewMessageSheetState extends State<_NewMessageSheet> {
-  final _recipientController = TextEditingController();
-  final _titleController = TextEditingController();
-  final _rawController = TextEditingController();
-
-  @override
-  void dispose() {
-    _recipientController.dispose();
-    _titleController.dispose();
-    _rawController.dispose();
-    super.dispose();
-  }
+  final String cooked;
+  final Color textColor;
+  final ValueChanged<String> onOpenImage;
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.viewInsetsOf(context).bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 4, 16, 16 + bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              '新私信',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _recipientController,
-            decoration: const InputDecoration(
-              labelText: '收件人用户名',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: '标题',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _rawController,
-            minLines: 4,
-            maxLines: 8,
-            decoration: const InputDecoration(
-              labelText: '内容',
-              alignLabelWithHint: true,
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _submit,
-              child: const Text('发送'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _submit() {
-    final recipients = _recipientController.text.trim();
-    final title = _titleController.text.trim();
-    final raw = _rawController.text.trim();
-    if (recipients.isEmpty || title.isEmpty || raw.isEmpty) {
-      return;
+    final segments = HtmlText.parseSegments(cooked);
+    if (segments.isEmpty) {
+      return Text(' ', style: TextStyle(color: textColor));
     }
-    widget.onSubmit(
-      PrivateMessageDraft(
-        recipients: recipients,
-        title: title,
-        raw: raw,
-        draftKey:
-            'new_private_message_${DateTime.now().millisecondsSinceEpoch}',
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final segment in segments)
+          if (segment.isImage)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: GestureDetector(
+                onTap: () => onOpenImage(segment.value),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: Image.network(
+                    segment.value,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 130,
+                        alignment: Alignment.center,
+                        color: const Color(0xFF252525),
+                        child: const Text('图片加载失败'),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                segment.value,
+                style: TextStyle(color: textColor, height: 1.38),
+              ),
+            ),
+      ],
     );
   }
 }

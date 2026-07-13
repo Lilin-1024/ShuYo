@@ -16,6 +16,7 @@ import '../features/home/topic_list_page.dart';
 import '../features/messages/messages_page.dart';
 import '../features/messages/notifications_page.dart';
 import '../features/profile/profile_page.dart';
+import '../features/profile/user_profile_page.dart';
 import '../features/topic/topic_page.dart';
 import '../features/webview/forum_webview_page.dart';
 import '../shared/widgets/app_header.dart';
@@ -194,6 +195,7 @@ class _AppShellState extends State<AppShell> {
           onLikePost: _likePost,
           onDeletePost: _deletePost,
           onCreateReply: _createReply,
+          onOpenUser: _openUserProfile,
           onLoginRequired: _login,
         );
       },
@@ -266,6 +268,7 @@ class _AppShellState extends State<AppShell> {
             previewForTopic: _repo.fetchTopicPreview,
             categoryById: _repo.categoryById,
             onOpenTopic: (topic) => setState(() => _openedTopic = topic),
+            onOpenUser: (user) => _openUserProfile(user.username),
             canLoadMore: canLoadMore,
             isLoadingMore: isLoadingMore,
             onLoadMore: loadMore,
@@ -321,14 +324,32 @@ class _AppShellState extends State<AppShell> {
       await _login();
       return;
     }
-    final topic = await Navigator.of(context).push<TopicListItem>(
+    await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (context) => ForumSearchPage(repository: _repo),
+        builder: (context) => ForumSearchPage(
+          repository: _repo,
+          onLoginRequired: _login,
+        ),
       ),
     );
-    if (topic != null && mounted) {
-      setState(() => _openedTopic = topic);
+  }
+
+  Future<void> _openUserProfile(String username) async {
+    if (!_repo.isOnline) {
+      await _login();
+      return;
     }
+    if (!mounted) {
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => UserProfilePage(
+          repository: _repo,
+          username: username,
+        ),
+      ),
+    );
   }
 
   Future<void> _openCreateTopic() async {

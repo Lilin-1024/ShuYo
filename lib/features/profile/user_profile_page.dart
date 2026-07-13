@@ -1,0 +1,429 @@
+import 'package:flutter/material.dart';
+
+import '../../data/models/composer.dart';
+import '../../data/models/user_profile.dart';
+import '../../data/repositories/forum_repository.dart';
+import '../../data/services/local_image_picker.dart';
+import '../../shared/time_format.dart';
+import '../../shared/widgets/avatar.dart';
+import '../../shared/widgets/empty_state.dart';
+
+class UserProfilePage extends StatefulWidget {
+  const UserProfilePage({
+    super.key,
+    required this.repository,
+    required this.username,
+  });
+
+  final ForumRepository repository;
+  final String username;
+
+  @override
+  State<UserProfilePage> createState() => _UserProfilePageState();
+}
+
+class _UserProfilePageState extends State<UserProfilePage> {
+  late Future<_UserProfileBundle> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.username)),
+      body: FutureBuilder<_UserProfileBundle>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return EmptyState(
+              icon: Icons.person_off_outlined,
+              title: '主页加载失败',
+              message: snapshot.error.toString(),
+              action: TextButton.icon(
+                onPressed: () => setState(() => _future = _load()),
+                icon: const Icon(Icons.refresh),
+                label: const Text('重试'),
+              ),
+            );
+          }
+          final data = snapshot.data;
+          if (data == null) {
+            return const EmptyState(
+              icon: Icons.person_outline,
+              title: '没有资料',
+              message: '论坛没有返回该用户的信息',
+            );
+          }
+          return _ProfileContent(
+            bundle: data,
+            onMessage: data.profile.canSendPrivateMessage
+                ? () => _openMessageSheet(data.profile)
+                : null,
+          );
+        },
+      ),
+    );
+  }
+
+  Future<_UserProfileBundle> _load() async {
+    final profile = await widget.repository.fetchUserProfile(widget.username);
+    UserSummary summary;
+    try {
+      summary = await widget.repository.fetchUserSummary(profile.username);
+    } on Object {
+      summary = const UserSummary(
+        likesGiven: 0,
+        likesReceived: 0,
+        topicsEntered: 0,
+        postsReadCount: 0,
+        daysVisited: 0,
+        topicCount: 0,
+        postCount: 0,
+        timeReadSeconds: 0,
+      );
+    }
+    return _UserProfileBundle(profile: profile, summary: summary);
+  }
+
+  void _openMessageSheet(UserProfile profile) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF111111),
+      showDragHandle: true,
+      builder: (context) {
+        return _PrivateMessageSheet(
+          repository: widget.repository,
+          recipient: profile.username,
+        );
+      },
+    );
+  }
+}
+
+class _UserProfileBundle {
+  const _UserProfileBundle({
+    required this.profile,
+    required this.summary,
+  });
+
+  final UserProfile profile;
+  final UserSummary summary;
+}
+
+class _ProfileContent extends StatelessWidget {
+  const _ProfileContent({
+    required this.bundle,
+    required this.onMessage,
+  });
+
+  final _UserProfileBundle bundle;
+  final VoidCallback? onMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = bundle.profile;
+    final summary = bundle.summary;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+      children: [
+        Row(
+          children: [
+            ForumAvatar(url: profile.avatarUrl(size: 144), size: 64),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.username,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _subtitle(profile),
+                    style: const TextStyle(color: Color(0xFFBDBDBD)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        if (profile.bioExcerpt.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          Text(
+            profile.bioExcerpt,
+            style: const TextStyle(color: Color(0xFFD6D6D6), height: 1.42),
+          ),
+        ],
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: onMessage,
+            icon: const Icon(Icons.mail_outline),
+            label: Text(onMessage == null ? '暂不能私信' : '发私信'),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _ProfileStatList(summary: summary),
+      ],
+    );
+  }
+
+  String _subtitle(UserProfile profile) {
+    final role = profile.admin
+        ? '管理员'
+        : profile.moderator
+            ? '版主'
+            : '用户';
+    final joined = TimeFormat.compact(profile.createdAt);
+    return joined.isEmpty ? role : '$role · $joined 加入';
+  }
+}
+
+class _ProfileStatList extends StatelessWidget {
+  const _ProfileStatList({required this.summary});
+
+  final UserSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = [
+      _StatItem('发帖', '${summary.topicCount}'),
+      _StatItem('回复', '${summary.postCount}'),
+      _StatItem('收到赞', '${summary.likesReceived}'),
+      _StatItem('访问天数', '${summary.daysVisited}'),
+    ];
+    return Column(
+      children: [
+        for (var i = 0; i < stats.length; i++) ...[
+          SizedBox(
+            height: 48,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    stats[i].label,
+                    style: const TextStyle(
+                      color: Color(0xFFD6D6D6),
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                Text(
+                  stats[i].value,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (i != stats.length - 1)
+            const Divider(height: 1, color: Color(0xFF202020)),
+        ],
+      ],
+    );
+  }
+}
+
+class _PrivateMessageSheet extends StatefulWidget {
+  const _PrivateMessageSheet({
+    required this.repository,
+    required this.recipient,
+  });
+
+  final ForumRepository repository;
+  final String recipient;
+
+  @override
+  State<_PrivateMessageSheet> createState() => _PrivateMessageSheetState();
+}
+
+class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
+  final _titleController = TextEditingController();
+  final _rawController = TextEditingController();
+  final _openedAt = DateTime.now();
+  final _images = <UploadedImage>[];
+  bool _submitting = false;
+  bool _uploading = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _rawController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 4, 16, 16 + bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '发给 ${widget.recipient}',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _titleController,
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: '标题',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _rawController,
+            minLines: 4,
+            maxLines: 8,
+            decoration: const InputDecoration(
+              labelText: '内容',
+              alignLabelWithHint: true,
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final image in _images)
+                InputChip(
+                  label: Text(image.filename),
+                  onDeleted: () => setState(() => _images.remove(image)),
+                ),
+              ActionChip(
+                avatar: _uploading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.image_outlined, size: 18),
+                label: const Text('添加图片'),
+                onPressed: _uploading ? null : _pickAndUpload,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send),
+              label: Text(_submitting ? '发送中...' : '发送'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickAndUpload() async {
+    setState(() => _uploading = true);
+    try {
+      final picked = await LocalImagePicker.pickImage();
+      if (picked == null) {
+        return;
+      }
+      final uploaded = await widget.repository.uploadImage(picked);
+      _images.add(uploaded);
+      final current = _rawController.text.trimRight();
+      _rawController.text = current.isEmpty
+          ? uploaded.markdown
+          : '$current\n${uploaded.markdown}';
+      _rawController.selection =
+          TextSelection.collapsed(offset: _rawController.text.length);
+      if (mounted) {
+        setState(() {});
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        _showSnack('图片上传失败：$error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploading = false);
+      }
+    }
+  }
+
+  Future<void> _submit() async {
+    final title = _titleController.text.trim();
+    final raw = _rawController.text.trim();
+    if (title.length < 2) {
+      _showSnack('标题至少 2 个字');
+      return;
+    }
+    if (raw.length < 3) {
+      _showSnack('内容至少 3 个字');
+      return;
+    }
+    setState(() => _submitting = true);
+    try {
+      await widget.repository.createPrivateMessage(
+        PrivateMessageDraft(
+          title: title,
+          raw: raw,
+          recipients: widget.recipient,
+          draftKey:
+              'new_private_message_${DateTime.now().millisecondsSinceEpoch}',
+          images: _images,
+          composerOpenDurationMs:
+              DateTime.now().difference(_openedAt).inMilliseconds,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context).pop();
+      messenger.showSnackBar(const SnackBar(content: Text('私信已发送')));
+    } on Object catch (error) {
+      if (mounted) {
+        _showSnack('私信发送失败：$error');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+}
+
+class _StatItem {
+  const _StatItem(this.label, this.value);
+
+  final String label;
+  final String value;
+}
