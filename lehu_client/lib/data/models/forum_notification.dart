@@ -1,4 +1,6 @@
 import 'common.dart';
+import '../services/emoji_text.dart';
+import '../services/html_text.dart';
 
 enum NotificationFeedFilter { all, replies, likes, mentions }
 
@@ -38,8 +40,8 @@ class ForumNotification {
     );
     return ForumNotification(
       id: intValue(json['id']),
-      title: title,
-      message: _messageForNotification(type, actor, map),
+      title: EmojiText.render(title),
+      message: EmojiText.render(_messageForNotification(type, actor, map)),
       kind: _kindForNotification(type),
       read: boolValue(json['read']),
       topicId: _nullableInt(json['topic_id']),
@@ -55,8 +57,10 @@ class ForumNotification {
     );
     return ForumNotification(
       id: intValue(json['id'] ?? json['post_id']),
-      title: title,
-      message: actor.isEmpty ? stringValue(json['excerpt']) : actor,
+      title: EmojiText.render(title),
+      message: actor.isEmpty
+          ? HtmlText.toPlainText(stringValue(json['excerpt']))
+          : EmojiText.render(actor),
       kind: kind,
       read: true,
       topicId: _nullableInt(json['topic_id']),

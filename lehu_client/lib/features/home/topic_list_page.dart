@@ -57,6 +57,7 @@ class _TopicListPageState extends State<TopicListPage> {
   Widget build(BuildContext context) {
     return ListView.separated(
       controller: _scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: widget.topics.length + (_hasFooter ? 1 : 0),
       separatorBuilder: (context, index) =>

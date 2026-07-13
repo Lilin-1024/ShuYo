@@ -1,9 +1,13 @@
 package cn.edu.shu.lehu_client
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.provider.OpenableColumns
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.android.FlutterActivity
@@ -22,6 +26,34 @@ class MainActivity : FlutterActivity() {
                 pickImage(result)
             } else {
                 result.notImplemented()
+            }
+        }
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "cn.edu.shu.lehu_client/image_saver"
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "saveImage") {
+                saveImage(
+                    call.argument("bytes"),
+                    call.argument("filename"),
+                    call.argument("mimeType"),
+                    result
+                )
+            } else {
+                result.notImplemented()
+            }
+        }
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "cn.edu.shu.lehu_client/emoji_recents"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getEmojiRecents" -> result.success(loadEmojiRecents())
+                "setEmojiRecents" -> {
+                    saveEmojiRecents(call.argument("shortcodes"))
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
         }
     }
@@ -85,7 +117,72 @@ class MainActivity : FlutterActivity() {
         return "image.jpg"
     }
 
+    private fun saveImage(
+        bytes: ByteArray?,
+        filename: String?,
+        mimeType: String?,
+        result: MethodChannel.Result
+    ) {
+        if (bytes == null || bytes.isEmpty()) {
+            result.error("empty_image", "Image bytes are empty", null)
+            return
+        }
+        val values = ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, filename ?: "lehu_image.jpg")
+            put(MediaStore.Images.Media.MIME_TYPE, mimeType ?: "image/jpeg")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_PICTURES}/Lehu"
+                )
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+        }
+        val resolver = contentResolver
+        var uri: Uri? = null
+        try {
+            uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            if (uri == null) {
+                result.error("save_failed", "Cannot create image entry", null)
+                return
+            }
+            resolver.openOutputStream(uri)?.use { output ->
+                output.write(bytes)
+            } ?: throw IllegalStateException("Cannot open image output stream")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                values.clear()
+                values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+            }
+            result.success(uri.toString())
+        } catch (error: Exception) {
+            if (uri != null) {
+                resolver.delete(uri, null, null)
+            }
+            result.error("save_failed", error.message, null)
+        }
+    }
+
+    private fun loadEmojiRecents(): List<String> {
+        val raw = getPreferences(MODE_PRIVATE).getString(KEY_EMOJI_RECENTS, "") ?: ""
+        if (raw.isBlank()) {
+            return emptyList()
+        }
+        return raw.split("\n").filter { it.isNotBlank() }
+    }
+
+    private fun saveEmojiRecents(shortcodes: List<String>?) {
+        val value = shortcodes.orEmpty()
+            .filter { it.isNotBlank() }
+            .joinToString("\n")
+        getPreferences(MODE_PRIVATE)
+            .edit()
+            .putString(KEY_EMOJI_RECENTS, value)
+            .apply()
+    }
+
     companion object {
         private const val REQUEST_PICK_IMAGE = 9101
+        private const val KEY_EMOJI_RECENTS = "emoji_recents"
     }
 }

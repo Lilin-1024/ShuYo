@@ -42,11 +42,36 @@ void main() {
 
     expect(topic.id, 662);
     expect(topic.posts, isNotEmpty);
+    expect(topic.postStreamIds, contains(topic.firstPost!.id));
     expect(HtmlText.preview(topic.firstPost!.cooked), isNotEmpty);
     expect(preview.imageUrls, isNotEmpty);
     expect(preview.text, isEmpty);
     expect(preview.text, isNot(contains('1920')));
     expect(preview.text, isNot(contains('KB')));
+  });
+
+  test('merges topic posts by id and keeps post-number order', () {
+    final topic = TopicDetail(
+      id: 1,
+      title: 'topic',
+      categoryId: 1,
+      postsCount: 2,
+      highestPostNumber: 2,
+      canCreatePost: true,
+      posts: [
+        _post(id: 10, postNumber: 1),
+      ],
+      postStreamIds: const [10, 11],
+    );
+
+    final merged = topic.mergedWithPosts([
+      _post(id: 11, postNumber: 2),
+      _post(id: 10, postNumber: 1),
+    ]);
+
+    expect(merged.posts.map((post) => post.id), [10, 11]);
+    expect(merged.postStreamIds, [10, 11]);
+    expect(merged.highestPostNumber, 2);
   });
 
   test('builds reply and like payloads', () {

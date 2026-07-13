@@ -5,6 +5,7 @@ import '../../data/models/composer.dart';
 import '../../data/models/post.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/local_image_picker.dart';
+import '../../shared/widgets/emoji_picker.dart';
 
 class CreatedTopicResult {
   const CreatedTopicResult({
@@ -133,6 +134,16 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
                     : const Icon(Icons.image_outlined, size: 18),
                 label: const Text('添加图片'),
                 onPressed: _uploading ? null : _pickAndUpload,
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.emoji_emotions_outlined, size: 18),
+                label: const Text('Emoji'),
+                onPressed: _submitting
+                    ? null
+                    : () => showEmojiPicker(
+                          context: context,
+                          controller: _rawController,
+                        ),
               ),
             ],
           ),

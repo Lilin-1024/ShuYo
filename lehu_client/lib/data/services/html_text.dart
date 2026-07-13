@@ -1,4 +1,5 @@
 import '../../core/forum_constants.dart';
+import 'emoji_text.dart';
 
 class CookedSegment {
   const CookedSegment.text(this.value) : isImage = false;
@@ -51,7 +52,8 @@ class HtmlText {
         .replaceAll(_tagPattern, '')
         .replaceAll(_attachmentInfoPattern, '')
         .trim();
-    return _decodeEntities(text).replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    final decoded = _decodeEntities(text).replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    return EmojiText.render(decoded);
   }
 
   static String preview(String html, {int maxLength = 72}) {
@@ -169,7 +171,7 @@ class _HtmlImage {
     if (alt.isEmpty) {
       return '';
     }
-    return alt;
+    return EmojiText.render(alt);
   }
 
   factory _HtmlImage.fromTag(String tag) {

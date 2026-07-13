@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/category.dart';
+import '../../data/models/composer.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
 import '../../data/services/html_text.dart';
+import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/emoji_picker.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 import 'threaded_posts.dart';
@@ -19,6 +22,7 @@ class TopicPage extends StatefulWidget {
     required this.detail,
     required this.category,
     required this.onCreateReply,
+    required this.onUploadImage,
     required this.onLikePost,
     required this.onDeletePost,
     required this.onOpenUser,
@@ -37,6 +41,7 @@ class TopicPage extends StatefulWidget {
   final Set<int> busyLikePostIds;
   final Set<int> busyDeletePostIds;
   final ValueChanged<ReplyDraft> onCreateReply;
+  final Future<UploadedImage> Function(PickedImage image) onUploadImage;
   final ValueChanged<int> onLikePost;
   final ValueChanged<Post> onDeletePost;
   final ValueChanged<String> onOpenUser;
@@ -173,7 +178,8 @@ class _TopicPageState extends State<TopicPage> {
       builder: (context) {
         return _ReplyComposer(
           replyToPostNumber: replyToPostNumber,
-          onSubmit: (raw) {
+          onUploadImage: widget.onUploadImage,
+          onSubmit: (raw, images) {
             Navigator.of(context).pop();
             widget.onCreateReply(
               ReplyDraft(
@@ -182,6 +188,7 @@ class _TopicPageState extends State<TopicPage> {
                 raw: raw,
                 replyToPostNumber: replyToPostNumber,
                 archetype: detail.archetype,
+                images: images,
               ),
             );
           },
@@ -190,11 +197,14 @@ class _TopicPageState extends State<TopicPage> {
     );
   }
 
-  void _openImagePreview(String url) {
+  void _openImagePreview(List<String> urls, int initialIndex) {
     Navigator.of(context).push<void>(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (context) => FullscreenImagePage(url: url),
+        builder: (context) => FullscreenImagePage(
+          urls: urls,
+          initialIndex: initialIndex,
+        ),
       ),
     );
   }
@@ -261,7 +271,7 @@ class _ThreadedPostView extends StatelessWidget {
   final ValueChanged<Post> onLike;
   final ValueChanged<Post> onDelete;
   final ValueChanged<String> onOpenUser;
-  final ValueChanged<String> onOpenImage;
+  final void Function(List<String> urls, int initialIndex) onOpenImage;
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +347,7 @@ class _NestedReplies extends StatelessWidget {
   final ValueChanged<Post> onLike;
   final ValueChanged<Post> onDelete;
   final ValueChanged<String> onOpenUser;
-  final ValueChanged<String> onOpenImage;
+  final void Function(List<String> urls, int initialIndex) onOpenImage;
 
   @override
   Widget build(BuildContext context) {
@@ -408,7 +418,7 @@ class _PostView extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onDelete;
   final VoidCallback onOpenUser;
-  final ValueChanged<String> onOpenImage;
+  final void Function(List<String> urls, int initialIndex) onOpenImage;
   final String? replyContext;
   final bool compact;
 
@@ -419,6 +429,54 @@ class _PostView extends StatelessWidget {
     final metaText = timeText.isEmpty
         ? '#${post.postNumber}'
         : '#${post.postNumber} · $timeText';
+    final contentWidgets = <Widget>[];
+    final segments = HtmlText.parseSegments(post.cooked);
+    final imageUrls = [
+      for (final segment in segments)
+        if (segment.isImage) segment.value,
+    ];
+    var imageIndex = 0;
+    for (final segment in segments) {
+      if (!segment.isImage) {
+        contentWidgets.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              segment.value,
+              style: TextStyle(fontSize: textSize, height: 1.46),
+            ),
+          ),
+        );
+        continue;
+      }
+      final currentImageIndex = imageIndex++;
+      contentWidgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: GestureDetector(
+            onTap: () => onOpenImage(imageUrls, currentImageIndex),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(
+                segment.value,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 160,
+                    alignment: Alignment.center,
+                    color: const Color(0xFF1C1C1C),
+                    child: const Text(
+                      '图片加载失败',
+                      style: TextStyle(color: Color(0xFFBDBDBD)),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return Container(
       padding: EdgeInsets.symmetric(vertical: compact ? 12 : 16),
       decoration: const BoxDecoration(
@@ -469,41 +527,7 @@ class _PostView extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          ...HtmlText.parseSegments(post.cooked).map((segment) {
-            if (!segment.isImage) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  segment.value,
-                  style: TextStyle(fontSize: textSize, height: 1.46),
-                ),
-              );
-            }
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: GestureDetector(
-                onTap: () => onOpenImage(segment.value),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.network(
-                    segment.value,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 160,
-                        alignment: Alignment.center,
-                        color: const Color(0xFF1C1C1C),
-                        child: const Text(
-                          '图片加载失败',
-                          style: TextStyle(color: Color(0xFFBDBDBD)),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            );
-          }),
+          ...contentWidgets,
           Row(
             children: [
               if (canLike)
@@ -586,11 +610,13 @@ class _ReplyBar extends StatelessWidget {
 class _ReplyComposer extends StatefulWidget {
   const _ReplyComposer({
     required this.onSubmit,
+    required this.onUploadImage,
     this.replyToPostNumber,
   });
 
   final int? replyToPostNumber;
-  final ValueChanged<String> onSubmit;
+  final void Function(String raw, List<UploadedImage> images) onSubmit;
+  final Future<UploadedImage> Function(PickedImage image) onUploadImage;
 
   @override
   State<_ReplyComposer> createState() => _ReplyComposerState();
@@ -598,6 +624,8 @@ class _ReplyComposer extends StatefulWidget {
 
 class _ReplyComposerState extends State<_ReplyComposer> {
   final _controller = TextEditingController();
+  final _images = <UploadedImage>[];
+  bool _uploading = false;
 
   @override
   void dispose() {
@@ -631,23 +659,89 @@ class _ReplyComposerState extends State<_ReplyComposer> {
               border: OutlineInputBorder(),
             ),
           ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final image in _images)
+                InputChip(
+                  label: Text(image.filename),
+                  onDeleted: _uploading
+                      ? null
+                      : () => setState(() => _images.remove(image)),
+                ),
+              ActionChip(
+                avatar: _uploading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.image_outlined, size: 18),
+                label: const Text('添加图片'),
+                onPressed: _uploading ? null : _pickAndUpload,
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.emoji_emotions_outlined, size: 18),
+                label: const Text('Emoji'),
+                onPressed: () => showEmojiPicker(
+                  context: context,
+                  controller: _controller,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
-              onPressed: () {
-                final text = _controller.text.trim();
-                if (text.isEmpty) {
-                  return;
-                }
-                widget.onSubmit(text);
-              },
+              onPressed: _uploading
+                  ? null
+                  : () {
+                      final text = _controller.text.trim();
+                      if (text.isEmpty) {
+                        return;
+                      }
+                      widget.onSubmit(text, List<UploadedImage>.of(_images));
+                    },
               child: const Text('发布评论'),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _pickAndUpload() async {
+    setState(() => _uploading = true);
+    try {
+      final picked = await LocalImagePicker.pickImage();
+      if (picked == null) {
+        return;
+      }
+      final uploaded = await widget.onUploadImage(picked);
+      _images.add(uploaded);
+      final current = _controller.text.trimRight();
+      _controller.text = current.isEmpty
+          ? uploaded.markdown
+          : '$current\n${uploaded.markdown}';
+      _controller.selection =
+          TextSelection.collapsed(offset: _controller.text.length);
+      if (mounted) {
+        setState(() {});
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('图片上传失败：$error')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _uploading = false);
+      }
+    }
   }
 }
 
