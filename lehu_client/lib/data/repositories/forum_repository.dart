@@ -5,8 +5,11 @@ import 'package:flutter/services.dart';
 import '../../core/forum_constants.dart';
 import '../models/category.dart';
 import '../models/common.dart';
+import '../models/composer.dart';
 import '../models/current_user.dart';
 import '../models/discourse_user.dart';
+import '../models/forum_notification.dart';
+import '../models/forum_search.dart';
 import '../models/post.dart';
 import '../models/topic.dart';
 import '../models/topic_detail.dart';
@@ -15,27 +18,57 @@ import '../services/discourse_api_client.dart';
 import '../services/forum_auth_service.dart';
 import '../services/html_text.dart';
 import '../services/payload_factory.dart';
+import '../services/sha1_hash.dart';
+
+class TopicFeedQuery {
+  const TopicFeedQuery({
+    this.categoryId,
+    this.hot = false,
+  });
+
+  final int? categoryId;
+  final bool hot;
+
+  String get key => '${categoryId ?? 'all'}:${hot ? 'hot' : 'latest'}';
+}
 
 abstract class ForumRepository {
   bool get isOnline;
   Map<int, DiscourseUser> get users;
+  List<ForumCategory> get categories;
   UserProfile get profile;
   UserSummary get userSummary;
   int get unreadNotificationCount;
+  bool get canCreateTopic;
 
   ForumCategory? categoryById(int id);
   bool get canLoadMoreLatest;
   bool get canLoadMoreHot;
+  bool canLoadMoreFeed(TopicFeedQuery query);
+  Future<List<TopicListItem>> fetchTopicFeed(
+    TopicFeedQuery query, {
+    bool forceRefresh = false,
+  });
+  Future<List<TopicListItem>> loadMoreTopicFeed(TopicFeedQuery query);
   Future<List<TopicListItem>> fetchLatestTopics({bool forceRefresh = false});
   Future<List<TopicListItem>> fetchHotTopics({bool forceRefresh = false});
   Future<List<TopicListItem>> loadMoreLatestTopics();
   Future<List<TopicListItem>> loadMoreHotTopics();
+  Future<ForumSearchResult> searchForum(String query);
   Future<TopicDetail?> fetchTopicDetail(
     int id, {
     bool forceRefresh = false,
   });
   Future<TopicPreview> fetchTopicPreview(int id);
+  Future<Post> createTopic(CreateTopicDraft draft);
+  Future<UploadedImage> uploadImage(PickedImage image);
   Future<Post> createReply(ReplyDraft draft);
+  Future<List<TopicListItem>> fetchPrivateMessages({bool forceRefresh = false});
+  Future<Post> createPrivateMessage(PrivateMessageDraft draft);
+  Future<List<ForumNotification>> fetchNotifications(
+    NotificationFeedFilter filter, {
+    bool forceRefresh = false,
+  });
   Future<Post> likePost(int postId);
   Future<void> deletePost(Post post);
   Future<void> clearLoginCookies();
@@ -103,6 +136,9 @@ class FixtureForumRepository implements ForumRepository {
   final Map<int, DiscourseUser> users;
 
   @override
+  List<ForumCategory> get categories => _sortedCategories(_categories);
+
+  @override
   final UserProfile profile;
 
   @override
@@ -115,6 +151,9 @@ class FixtureForumRepository implements ForumRepository {
   int get unreadNotificationCount => 0;
 
   @override
+  bool get canCreateTopic => false;
+
+  @override
   ForumCategory? categoryById(int id) => _categories[id];
 
   @override
@@ -122,6 +161,27 @@ class FixtureForumRepository implements ForumRepository {
 
   @override
   bool get canLoadMoreHot => false;
+
+  @override
+  bool canLoadMoreFeed(TopicFeedQuery query) => false;
+
+  @override
+  Future<List<TopicListItem>> fetchTopicFeed(
+    TopicFeedQuery query, {
+    bool forceRefresh = false,
+  }) async {
+    if (query.categoryId != null) {
+      return _latestTopics
+          .where((topic) => topic.categoryId == query.categoryId)
+          .toList();
+    }
+    return query.hot ? _hotTopics : _latestTopics;
+  }
+
+  @override
+  Future<List<TopicListItem>> loadMoreTopicFeed(TopicFeedQuery query) {
+    return fetchTopicFeed(query);
+  }
 
   @override
   Future<List<TopicListItem>> fetchLatestTopics({
@@ -167,8 +227,50 @@ class FixtureForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumSearchResult> searchForum(String query) async {
+    final normalized = query.trim();
+    if (normalized.isEmpty) {
+      return const ForumSearchResult(posts: [], topics: []);
+    }
+    final topics = _latestTopics
+        .where((topic) => topic.title.contains(normalized))
+        .toList(growable: false);
+    return ForumSearchResult(posts: const [], topics: topics);
+  }
+
+  @override
+  Future<Post> createTopic(CreateTopicDraft draft) {
+    throw const ForumAuthException('请先登录后再发帖');
+  }
+
+  @override
+  Future<UploadedImage> uploadImage(PickedImage image) {
+    throw const ForumAuthException('请先登录后再上传图片');
+  }
+
+  @override
   Future<Post> createReply(ReplyDraft draft) {
     throw const ForumAuthException('请先登录后再评论');
+  }
+
+  @override
+  Future<List<TopicListItem>> fetchPrivateMessages({
+    bool forceRefresh = false,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<Post> createPrivateMessage(PrivateMessageDraft draft) {
+    throw const ForumAuthException('请先登录后再发私信');
+  }
+
+  @override
+  Future<List<ForumNotification>> fetchNotifications(
+    NotificationFeedFilter filter, {
+    bool forceRefresh = false,
+  }) async {
+    return const [];
   }
 
   @override
@@ -209,7 +311,9 @@ class FixtureForumRepository implements ForumRepository {
   }
 
   static Map<int, ForumCategory> _parseCategories(JsonMap json) {
-    final categories = json['categories'];
+    final list = json['category_list'];
+    final categories =
+        list is JsonMap ? list['categories'] : json['categories'];
     if (categories is! List) {
       return {};
     }
@@ -271,13 +375,17 @@ class OnlineForumRepository implements ForumRepository {
   final Map<int, ForumCategory> _categories;
   final Map<int, TopicDetail> _topicDetails = {};
   final Map<int, Future<TopicDetail?>> _pendingTopicDetails = {};
-  List<TopicListItem>? _latestTopics;
-  List<TopicListItem>? _hotTopics;
-  String? _latestMorePath;
-  String? _hotMorePath;
+  final Map<String, List<TopicListItem>> _feedTopics = {};
+  final Map<String, String?> _feedMorePaths = {};
+  final Map<NotificationFeedFilter, List<ForumNotification>> _notifications =
+      {};
+  List<TopicListItem>? _privateMessages;
 
   @override
   final Map<int, DiscourseUser> users;
+
+  @override
+  List<ForumCategory> get categories => _sortedCategories(_categories);
 
   @override
   bool get isOnline => true;
@@ -292,6 +400,9 @@ class OnlineForumRepository implements ForumRepository {
   int get unreadNotificationCount => _session.notificationBadgeCount;
 
   @override
+  bool get canCreateTopic => _session.canCreateTopic;
+
+  @override
   Future<void> clearLoginCookies() => _authService.clearCookies();
 
   @override
@@ -300,59 +411,61 @@ class OnlineForumRepository implements ForumRepository {
   }
 
   @override
-  bool get canLoadMoreLatest => _latestMorePath != null;
+  bool get canLoadMoreLatest => canLoadMoreFeed(const TopicFeedQuery());
 
   @override
-  bool get canLoadMoreHot => _hotMorePath != null;
+  bool get canLoadMoreHot => canLoadMoreFeed(const TopicFeedQuery(hot: true));
+
+  @override
+  bool canLoadMoreFeed(TopicFeedQuery query) =>
+      _feedMorePaths[query.key] != null;
+
+  @override
+  Future<List<TopicListItem>> fetchTopicFeed(
+    TopicFeedQuery query, {
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _feedTopics[query.key] != null) {
+      return _feedTopics[query.key]!;
+    }
+    final json = await _apiClient.getJson(_feedPath(query));
+    _mergeUsers(json);
+    _feedMorePaths[query.key] = _parseMoreTopicsPath(json);
+    return _feedTopics[query.key] = FixtureForumRepository._parseTopics(json);
+  }
+
+  @override
+  Future<List<TopicListItem>> loadMoreTopicFeed(TopicFeedQuery query) async {
+    return _loadMoreTopics(
+      currentTopics: _feedTopics[query.key] ?? await fetchTopicFeed(query),
+      morePath: _feedMorePaths[query.key],
+      setState: (topics, morePath) {
+        _feedTopics[query.key] = topics;
+        _feedMorePaths[query.key] = morePath;
+      },
+    );
+  }
 
   @override
   Future<List<TopicListItem>> fetchLatestTopics({
     bool forceRefresh = false,
-  }) async {
-    if (!forceRefresh && _latestTopics != null) {
-      return _latestTopics!;
-    }
-    final json = await _apiClient.getJson('/latest.json');
-    _mergeUsers(json);
-    _latestMorePath = _parseMoreTopicsPath(json);
-    return _latestTopics = FixtureForumRepository._parseTopics(json);
-  }
+  }) =>
+      fetchTopicFeed(const TopicFeedQuery(), forceRefresh: forceRefresh);
 
   @override
-  Future<List<TopicListItem>> fetchHotTopics(
-      {bool forceRefresh = false}) async {
-    if (!forceRefresh && _hotTopics != null) {
-      return _hotTopics!;
-    }
-    final json = await _apiClient.getJson('/hot.json');
-    _mergeUsers(json);
-    _hotMorePath = _parseMoreTopicsPath(json);
-    return _hotTopics = FixtureForumRepository._parseTopics(json);
-  }
+  Future<List<TopicListItem>> fetchHotTopics({bool forceRefresh = false}) =>
+      fetchTopicFeed(
+        const TopicFeedQuery(hot: true),
+        forceRefresh: forceRefresh,
+      );
 
   @override
-  Future<List<TopicListItem>> loadMoreLatestTopics() async {
-    return _loadMoreTopics(
-      currentTopics: _latestTopics ?? await fetchLatestTopics(),
-      morePath: _latestMorePath,
-      setState: (topics, morePath) {
-        _latestTopics = topics;
-        _latestMorePath = morePath;
-      },
-    );
-  }
+  Future<List<TopicListItem>> loadMoreLatestTopics() =>
+      loadMoreTopicFeed(const TopicFeedQuery());
 
   @override
-  Future<List<TopicListItem>> loadMoreHotTopics() async {
-    return _loadMoreTopics(
-      currentTopics: _hotTopics ?? await fetchHotTopics(),
-      morePath: _hotMorePath,
-      setState: (topics, morePath) {
-        _hotTopics = topics;
-        _hotMorePath = morePath;
-      },
-    );
-  }
+  Future<List<TopicListItem>> loadMoreHotTopics() =>
+      loadMoreTopicFeed(const TopicFeedQuery(hot: true));
 
   @override
   Future<TopicDetail?> fetchTopicDetail(
@@ -386,6 +499,61 @@ class OnlineForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumSearchResult> searchForum(String query) async {
+    final normalized = query.trim();
+    if (normalized.isEmpty) {
+      return const ForumSearchResult(posts: [], topics: []);
+    }
+    final encoded = Uri.encodeQueryComponent('$normalized order:likes');
+    final json = await _apiClient.getJson('/search?q=$encoded&page=1');
+    return ForumSearchResult.fromJson(json);
+  }
+
+  @override
+  Future<Post> createTopic(CreateTopicDraft draft) async {
+    final payload = PayloadFactory.createTopic(draft);
+    final json =
+        await _apiClient.postForm(ForumConstants.postsPath, payload.body);
+    final postJson = json['post'];
+    if (postJson is! JsonMap) {
+      throw const ForumApiException('主题已提交，但返回内容无法解析');
+    }
+    final post = Post.fromJson(postJson);
+    _topicDetails.remove(post.topicId);
+    _feedTopics.clear();
+    _feedMorePaths.clear();
+    return post;
+  }
+
+  @override
+  Future<UploadedImage> uploadImage(PickedImage image) async {
+    final clientId = _uploadClientId();
+    final json = await _apiClient.postMultipart(
+      path: '/uploads.json?client_id=$clientId',
+      fields: {
+        'client_id': clientId,
+        'upload_type': 'composer',
+        'pasted': 'undefined',
+        'name': image.filename,
+        'type': image.mimeType,
+        'sha1_checksum': Sha1Hash.hex(image.bytes),
+      },
+      fileField: 'file',
+      fileBytes: image.bytes,
+      filename: image.filename,
+    );
+    return UploadedImage(
+      url: stringValue(json['url']),
+      shortUrl: stringValue(json['short_url']),
+      filename: stringValue(json['original_filename'], image.filename),
+      width: intValue(json['width']),
+      height: intValue(json['height']),
+      thumbnailWidth: intValue(json['thumbnail_width']),
+      thumbnailHeight: intValue(json['thumbnail_height']),
+    );
+  }
+
+  @override
   Future<Post> createReply(ReplyDraft draft) async {
     final payload = PayloadFactory.createReply(draft);
     final json =
@@ -396,6 +564,47 @@ class OnlineForumRepository implements ForumRepository {
     }
     _topicDetails.remove(draft.topicId);
     return Post.fromJson(postJson);
+  }
+
+  @override
+  Future<List<TopicListItem>> fetchPrivateMessages({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _privateMessages != null) {
+      return _privateMessages!;
+    }
+    final path =
+        '/topics/private-messages/${profile.username.toLowerCase()}.json';
+    final json = await _apiClient.getJson(path);
+    _mergeUsers(json);
+    return _privateMessages = FixtureForumRepository._parseTopics(json);
+  }
+
+  @override
+  Future<Post> createPrivateMessage(PrivateMessageDraft draft) async {
+    final payload = PayloadFactory.createPrivateMessage(draft);
+    final json =
+        await _apiClient.postForm(ForumConstants.postsPath, payload.body);
+    final postJson = json['post'];
+    if (postJson is! JsonMap) {
+      throw const ForumApiException('私信已提交，但返回内容无法解析');
+    }
+    _privateMessages = null;
+    return Post.fromJson(postJson);
+  }
+
+  @override
+  Future<List<ForumNotification>> fetchNotifications(
+    NotificationFeedFilter filter, {
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _notifications[filter] != null) {
+      return _notifications[filter]!;
+    }
+    final json = await _apiClient.getJson(_notificationPath(filter));
+    final items = _parseNotifications(json, filter);
+    _notifications[filter] = items;
+    return items;
   }
 
   @override
@@ -452,6 +661,70 @@ class OnlineForumRepository implements ForumRepository {
     return merged;
   }
 
+  String _feedPath(TopicFeedQuery query) {
+    final categoryId = query.categoryId;
+    if (categoryId == null) {
+      return query.hot ? '/hot.json' : '/latest.json';
+    }
+    final slug = _categories[categoryId]?.routeSlug ?? '$categoryId-category';
+    final mode = query.hot ? 'hot' : 'latest';
+    final filter = query.hot ? 'hot' : 'default';
+    return '/c/$slug/$categoryId/l/$mode.json?filter=$filter';
+  }
+
+  String _notificationPath(NotificationFeedFilter filter) {
+    final username = profile.username;
+    final lower = username.toLowerCase();
+    return switch (filter) {
+      NotificationFeedFilter.all =>
+        '/notifications?username=$username&filter=all&limit=60',
+      NotificationFeedFilter.replies =>
+        '/user_actions.json?offset=0&username=$lower&filter=6,9',
+      NotificationFeedFilter.likes =>
+        '/user_actions.json?offset=0&username=$lower&filter=2',
+      NotificationFeedFilter.mentions =>
+        '/user_actions.json?offset=0&username=$lower&filter=7',
+    };
+  }
+
+  List<ForumNotification> _parseNotifications(
+    JsonMap json,
+    NotificationFeedFilter filter,
+  ) {
+    final notificationsJson = json['notifications'];
+    if (notificationsJson is List) {
+      return notificationsJson
+          .whereType<JsonMap>()
+          .map(ForumNotification.fromNotificationJson)
+          .toList();
+    }
+    final actionsJson = json['user_actions'];
+    if (actionsJson is List) {
+      return actionsJson
+          .whereType<JsonMap>()
+          .map((action) => ForumNotification.fromUserActionJson(
+                action,
+                _notificationKind(filter),
+              ))
+          .toList();
+    }
+    return const [];
+  }
+
+  String _notificationKind(NotificationFeedFilter filter) {
+    return switch (filter) {
+      NotificationFeedFilter.all => '通知',
+      NotificationFeedFilter.replies => '回复',
+      NotificationFeedFilter.likes => '赞',
+      NotificationFeedFilter.mentions => '提及',
+    };
+  }
+
+  String _uploadClientId() {
+    final seed = '${profile.username}:${DateTime.now().microsecondsSinceEpoch}';
+    return Sha1Hash.hex(Uint8List.fromList(utf8.encode(seed)));
+  }
+
   static String? _parseMoreTopicsPath(JsonMap json) {
     final list = json['topic_list'];
     if (list is! JsonMap) {
@@ -485,13 +758,21 @@ class OnlineForumRepository implements ForumRepository {
     FixtureForumRepository fallback,
   ) async {
     try {
-      final json = await apiClient.getJson('/site.json');
+      final json = await apiClient.getJson('/categories.json');
       final categories = FixtureForumRepository._parseCategories(json);
       if (categories.isNotEmpty) {
         return categories;
       }
     } on ForumApiException {
-      return fallback._categories;
+      try {
+        final json = await apiClient.getJson('/site.json');
+        final categories = FixtureForumRepository._parseCategories(json);
+        if (categories.isNotEmpty) {
+          return categories;
+        }
+      } on ForumApiException {
+        return fallback._categories;
+      }
     }
     return fallback._categories;
   }
@@ -509,6 +790,15 @@ class OnlineForumRepository implements ForumRepository {
       return fallback.userSummary;
     }
   }
+}
+
+List<ForumCategory> _sortedCategories(Map<int, ForumCategory> categories) {
+  final list = categories.values.toList();
+  list.sort((a, b) {
+    final byPosition = a.position.compareTo(b.position);
+    return byPosition == 0 ? a.id.compareTo(b.id) : byPosition;
+  });
+  return list;
 }
 
 class ForumRepositoryFactory {

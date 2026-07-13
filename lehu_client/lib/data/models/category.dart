@@ -7,6 +7,9 @@ class ForumCategory {
     required this.slug,
     required this.color,
     required this.textColor,
+    this.position = 0,
+    this.permission,
+    this.readRestricted = false,
   });
 
   final int id;
@@ -14,6 +17,9 @@ class ForumCategory {
   final String slug;
   final String color;
   final String textColor;
+  final int position;
+  final int? permission;
+  final bool readRestricted;
 
   factory ForumCategory.fromJson(JsonMap json) {
     return ForumCategory(
@@ -22,6 +28,11 @@ class ForumCategory {
       slug: stringValue(json['slug']),
       color: stringValue(json['color'], '333333'),
       textColor: stringValue(json['text_color'], 'FFFFFF'),
+      position: intValue(json['position']),
+      permission: json['permission'] == null ? null : intValue(json['permission']),
+      readRestricted: boolValue(json['read_restricted']),
     );
   }
+
+  String get routeSlug => slug.isEmpty ? '$id-category' : slug;
 }

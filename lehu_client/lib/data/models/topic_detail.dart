@@ -10,6 +10,7 @@ class TopicDetail {
     required this.highestPostNumber,
     required this.canCreatePost,
     required this.posts,
+    this.archetype = 'regular',
   });
 
   final int id;
@@ -19,6 +20,9 @@ class TopicDetail {
   final int highestPostNumber;
   final bool canCreatePost;
   final List<Post> posts;
+  final String archetype;
+
+  bool get isPrivateMessage => archetype == 'private_message';
 
   factory TopicDetail.fromJson(JsonMap json) {
     final stream = json['post_stream'];
@@ -30,6 +34,7 @@ class TopicDetail {
       categoryId: intValue(json['category_id']),
       postsCount: intValue(json['posts_count']),
       highestPostNumber: intValue(json['highest_post_number']),
+      archetype: stringValue(json['archetype'], 'regular'),
       canCreatePost:
           details is JsonMap ? boolValue(details['can_create_post']) : false,
       posts: postsJson is List

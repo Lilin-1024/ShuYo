@@ -8,8 +8,13 @@ import '../data/repositories/forum_repository.dart';
 import '../data/services/discourse_api_client.dart';
 import '../data/services/payload_factory.dart';
 import '../features/auth/login_webview_page.dart';
+import '../features/forum/create_topic_page.dart';
+import '../features/forum/forum_filter_bar.dart';
+import '../features/forum/forum_search_page.dart';
+import '../features/home/home_dashboard_page.dart';
 import '../features/home/topic_list_page.dart';
 import '../features/messages/messages_page.dart';
+import '../features/messages/notifications_page.dart';
 import '../features/profile/profile_page.dart';
 import '../features/topic/topic_page.dart';
 import '../features/webview/forum_webview_page.dart';
@@ -33,27 +38,27 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _tabIndex = 0;
   TopicListItem? _openedTopic;
+  TopicFeedQuery _feedQuery = const TopicFeedQuery();
   bool _reloadingSession = false;
-  bool _loadingMoreLatest = false;
-  bool _loadingMoreHot = false;
+  bool _loadingMoreFeed = false;
   bool _submittingReply = false;
   final _likingPostIds = <int>{};
   final _deletingPostIds = <int>{};
   late ForumRepository _repo;
-  late Future<List<TopicListItem>> _latestFuture;
-  late Future<List<TopicListItem>> _hotFuture;
+  late Future<List<TopicListItem>> _feedFuture;
 
   @override
   void initState() {
     super.initState();
     _repo = widget.repository;
-    _resetListFutures();
+    _resetFeedFuture();
   }
 
   @override
   Widget build(BuildContext context) {
     final profile = _repo.profile;
     final isProfileTab = _tabIndex == 3 && _openedTopic == null;
+    final isForumTab = _tabIndex == 1 && _openedTopic == null;
 
     return PopScope(
       canPop: _openedTopic == null,
@@ -71,11 +76,15 @@ class _AppShellState extends State<AppShell> {
                 showBack: _openedTopic != null,
                 showSettings: isProfileTab,
                 showMore: _openedTopic != null,
+                showSearch: isForumTab,
+                showCreate: isForumTab,
                 notificationCount: _repo.unreadNotificationCount,
                 onBack: () => setState(() => _openedTopic = null),
                 onMore: _openedTopic == null
                     ? null
                     : () => _showTopicMoreSheet(_openedTopic!),
+                onSearch: _openSearch,
+                onCreate: _openCreateTopic,
                 onSettings: () => _repo.isOnline
                     ? _openForumWebView(
                         title: '设置',
@@ -83,13 +92,7 @@ class _AppShellState extends State<AppShell> {
                             'https://bbs.shu.edu.cn/u/${profile.username.toLowerCase()}/preferences/account',
                       )
                     : _login(),
-                onNotification: () => _repo.isOnline
-                    ? _openForumWebView(
-                        title: '通知',
-                        url:
-                            'https://bbs.shu.edu.cn/u/${profile.username.toLowerCase()}/notifications',
-                      )
-                    : _login(),
+                onNotification: _openNotifications,
               ),
               Expanded(child: _bodyForTab()),
             ],
@@ -104,11 +107,12 @@ class _AppShellState extends State<AppShell> {
             });
           },
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.schedule), label: '最新'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.local_fire_department), label: '热点'),
+                icon: Icon(Icons.home_outlined), label: '首页'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.forum_outlined), label: '消息'),
+                icon: Icon(Icons.forum_outlined), label: '论坛'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.chat_bubble_outline), label: '消息'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline), label: '我'),
           ],
@@ -122,8 +126,8 @@ class _AppShellState extends State<AppShell> {
       return '帖子';
     }
     return switch (_tabIndex) {
-      0 => '最新',
-      1 => '热点',
+      0 => '首页',
+      1 => '论坛',
       2 => '消息',
       3 => '我',
       _ => '乐乎',
@@ -133,54 +137,23 @@ class _AppShellState extends State<AppShell> {
   Widget _bodyForTab() {
     final openedTopic = _openedTopic;
     if (openedTopic != null) {
-      return FutureBuilder<TopicDetail?>(
-        future: _repo.fetchTopicDetail(openedTopic.id),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const _LoadingState(message: '正在加载帖子...');
-          }
-          if (snapshot.hasError) {
-            return _ErrorState(
-              title: '帖子加载失败',
-              message: snapshot.error.toString(),
-              onRetry: () => setState(() {
-                _repo.fetchTopicDetail(openedTopic.id, forceRefresh: true);
-              }),
-            );
-          }
-          return TopicPage(
-            item: openedTopic,
-            detail: snapshot.data,
-            category: _repo.categoryById(openedTopic.categoryId),
-            isOnline: _repo.isOnline,
-            isSubmittingReply: _submittingReply,
-            busyLikePostIds: _likingPostIds,
-            busyDeletePostIds: _deletingPostIds,
-            onLikePost: _likePost,
-            onDeletePost: _deletePost,
-            onCreateReply: _createReply,
-            onLoginRequired: _login,
-          );
-        },
-      );
+      return _openedTopicView(openedTopic);
     }
 
     return switch (_tabIndex) {
-      0 => _topicList(
-          future: _latestFuture,
-          refresh: _refreshLatest,
-          canLoadMore: _repo.canLoadMoreLatest,
-          isLoadingMore: _loadingMoreLatest,
-          loadMore: _loadMoreLatest,
+      0 => HomeDashboardPage(
+          profile: _repo.profile,
+          isOnline: _repo.isOnline,
+          isBusy: _reloadingSession,
+          onLogin: _login,
+          onRelogin: _relogin,
+          onPlaceholder: (name) => _showSnack('$name 后续接入'),
         ),
-      1 => _topicList(
-          future: _hotFuture,
-          refresh: _refreshHot,
-          canLoadMore: _repo.canLoadMoreHot,
-          isLoadingMore: _loadingMoreHot,
-          loadMore: _loadMoreHot,
+      1 => _forumBody(),
+      2 => MessagesPage(
+          repository: _repo,
+          onLoginRequired: _login,
         ),
-      2 => const MessagesPage(),
       3 => ProfilePage(
           profile: _repo.profile,
           summary: _repo.userSummary,
@@ -194,12 +167,76 @@ class _AppShellState extends State<AppShell> {
     };
   }
 
-  Widget _topicList(
-      {required Future<List<TopicListItem>> future,
-      required Future<void> Function() refresh,
-      required bool canLoadMore,
-      required bool isLoadingMore,
-      required Future<void> Function() loadMore}) {
+  Widget _openedTopicView(TopicListItem openedTopic) {
+    return FutureBuilder<TopicDetail?>(
+      future: _repo.fetchTopicDetail(openedTopic.id),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _LoadingState(message: '正在加载帖子...');
+        }
+        if (snapshot.hasError) {
+          return _ErrorState(
+            title: '帖子加载失败',
+            message: snapshot.error.toString(),
+            onRetry: () => setState(() {
+              _repo.fetchTopicDetail(openedTopic.id, forceRefresh: true);
+            }),
+          );
+        }
+        return TopicPage(
+          item: openedTopic,
+          detail: snapshot.data,
+          category: _repo.categoryById(openedTopic.categoryId),
+          isOnline: _repo.isOnline,
+          isSubmittingReply: _submittingReply,
+          busyLikePostIds: _likingPostIds,
+          busyDeletePostIds: _deletingPostIds,
+          onLikePost: _likePost,
+          onDeletePost: _deletePost,
+          onCreateReply: _createReply,
+          onLoginRequired: _login,
+        );
+      },
+    );
+  }
+
+  Widget _forumBody() {
+    return Column(
+      children: [
+        ForumFilterBar(
+          categories: _repo.categories,
+          isHot: _feedQuery.hot,
+          selectedCategoryId: _feedQuery.categoryId,
+          onToggleMode: () => _setFeedQuery(
+            TopicFeedQuery(
+              categoryId: _feedQuery.categoryId,
+              hot: !_feedQuery.hot,
+            ),
+          ),
+          onSelectCategory: (id) => _setFeedQuery(
+            TopicFeedQuery(categoryId: id, hot: _feedQuery.hot),
+          ),
+        ),
+        Expanded(
+          child: _topicList(
+            future: _feedFuture,
+            refresh: _refreshFeed,
+            canLoadMore: _repo.canLoadMoreFeed(_feedQuery),
+            isLoadingMore: _loadingMoreFeed,
+            loadMore: _loadMoreFeed,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _topicList({
+    required Future<List<TopicListItem>> future,
+    required Future<void> Function() refresh,
+    required bool canLoadMore,
+    required bool isLoadingMore,
+    required Future<void> Function() loadMore,
+  }) {
     return FutureBuilder<List<TopicListItem>>(
       future: future,
       builder: (context, snapshot) {
@@ -238,75 +275,111 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  void _resetListFutures() {
-    _latestFuture = _repo.fetchLatestTopics();
-    _hotFuture = _repo.fetchHotTopics();
-    _loadingMoreLatest = false;
-    _loadingMoreHot = false;
+  void _resetFeedFuture() {
+    _feedFuture = _repo.fetchTopicFeed(_feedQuery);
+    _loadingMoreFeed = false;
   }
 
-  Future<void> _refreshLatest() async {
-    final future = _repo.fetchLatestTopics(forceRefresh: true);
-    setState(() => _latestFuture = future);
-    try {
-      await future;
-    } finally {
-      if (mounted) {
-        setState(() {});
-      }
+  void _setFeedQuery(TopicFeedQuery query) {
+    setState(() {
+      _feedQuery = query;
+      _resetFeedFuture();
+    });
+  }
+
+  Future<void> _refreshFeed() async {
+    final future = _repo.fetchTopicFeed(_feedQuery, forceRefresh: true);
+    setState(() => _feedFuture = future);
+    await future;
+    if (mounted) {
+      setState(() {});
     }
   }
 
-  Future<void> _refreshHot() async {
-    final future = _repo.fetchHotTopics(forceRefresh: true);
-    setState(() => _hotFuture = future);
-    try {
-      await future;
-    } finally {
-      if (mounted) {
-        setState(() {});
-      }
-    }
-  }
-
-  Future<void> _loadMoreLatest() async {
-    if (_loadingMoreLatest || !_repo.canLoadMoreLatest) {
+  Future<void> _loadMoreFeed() async {
+    if (_loadingMoreFeed || !_repo.canLoadMoreFeed(_feedQuery)) {
       return;
     }
-    setState(() => _loadingMoreLatest = true);
+    setState(() => _loadingMoreFeed = true);
     try {
-      final topics = await _repo.loadMoreLatestTopics();
+      final topics = await _repo.loadMoreTopicFeed(_feedQuery);
       if (!mounted) {
         return;
       }
-      setState(() => _latestFuture = Future.value(topics));
+      setState(() => _feedFuture = Future.value(topics));
     } on Object catch (error) {
       await _handleOperationError(error, title: '加载更多失败');
     } finally {
       if (mounted) {
-        setState(() => _loadingMoreLatest = false);
+        setState(() => _loadingMoreFeed = false);
       }
     }
   }
 
-  Future<void> _loadMoreHot() async {
-    if (_loadingMoreHot || !_repo.canLoadMoreHot) {
+  Future<void> _openSearch() async {
+    if (!_repo.isOnline) {
+      await _login();
       return;
     }
-    setState(() => _loadingMoreHot = true);
-    try {
-      final topics = await _repo.loadMoreHotTopics();
-      if (!mounted) {
-        return;
-      }
-      setState(() => _hotFuture = Future.value(topics));
-    } on Object catch (error) {
-      await _handleOperationError(error, title: '加载更多失败');
-    } finally {
-      if (mounted) {
-        setState(() => _loadingMoreHot = false);
-      }
+    final topic = await Navigator.of(context).push<TopicListItem>(
+      MaterialPageRoute(
+        builder: (context) => ForumSearchPage(repository: _repo),
+      ),
+    );
+    if (topic != null && mounted) {
+      setState(() => _openedTopic = topic);
     }
+  }
+
+  Future<void> _openCreateTopic() async {
+    if (!_repo.isOnline) {
+      await _login();
+      return;
+    }
+    final result = await Navigator.of(context).push<CreatedTopicResult>(
+      MaterialPageRoute(
+        builder: (context) => CreateTopicPage(
+          repository: _repo,
+          categories: _repo.categories,
+          initialCategoryId: _feedQuery.categoryId,
+        ),
+      ),
+    );
+    if (result == null || !mounted) {
+      return;
+    }
+    _showSnack('帖子已发布');
+    await _refreshFeed();
+    setState(() {
+      _openedTopic = TopicListItem(
+        id: result.post.topicId,
+        title: result.title,
+        postsCount: 1,
+        replyCount: 0,
+        highestPostNumber: 1,
+        views: 0,
+        likeCount: 0,
+        categoryId: result.categoryId,
+        posters: const [],
+        createdAt: result.post.createdAt,
+        lastPostedAt: result.post.createdAt,
+      );
+    });
+  }
+
+  Future<void> _openNotifications() async {
+    if (!_repo.isOnline) {
+      await _login();
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => NotificationsPage(
+          repository: _repo,
+          onOpenTopic: (topic) => setState(() => _openedTopic = topic),
+        ),
+      ),
+    );
   }
 
   Future<void> _login() async {
@@ -329,7 +402,7 @@ class _AppShellState extends State<AppShell> {
         _repo = nextRepository;
         _openedTopic = null;
         _reloadingSession = false;
-        _resetListFutures();
+        _resetFeedFuture();
       });
       _showSnack('已接入真实乐乎数据');
     } on Object catch (error) {
@@ -359,7 +432,7 @@ class _AppShellState extends State<AppShell> {
         _repo = nextRepository;
         _openedTopic = null;
         _reloadingSession = false;
-        _resetListFutures();
+        _resetFeedFuture();
       });
     } on Object catch (error) {
       if (!mounted) {
@@ -390,7 +463,7 @@ class _AppShellState extends State<AppShell> {
         _repo = nextRepository;
         _openedTopic = null;
         _reloadingSession = false;
-        _resetListFutures();
+        _resetFeedFuture();
       });
       _showSnack('已退出登录');
     } on Object catch (error) {
@@ -549,7 +622,7 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       _repo = nextRepository;
       _openedTopic = null;
-      _resetListFutures();
+      _resetFeedFuture();
     });
   }
 
