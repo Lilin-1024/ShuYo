@@ -349,18 +349,31 @@ class _MessageDetailPage extends StatefulWidget {
 
 class _MessageDetailPageState extends State<_MessageDetailPage> {
   static const _minRefreshIndicatorDuration = Duration(milliseconds: 800);
+  static const _autoRefreshInterval = Duration(seconds: 6);
 
   TopicDetail? _detail;
   Object? _error;
   bool _loadingInitial = true;
   bool _submitting = false;
   bool _refreshing = false;
+  bool _autoRefreshing = false;
+  Timer? _autoRefreshTimer;
   Set<int> _animatedPostIds = const {};
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadInitial());
+    _autoRefreshTimer = Timer.periodic(
+      _autoRefreshInterval,
+      (_) => unawaited(_refreshDetailSilently()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _autoRefreshTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -531,6 +544,40 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       if (mounted) {
         setState(() => _refreshing = false);
       }
+    }
+  }
+
+  Future<void> _refreshDetailSilently() async {
+    if (!mounted ||
+        _autoRefreshing ||
+        _refreshing ||
+        _loadingInitial ||
+        _submitting ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    final previousIds = _detail?.posts.map((post) => post.id).toSet() ?? {};
+    _autoRefreshing = true;
+    try {
+      final fetched = await _fetchLatestDetail();
+      final detail = _mergeWithCurrentDetail(fetched);
+      final nextIds = detail?.posts.map((post) => post.id).toSet() ?? {};
+      final newIds = nextIds.difference(previousIds);
+      final changed = !_sameIntSet(previousIds, nextIds);
+      if (!mounted) {
+        return;
+      }
+      if (changed || (_detail == null && detail != null)) {
+        setState(() {
+          _detail = detail;
+          _animatedPostIds = newIds;
+          _error = null;
+        });
+      }
+    } on Object {
+      // 静默轮询不打扰用户；手动刷新仍会展示具体错误。
+    } finally {
+      _autoRefreshing = false;
     }
   }
 

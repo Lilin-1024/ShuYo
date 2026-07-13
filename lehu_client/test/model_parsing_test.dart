@@ -10,6 +10,7 @@ import 'package:lehu_client/data/models/forum_notification.dart';
 import 'package:lehu_client/data/models/post.dart';
 import 'package:lehu_client/data/models/topic.dart';
 import 'package:lehu_client/data/models/topic_detail.dart';
+import 'package:lehu_client/data/services/emoji_text.dart';
 import 'package:lehu_client/data/services/html_text.dart';
 import 'package:lehu_client/data/services/payload_factory.dart';
 import 'package:lehu_client/data/services/sha1_hash.dart';
@@ -226,6 +227,17 @@ void main() {
     expect(notification.canOpenTopic, isTrue);
     expect(Sha1Hash.hex(Uint8List.fromList(utf8.encode('abc'))),
         'a9993e364706816aba3e25717850c26c9cd0d89d');
+  });
+
+  test('renders extended discourse emoji shortcodes', () {
+    final rendered = EmojiText.render(
+      ':game_die: :left_speech_bubble: :crystal_ball:',
+    );
+
+    expect(rendered, contains('\u{1F3B2}'));
+    expect(rendered, contains('\u{1F5E8}\u{FE0F}'));
+    expect(rendered, contains('\u{1F52E}'));
+    expect(EmojiText.entriesForShortcodes(['game_die']), isNotEmpty);
   });
 }
 
