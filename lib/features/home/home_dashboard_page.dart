@@ -11,7 +11,9 @@ class HomeDashboardPage extends StatelessWidget {
     required this.onLogin,
     required this.onRelogin,
     required this.onOpenAcademicSystem,
+    required this.onOpenAnnouncements,
     required this.todayCourseContent,
+    required this.announcementContent,
     required this.onPlaceholder,
   });
 
@@ -21,7 +23,9 @@ class HomeDashboardPage extends StatelessWidget {
   final VoidCallback onLogin;
   final VoidCallback onRelogin;
   final VoidCallback onOpenAcademicSystem;
+  final VoidCallback onOpenAnnouncements;
   final String todayCourseContent;
+  final String announcementContent;
   final ValueChanged<String> onPlaceholder;
 
   @override
@@ -55,6 +59,11 @@ class HomeDashboardPage extends StatelessWidget {
           title: '今日课程',
           content: todayCourseContent,
           onTap: onOpenAcademicSystem,
+        ),
+        _HomeRow(
+          title: '通知公告',
+          content: announcementContent,
+          onTap: onOpenAnnouncements,
         ),
         _HomeRow(
           title: '空教室查询',
