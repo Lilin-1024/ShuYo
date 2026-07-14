@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -19,8 +21,14 @@ class ForumWebViewPage extends StatefulWidget {
 }
 
 class _ForumWebViewPageState extends State<ForumWebViewPage> {
+  static const _mobileChromeUserAgent =
+      'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+      '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+
   late final WebViewController _controller;
   bool _loading = true;
+  WebResourceError? _lastError;
+  HttpResponseError? _lastHttpError;
   Uri? _currentUri;
 
   @override
@@ -29,11 +37,16 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
+      ..setUserAgent(_mobileChromeUserAgent)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
             _currentUri = Uri.tryParse(url);
-            setState(() => _loading = true);
+            setState(() {
+              _loading = true;
+              _lastError = null;
+              _lastHttpError = null;
+            });
           },
           onPageFinished: (_) {
             if (mounted) {
@@ -44,10 +57,28 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
             _currentUri = Uri.tryParse(request.url);
             return NavigationDecision.navigate;
           },
+          onWebResourceError: (error) {
+            if (!mounted || error.isForMainFrame == false) {
+              return;
+            }
+            setState(() {
+              _loading = false;
+              _lastError = error;
+            });
+          },
+          onHttpError: (error) {
+            if (!mounted) {
+              return;
+            }
+            setState(() {
+              _loading = false;
+              _lastHttpError = error;
+            });
+          },
           onSslAuthError: _handleSslAuthError,
         ),
-      )
-      ..loadRequest(Uri.parse(widget.url));
+      );
+    unawaited(_loadInitialRequest());
   }
 
   @override
@@ -57,6 +88,19 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
+          if (_lastError != null || _lastHttpError != null)
+            _WebViewErrorOverlay(
+              error: _lastError,
+              httpError: _lastHttpError,
+              onRetry: () {
+                setState(() {
+                  _lastError = null;
+                  _lastHttpError = null;
+                  _loading = true;
+                });
+                _controller.reload();
+              },
+            ),
           if (_loading)
             const LinearProgressIndicator(
               minHeight: 2,
@@ -82,5 +126,84 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
       return Uri.tryParse(platform.url);
     }
     return null;
+  }
+
+  Future<void> _configureAndroidWebView() async {
+    final platform = _controller.platform;
+    if (platform is! AndroidWebViewController) {
+      return;
+    }
+    await AndroidWebViewController.enableDebugging(true);
+    await platform.setMediaPlaybackRequiresUserGesture(false);
+    await platform.setUseWideViewPort(true);
+    await platform.setMixedContentMode(MixedContentMode.compatibilityMode);
+    final cookieManager = WebViewCookieManager().platform;
+    if (cookieManager is AndroidWebViewCookieManager) {
+      await cookieManager.setAcceptThirdPartyCookies(platform, true);
+    }
+  }
+
+  Future<void> _loadInitialRequest() async {
+    await _configureAndroidWebView();
+    if (!mounted) {
+      return;
+    }
+    await _controller.loadRequest(Uri.parse(widget.url));
+  }
+}
+
+class _WebViewErrorOverlay extends StatelessWidget {
+  const _WebViewErrorOverlay({
+    required this.error,
+    required this.httpError,
+    required this.onRetry,
+  });
+
+  final WebResourceError? error;
+  final HttpResponseError? httpError;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final error = this.error;
+    final httpError = this.httpError;
+    final message = error != null
+        ? '${error.errorCode} · ${error.description}'
+        : 'HTTP ${httpError?.response?.statusCode ?? '错误'}';
+    return ColoredBox(
+      color: Colors.black,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.public_off_outlined,
+                size: 40,
+                color: Color(0xFFBDBDBD),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                '网页加载失败',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFFAAAAAA)),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

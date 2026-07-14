@@ -10,6 +10,8 @@ class HomeDashboardPage extends StatelessWidget {
     required this.isBusy,
     required this.onLogin,
     required this.onRelogin,
+    required this.onOpenAcademicSystem,
+    required this.todayCourseContent,
     required this.onPlaceholder,
   });
 
@@ -18,6 +20,8 @@ class HomeDashboardPage extends StatelessWidget {
   final bool isBusy;
   final VoidCallback onLogin;
   final VoidCallback onRelogin;
+  final VoidCallback onOpenAcademicSystem;
+  final String todayCourseContent;
   final ValueChanged<String> onPlaceholder;
 
   @override
@@ -49,8 +53,8 @@ class HomeDashboardPage extends StatelessWidget {
         ),
         _HomeRow(
           title: '今日课程',
-          content: '课表接入后显示下节课名称和时间',
-          onTap: () => onPlaceholder('今日课程'),
+          content: todayCourseContent,
+          onTap: onOpenAcademicSystem,
         ),
         _HomeRow(
           title: '空教室查询',

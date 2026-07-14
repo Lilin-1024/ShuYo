@@ -1,16 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/models/post.dart';
 import '../data/models/topic.dart';
 import '../data/models/topic_detail.dart';
+import '../data/repositories/academic_schedule_repository.dart';
 import '../data/repositories/forum_repository.dart';
+import '../data/services/academic_schedule_notification_service.dart';
 import '../data/services/discourse_api_client.dart';
 import '../data/services/payload_factory.dart';
 import '../features/auth/login_webview_page.dart';
 import '../features/forum/create_topic_page.dart';
 import '../features/forum/forum_filter_bar.dart';
 import '../features/forum/forum_search_page.dart';
+import '../features/home/academic_schedule_page.dart';
 import '../features/home/home_dashboard_page.dart';
 import '../features/home/topic_list_page.dart';
 import '../features/messages/messages_page.dart';
@@ -46,13 +51,28 @@ class _AppShellState extends State<AppShell> {
   final _likingPostIds = <int>{};
   final _deletingPostIds = <int>{};
   late ForumRepository _repo;
+  late final AcademicScheduleRepository _scheduleRepository;
+  late final AcademicScheduleNotificationService _scheduleNotificationService;
   late Future<List<TopicListItem>> _feedFuture;
+  Timer? _scheduleSummaryTimer;
+  bool _loadingScheduleSummary = false;
+  String _scheduleSummaryText = '正在读取课表...';
 
   @override
   void initState() {
     super.initState();
     _repo = widget.repository;
+    _scheduleRepository = AcademicScheduleRepository();
+    _scheduleNotificationService = AcademicScheduleNotificationService(
+      repository: _scheduleRepository,
+    );
     _resetFeedFuture();
+    unawaited(_refreshScheduleSummaryQuietly());
+    _scheduleSummaryTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _refreshScheduleSummaryQuietly(),
+    );
+    unawaited(_scheduleNotificationService.syncScheduleReminders());
   }
 
   @override
@@ -106,6 +126,9 @@ class _AppShellState extends State<AppShell> {
               _tabIndex = index;
               _openedTopic = null;
             });
+            if (index == 0) {
+              unawaited(_refreshScheduleSummaryQuietly());
+            }
           },
           items: const [
             BottomNavigationBarItem(
@@ -120,6 +143,12 @@ class _AppShellState extends State<AppShell> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _scheduleSummaryTimer?.cancel();
+    super.dispose();
   }
 
   String get _headerTitle {
@@ -142,14 +171,7 @@ class _AppShellState extends State<AppShell> {
     }
 
     return switch (_tabIndex) {
-      0 => HomeDashboardPage(
-          profile: _repo.profile,
-          isOnline: _repo.isOnline,
-          isBusy: _reloadingSession,
-          onLogin: _login,
-          onRelogin: _relogin,
-          onPlaceholder: (name) => _showSnack('$name 后续接入'),
-        ),
+      0 => _homeBody(),
       1 => _forumBody(),
       2 => MessagesPage(
           repository: _repo,
@@ -166,6 +188,39 @@ class _AppShellState extends State<AppShell> {
         ),
       _ => const SizedBox.shrink(),
     };
+  }
+
+  Widget _homeBody() {
+    return HomeDashboardPage(
+      profile: _repo.profile,
+      isOnline: _repo.isOnline,
+      isBusy: _reloadingSession,
+      onLogin: _login,
+      onRelogin: _relogin,
+      onOpenAcademicSystem: () => unawaited(_openAcademicSystem()),
+      todayCourseContent: _scheduleSummaryText,
+      onPlaceholder: (name) => _showSnack('$name 后续接入'),
+    );
+  }
+
+  Future<void> _refreshScheduleSummaryQuietly() async {
+    if (_loadingScheduleSummary) {
+      return;
+    }
+    _loadingScheduleSummary = true;
+    try {
+      final summary = await _scheduleRepository.homeSummary();
+      if (!mounted || summary.text == _scheduleSummaryText) {
+        return;
+      }
+      setState(() => _scheduleSummaryText = summary.text);
+    } on Object {
+      if (mounted && _scheduleSummaryText == '正在读取课表...') {
+        setState(() => _scheduleSummaryText = '点击同步教务课表');
+      }
+    } finally {
+      _loadingScheduleSummary = false;
+    }
   }
 
   Widget _openedTopicView(TopicListItem openedTopic) {
@@ -661,6 +716,34 @@ class _AppShellState extends State<AppShell> {
     Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => ForumWebViewPage(title: title, url: url),
+      ),
+    );
+  }
+
+  Future<void> _openAcademicSystem() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => AcademicSchedulePage(
+          repository: _scheduleRepository,
+          notificationService: _scheduleNotificationService,
+          onLoginRequired: _openAcademicLogin,
+        ),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    await _refreshScheduleSummaryQuietly();
+    unawaited(_scheduleNotificationService.syncScheduleReminders());
+  }
+
+  Future<void> _openAcademicLogin() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => const ForumWebViewPage(
+          title: '教务系统',
+          url: 'https://jwxt.shu.edu.cn',
+        ),
       ),
     );
   }
