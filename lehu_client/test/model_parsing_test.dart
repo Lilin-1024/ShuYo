@@ -11,6 +11,7 @@ import 'package:lehu_client/data/models/forum_notification.dart';
 import 'package:lehu_client/data/models/post.dart';
 import 'package:lehu_client/data/models/topic.dart';
 import 'package:lehu_client/data/models/topic_detail.dart';
+import 'package:lehu_client/data/services/announcement_api_client.dart';
 import 'package:lehu_client/data/services/emoji_text.dart';
 import 'package:lehu_client/data/services/html_text.dart';
 import 'package:lehu_client/data/services/payload_factory.dart';
@@ -239,6 +240,53 @@ void main() {
     expect(rendered, contains('\u{1F5E8}\u{FE0F}'));
     expect(rendered, contains('\u{1F52E}'));
     expect(EmojiText.entriesForShortcodes(['game_die']), isNotEmpty);
+  });
+
+  test('parses school announcement list and detail html', () {
+    final items = AnnouncementApiClient.parseAnnouncementList(
+      '''
+      <div class="ej_main"><div class="list"><ul>
+        <li><a href="info/1051/397875.htm">
+          <p class="bt">关于2025-2026学年暑假工作安排的通知</p>
+          <p class="zy">校内各单位：经学校研究决定...</p>
+          <p class="sj">2026.06.30</p>
+        </a></li>
+      </ul></div></div>
+      ''',
+      baseUrl: 'https://www.shu.edu.cn/tzgg.htm',
+    );
+
+    expect(items.single.title, contains('暑假工作安排'));
+    expect(items.single.url, 'https://www.shu.edu.cn/info/1051/397875.htm');
+    expect(items.single.publishedAt, DateTime(2026, 6, 30));
+
+    final detail = AnnouncementApiClient.parseAnnouncementDetail(
+      '''
+      <div class="nry">
+        <h1 align="center">关于宝山校区校内通行温馨提醒</h1>
+        <div class="xx">
+          <span>发布时间：2026-05-29</span>
+          <span>投稿：钟艺玲</span>
+          <span>部门：对外联络处</span>
+        </div>
+        <div class="con"><div class="v_news_content">
+          <p>广大师生：</p>
+          <p class="vsbcontent_img">
+            <img src="/__local/image.jpg" alt="route.jpg">
+          </p>
+          <p>请注意安全。</p>
+        </div></div>
+      </div>
+      ''',
+      url: 'https://www.shu.edu.cn/info/1051/395885.htm',
+    );
+
+    expect(detail.department, '对外联络处');
+    expect(detail.blocks.map((block) => block.value), contains('广大师生：'));
+    expect(
+      detail.blocks.map((block) => block.value),
+      contains('https://www.shu.edu.cn/__local/image.jpg'),
+    );
   });
 
   test('parses academic schedule bitmasks and untimed courses', () {

@@ -7,6 +7,7 @@ import '../data/models/post.dart';
 import '../data/models/topic.dart';
 import '../data/models/topic_detail.dart';
 import '../data/repositories/academic_schedule_repository.dart';
+import '../data/repositories/announcement_repository.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/academic_schedule_notification_service.dart';
 import '../data/services/discourse_api_client.dart';
@@ -16,6 +17,7 @@ import '../features/forum/create_topic_page.dart';
 import '../features/forum/forum_filter_bar.dart';
 import '../features/forum/forum_search_page.dart';
 import '../features/home/academic_schedule_page.dart';
+import '../features/home/announcements_page.dart';
 import '../features/home/home_dashboard_page.dart';
 import '../features/home/topic_list_page.dart';
 import '../features/messages/messages_page.dart';
@@ -53,10 +55,14 @@ class _AppShellState extends State<AppShell> {
   late ForumRepository _repo;
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
+  late final AnnouncementRepository _announcementRepository;
   late Future<List<TopicListItem>> _feedFuture;
   Timer? _scheduleSummaryTimer;
+  Timer? _announcementSummaryTimer;
   bool _loadingScheduleSummary = false;
+  bool _loadingAnnouncementSummary = false;
   String _scheduleSummaryText = '正在读取课表...';
+  String _announcementSummaryText = '正在读取通知公告...';
 
   @override
   void initState() {
@@ -66,11 +72,18 @@ class _AppShellState extends State<AppShell> {
     _scheduleNotificationService = AcademicScheduleNotificationService(
       repository: _scheduleRepository,
     );
+    _announcementRepository = AnnouncementRepository();
     _resetFeedFuture();
     unawaited(_refreshScheduleSummaryQuietly());
+    unawaited(_loadAnnouncementSummaryFromCache());
+    unawaited(_refreshAnnouncementSummaryQuietly());
     _scheduleSummaryTimer = Timer.periodic(
       const Duration(minutes: 1),
       (_) => _refreshScheduleSummaryQuietly(),
+    );
+    _announcementSummaryTimer = Timer.periodic(
+      const Duration(minutes: 30),
+      (_) => _refreshAnnouncementSummaryQuietly(),
     );
     unawaited(_scheduleNotificationService.syncScheduleReminders());
   }
@@ -128,6 +141,7 @@ class _AppShellState extends State<AppShell> {
             });
             if (index == 0) {
               unawaited(_refreshScheduleSummaryQuietly());
+              unawaited(_refreshAnnouncementSummaryQuietly());
             }
           },
           items: const [
@@ -148,6 +162,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _scheduleSummaryTimer?.cancel();
+    _announcementSummaryTimer?.cancel();
     super.dispose();
   }
 
@@ -198,7 +213,9 @@ class _AppShellState extends State<AppShell> {
       onLogin: _login,
       onRelogin: _relogin,
       onOpenAcademicSystem: () => unawaited(_openAcademicSystem()),
+      onOpenAnnouncements: () => unawaited(_openAnnouncements()),
       todayCourseContent: _scheduleSummaryText,
+      announcementContent: _announcementSummaryText,
       onPlaceholder: (name) => _showSnack('$name 后续接入'),
     );
   }
@@ -220,6 +237,41 @@ class _AppShellState extends State<AppShell> {
       }
     } finally {
       _loadingScheduleSummary = false;
+    }
+  }
+
+  Future<void> _loadAnnouncementSummaryFromCache() async {
+    try {
+      final summary = await _announcementRepository.homeSummary();
+      if (!mounted || summary.text == _announcementSummaryText) {
+        return;
+      }
+      setState(() => _announcementSummaryText = summary.text);
+    } on Object {
+      if (mounted && _announcementSummaryText == '正在读取通知公告...') {
+        setState(() => _announcementSummaryText = '点击查看通知公告');
+      }
+    }
+  }
+
+  Future<void> _refreshAnnouncementSummaryQuietly() async {
+    if (_loadingAnnouncementSummary) {
+      return;
+    }
+    _loadingAnnouncementSummary = true;
+    try {
+      final items = await _announcementRepository.fetchAnnouncements();
+      final text = items.isEmpty ? '点击查看通知公告' : items.first.title;
+      if (!mounted || text == _announcementSummaryText) {
+        return;
+      }
+      setState(() => _announcementSummaryText = text);
+    } on Object {
+      if (mounted && _announcementSummaryText == '正在读取通知公告...') {
+        setState(() => _announcementSummaryText = '点击查看通知公告');
+      }
+    } finally {
+      _loadingAnnouncementSummary = false;
     }
   }
 
@@ -735,6 +787,21 @@ class _AppShellState extends State<AppShell> {
     }
     await _refreshScheduleSummaryQuietly();
     unawaited(_scheduleNotificationService.syncScheduleReminders());
+  }
+
+  Future<void> _openAnnouncements() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => AnnouncementsPage(
+          repository: _announcementRepository,
+        ),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    await _loadAnnouncementSummaryFromCache();
+    unawaited(_refreshAnnouncementSummaryQuietly());
   }
 
   Future<void> _openAcademicLogin() async {
