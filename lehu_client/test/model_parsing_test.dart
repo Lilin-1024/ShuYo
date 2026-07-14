@@ -11,7 +11,9 @@ import 'package:lehu_client/data/models/forum_notification.dart';
 import 'package:lehu_client/data/models/post.dart';
 import 'package:lehu_client/data/models/topic.dart';
 import 'package:lehu_client/data/models/topic_detail.dart';
+import 'package:lehu_client/data/repositories/classroom_repository.dart';
 import 'package:lehu_client/data/services/announcement_api_client.dart';
+import 'package:lehu_client/data/services/classroom_api_client.dart';
 import 'package:lehu_client/data/services/emoji_text.dart';
 import 'package:lehu_client/data/services/html_text.dart';
 import 'package:lehu_client/data/services/payload_factory.dart';
@@ -287,6 +289,81 @@ void main() {
       detail.blocks.map((block) => block.value),
       contains('https://www.shu.edu.cn/__local/image.jpg'),
     );
+  });
+
+  test('parses classroom options and detects available rooms', () {
+    final options = ClassroomApiClient.parseSearchOptions(
+      {
+        'code': 200,
+        'data': {
+          'buildList': [
+            {
+              'id': 303,
+              'name': 'A楼',
+              'parentNodeId': 3,
+              'fullName': '上海大学/宝山校区/A楼',
+              'roomCode': 'AL',
+            },
+          ],
+        },
+      },
+      {
+        'code': 200,
+        'data': {
+          'curSection': 5,
+          'section': [
+            {'sectionIndex': 5, 'startTime': '13:00', 'endTime': '13:45'},
+            {'sectionIndex': 6, 'startTime': '13:55', 'endTime': '14:40'},
+          ],
+        },
+      },
+    );
+
+    expect(options.buildings.single.campusName, '宝山');
+    expect(options.sections.map((section) => section.index), [5, 6]);
+    final range = ClassroomRepository().defaultRangeFor(options);
+    expect(range.label, '5-6节');
+
+    final schedule = ClassroomApiClient.parseBuildingSchedule(
+      {
+        'code': 200,
+        'data': {
+          'floorList': [
+            {
+              'id': 304,
+              'name': '一层',
+              'children': [
+                {
+                  'id': 362,
+                  'name': 'A101',
+                  'fullName': '上海大学/宝山校区/A楼/一层/A101',
+                  'roomCourseList': [],
+                },
+                {
+                  'id': 353,
+                  'name': 'A104',
+                  'fullName': '上海大学/宝山校区/A楼/一层/A104',
+                  'roomCourseList': [
+                    {
+                      'courseName': '日语语言认知实习',
+                      'teacherName': '叶老师',
+                      'startSection': 5,
+                      'endSection': 8,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+      building: options.buildings.single,
+    );
+
+    final rooms = schedule.floors.single.rooms;
+    expect(rooms.first.isFreeFor(5, 6), isTrue);
+    expect(rooms.last.isFreeFor(5, 6), isFalse);
+    expect(rooms.last.coursesFor(5, 6).single.courseName, contains('日语'));
   });
 
   test('parses academic schedule bitmasks and untimed courses', () {

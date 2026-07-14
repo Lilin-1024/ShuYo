@@ -1,0 +1,254 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/classroom.dart';
+import '../models/common.dart';
+import '../services/classroom_api_client.dart';
+
+class ClassroomSectionRange {
+  const ClassroomSectionRange({
+    required this.start,
+    required this.end,
+  });
+
+  final int start;
+  final int end;
+
+  String get label => start == end ? '$start节' : '$start-$end节';
+
+  bool contains(int section) => section >= start && section <= end;
+}
+
+class ClassroomAvailabilityQuery {
+  const ClassroomAvailabilityQuery({
+    required this.building,
+    required this.date,
+    required this.startSection,
+    required this.endSection,
+  });
+
+  final ClassroomBuilding building;
+  final DateTime date;
+  final int startSection;
+  final int endSection;
+}
+
+class ClassroomRepository {
+  ClassroomRepository({
+    ClassroomApiClient? apiClient,
+    Future<SharedPreferences> Function()? preferencesLoader,
+    this.optionsCacheDuration = const Duration(days: 7),
+    this.scheduleCacheDuration = const Duration(minutes: 10),
+  })  : _apiClient = apiClient ?? ClassroomApiClient(),
+        _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance;
+
+  static const _optionsCacheKey = 'classroom.options.cache';
+  static const _optionsLastRefreshKey = 'classroom.options.lastRefreshAt';
+
+  final ClassroomApiClient _apiClient;
+  final Future<SharedPreferences> Function() _preferencesLoader;
+  final Duration optionsCacheDuration;
+  final Duration scheduleCacheDuration;
+
+  ClassroomSearchOptions? _memoryOptions;
+  final _scheduleCache = <String, _CachedClassroomSchedule>{};
+
+  Future<ClassroomSearchOptions> loadOptions({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _memoryOptions != null) {
+      return _memoryOptions!;
+    }
+    final cached = await _loadCachedOptions();
+    if (!forceRefresh && cached != null && !await _optionsCacheExpired()) {
+      _memoryOptions = cached;
+      return cached;
+    }
+    try {
+      final options = await _apiClient.fetchSearchOptions();
+      await _saveOptions(options);
+      return options;
+    } on Object {
+      if (cached != null) {
+        _memoryOptions = cached;
+        return cached;
+      }
+      rethrow;
+    }
+  }
+
+  Future<ClassroomAvailabilityResult> search(
+    ClassroomAvailabilityQuery query, {
+    bool forceRefresh = false,
+  }) async {
+    final schedule = await _loadBuildingSchedule(
+      building: query.building,
+      date: query.date,
+      forceRefresh: forceRefresh,
+    );
+    final floors = schedule.floors.map((floor) {
+      final available = floor.rooms
+          .where((room) => room.isFreeFor(query.startSection, query.endSection))
+          .toList(growable: false);
+      return ClassroomFloorAvailability(
+        floor: floor,
+        rooms: floor.rooms,
+        availableRooms: available,
+      );
+    }).toList(growable: false);
+    return ClassroomAvailabilityResult(
+      building: query.building,
+      date: query.date,
+      startSection: query.startSection,
+      endSection: query.endSection,
+      floors: floors,
+    );
+  }
+
+  Future<ClassroomBuildingSchedule> _loadBuildingSchedule({
+    required ClassroomBuilding building,
+    required DateTime date,
+    bool forceRefresh = false,
+  }) async {
+    final key = '${building.id}:${date.year}-${date.month}-${date.day}';
+    final cached = _scheduleCache[key];
+    if (!forceRefresh &&
+        cached != null &&
+        DateTime.now().difference(cached.createdAt) < scheduleCacheDuration) {
+      return cached.schedule;
+    }
+    final schedule = await _apiClient.fetchBuildingSchedule(
+      building: building,
+      date: date,
+    );
+    _scheduleCache[key] = _CachedClassroomSchedule(
+      schedule: schedule,
+      createdAt: DateTime.now(),
+    );
+    return schedule;
+  }
+
+  List<ClassroomSectionRange> defaultRanges(List<ClassroomSection> sections) {
+    final maxSection = sections.isEmpty
+        ? 12
+        : sections.map((section) => section.index).reduce(
+              (a, b) => a > b ? a : b,
+            );
+    final ranges = <ClassroomSectionRange>[];
+    for (var start = 1; start <= maxSection; start += 2) {
+      final end = start + 1 <= maxSection ? start + 1 : start;
+      ranges.add(ClassroomSectionRange(start: start, end: end));
+    }
+    return ranges;
+  }
+
+  ClassroomSectionRange defaultRangeFor(
+    ClassroomSearchOptions options, {
+    DateTime? now,
+  }) {
+    final ranges = defaultRanges(options.sections);
+    if (ranges.isEmpty) {
+      return const ClassroomSectionRange(start: 1, end: 2);
+    }
+    final current = options.currentSection;
+    if (current > 0) {
+      return ranges.firstWhere(
+        (range) => range.contains(current),
+        orElse: () => ranges.first,
+      );
+    }
+    final section = _sectionFromTime(options.sections, now ?? DateTime.now());
+    if (section != null) {
+      return ranges.firstWhere(
+        (range) => range.contains(section.index),
+        orElse: () => ranges.first,
+      );
+    }
+    return ranges.first;
+  }
+
+  Future<ClassroomSearchOptions?> _loadCachedOptions() async {
+    final prefs = await _preferencesLoader();
+    final raw = prefs.getString(_optionsCacheKey);
+    if (raw == null || raw.isEmpty) {
+      return null;
+    }
+    final decoded = jsonDecode(raw);
+    if (decoded is! JsonMap) {
+      return null;
+    }
+    final options = ClassroomSearchOptions.fromJson(decoded);
+    if (options.buildings.isEmpty || options.sections.isEmpty) {
+      return null;
+    }
+    return options;
+  }
+
+  Future<bool> _optionsCacheExpired() async {
+    final prefs = await _preferencesLoader();
+    final raw = prefs.getString(_optionsLastRefreshKey);
+    final lastRefresh = raw == null ? null : DateTime.tryParse(raw);
+    if (lastRefresh == null) {
+      return true;
+    }
+    return DateTime.now().difference(lastRefresh) >= optionsCacheDuration;
+  }
+
+  Future<void> _saveOptions(ClassroomSearchOptions options) async {
+    _memoryOptions = options;
+    final prefs = await _preferencesLoader();
+    await prefs.setString(_optionsCacheKey, jsonEncode(options.toJson()));
+    await prefs.setString(
+      _optionsLastRefreshKey,
+      DateTime.now().toIso8601String(),
+    );
+  }
+
+  ClassroomSection? _sectionFromTime(
+    List<ClassroomSection> sections,
+    DateTime now,
+  ) {
+    final minutes = now.hour * 60 + now.minute;
+    for (final section in sections) {
+      final start = _minutes(section.startTime);
+      final end = _minutes(section.endTime);
+      if (start == null || end == null) {
+        continue;
+      }
+      if (minutes >= start && minutes <= end) {
+        return section;
+      }
+    }
+    for (final section in sections) {
+      final start = _minutes(section.startTime);
+      if (start != null && minutes < start) {
+        return section;
+      }
+    }
+    return null;
+  }
+
+  int? _minutes(String time) {
+    final parts = time.split(':');
+    if (parts.length != 2) {
+      return null;
+    }
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) {
+      return null;
+    }
+    return hour * 60 + minute;
+  }
+}
+
+class _CachedClassroomSchedule {
+  const _CachedClassroomSchedule({
+    required this.schedule,
+    required this.createdAt,
+  });
+
+  final ClassroomBuildingSchedule schedule;
+  final DateTime createdAt;
+}

@@ -12,6 +12,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.onRelogin,
     required this.onOpenAcademicSystem,
     required this.onOpenAnnouncements,
+    required this.onOpenEmptyClassroom,
     required this.todayCourseContent,
     required this.announcementContent,
     required this.onPlaceholder,
@@ -24,6 +25,7 @@ class HomeDashboardPage extends StatelessWidget {
   final VoidCallback onRelogin;
   final VoidCallback onOpenAcademicSystem;
   final VoidCallback onOpenAnnouncements;
+  final VoidCallback onOpenEmptyClassroom;
   final String todayCourseContent;
   final String announcementContent;
   final ValueChanged<String> onPlaceholder;
@@ -68,7 +70,7 @@ class HomeDashboardPage extends StatelessWidget {
         _HomeRow(
           title: '空教室查询',
           content: '选择校区、教学楼和节次后查询',
-          onTap: () => onPlaceholder('空教室查询'),
+          onTap: onOpenEmptyClassroom,
         ),
         _HomeRow(
           title: '课程评价',
