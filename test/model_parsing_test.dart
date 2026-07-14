@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lehu_client/data/models/academic_schedule.dart';
 import 'package:lehu_client/data/models/category.dart';
 import 'package:lehu_client/data/models/common.dart';
 import 'package:lehu_client/data/models/composer.dart';
@@ -238,6 +239,43 @@ void main() {
     expect(rendered, contains('\u{1F5E8}\u{FE0F}'));
     expect(rendered, contains('\u{1F52E}'));
     expect(EmojiText.entriesForShortcodes(['game_die']), isNotEmpty);
+  });
+
+  test('parses academic schedule bitmasks and untimed courses', () {
+    final schedule = AcademicScheduleParser.parse({
+      'xsxx': {
+        'XNM': '2025',
+        'XQM': '16',
+        'XNMC': '2025-2026',
+        'XQMMC': '春',
+      },
+      'kbList': [
+        {
+          'jxb_id': 'course-1',
+          'kcmc': '形势与政策',
+          'xm': '老师',
+          'xqj': '2',
+          'jcs': '5-6',
+          'oldjc': '48',
+          'zcd': '3周,7周,11周,15周',
+          'oldzc': '17476',
+          'cdmc': 'EJ106',
+        },
+      ],
+      'sjkList': [
+        {
+          'kcmc': '编程实训',
+          'jsxm': '魏晓',
+          'qsjsz': '1-4周',
+          'qtkcgs': '编程实训魏晓(共4周)/1-4周',
+        },
+      ],
+    });
+
+    expect(schedule.maxWeek, 15);
+    expect(schedule.sessions.single.sections, [5, 6]);
+    expect(schedule.sessions.single.weeks, [3, 7, 11, 15]);
+    expect(schedule.untimedCourses.single.weeks, [1, 2, 3, 4]);
   });
 }
 
