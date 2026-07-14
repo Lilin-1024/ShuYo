@@ -1,0 +1,140 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
+
+import '../models/classroom.dart';
+import '../models/common.dart';
+
+class ClassroomApiException implements Exception {
+  const ClassroomApiException(this.message, {this.statusCode});
+
+  final String message;
+  final int? statusCode;
+
+  @override
+  String toString() {
+    final code = statusCode;
+    if (code == null) {
+      return message;
+    }
+    return '$message ($code)';
+  }
+}
+
+class ClassroomApiClient {
+  ClassroomApiClient({http.Client? httpClient})
+      : _httpClient = httpClient ?? IOClient(HttpClient());
+
+  static const baseUrl = 'https://classroom.cc.shu.edu.cn';
+
+  final http.Client _httpClient;
+
+  Future<ClassroomSearchOptions> fetchSearchOptions() async {
+    final form = await _postJson('/build/findSearchRoomSearchForm');
+    final section = await _postJson('/course/findSection');
+    return parseSearchOptions(form, section);
+  }
+
+  Future<ClassroomBuildingSchedule> fetchBuildingSchedule({
+    required ClassroomBuilding building,
+    required DateTime date,
+  }) async {
+    final json = await _postJson(
+      '/build/findBuildRoomType',
+      body: {
+        'buildId': building.id.toString(),
+        'courseDate': _dateParam(date),
+      },
+    );
+    return parseBuildingSchedule(json, building: building);
+  }
+
+  static ClassroomSearchOptions parseSearchOptions(
+    JsonMap formJson,
+    JsonMap sectionJson,
+  ) {
+    final formData = _dataMap(formJson);
+    final sectionData = _dataMap(sectionJson);
+    final buildings = (formData['buildList'] as List? ?? const [])
+        .whereType<JsonMap>()
+        .map(ClassroomBuilding.fromJson)
+        .where((building) => building.id > 0 && building.name.isNotEmpty)
+        .toList(growable: false);
+    final sections = (sectionData['section'] as List? ?? const [])
+        .whereType<JsonMap>()
+        .map(ClassroomSection.fromJson)
+        .where((section) => section.index > 0)
+        .toList(growable: false)
+      ..sort((a, b) => a.index.compareTo(b.index));
+    return ClassroomSearchOptions(
+      buildings: buildings,
+      sections: sections,
+      currentSection: intValue(sectionData['curSection']),
+    );
+  }
+
+  static ClassroomBuildingSchedule parseBuildingSchedule(
+    JsonMap json, {
+    required ClassroomBuilding building,
+  }) {
+    final data = _dataMap(json);
+    final floors = (data['floorList'] as List? ?? const [])
+        .whereType<JsonMap>()
+        .map(ClassroomFloor.fromJson)
+        .where((floor) => floor.rooms.isNotEmpty)
+        .toList(growable: false);
+    return ClassroomBuildingSchedule(
+      building: building,
+      floors: floors,
+    );
+  }
+
+  Future<JsonMap> _postJson(
+    String path, {
+    Map<String, String>? body,
+  }) async {
+    final response = await _httpClient.post(
+      Uri.parse('$baseUrl$path'),
+      headers: const {
+        'accept': 'application/json, text/javascript, */*; q=0.01',
+        'user-agent':
+            'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+                '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+        'x-requested-with': 'XMLHttpRequest',
+      },
+      body: body,
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ClassroomApiException(
+        '空教室查询请求失败',
+        statusCode: response.statusCode,
+      );
+    }
+    final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+    if (decoded is! JsonMap) {
+      throw const ClassroomApiException('空教室查询返回了无法识别的数据');
+    }
+    final code = intValue(decoded['code']);
+    if (code != 200) {
+      throw ClassroomApiException(
+        stringValue(decoded['msg'], '空教室查询失败'),
+        statusCode: code,
+      );
+    }
+    return decoded;
+  }
+
+  static JsonMap _dataMap(JsonMap json) {
+    final data = json['data'];
+    if (data is JsonMap) {
+      return data;
+    }
+    return const <String, dynamic>{};
+  }
+
+  static String _dateParam(DateTime date) {
+    return '${date.year}-${date.month}-${date.day}';
+  }
+}
