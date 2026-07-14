@@ -82,7 +82,7 @@ class _AppShellState extends State<AppShell> {
       (_) => _refreshScheduleSummaryQuietly(),
     );
     _announcementSummaryTimer = Timer.periodic(
-      const Duration(minutes: 30),
+      AnnouncementRepository.defaultAutoRefreshInterval,
       (_) => _refreshAnnouncementSummaryQuietly(),
     );
     unawaited(_scheduleNotificationService.syncScheduleReminders());
