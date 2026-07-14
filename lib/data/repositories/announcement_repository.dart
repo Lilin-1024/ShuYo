@@ -16,10 +16,11 @@ class AnnouncementRepository {
   AnnouncementRepository({
     AnnouncementApiClient? apiClient,
     Future<SharedPreferences> Function()? preferencesLoader,
-    this.autoRefreshInterval = const Duration(minutes: 30),
+    this.autoRefreshInterval = defaultAutoRefreshInterval,
   })  : _apiClient = apiClient ?? AnnouncementApiClient(),
         _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance;
 
+  static const defaultAutoRefreshInterval = Duration(hours: 12);
   static const _listCacheKey = 'announcements.list.cache';
   static const _lastRefreshKey = 'announcements.lastRefreshAt';
   static const _cacheVersionKey = 'announcements.cacheVersion';
