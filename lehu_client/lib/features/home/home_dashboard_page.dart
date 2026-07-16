@@ -39,7 +39,7 @@ class HomeDashboardPage extends StatelessWidget {
       children: [
         _HomeRow(
           title: isOnline ? '欢迎回来，${profile.username}' : '立即登录',
-          content: isOnline ? _greeting() : '登录后同步论坛消息和个人数据',
+          content: isOnline ? _greeting() : '登录后同步个人数据',
           trailing: isOnline
               ? IconButton(
                   tooltip: '重新登录',
