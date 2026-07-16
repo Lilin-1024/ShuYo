@@ -12,6 +12,7 @@ import '../data/repositories/classroom_repository.dart';
 import '../data/repositories/course_rating_repository.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/academic_schedule_notification_service.dart';
+import '../data/services/client_settings_service.dart';
 import '../data/services/discourse_api_client.dart';
 import '../data/services/payload_factory.dart';
 import '../features/auth/login_webview_page.dart';
@@ -29,6 +30,7 @@ import '../features/messages/notifications_page.dart';
 import '../features/profile/profile_page.dart';
 import '../features/profile/profile_settings_page.dart';
 import '../features/profile/user_profile_page.dart';
+import '../features/settings/client_settings_page.dart';
 import '../features/topic/topic_page.dart';
 import '../features/webview/forum_webview_page.dart';
 import '../shared/widgets/app_header.dart';
@@ -60,6 +62,7 @@ class _AppShellState extends State<AppShell> {
   late ForumRepository _repo;
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
+  late final ClientSettingsService _clientSettingsService;
   late final AnnouncementRepository _announcementRepository;
   late final ClassroomRepository _classroomRepository;
   late final CourseRatingRepository _courseRatingRepository;
@@ -79,6 +82,7 @@ class _AppShellState extends State<AppShell> {
     _scheduleNotificationService = AcademicScheduleNotificationService(
       repository: _scheduleRepository,
     );
+    _clientSettingsService = ClientSettingsService();
     _announcementRepository = AnnouncementRepository();
     _classroomRepository = ClassroomRepository();
     _courseRatingRepository = CourseRatingRepository();
@@ -99,7 +103,8 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final isProfileTab = _tabIndex == 3 && _openedTopic == null;
+    final canOpenClientSettings =
+        _openedTopic == null && (_tabIndex == 0 || _tabIndex == 3);
     final isForumTab = _tabIndex == 1 && _openedTopic == null && _repo.isOnline;
 
     return PopScope(
@@ -116,7 +121,7 @@ class _AppShellState extends State<AppShell> {
               AppHeader(
                 title: _headerTitle,
                 showBack: _openedTopic != null,
-                showSettings: isProfileTab && _repo.isOnline,
+                showSettings: canOpenClientSettings,
                 showMore: _openedTopic != null,
                 showSearch: isForumTab,
                 showCreate: isForumTab,
@@ -128,7 +133,7 @@ class _AppShellState extends State<AppShell> {
                     : () => _showTopicMoreSheet(_openedTopic!),
                 onSearch: _openSearch,
                 onCreate: _openCreateTopic,
-                onSettings: () => _showSnack('客户端设置后续接入'),
+                onSettings: _openClientSettings,
                 onNotification: _openNotifications,
               ),
               Expanded(child: _bodyForTab()),
@@ -512,6 +517,17 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  Future<void> _openClientSettings() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => ClientSettingsPage(
+          settingsService: _clientSettingsService,
+          scheduleNotificationService: _scheduleNotificationService,
+        ),
+      ),
+    );
+  }
+
   Future<void> _openCreateTopic() async {
     if (!_repo.isOnline) {
       await _login();
@@ -585,7 +601,7 @@ class _AppShellState extends State<AppShell> {
         _reloadingSession = false;
         _resetFeedFuture();
       });
-      _showSnack('已接入真实乐乎数据');
+      _showSnack('已加载论坛');
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -793,7 +809,7 @@ class _AppShellState extends State<AppShell> {
       await _clearExpiredLogin();
       await _showErrorDialog(
         title: '登录已失效',
-        message: '论坛没有接受当前登录态，请重新登录后再操作。',
+        message: '请试着重新登录后再操作。',
       );
       return;
     }
@@ -922,12 +938,12 @@ class _AppShellState extends State<AppShell> {
 
   String _loginError(Object error) {
     if (error is ForumAuthException) {
-      return '还没有检测到登录态。请确认已在 WebView 中登录成功，再点“完成”。';
+      return '还没有检测到登录态。请确认已在网页中登录成功，再点“完成”。';
     }
     if (error is ForumApiException) {
       return error.message;
     }
-    return '登录态检测失败，请确认模拟器能访问校园网或 VPN。';
+    return '登录态检测失败，请确认能访问校园网或使用 VPN。';
   }
 }
 
