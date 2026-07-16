@@ -72,6 +72,18 @@ class DiscourseApiClient {
     return _decode(response);
   }
 
+  Future<JsonMap> putForm(String path, String body) async {
+    final response = await _httpClient.put(
+      _uri(path),
+      headers: await _headers(
+        csrfToken: await _csrf(),
+        formRequest: true,
+      ),
+      body: body,
+    );
+    return _decode(response);
+  }
+
   Future<JsonMap> deleteForm(String path, String body) async {
     final response = await _httpClient.delete(
       _uri(path),

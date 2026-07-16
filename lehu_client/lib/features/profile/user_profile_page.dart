@@ -5,9 +5,9 @@ import '../../data/models/user_profile.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../shared/time_format.dart';
-import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/emoji_picker.dart';
+import 'profile_header.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({
@@ -135,30 +135,10 @@ class _ProfileContent extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
-        Row(
-          children: [
-            ForumAvatar(url: profile.avatarUrl(size: 144), size: 64),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile.username,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _subtitle(profile),
-                    style: const TextStyle(color: Color(0xFFBDBDBD)),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        ProfileHeader(
+          profile: profile,
+          title: profile.username,
+          subtitle: _subtitle(profile),
         ),
         if (profile.bioExcerpt.isNotEmpty) ...[
           const SizedBox(height: 18),

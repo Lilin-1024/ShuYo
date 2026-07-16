@@ -27,6 +27,7 @@ import '../features/home/topic_list_page.dart';
 import '../features/messages/messages_page.dart';
 import '../features/messages/notifications_page.dart';
 import '../features/profile/profile_page.dart';
+import '../features/profile/profile_settings_page.dart';
 import '../features/profile/user_profile_page.dart';
 import '../features/topic/topic_page.dart';
 import '../features/webview/forum_webview_page.dart';
@@ -98,7 +99,6 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = _repo.profile;
     final isProfileTab = _tabIndex == 3 && _openedTopic == null;
     final isForumTab = _tabIndex == 1 && _openedTopic == null && _repo.isOnline;
 
@@ -128,13 +128,7 @@ class _AppShellState extends State<AppShell> {
                     : () => _showTopicMoreSheet(_openedTopic!),
                 onSearch: _openSearch,
                 onCreate: _openCreateTopic,
-                onSettings: () => _repo.isOnline
-                    ? _openForumWebView(
-                        title: '设置',
-                        url:
-                            'https://bbs.shu.edu.cn/u/${profile.username.toLowerCase()}/preferences/account',
-                      )
-                    : _login(),
+                onSettings: () => _showSnack('客户端设置后续接入'),
                 onNotification: _openNotifications,
               ),
               Expanded(child: _bodyForTab()),
@@ -219,6 +213,7 @@ class _AppShellState extends State<AppShell> {
           isOnline: _repo.isOnline,
           isBusy: _reloadingSession,
           onLogin: _login,
+          onEditProfile: _openProfileSettings,
           onRelogin: _relogin,
           onLogout: _logout,
         ),
@@ -490,6 +485,31 @@ class _AppShellState extends State<AppShell> {
         ),
       ),
     );
+  }
+
+  Future<void> _openProfileSettings() async {
+    if (!_repo.isOnline) {
+      await _login();
+      return;
+    }
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => ProfileSettingsPage(repository: _repo),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    if (changed == true) {
+      try {
+        await _repo.fetchCurrentUserProfile(forceRefresh: true);
+      } on Object {
+        // 设置页内已经完成提交；返回刷新失败时保持本地已更新的资料。
+      }
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 
   Future<void> _openCreateTopic() async {
@@ -795,14 +815,6 @@ class _AppShellState extends State<AppShell> {
       _openedTopic = null;
       _resetFeedFuture();
     });
-  }
-
-  void _openForumWebView({required String title, required String url}) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (context) => ForumWebViewPage(title: title, url: url),
-      ),
-    );
   }
 
   Future<void> _openAcademicSystem() async {
