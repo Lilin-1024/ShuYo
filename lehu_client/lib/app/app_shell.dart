@@ -1,15 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../core/academic_constants.dart';
 import '../core/academic_url_resolver.dart';
 import '../core/forum_url_resolver.dart';
 import '../data/models/forum_activity.dart';
-import '../data/models/post.dart';
 import '../data/models/topic.dart';
-import '../data/models/topic_detail.dart';
 import '../data/repositories/academic_schedule_repository.dart';
 import '../data/repositories/announcement_repository.dart';
 import '../data/repositories/classroom_repository.dart';
@@ -21,7 +18,6 @@ import '../data/services/client_settings_service.dart';
 import '../data/services/discourse_api_client.dart';
 import '../data/services/forum_image_headers.dart';
 import '../data/services/forum_reachability_service.dart';
-import '../data/services/payload_factory.dart';
 import '../features/auth/login_webview_page.dart';
 import '../features/forum/create_topic_page.dart';
 import '../features/forum/forum_filter_bar.dart';
@@ -39,9 +35,10 @@ import '../features/profile/forum_activity_page.dart';
 import '../features/profile/profile_settings_page.dart';
 import '../features/profile/user_profile_page.dart';
 import '../features/settings/client_settings_page.dart';
-import '../features/topic/topic_page.dart';
+import '../features/topic/topic_detail_page.dart';
 import '../features/webview/academic_webvpn_preloader.dart';
 import '../features/webview/forum_webview_page.dart';
+import '../shared/navigation/lehu_route.dart';
 import '../shared/widgets/app_header.dart';
 import '../shared/widgets/empty_state.dart';
 
@@ -61,13 +58,9 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _tabIndex = 0;
-  TopicListItem? _openedTopic;
   TopicFeedQuery _feedQuery = const TopicFeedQuery();
   bool _reloadingSession = false;
   bool _loadingMoreFeed = false;
-  bool _submittingReply = false;
-  final _likingPostIds = <int>{};
-  final _deletingPostIds = <int>{};
   late ForumRepository _repo;
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
@@ -124,78 +117,59 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final canOpenClientSettings =
-        _openedTopic == null && (_tabIndex == 0 || _tabIndex == 3);
-    final isForumTab = _tabIndex == 1 && _openedTopic == null && _repo.isOnline;
+    final canOpenClientSettings = _tabIndex == 0 || _tabIndex == 3;
+    final isForumTab = _tabIndex == 1 && _repo.isOnline;
 
-    return PopScope(
-      canPop: _openedTopic == null,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && _openedTopic != null) {
-          setState(() => _openedTopic = null);
-        }
-      },
-      child: Scaffold(
-        body: Stack(
-          children: [
-            SafeArea(
-              child: Column(
-                children: [
-                  AppHeader(
-                    title: _headerTitle,
-                    showBack: _openedTopic != null,
-                    showSettings: canOpenClientSettings,
-                    showMore: _openedTopic != null,
-                    showSearch: isForumTab,
-                    showCreate: isForumTab,
-                    notificationCount:
-                        _repo.isOnline ? _repo.unreadNotificationCount : 0,
-                    onBack: () => setState(() => _openedTopic = null),
-                    onMore: _openedTopic == null
-                        ? null
-                        : () => _showTopicMoreSheet(_openedTopic!),
-                    onSearch: _openSearch,
-                    onCreate: _openCreateTopic,
-                    onSettings: _openClientSettings,
-                    onNotification: _openNotifications,
-                  ),
-                  Expanded(child: _bodyForTab()),
-                ],
+    return Scaffold(
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                AppHeader(
+                  title: _headerTitle,
+                  showSettings: canOpenClientSettings,
+                  showSearch: isForumTab,
+                  showCreate: isForumTab,
+                  notificationCount:
+                      _repo.isOnline ? _repo.unreadNotificationCount : 0,
+                  onSearch: _openSearch,
+                  onCreate: _openCreateTopic,
+                  onSettings: _openClientSettings,
+                  onNotification: _openNotifications,
+                ),
+                Expanded(child: _bodyForTab()),
+              ],
+            ),
+          ),
+          if (_academicWebVpnPreloadCompleter != null)
+            Positioned(
+              left: 0,
+              top: 0,
+              child: AcademicWebVpnPreloader(
+                key: ValueKey(_academicWebVpnPreloadToken),
+                onComplete: _completeAcademicWebVpnPreload,
               ),
             ),
-            if (_academicWebVpnPreloadCompleter != null)
-              Positioned(
-                left: 0,
-                top: 0,
-                child: AcademicWebVpnPreloader(
-                  key: ValueKey(_academicWebVpnPreloadToken),
-                  onComplete: _completeAcademicWebVpnPreload,
-                ),
-              ),
-          ],
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _tabIndex,
-          onTap: (index) {
-            setState(() {
-              _tabIndex = index;
-              _openedTopic = null;
-            });
-            if (index == 0) {
-              unawaited(_refreshScheduleSummaryQuietly());
-              unawaited(_refreshForumReachabilityQuietly());
-              unawaited(_refreshAnnouncementSummaryQuietly());
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: '首页'),
-            BottomNavigationBarItem(icon: Icon(Icons.forum), label: '论坛'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.chat_bubble_outline), label: '消息'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.account_circle), label: '我'),
-          ],
-        ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _tabIndex,
+        onTap: (index) {
+          setState(() => _tabIndex = index);
+          if (index == 0) {
+            unawaited(_refreshScheduleSummaryQuietly());
+            unawaited(_refreshForumReachabilityQuietly());
+            unawaited(_refreshAnnouncementSummaryQuietly());
+          }
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: '首页'),
+          BottomNavigationBarItem(icon: Icon(Icons.forum), label: '论坛'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.chat_bubble_outline), label: '消息'),
+          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: '我'),
+        ],
       ),
     );
   }
@@ -208,9 +182,6 @@ class _AppShellState extends State<AppShell> {
   }
 
   String get _headerTitle {
-    if (_openedTopic != null) {
-      return '帖子';
-    }
     return switch (_tabIndex) {
       0 => '首页',
       1 => '论坛',
@@ -221,11 +192,6 @@ class _AppShellState extends State<AppShell> {
   }
 
   Widget _bodyForTab() {
-    final openedTopic = _openedTopic;
-    if (openedTopic != null) {
-      return _openedTopicView(openedTopic);
-    }
-
     return switch (_tabIndex) {
       0 => _homeBody(),
       1 => _repo.isOnline
@@ -498,41 +464,6 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
-  Widget _openedTopicView(TopicListItem openedTopic) {
-    return FutureBuilder<TopicDetail?>(
-      future: _repo.fetchTopicDetail(openedTopic.id),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const _LoadingState(message: '正在加载帖子...');
-        }
-        if (snapshot.hasError) {
-          return _ErrorState(
-            title: '帖子加载失败',
-            message: snapshot.error.toString(),
-            onRetry: () => setState(() {
-              _repo.fetchTopicDetail(openedTopic.id, forceRefresh: true);
-            }),
-          );
-        }
-        return TopicPage(
-          item: openedTopic,
-          detail: snapshot.data,
-          category: _repo.categoryById(openedTopic.categoryId),
-          isOnline: _repo.isOnline,
-          isSubmittingReply: _submittingReply,
-          busyLikePostIds: _likingPostIds,
-          busyDeletePostIds: _deletingPostIds,
-          onLikePost: _likePost,
-          onDeletePost: _deletePost,
-          onUploadImage: _repo.uploadImage,
-          onCreateReply: _createReply,
-          onOpenUser: _openUserProfile,
-          onLoginRequired: _login,
-        );
-      },
-    );
-  }
-
   Widget _forumBody() {
     return Column(
       children: [
@@ -607,7 +538,7 @@ class _AppShellState extends State<AppShell> {
             users: _repo.users,
             previewForTopic: _repo.fetchTopicPreview,
             categoryById: _repo.categoryById,
-            onOpenTopic: (topic) => setState(() => _openedTopic = topic),
+            onOpenTopic: (topic) => unawaited(_openTopic(topic)),
             onOpenUser: (user) => _openUserProfile(user.username),
             canLoadMore: canLoadMore,
             isLoadingMore: isLoadingMore,
@@ -659,16 +590,48 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  Future<void> _openTopic(TopicListItem topic) async {
+    if (!_repo.isOnline) {
+      await _login();
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => TopicDetailPage(
+          repository: _repo,
+          topic: topic,
+          onLoginRequired: _login,
+          onSessionExpired: _clearExpiredLogin,
+          onBookmarkChanged: _refreshProfileActivityCounts,
+        ),
+      ),
+    );
+  }
+
+  void _refreshProfileActivityCounts() {
+    if (!mounted || !_repo.isOnline) {
+      return;
+    }
+    setState(() {
+      _activityCountsFuture = _repo.fetchActivityCounts(forceRefresh: true);
+    });
+  }
+
   Future<void> _openSearch() async {
     if (!_repo.isOnline) {
       await _login();
       return;
     }
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => ForumSearchPage(
           repository: _repo,
           onLoginRequired: _login,
+          onBookmarkChanged: _refreshProfileActivityCounts,
+          onSessionExpired: _clearExpiredLogin,
         ),
       ),
     );
@@ -683,7 +646,7 @@ class _AppShellState extends State<AppShell> {
       return;
     }
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => UserProfilePage(
           repository: _repo,
           username: username,
@@ -698,7 +661,7 @@ class _AppShellState extends State<AppShell> {
       return;
     }
     final changed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => ProfileSettingsPage(repository: _repo),
       ),
     );
@@ -723,7 +686,7 @@ class _AppShellState extends State<AppShell> {
       return;
     }
     final topic = await Navigator.of(context).push<TopicListItem>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => ForumActivityPage(
           repository: _repo,
           kind: kind,
@@ -733,18 +696,16 @@ class _AppShellState extends State<AppShell> {
     if (!mounted) {
       return;
     }
-    setState(() {
-      _activityCountsFuture = _repo.fetchActivityCounts(forceRefresh: true);
-      if (topic != null) {
-        _openedTopic = topic;
-      }
-    });
+    _refreshProfileActivityCounts();
+    if (topic != null) {
+      await _openTopic(topic);
+    }
   }
 
   Future<void> _openClientSettings() async {
     final previousAutoProxy = _autoUseWebVpnProxy;
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => ClientSettingsPage(
           settingsService: _clientSettingsService,
           scheduleNotificationService: _scheduleNotificationService,
@@ -769,7 +730,7 @@ class _AppShellState extends State<AppShell> {
       return;
     }
     final result = await Navigator.of(context).push<CreatedTopicResult>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => CreateTopicPage(
           repository: _repo,
           categories: _repo.categories,
@@ -782,8 +743,8 @@ class _AppShellState extends State<AppShell> {
     }
     _showSnack('帖子已发布');
     await _refreshFeed();
-    setState(() {
-      _openedTopic = TopicListItem(
+    await _openTopic(
+      TopicListItem(
         id: result.post.topicId,
         title: result.title,
         postsCount: 1,
@@ -795,8 +756,8 @@ class _AppShellState extends State<AppShell> {
         posters: const [],
         createdAt: result.post.createdAt,
         lastPostedAt: result.post.createdAt,
-      );
-    });
+      ),
+    );
   }
 
   Future<void> _openNotifications() async {
@@ -804,14 +765,15 @@ class _AppShellState extends State<AppShell> {
       _openProfileLoginTab();
       return;
     }
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (context) => NotificationsPage(
-          repository: _repo,
-          onOpenTopic: (topic) => setState(() => _openedTopic = topic),
-        ),
+    final topic = await Navigator.of(context).push<TopicListItem>(
+      lehuRoute(
+        builder: (context) => NotificationsPage(repository: _repo),
       ),
     );
+    if (!mounted || topic == null) {
+      return;
+    }
+    await _openTopic(topic);
   }
 
   Future<void> _login() async {
@@ -819,7 +781,7 @@ class _AppShellState extends State<AppShell> {
       return;
     }
     final logged = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (context) => const LoginWebViewPage()),
+      lehuRoute(builder: (context) => const LoginWebViewPage()),
     );
     if (logged != true || !mounted) {
       return;
@@ -833,7 +795,6 @@ class _AppShellState extends State<AppShell> {
       }
       setState(() {
         _repo = nextRepository;
-        _openedTopic = null;
         _reloadingSession = false;
         _activityCountsFuture = null;
         _resetFeedFuture();
@@ -857,7 +818,6 @@ class _AppShellState extends State<AppShell> {
     }
     setState(() {
       _tabIndex = 3;
-      _openedTopic = null;
     });
   }
 
@@ -874,7 +834,6 @@ class _AppShellState extends State<AppShell> {
       }
       setState(() {
         _repo = nextRepository;
-        _openedTopic = null;
         _reloadingSession = false;
         _activityCountsFuture = null;
         _resetFeedFuture();
@@ -906,7 +865,6 @@ class _AppShellState extends State<AppShell> {
       }
       setState(() {
         _repo = nextRepository;
-        _openedTopic = null;
         _reloadingSession = false;
         _activityCountsFuture = null;
         _resetFeedFuture();
@@ -921,159 +879,6 @@ class _AppShellState extends State<AppShell> {
         title: '退出登录失败',
         message: _friendlyError(error),
       );
-    }
-  }
-
-  Future<void> _createReply(ReplyDraft draft) async {
-    if (!_repo.isOnline) {
-      await _login();
-      return;
-    }
-    if (_submittingReply) {
-      return;
-    }
-    setState(() => _submittingReply = true);
-    try {
-      await _repo.createReply(draft);
-      if (!mounted) {
-        return;
-      }
-      _showSnack('评论已发布');
-      await _refreshTopic(draft.topicId);
-    } on Object catch (error) {
-      await _handleOperationError(error, title: '评论失败');
-    } finally {
-      if (mounted) {
-        setState(() => _submittingReply = false);
-      }
-    }
-  }
-
-  Future<void> _likePost(int postId) async {
-    if (!_repo.isOnline) {
-      await _login();
-      return;
-    }
-    if (_likingPostIds.contains(postId)) {
-      return;
-    }
-    setState(() => _likingPostIds.add(postId));
-    try {
-      final post = await _repo.likePost(postId);
-      if (!mounted) {
-        return;
-      }
-      _showSnack('已点赞');
-      await _refreshTopic(post.topicId);
-    } on Object catch (error) {
-      await _handleOperationError(error, title: '点赞失败');
-    } finally {
-      if (mounted) {
-        setState(() => _likingPostIds.remove(postId));
-      }
-    }
-  }
-
-  Future<void> _deletePost(Post post) async {
-    if (!_repo.isOnline) {
-      await _login();
-      return;
-    }
-    if (_deletingPostIds.contains(post.id)) {
-      return;
-    }
-    setState(() => _deletingPostIds.add(post.id));
-    try {
-      await _repo.deletePost(post);
-      if (!mounted) {
-        return;
-      }
-      _showSnack('回复已删除');
-      await _refreshTopic(post.topicId);
-    } on Object catch (error) {
-      await _handleOperationError(error, title: '删除失败');
-    } finally {
-      if (mounted) {
-        setState(() => _deletingPostIds.remove(post.id));
-      }
-    }
-  }
-
-  Future<void> _shareTopic(TopicListItem topic) async {
-    final url = 'https://bbs.shu.edu.cn/t/topic/${topic.id}';
-    await Clipboard.setData(ClipboardData(text: url));
-    if (!mounted) {
-      return;
-    }
-    _showSnack('帖子链接已复制');
-  }
-
-  void _showTopicMoreSheet(TopicListItem topic) {
-    final bookmarkFuture = _repo.isOnline
-        ? _repo.findTopicBookmark(topic.id)
-        : Future<ForumBookmark?>.value();
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.58),
-      builder: (context) {
-        return _TopicMoreSheet(
-          bookmarkFuture: bookmarkFuture,
-          onClose: () => Navigator.of(context).pop(),
-          onShare: () {
-            Navigator.of(context).pop();
-            _shareTopic(topic);
-          },
-          onReport: () {
-            Navigator.of(context).pop();
-            _showSnack('举报功能后续接入');
-          },
-          onBookmark: (bookmark) {
-            Navigator.of(context).pop();
-            unawaited(_toggleTopicBookmark(topic, bookmark));
-          },
-        );
-      },
-    );
-  }
-
-  Future<void> _toggleTopicBookmark(
-    TopicListItem topic,
-    ForumBookmark? current,
-  ) async {
-    if (!_repo.isOnline) {
-      await _login();
-      return;
-    }
-    try {
-      if (current != null && current.id > 0) {
-        await _repo.unbookmarkTopic(current.id);
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _activityCountsFuture = _repo.fetchActivityCounts(forceRefresh: true);
-        });
-        _showSnack('已取消收藏');
-        return;
-      }
-      await _repo.bookmarkTopic(topic.id);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _activityCountsFuture = _repo.fetchActivityCounts(forceRefresh: true);
-      });
-      _showSnack('已收藏');
-    } on Object catch (error) {
-      await _handleOperationError(error, title: '收藏操作失败');
-    }
-  }
-
-  Future<void> _refreshTopic(int topicId) async {
-    await _repo.fetchTopicDetail(topicId, forceRefresh: true);
-    if (mounted) {
-      setState(() {});
     }
   }
 
@@ -1104,7 +909,6 @@ class _AppShellState extends State<AppShell> {
     }
     setState(() {
       _repo = nextRepository;
-      _openedTopic = null;
       _activityCountsFuture = null;
       _resetFeedFuture();
     });
@@ -1112,7 +916,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _openAcademicSystem() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => AcademicSchedulePage(
           repository: _scheduleRepository,
           notificationService: _scheduleNotificationService,
@@ -1129,7 +933,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _openAnnouncements() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => AnnouncementsPage(
           repository: _announcementRepository,
         ),
@@ -1144,7 +948,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _openEmptyClassroom() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => EmptyClassroomPage(
           repository: _classroomRepository,
         ),
@@ -1164,7 +968,7 @@ class _AppShellState extends State<AppShell> {
       return;
     }
     final completed = await navigator.push<bool>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => const ForumWebViewPage(
           title: 'WebVPN',
           url: ForumUrlResolver.webVpnPortalUrl,
@@ -1182,7 +986,6 @@ class _AppShellState extends State<AppShell> {
     ForumImageHeaders.clearCache();
     setState(() {
       _tabIndex = 0;
-      _openedTopic = null;
     });
     unawaited(_refreshForumReachabilityQuietly(force: true));
     if (completed == true) {
@@ -1192,7 +995,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _openCourseRatings() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => CourseRatingPage(
           repository: _courseRatingRepository,
         ),
@@ -1212,7 +1015,6 @@ class _AppShellState extends State<AppShell> {
       }
       setState(() {
         _repo = nextRepository;
-        _openedTopic = null;
         _reloadingSession = false;
         _activityCountsFuture = null;
         _resetFeedFuture();
@@ -1235,7 +1037,7 @@ class _AppShellState extends State<AppShell> {
   Future<void> _openAcademicLogin() async {
     if (AcademicUrlResolver.usesWebVpn) {
       await Navigator.of(context).push<void>(
-        MaterialPageRoute(
+        lehuRoute(
           builder: (context) => ForumWebViewPage(
             title: '教务系统',
             url: AcademicUrlResolver.entryUri.toString(),
@@ -1251,7 +1053,7 @@ class _AppShellState extends State<AppShell> {
       return;
     }
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => ForumWebViewPage(
           title: '教务系统',
           url:
@@ -1317,135 +1119,6 @@ class _AppShellState extends State<AppShell> {
       return error.message;
     }
     return '登录态检测失败，请确认能访问校园网或使用 VPN。';
-  }
-}
-
-class _TopicMoreSheet extends StatelessWidget {
-  const _TopicMoreSheet({
-    required this.bookmarkFuture,
-    required this.onClose,
-    required this.onShare,
-    required this.onReport,
-    required this.onBookmark,
-  });
-
-  final Future<ForumBookmark?> bookmarkFuture;
-  final VoidCallback onClose;
-  final VoidCallback onShare;
-  final VoidCallback onReport;
-  final ValueChanged<ForumBookmark?> onBookmark;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 22),
-        decoration: const BoxDecoration(
-          color: Color(0xFF111111),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    '更多',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                IconButton(
-                  tooltip: '关闭',
-                  onPressed: onClose,
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _TopicActionButton(
-                    icon: Icons.ios_share,
-                    label: '分享',
-                    onTap: onShare,
-                  ),
-                ),
-                Expanded(
-                  child: _TopicActionButton(
-                    icon: Icons.flag_outlined,
-                    label: '举报',
-                    onTap: onReport,
-                  ),
-                ),
-                Expanded(
-                  child: FutureBuilder<ForumBookmark?>(
-                    future: bookmarkFuture,
-                    builder: (context, snapshot) {
-                      final loading =
-                          snapshot.connectionState != ConnectionState.done;
-                      final bookmark = snapshot.data;
-                      final bookmarked = bookmark != null && bookmark.id > 0;
-                      return _TopicActionButton(
-                        icon:
-                            bookmarked ? Icons.bookmark : Icons.bookmark_border,
-                        label: bookmarked ? '取消收藏' : '收藏',
-                        onTap: loading ? null : () => onBookmark(bookmark),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TopicActionButton extends StatelessWidget {
-  const _TopicActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: onTap,
-      child: SizedBox(
-        height: 88,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 26,
-              color: enabled ? null : const Color(0xFF666666),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                color: enabled ? null : const Color(0xFF666666),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

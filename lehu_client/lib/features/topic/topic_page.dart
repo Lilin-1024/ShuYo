@@ -12,6 +12,7 @@ import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/emoji_picker.dart';
 import '../../shared/widgets/forum_network_image.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 import 'threaded_posts.dart';
@@ -200,7 +201,7 @@ class _TopicPageState extends State<TopicPage> {
 
   void _openImagePreview(List<String> urls, int initialIndex) {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         fullscreenDialog: true,
         builder: (context) => FullscreenImagePage(
           urls: urls,

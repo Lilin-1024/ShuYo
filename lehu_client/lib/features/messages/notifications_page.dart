@@ -10,11 +10,9 @@ class NotificationsPage extends StatefulWidget {
   const NotificationsPage({
     super.key,
     required this.repository,
-    required this.onOpenTopic,
   });
 
   final ForumRepository repository;
-  final ValueChanged<TopicListItem> onOpenTopic;
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -62,7 +60,6 @@ class _NotificationsPageState extends State<NotificationsPage>
           return _NotificationListHost(
             repository: widget.repository,
             filter: child.filter,
-            onOpenTopic: widget.onOpenTopic,
           );
         }).toList(),
       ),
@@ -80,12 +77,10 @@ class _NotificationListHost extends StatefulWidget {
   const _NotificationListHost({
     required this.repository,
     required this.filter,
-    required this.onOpenTopic,
   });
 
   final ForumRepository repository;
   final NotificationFeedFilter filter;
-  final ValueChanged<TopicListItem> onOpenTopic;
 
   @override
   State<_NotificationListHost> createState() => _NotificationListHostState();
@@ -160,7 +155,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
                 ),
                 onTap: item.canOpenTopic
                     ? () {
-                        widget.onOpenTopic(
+                        Navigator.of(context).pop<TopicListItem>(
                           TopicListItem(
                             id: item.topicId!,
                             title: item.title,
@@ -175,7 +170,6 @@ class _NotificationListHostState extends State<_NotificationListHost> {
                             createdAt: item.createdAt,
                           ),
                         );
-                        Navigator.of(context).pop();
                       }
                     : null,
               );
