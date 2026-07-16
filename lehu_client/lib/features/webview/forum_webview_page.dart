@@ -5,16 +5,23 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../core/certificate_policy.dart';
+import '../../shared/widgets/info_confirm_dialog.dart';
 
 class ForumWebViewPage extends StatefulWidget {
   const ForumWebViewPage({
     super.key,
     required this.title,
     required this.url,
+    this.initialNoticeTitle,
+    this.initialNoticeMessage,
+    this.initialNoticeDelay = Duration.zero,
   });
 
   final String title;
   final String url;
+  final String? initialNoticeTitle;
+  final String? initialNoticeMessage;
+  final Duration initialNoticeDelay;
 
   @override
   State<ForumWebViewPage> createState() => _ForumWebViewPageState();
@@ -79,6 +86,9 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
         ),
       );
     unawaited(_loadInitialRequest());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_showInitialNotice());
+    });
   }
 
   @override
@@ -149,6 +159,20 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
       return;
     }
     await _controller.loadRequest(Uri.parse(widget.url));
+  }
+
+  Future<void> _showInitialNotice() async {
+    final title = widget.initialNoticeTitle;
+    final message = widget.initialNoticeMessage;
+    if (!mounted || title == null || message == null) {
+      return;
+    }
+    await showInfoConfirmDialog(
+      context,
+      title: title,
+      message: message,
+      confirmDelay: widget.initialNoticeDelay,
+    );
   }
 }
 
