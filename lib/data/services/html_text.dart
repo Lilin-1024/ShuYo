@@ -1,4 +1,4 @@
-import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 import 'emoji_text.dart';
 
 class CookedSegment {
@@ -127,10 +127,7 @@ class HtmlText {
   }
 
   static String _absoluteUrl(String url) {
-    if (url.startsWith('http')) {
-      return url;
-    }
-    return '${ForumConstants.baseUrl}$url';
+    return ForumUrlResolver.resolve(url);
   }
 
   static String _decodeEntities(String value) {

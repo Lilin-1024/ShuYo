@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/academic_constants.dart';
+import '../core/academic_url_resolver.dart';
+import '../core/forum_url_resolver.dart';
 import '../data/models/post.dart';
 import '../data/models/topic.dart';
 import '../data/models/topic_detail.dart';
@@ -12,8 +15,11 @@ import '../data/repositories/classroom_repository.dart';
 import '../data/repositories/course_rating_repository.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/academic_schedule_notification_service.dart';
+import '../data/services/academic_schedule_api_client.dart';
 import '../data/services/client_settings_service.dart';
 import '../data/services/discourse_api_client.dart';
+import '../data/services/forum_image_headers.dart';
+import '../data/services/forum_reachability_service.dart';
 import '../data/services/payload_factory.dart';
 import '../features/auth/login_webview_page.dart';
 import '../features/forum/create_topic_page.dart';
@@ -32,6 +38,7 @@ import '../features/profile/profile_settings_page.dart';
 import '../features/profile/user_profile_page.dart';
 import '../features/settings/client_settings_page.dart';
 import '../features/topic/topic_page.dart';
+import '../features/webview/academic_webvpn_preloader.dart';
 import '../features/webview/forum_webview_page.dart';
 import '../shared/widgets/app_header.dart';
 import '../shared/widgets/empty_state.dart';
@@ -63,6 +70,7 @@ class _AppShellState extends State<AppShell> {
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
   late final ClientSettingsService _clientSettingsService;
+  late final ForumReachabilityService _forumReachabilityService;
   late final AnnouncementRepository _announcementRepository;
   late final ClassroomRepository _classroomRepository;
   late final CourseRatingRepository _courseRatingRepository;
@@ -70,9 +78,16 @@ class _AppShellState extends State<AppShell> {
   Timer? _scheduleSummaryTimer;
   Timer? _announcementSummaryTimer;
   bool _loadingScheduleSummary = false;
+  bool _syncingAcademicSchedule = false;
   bool _loadingAnnouncementSummary = false;
+  bool _checkingForumReachability = false;
+  bool _forumNetworkUnavailable = false;
+  bool _autoUseWebVpnProxy = ForumUrlResolver.usesWebVpn;
+  DateTime? _lastForumReachabilityCheck;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
+  Completer<bool>? _academicWebVpnPreloadCompleter;
+  int _academicWebVpnPreloadToken = 0;
 
   @override
   void initState() {
@@ -83,11 +98,14 @@ class _AppShellState extends State<AppShell> {
       repository: _scheduleRepository,
     );
     _clientSettingsService = ClientSettingsService();
+    _forumReachabilityService = const ForumReachabilityService();
     _announcementRepository = AnnouncementRepository();
     _classroomRepository = ClassroomRepository();
     _courseRatingRepository = CourseRatingRepository();
     _resetFeedFuture();
     unawaited(_refreshScheduleSummaryQuietly());
+    unawaited(_loadNetworkSettings());
+    unawaited(_refreshForumReachabilityQuietly(force: true));
     unawaited(_loadAnnouncementSummaryFromCache());
     unawaited(_refreshAnnouncementSummaryQuietly());
     _scheduleSummaryTimer = Timer.periodic(
@@ -115,30 +133,43 @@ class _AppShellState extends State<AppShell> {
         }
       },
       child: Scaffold(
-        body: SafeArea(
-          child: Column(
-            children: [
-              AppHeader(
-                title: _headerTitle,
-                showBack: _openedTopic != null,
-                showSettings: canOpenClientSettings,
-                showMore: _openedTopic != null,
-                showSearch: isForumTab,
-                showCreate: isForumTab,
-                notificationCount:
-                    _repo.isOnline ? _repo.unreadNotificationCount : 0,
-                onBack: () => setState(() => _openedTopic = null),
-                onMore: _openedTopic == null
-                    ? null
-                    : () => _showTopicMoreSheet(_openedTopic!),
-                onSearch: _openSearch,
-                onCreate: _openCreateTopic,
-                onSettings: _openClientSettings,
-                onNotification: _openNotifications,
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  AppHeader(
+                    title: _headerTitle,
+                    showBack: _openedTopic != null,
+                    showSettings: canOpenClientSettings,
+                    showMore: _openedTopic != null,
+                    showSearch: isForumTab,
+                    showCreate: isForumTab,
+                    notificationCount:
+                        _repo.isOnline ? _repo.unreadNotificationCount : 0,
+                    onBack: () => setState(() => _openedTopic = null),
+                    onMore: _openedTopic == null
+                        ? null
+                        : () => _showTopicMoreSheet(_openedTopic!),
+                    onSearch: _openSearch,
+                    onCreate: _openCreateTopic,
+                    onSettings: _openClientSettings,
+                    onNotification: _openNotifications,
+                  ),
+                  Expanded(child: _bodyForTab()),
+                ],
               ),
-              Expanded(child: _bodyForTab()),
-            ],
-          ),
+            ),
+            if (_academicWebVpnPreloadCompleter != null)
+              Positioned(
+                left: 0,
+                top: 0,
+                child: AcademicWebVpnPreloader(
+                  key: ValueKey(_academicWebVpnPreloadToken),
+                  onComplete: _completeAcademicWebVpnPreload,
+                ),
+              ),
+          ],
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _tabIndex,
@@ -149,6 +180,7 @@ class _AppShellState extends State<AppShell> {
             });
             if (index == 0) {
               unawaited(_refreshScheduleSummaryQuietly());
+              unawaited(_refreshForumReachabilityQuietly());
               unawaited(_refreshAnnouncementSummaryQuietly());
             }
           },
@@ -233,18 +265,83 @@ class _AppShellState extends State<AppShell> {
       isBusy: _reloadingSession,
       onLogin: _login,
       onRelogin: _relogin,
-      onOpenAcademicSystem: () => unawaited(_openAcademicSystem()),
+      onOpenAcademicSystem: _syncingAcademicSchedule
+          ? _showScheduleSyncingSnack
+          : () => unawaited(_openAcademicSystem()),
       onOpenAnnouncements: () => unawaited(_openAnnouncements()),
       onOpenEmptyClassroom: () => unawaited(_openEmptyClassroom()),
       onOpenCourseRatings: () => unawaited(_openCourseRatings()),
-      todayCourseContent: _scheduleSummaryText,
+      showForumNetworkWarning: _forumNetworkUnavailable && !_autoUseWebVpnProxy,
+      onOpenWebVpnProxy: () => unawaited(_openWebVpnProxy()),
+      todayCourseContent:
+          _syncingAcademicSchedule ? '课表获取中...' : _scheduleSummaryText,
       announcementContent: _announcementSummaryText,
       onPlaceholder: (name) => _showSnack('$name 后续接入'),
     );
   }
 
+  Future<void> _loadNetworkSettings() async {
+    try {
+      final settings = await _clientSettingsService.loadNetworkSettings();
+      ForumUrlResolver.configure(
+        useWebVpn: settings.autoUseWebVpnProxy,
+      );
+      ForumImageHeaders.clearCache();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _autoUseWebVpnProxy = settings.autoUseWebVpnProxy;
+      });
+    } on Object {
+      // 网络设置读取失败时保留当前访问模式，不阻断首页加载。
+    }
+  }
+
+  Future<void> _refreshForumReachabilityQuietly({bool force = false}) async {
+    if (_checkingForumReachability) {
+      return;
+    }
+    final lastCheck = _lastForumReachabilityCheck;
+    if (!force &&
+        lastCheck != null &&
+        DateTime.now().difference(lastCheck) < const Duration(minutes: 5)) {
+      return;
+    }
+    _checkingForumReachability = true;
+    _lastForumReachabilityCheck = DateTime.now();
+    try {
+      final result =
+          await _forumReachabilityService.checkDirectBbsReachability();
+      if (!mounted || _forumNetworkUnavailable == result.isUnavailable) {
+        return;
+      }
+      setState(() {
+        _forumNetworkUnavailable = result.isUnavailable;
+      });
+    } on Object {
+      // 未知检测错误不展示内网不可达提示，避免把证书等非网络问题误报。
+    } finally {
+      _checkingForumReachability = false;
+    }
+  }
+
+  Future<void> _setAutoUseWebVpnProxy(bool value) async {
+    final settings = await _clientSettingsService.loadNetworkSettings();
+    if (settings.autoUseWebVpnProxy != value) {
+      await _clientSettingsService.saveNetworkSettings(
+        settings.copyWith(autoUseWebVpnProxy: value),
+      );
+    }
+    ForumUrlResolver.configure(useWebVpn: value);
+    ForumImageHeaders.clearCache();
+    if (mounted) {
+      setState(() => _autoUseWebVpnProxy = value);
+    }
+  }
+
   Future<void> _refreshScheduleSummaryQuietly() async {
-    if (_loadingScheduleSummary) {
+    if (_loadingScheduleSummary || _syncingAcademicSchedule) {
       return;
     }
     _loadingScheduleSummary = true;
@@ -260,6 +357,99 @@ class _AppShellState extends State<AppShell> {
       }
     } finally {
       _loadingScheduleSummary = false;
+    }
+  }
+
+  Future<void> _syncScheduleAfterWebVpnLogin() async {
+    if (_syncingAcademicSchedule) {
+      debugPrint('[LEHU_WEBVPN] schedule-sync skipped: already loading');
+      return;
+    }
+    debugPrint('[LEHU_WEBVPN] schedule-sync start');
+    _loadingScheduleSummary = true;
+    _syncingAcademicSchedule = true;
+    if (mounted) {
+      setState(() => _scheduleSummaryText = '课表获取中...');
+    }
+    try {
+      final prepared = await _prepareAcademicWebVpnSessionInBackground();
+      debugPrint('[LEHU_WEBVPN] schedule-sync prepared=$prepared');
+      if (!prepared) {
+        final summary = await _scheduleRepository.homeSummary();
+        if (mounted) {
+          setState(() => _scheduleSummaryText = summary.text);
+        }
+        return;
+      }
+      await Future<void>.delayed(const Duration(seconds: 1));
+      debugPrint('[LEHU_WEBVPN] schedule-sync refreshSchedule');
+      await _scheduleRepository.refreshSchedule();
+      final summary = await _scheduleRepository.homeSummary();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _scheduleSummaryText = summary.text);
+      unawaited(_scheduleNotificationService.syncScheduleReminders());
+      _showSnack('WebVPN已登录，课表已同步');
+      debugPrint('[LEHU_WEBVPN] schedule-sync success');
+    } on AcademicAuthException catch (error) {
+      debugPrint('[LEHU_WEBVPN] schedule-sync auth-error: $error');
+      if (mounted) {
+        final summary = await _scheduleRepository.homeSummary();
+        if (mounted) {
+          setState(() => _scheduleSummaryText = summary.text);
+        }
+      }
+    } on Object catch (error) {
+      debugPrint('[LEHU_WEBVPN] schedule-sync error: $error');
+      if (mounted) {
+        final summary = await _scheduleRepository.homeSummary();
+        if (mounted) {
+          setState(() => _scheduleSummaryText = summary.text);
+        }
+      }
+    } finally {
+      _loadingScheduleSummary = false;
+      if (mounted) {
+        setState(() => _syncingAcademicSchedule = false);
+      } else {
+        _syncingAcademicSchedule = false;
+      }
+    }
+  }
+
+  Future<bool> _prepareAcademicWebVpnSessionInBackground() async {
+    if (!AcademicUrlResolver.usesWebVpn) {
+      return true;
+    }
+    if (!mounted) {
+      return false;
+    }
+    final completer = Completer<bool>();
+    setState(() {
+      _academicWebVpnPreloadCompleter = completer;
+      _academicWebVpnPreloadToken++;
+    });
+    try {
+      return await completer.future.timeout(
+        const Duration(seconds: 75),
+        onTimeout: () {
+          debugPrint('[LEHU_WEBVPN] background academic preload timeout');
+          return false;
+        },
+      );
+    } finally {
+      if (mounted && identical(_academicWebVpnPreloadCompleter, completer)) {
+        setState(() => _academicWebVpnPreloadCompleter = null);
+      }
+    }
+  }
+
+  void _completeAcademicWebVpnPreload(bool success) {
+    final completer = _academicWebVpnPreloadCompleter;
+    debugPrint('[LEHU_WEBVPN] background academic preload complete=$success');
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(success);
     }
   }
 
@@ -518,6 +708,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _openClientSettings() async {
+    final previousAutoProxy = _autoUseWebVpnProxy;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => ClientSettingsPage(
@@ -526,6 +717,14 @@ class _AppShellState extends State<AppShell> {
         ),
       ),
     );
+    if (!mounted) {
+      return;
+    }
+    await _loadNetworkSettings();
+    if (!mounted || previousAutoProxy == _autoUseWebVpnProxy) {
+      return;
+    }
+    await _reloadForumRepositoryAfterAccessModeChange();
   }
 
   Future<void> _openCreateTopic() async {
@@ -589,6 +788,7 @@ class _AppShellState extends State<AppShell> {
     if (logged != true || !mounted) {
       return;
     }
+    ForumImageHeaders.clearCache();
     setState(() => _reloadingSession = true);
     try {
       final nextRepository = await widget.reloadRepository();
@@ -875,6 +1075,44 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  Future<void> _openWebVpnProxy() async {
+    final navigator = Navigator.of(context);
+    debugPrint('[LEHU_WEBVPN] open webvpn proxy');
+    try {
+      await _setAutoUseWebVpnProxy(true);
+    } on Object catch (error) {
+      _showSnack('WebVPN代理设置失败：$error');
+    }
+    if (!mounted) {
+      return;
+    }
+    final completed = await navigator.push<bool>(
+      MaterialPageRoute(
+        builder: (context) => const ForumWebViewPage(
+          title: 'WebVPN',
+          url: ForumUrlResolver.webVpnPortalUrl,
+          autoCloseUrlPrefixes: [
+            ForumUrlResolver.webVpnSiteNavUrl,
+            ForumUrlResolver.webVpnSiteNavHomeUrl,
+          ],
+        ),
+      ),
+    );
+    debugPrint('[LEHU_WEBVPN] webvpn page completed=$completed');
+    if (!mounted || !_autoUseWebVpnProxy) {
+      return;
+    }
+    ForumImageHeaders.clearCache();
+    setState(() {
+      _tabIndex = 0;
+      _openedTopic = null;
+    });
+    unawaited(_refreshForumReachabilityQuietly(force: true));
+    if (completed == true) {
+      await _syncScheduleAfterWebVpnLogin();
+    }
+  }
+
   Future<void> _openCourseRatings() async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -885,19 +1123,72 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  Future<void> _reloadForumRepositoryAfterAccessModeChange() async {
+    if (_reloadingSession) {
+      return;
+    }
+    setState(() => _reloadingSession = true);
+    try {
+      final nextRepository = await ForumRepositoryFactory.load();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _repo = nextRepository;
+        _openedTopic = null;
+        _reloadingSession = false;
+        _resetFeedFuture();
+      });
+      if (nextRepository.isOnline) {
+        _showSnack('已切换论坛访问方式');
+      }
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _reloadingSession = false);
+      await _showErrorDialog(
+        title: '论坛重新加载失败',
+        message: _friendlyError(error),
+      );
+    }
+  }
+
   Future<void> _openAcademicLogin() async {
+    if (AcademicUrlResolver.usesWebVpn) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (context) => ForumWebViewPage(
+            title: '教务系统',
+            url: AcademicUrlResolver.entryUri.toString(),
+            initialNoticeTitle: '教务系统说明',
+            initialNoticeMessage:
+                '当前已开启WebVPN代理。完成统一身份认证后，课表通常可以直接同步。\n\n本应用只读取课表数据，不会收集或保存你的账号密码。',
+            initialNoticeDelay: const Duration(seconds: 5),
+            debugLabel: 'ACADEMIC_MANUAL',
+            showDebugInfo: true,
+          ),
+        ),
+      );
+      return;
+    }
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
-        builder: (context) => const ForumWebViewPage(
+        builder: (context) => ForumWebViewPage(
           title: '教务系统',
-          url: 'https://jwxt.shu.edu.cn',
+          url:
+              '${AcademicUrlResolver.baseUrl}${AcademicConstants.scheduleIndexPath}',
           initialNoticeTitle: '教务系统登录',
           initialNoticeMessage:
               '教务系统为独立系统，需要你在网页中单独登录一次。\n\n本应用只读取课表数据，不会收集或保存你的账号密码。',
-          initialNoticeDelay: Duration(seconds: 5),
+          initialNoticeDelay: const Duration(seconds: 5),
         ),
       ),
     );
+  }
+
+  void _showScheduleSyncingSnack() {
+    _showSnack('正在获取课表，请稍后');
   }
 
   void _showSnack(String message) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../data/services/forum_image_headers.dart';
 import '../../data/services/image_saver.dart';
 
 class FullscreenImagePage extends StatefulWidget {
@@ -228,8 +229,10 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
   final _controller = TransformationController();
   late final ImageStreamListener _imageListener;
   ImageStream? _imageStream;
+  Map<String, String>? _headers;
   Size? _imageSize;
   Size? _viewportSize;
+  bool _headersLoaded = false;
   bool _zoomed = false;
   bool _clamping = false;
   bool _pageSwipeTriggered = false;
@@ -246,12 +249,15 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
       _clampTransform();
     });
     _controller.addListener(_handleTransformChanged);
+    _loadHeaders();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _resolveImage();
+    if (_headersLoaded) {
+      _resolveImage();
+    }
   }
 
   @override
@@ -259,9 +265,11 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.url != widget.url) {
       _imageSize = null;
+      _headers = null;
+      _headersLoaded = false;
       _controller.value = Matrix4.identity();
       _setZoomed(false);
-      _resolveImage();
+      _loadHeaders();
     }
   }
 
@@ -279,6 +287,11 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     return LayoutBuilder(
       builder: (context, constraints) {
         _viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+        if (!_headersLoaded) {
+          return const Center(
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
         return InteractiveViewer(
           transformationController: _controller,
           minScale: 1,
@@ -301,6 +314,7 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
               child: Image.network(
                 widget.url,
                 fit: BoxFit.contain,
+                headers: _headers,
                 errorBuilder: (context, error, stackTrace) {
                   return const Text(
                     '图片加载失败',
@@ -316,8 +330,11 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
   }
 
   void _resolveImage() {
+    if (!_headersLoaded) {
+      return;
+    }
     final oldStream = _imageStream;
-    final newStream = NetworkImage(widget.url).resolve(
+    final newStream = NetworkImage(widget.url, headers: _headers).resolve(
       createLocalImageConfiguration(context),
     );
     if (oldStream?.key == newStream.key) {
@@ -325,6 +342,18 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     }
     oldStream?.removeListener(_imageListener);
     _imageStream = newStream..addListener(_imageListener);
+  }
+
+  Future<void> _loadHeaders() async {
+    final headers = await ForumImageHeaders.forUrl(widget.url);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _headers = headers;
+      _headersLoaded = true;
+    });
+    _resolveImage();
   }
 
   void _handleInteractionUpdate(ScaleUpdateDetails details) {

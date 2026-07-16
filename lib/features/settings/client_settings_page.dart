@@ -32,6 +32,16 @@ class ClientSettingsPage extends StatelessWidget {
             ),
           ),
           _SettingsRow(
+            title: 'WebVPN代理',
+            onTap: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (context) => _NetworkSettingsPage(
+                  settingsService: settingsService,
+                ),
+              ),
+            ),
+          ),
+          _SettingsRow(
             title: '主题切换',
             onTap: () => _showSnack(context, '主题切换后续接入'),
           ),
@@ -59,6 +69,101 @@ class ClientSettingsPage extends StatelessWidget {
         Text('名称、主题和更多说明会在后续版本中完善。'),
       ],
     );
+  }
+}
+
+class _NetworkSettingsPage extends StatefulWidget {
+  const _NetworkSettingsPage({
+    required this.settingsService,
+  });
+
+  final ClientSettingsService settingsService;
+
+  @override
+  State<_NetworkSettingsPage> createState() => _NetworkSettingsPageState();
+}
+
+class _NetworkSettingsPageState extends State<_NetworkSettingsPage> {
+  late Future<ClientNetworkSettings> _future;
+  ClientNetworkSettings? _settings;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _loadSettings();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('WebVPN代理')),
+      body: FutureBuilder<ClientNetworkSettings>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return EmptyState(
+              icon: Icons.wifi_off,
+              title: '设置加载失败',
+              message: snapshot.error.toString(),
+              action: TextButton.icon(
+                onPressed: () => setState(() => _future = _loadSettings()),
+                icon: const Icon(Icons.refresh),
+                label: const Text('重试'),
+              ),
+            );
+          }
+          final settings = _settings ?? snapshot.data!;
+          return ListView(
+            children: [
+              _SettingsSwitchRow(
+                title: '自动使用WebVPN代理',
+                value: settings.autoUseWebVpnProxy,
+                enabled: true,
+                onChanged: (value) => _save(
+                  settings.copyWith(autoUseWebVpnProxy: value),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<ClientNetworkSettings> _loadSettings() async {
+    final settings = await widget.settingsService.loadNetworkSettings();
+    _settings = settings;
+    return settings;
+  }
+
+  Future<void> _save(ClientNetworkSettings settings) async {
+    if (_saving) {
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _settings = settings;
+    });
+    try {
+      final saved = await widget.settingsService.saveNetworkSettings(settings);
+      if (!mounted) {
+        return;
+      }
+      setState(() => _settings = saved);
+    } on Object catch (error) {
+      if (mounted) {
+        _showSnack(context, '设置保存失败：$error');
+        setState(() => _future = _loadSettings());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
   }
 }
 

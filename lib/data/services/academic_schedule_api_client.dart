@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import '../../core/academic_constants.dart';
+import '../../core/academic_url_resolver.dart';
 import '../models/academic_schedule.dart';
 import '../models/common.dart';
 import 'academic_auth_service.dart';
@@ -139,8 +140,9 @@ class AcademicScheduleApiClient {
     return {
       'accept': accept,
       'cookie': cookie,
-      'referer':
-          '${AcademicConstants.baseUrl}${AcademicConstants.scheduleIndexPath}',
+      'referer': AcademicUrlResolver.usesWebVpn
+          ? AcademicUrlResolver.scheduleIndexUri.toString()
+          : '${AcademicUrlResolver.baseUrl}${AcademicConstants.scheduleIndexPath}',
       'user-agent':
           'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
               '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
@@ -150,7 +152,7 @@ class AcademicScheduleApiClient {
     }..removeWhere((_, value) => value.isEmpty);
   }
 
-  Uri _uri(String path) => Uri.parse('${AcademicConstants.baseUrl}$path');
+  Uri _uri(String path) => AcademicUrlResolver.uri(path);
 
   void _ensureSuccess(http.Response response) {
     if (response.statusCode == 401 || response.statusCode == 403) {

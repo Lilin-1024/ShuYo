@@ -11,6 +11,7 @@ import '../../data/services/payload_factory.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/emoji_picker.dart';
+import '../../shared/widgets/forum_network_image.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 import 'threaded_posts.dart';
@@ -457,7 +458,7 @@ class _PostView extends StatelessWidget {
             onTap: () => onOpenImage(imageUrls, currentImageIndex),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: Image.network(
+              child: ForumNetworkImage(
                 segment.value,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 import '../models/category.dart';
 import '../models/common.dart';
 import '../models/composer.dart';
@@ -15,6 +16,7 @@ import '../models/topic.dart';
 import '../models/topic_detail.dart';
 import '../models/user_profile.dart';
 import '../services/discourse_api_client.dart';
+import '../services/client_settings_service.dart';
 import '../services/forum_auth_service.dart';
 import '../services/html_text.dart';
 import '../services/payload_factory.dart';
@@ -1186,6 +1188,7 @@ class ForumRepositoryFactory {
   const ForumRepositoryFactory._();
 
   static Future<ForumRepository> load() async {
+    await _configureForumAccessMode();
     final fixture = await FixtureForumRepository.load();
     try {
       return await OnlineForumRepository.connect(fallback: fixture);
@@ -1195,7 +1198,15 @@ class ForumRepositoryFactory {
   }
 
   static Future<ForumRepository> loadOnline() async {
+    await _configureForumAccessMode();
     final fixture = await FixtureForumRepository.load();
     return OnlineForumRepository.connect(fallback: fixture);
+  }
+
+  static Future<void> _configureForumAccessMode() async {
+    final settings = await ClientSettingsService().loadNetworkSettings();
+    ForumUrlResolver.configure(
+      useWebVpn: settings.autoUseWebVpnProxy,
+    );
   }
 }

@@ -1,4 +1,5 @@
 import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 import '../models/composer.dart';
 import '../models/post.dart';
 import '../models/user_profile.dart';
@@ -72,7 +73,7 @@ class PayloadFactory {
 
     return RequestPayload(
       method: 'POST',
-      url: '${ForumConstants.baseUrl}${ForumConstants.postsPath}',
+      url: ForumUrlResolver.resolve(ForumConstants.postsPath),
       body: _formEncode(fields),
     );
   }
@@ -99,7 +100,7 @@ class PayloadFactory {
     }
     return RequestPayload(
       method: 'POST',
-      url: '${ForumConstants.baseUrl}${ForumConstants.postsPath}',
+      url: ForumUrlResolver.resolve(ForumConstants.postsPath),
       body: _formEncode(fields),
     );
   }
@@ -107,7 +108,7 @@ class PayloadFactory {
   static RequestPayload createPrivateMessage(PrivateMessageDraft draft) {
     return RequestPayload(
       method: 'POST',
-      url: '${ForumConstants.baseUrl}${ForumConstants.postsPath}',
+      url: ForumUrlResolver.resolve(ForumConstants.postsPath),
       body: _formEncode({
         'raw': draft.raw,
         'title': draft.title,
@@ -134,7 +135,7 @@ class PayloadFactory {
   static RequestPayload likePost(int postId) {
     return RequestPayload(
       method: 'POST',
-      url: '${ForumConstants.baseUrl}${ForumConstants.postActionsPath}',
+      url: ForumUrlResolver.resolve(ForumConstants.postActionsPath),
       body: _formEncode({
         'id': '$postId',
         'post_action_type_id': '2',
@@ -146,7 +147,7 @@ class PayloadFactory {
   static RequestPayload deletePost(Post post) {
     return RequestPayload(
       method: 'DELETE',
-      url: '${ForumConstants.baseUrl}${ForumConstants.postsPath}/${post.id}',
+      url: ForumUrlResolver.resolve('${ForumConstants.postsPath}/${post.id}'),
       body: _formEncode({
         'context': '/t/topic/${post.topicId}/${post.postNumber}',
       }),
@@ -160,7 +161,7 @@ class PayloadFactory {
     final lower = username.toLowerCase();
     return RequestPayload(
       method: 'PUT',
-      url: '${ForumConstants.baseUrl}/u/$lower.json',
+      url: ForumUrlResolver.resolve('/u/$lower.json'),
       body: _formEncode({
         'bio_raw': draft.bioRaw,
         'profile_background_upload_url': draft.profileBackgroundUploadUrl,
@@ -175,8 +176,9 @@ class PayloadFactory {
   static RequestPayload pickSystemAvatar(String username) {
     return RequestPayload(
       method: 'PUT',
-      url:
-          '${ForumConstants.baseUrl}/u/${username.toLowerCase()}/preferences/avatar/pick',
+      url: ForumUrlResolver.resolve(
+        '/u/${username.toLowerCase()}/preferences/avatar/pick',
+      ),
       body: _formEncode({
         'upload_id': '',
         'type': 'system',
@@ -187,8 +189,9 @@ class PayloadFactory {
   static RequestPayload pickCustomAvatar(String username, int uploadId) {
     return RequestPayload(
       method: 'PUT',
-      url:
-          '${ForumConstants.baseUrl}/u/${username.toLowerCase()}/preferences/avatar/pick',
+      url: ForumUrlResolver.resolve(
+        '/u/${username.toLowerCase()}/preferences/avatar/pick',
+      ),
       body: _formEncode({
         'upload_id': '$uploadId',
         'type': 'custom',

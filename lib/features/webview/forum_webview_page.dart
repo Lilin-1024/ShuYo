@@ -15,6 +15,15 @@ class ForumWebViewPage extends StatefulWidget {
     this.initialNoticeTitle,
     this.initialNoticeMessage,
     this.initialNoticeDelay = Duration.zero,
+    this.autoCloseUrlPrefixes = const [],
+    this.autoVisitUrlPrefixes = const [],
+    this.autoVisitUrls = const [],
+    this.autoCloseAfterAutoVisit = false,
+    this.autoVisitMessage,
+    this.autoVisitFinalDelay = Duration.zero,
+    this.hideContentDuringAutoVisit = false,
+    this.debugLabel,
+    this.showDebugInfo = false,
   });
 
   final String title;
@@ -22,6 +31,15 @@ class ForumWebViewPage extends StatefulWidget {
   final String? initialNoticeTitle;
   final String? initialNoticeMessage;
   final Duration initialNoticeDelay;
+  final List<String> autoCloseUrlPrefixes;
+  final List<String> autoVisitUrlPrefixes;
+  final List<String> autoVisitUrls;
+  final bool autoCloseAfterAutoVisit;
+  final String? autoVisitMessage;
+  final Duration autoVisitFinalDelay;
+  final bool hideContentDuringAutoVisit;
+  final String? debugLabel;
+  final bool showDebugInfo;
 
   @override
   State<ForumWebViewPage> createState() => _ForumWebViewPageState();
@@ -37,6 +55,13 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
   WebResourceError? _lastError;
   HttpResponseError? _lastHttpError;
   Uri? _currentUri;
+  bool _autoClosed = false;
+  bool _autoVisitStarted = false;
+  String? _autoVisitMessage;
+  String? _waitingForUrl;
+  String _debugStatus = '初始化';
+  String _debugUrl = '';
+  Completer<String>? _pageFinishedCompleter;
 
   @override
   void initState() {
@@ -49,25 +74,45 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
         NavigationDelegate(
           onPageStarted: (url) {
             _currentUri = Uri.tryParse(url);
+            _debug('page-started', url);
             setState(() {
               _loading = true;
               _lastError = null;
               _lastHttpError = null;
             });
           },
-          onPageFinished: (_) {
+          onPageFinished: (url) {
+            _debug('page-finished', url);
             if (mounted) {
               setState(() => _loading = false);
             }
+            final completer = _pageFinishedCompleter;
+            if (completer != null && !completer.isCompleted) {
+              final waitingFor = _waitingForUrl;
+              if (waitingFor == null ||
+                  _isRelevantFinishedUrl(waitingFor, url)) {
+                completer.complete(url);
+              } else {
+                _debug('page-finished-ignored', url);
+              }
+            }
+            if (_maybeStartAutoVisit(url)) {
+              return;
+            }
+            _closeIfMatched(url);
           },
           onNavigationRequest: (request) {
             _currentUri = Uri.tryParse(request.url);
+            _debug('navigation-request', request.url);
             return NavigationDecision.navigate;
           },
           onWebResourceError: (error) {
             if (!mounted || error.isForMainFrame == false) {
               return;
             }
+            _debug(
+              'web-resource-error ${error.errorCode}: ${error.description}',
+            );
             setState(() {
               _loading = false;
               _lastError = error;
@@ -77,6 +122,7 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
             if (!mounted) {
               return;
             }
+            _debug('http-error ${error.response?.statusCode ?? 'unknown'}');
             setState(() {
               _loading = false;
               _lastHttpError = error;
@@ -116,6 +162,16 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
               minHeight: 2,
               backgroundColor: Colors.transparent,
             ),
+          if (widget.hideContentDuringAutoVisit && _autoVisitMessage != null)
+            const ColoredBox(color: Colors.black),
+          if (_autoVisitMessage != null)
+            _AutoVisitOverlay(message: _autoVisitMessage!),
+          if (widget.showDebugInfo)
+            _WebViewDebugPanel(
+              label: widget.debugLabel ?? widget.title,
+              status: _debugStatus,
+              url: _debugUrl,
+            ),
         ],
       ),
     );
@@ -124,9 +180,11 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
   void _handleSslAuthError(SslAuthError error) {
     final uri = _sslErrorUri(error) ?? _currentUri;
     if (CertificatePolicy.allowsUri(uri)) {
+      _debug('ssl-proceed', uri?.toString());
       error.proceed();
       return;
     }
+    _debug('ssl-cancel', uri?.toString());
     error.cancel();
   }
 
@@ -158,6 +216,7 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
     if (!mounted) {
       return;
     }
+    _debug('load-initial', widget.url);
     await _controller.loadRequest(Uri.parse(widget.url));
   }
 
@@ -172,6 +231,225 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
       title: title,
       message: message,
       confirmDelay: widget.initialNoticeDelay,
+    );
+  }
+
+  Future<void> _closeIfMatched(String url) async {
+    if (_autoClosed || widget.autoCloseUrlPrefixes.isEmpty) {
+      return;
+    }
+    if (!widget.autoCloseUrlPrefixes.any(url.startsWith)) {
+      _debug('auto-close-not-matched', url);
+      return;
+    }
+    _autoClosed = true;
+    _debug('auto-close-matched', url);
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      _debug('auto-close-pop-true');
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  bool _maybeStartAutoVisit(String url) {
+    if (_autoVisitStarted ||
+        widget.autoVisitUrls.isEmpty ||
+        widget.autoVisitUrlPrefixes.isEmpty) {
+      return false;
+    }
+    if (!widget.autoVisitUrlPrefixes.any(url.startsWith)) {
+      _debug('auto-visit-not-matched', url);
+      return false;
+    }
+    _autoVisitStarted = true;
+    _debug('auto-visit-start', url);
+    unawaited(_runAutoVisitSequence());
+    return true;
+  }
+
+  Future<void> _runAutoVisitSequence() async {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _autoVisitMessage = widget.autoVisitMessage ?? '正在准备页面...';
+      _lastError = null;
+      _lastHttpError = null;
+    });
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      for (final url in widget.autoVisitUrls) {
+        _debug('auto-visit-load', url);
+        await _loadAndWaitForPage(url);
+        await Future<void>.delayed(const Duration(milliseconds: 450));
+      }
+      if (!mounted) {
+        return;
+      }
+      if (widget.autoVisitFinalDelay > Duration.zero) {
+        _debug(
+            'auto-visit-final-delay ${widget.autoVisitFinalDelay.inMilliseconds}ms');
+        await Future<void>.delayed(widget.autoVisitFinalDelay);
+      }
+      if (!mounted) {
+        return;
+      }
+      if (widget.autoCloseAfterAutoVisit) {
+        _debug('auto-visit-complete-pop-true');
+        Navigator.of(context).pop(true);
+        return;
+      }
+      _debug('auto-visit-complete-stay');
+      setState(() => _autoVisitMessage = null);
+    } on Object catch (error) {
+      _debug('auto-visit-error: $error');
+      if (!mounted) {
+        return;
+      }
+      if (widget.autoCloseAfterAutoVisit) {
+        _debug('auto-visit-pop-false');
+        Navigator.of(context).pop(false);
+        return;
+      }
+      setState(() => _autoVisitMessage = null);
+    }
+  }
+
+  Future<void> _loadAndWaitForPage(String url) async {
+    final completer = Completer<String>();
+    _pageFinishedCompleter = completer;
+    _waitingForUrl = url;
+    await _controller.loadRequest(Uri.parse(url));
+    try {
+      final finishedUrl =
+          await completer.future.timeout(const Duration(seconds: 18));
+      _debug('auto-visit-finished', finishedUrl);
+    } finally {
+      if (identical(_pageFinishedCompleter, completer)) {
+        _pageFinishedCompleter = null;
+      }
+      if (_waitingForUrl == url) {
+        _waitingForUrl = null;
+      }
+    }
+  }
+
+  bool _isRelevantFinishedUrl(String requestedUrl, String finishedUrl) {
+    if (finishedUrl.startsWith(requestedUrl)) {
+      return true;
+    }
+    final requested = Uri.tryParse(requestedUrl);
+    final finished = Uri.tryParse(finishedUrl);
+    if (requested == null || finished == null) {
+      return false;
+    }
+    if (requested.host == finished.host && requested.path == finished.path) {
+      return true;
+    }
+    if (requested.host == finished.host &&
+        finished.path.endsWith('/login_slogin.html')) {
+      return true;
+    }
+    return false;
+  }
+
+  void _debug(String status, [String? url]) {
+    final label = widget.debugLabel ?? widget.title;
+    final nextUrl = url ?? _debugUrl;
+    debugPrint(
+      '[LEHU_WEBVIEW $label] $status${nextUrl.isEmpty ? '' : ' | $nextUrl'}',
+    );
+    if (!widget.showDebugInfo || !mounted) {
+      return;
+    }
+    setState(() {
+      _debugStatus = status;
+      if (url != null) {
+        _debugUrl = url;
+      }
+    });
+  }
+}
+
+class _WebViewDebugPanel extends StatelessWidget {
+  const _WebViewDebugPanel({
+    required this.label,
+    required this.status,
+    required this.url,
+  });
+
+  final String label;
+  final String status;
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.78),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF333333)),
+          ),
+          child: DefaultTextStyle(
+            style: const TextStyle(
+              color: Color(0xFFE0E0E0),
+              fontSize: 11,
+              height: 1.25,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('DEBUG $label · $status'),
+                if (url.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(url, maxLines: 3, overflow: TextOverflow.ellipsis),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AutoVisitOverlay extends StatelessWidget {
+  const _AutoVisitOverlay({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Colors.black.withValues(alpha: 0.72),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF111111),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 12),
+              Text(message),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

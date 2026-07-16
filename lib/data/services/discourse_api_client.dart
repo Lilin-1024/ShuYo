@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import '../../core/certificate_policy.dart';
-import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 import '../models/common.dart';
 import 'forum_auth_service.dart';
 
@@ -154,10 +154,7 @@ class DiscourseApiClient {
   }
 
   Uri _uri(String path) {
-    if (path.startsWith('http')) {
-      return Uri.parse(path);
-    }
-    return Uri.parse('${ForumConstants.baseUrl}$path');
+    return ForumUrlResolver.uri(path);
   }
 
   JsonMap _decode(http.Response response) {
