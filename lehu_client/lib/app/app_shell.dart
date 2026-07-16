@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../core/academic_constants.dart';
 import '../core/academic_url_resolver.dart';
 import '../core/forum_url_resolver.dart';
+import '../data/models/forum_activity.dart';
 import '../data/models/post.dart';
 import '../data/models/topic.dart';
 import '../data/models/topic_detail.dart';
@@ -34,6 +35,7 @@ import '../features/home/topic_list_page.dart';
 import '../features/messages/messages_page.dart';
 import '../features/messages/notifications_page.dart';
 import '../features/profile/profile_page.dart';
+import '../features/profile/forum_activity_page.dart';
 import '../features/profile/profile_settings_page.dart';
 import '../features/profile/user_profile_page.dart';
 import '../features/settings/client_settings_page.dart';
@@ -75,6 +77,7 @@ class _AppShellState extends State<AppShell> {
   late final ClassroomRepository _classroomRepository;
   late final CourseRatingRepository _courseRatingRepository;
   late Future<List<TopicListItem>> _feedFuture;
+  Future<ForumActivityCounts>? _activityCountsFuture;
   Timer? _scheduleSummaryTimer;
   Timer? _announcementSummaryTimer;
   bool _loadingScheduleSummary = false;
@@ -251,11 +254,18 @@ class _AppShellState extends State<AppShell> {
           isBusy: _reloadingSession,
           onLogin: _login,
           onEditProfile: _openProfileSettings,
-          onRelogin: _relogin,
-          onLogout: _logout,
+          activityCountsFuture: _profileActivityCountsFuture,
+          onOpenActivity: (kind) => unawaited(_openProfileActivity(kind)),
         ),
       _ => const SizedBox.shrink(),
     };
+  }
+
+  Future<ForumActivityCounts>? get _profileActivityCountsFuture {
+    if (!_repo.isOnline) {
+      return null;
+    }
+    return _activityCountsFuture ??= _repo.fetchActivityCounts();
   }
 
   Widget _homeBody() {
@@ -707,6 +717,30 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  Future<void> _openProfileActivity(ForumActivityKind kind) async {
+    if (!_repo.isOnline) {
+      await _login();
+      return;
+    }
+    final topic = await Navigator.of(context).push<TopicListItem>(
+      MaterialPageRoute(
+        builder: (context) => ForumActivityPage(
+          repository: _repo,
+          kind: kind,
+        ),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _activityCountsFuture = _repo.fetchActivityCounts(forceRefresh: true);
+      if (topic != null) {
+        _openedTopic = topic;
+      }
+    });
+  }
+
   Future<void> _openClientSettings() async {
     final previousAutoProxy = _autoUseWebVpnProxy;
     await Navigator.of(context).push<void>(
@@ -714,6 +748,8 @@ class _AppShellState extends State<AppShell> {
         builder: (context) => ClientSettingsPage(
           settingsService: _clientSettingsService,
           scheduleNotificationService: _scheduleNotificationService,
+          isOnline: _repo.isOnline,
+          onLogout: _logout,
         ),
       ),
     );
@@ -799,6 +835,7 @@ class _AppShellState extends State<AppShell> {
         _repo = nextRepository;
         _openedTopic = null;
         _reloadingSession = false;
+        _activityCountsFuture = null;
         _resetFeedFuture();
       });
       _showSnack('已加载论坛');
@@ -839,6 +876,7 @@ class _AppShellState extends State<AppShell> {
         _repo = nextRepository;
         _openedTopic = null;
         _reloadingSession = false;
+        _activityCountsFuture = null;
         _resetFeedFuture();
       });
     } on Object catch (error) {
@@ -870,6 +908,7 @@ class _AppShellState extends State<AppShell> {
         _repo = nextRepository;
         _openedTopic = null;
         _reloadingSession = false;
+        _activityCountsFuture = null;
         _resetFeedFuture();
       });
       _showSnack('已退出登录');
@@ -970,12 +1009,16 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _showTopicMoreSheet(TopicListItem topic) {
+    final bookmarkFuture = _repo.isOnline
+        ? _repo.findTopicBookmark(topic.id)
+        : Future<ForumBookmark?>.value();
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.58),
       builder: (context) {
         return _TopicMoreSheet(
+          bookmarkFuture: bookmarkFuture,
           onClose: () => Navigator.of(context).pop(),
           onShare: () {
             Navigator.of(context).pop();
@@ -985,13 +1028,46 @@ class _AppShellState extends State<AppShell> {
             Navigator.of(context).pop();
             _showSnack('举报功能后续接入');
           },
-          onBookmark: () {
+          onBookmark: (bookmark) {
             Navigator.of(context).pop();
-            _showSnack('收藏功能后续接入');
+            unawaited(_toggleTopicBookmark(topic, bookmark));
           },
         );
       },
     );
+  }
+
+  Future<void> _toggleTopicBookmark(
+    TopicListItem topic,
+    ForumBookmark? current,
+  ) async {
+    if (!_repo.isOnline) {
+      await _login();
+      return;
+    }
+    try {
+      if (current != null && current.id > 0) {
+        await _repo.unbookmarkTopic(current.id);
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _activityCountsFuture = _repo.fetchActivityCounts(forceRefresh: true);
+        });
+        _showSnack('已取消收藏');
+        return;
+      }
+      await _repo.bookmarkTopic(topic.id);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _activityCountsFuture = _repo.fetchActivityCounts(forceRefresh: true);
+      });
+      _showSnack('已收藏');
+    } on Object catch (error) {
+      await _handleOperationError(error, title: '收藏操作失败');
+    }
   }
 
   Future<void> _refreshTopic(int topicId) async {
@@ -1029,6 +1105,7 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       _repo = nextRepository;
       _openedTopic = null;
+      _activityCountsFuture = null;
       _resetFeedFuture();
     });
   }
@@ -1137,6 +1214,7 @@ class _AppShellState extends State<AppShell> {
         _repo = nextRepository;
         _openedTopic = null;
         _reloadingSession = false;
+        _activityCountsFuture = null;
         _resetFeedFuture();
       });
       if (nextRepository.isOnline) {
@@ -1244,16 +1322,18 @@ class _AppShellState extends State<AppShell> {
 
 class _TopicMoreSheet extends StatelessWidget {
   const _TopicMoreSheet({
+    required this.bookmarkFuture,
     required this.onClose,
     required this.onShare,
     required this.onReport,
     required this.onBookmark,
   });
 
+  final Future<ForumBookmark?> bookmarkFuture;
   final VoidCallback onClose;
   final VoidCallback onShare;
   final VoidCallback onReport;
-  final VoidCallback onBookmark;
+  final ValueChanged<ForumBookmark?> onBookmark;
 
   @override
   Widget build(BuildContext context) {
@@ -1302,10 +1382,20 @@ class _TopicMoreSheet extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: _TopicActionButton(
-                    icon: Icons.bookmark_border,
-                    label: '收藏',
-                    onTap: onBookmark,
+                  child: FutureBuilder<ForumBookmark?>(
+                    future: bookmarkFuture,
+                    builder: (context, snapshot) {
+                      final loading =
+                          snapshot.connectionState != ConnectionState.done;
+                      final bookmark = snapshot.data;
+                      final bookmarked = bookmark != null && bookmark.id > 0;
+                      return _TopicActionButton(
+                        icon:
+                            bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                        label: bookmarked ? '取消收藏' : '收藏',
+                        onTap: loading ? null : () => onBookmark(bookmark),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -1326,10 +1416,11 @@ class _TopicActionButton extends StatelessWidget {
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final enabled = onTap != null;
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,
@@ -1338,9 +1429,19 @@ class _TopicActionButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 26),
+            Icon(
+              icon,
+              size: 26,
+              color: enabled ? null : const Color(0xFF666666),
+            ),
             const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontSize: 14)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: enabled ? null : const Color(0xFF666666),
+              ),
+            ),
           ],
         ),
       ),

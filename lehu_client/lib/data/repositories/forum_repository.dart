@@ -9,6 +9,7 @@ import '../models/common.dart';
 import '../models/composer.dart';
 import '../models/current_user.dart';
 import '../models/discourse_user.dart';
+import '../models/forum_activity.dart';
 import '../models/forum_notification.dart';
 import '../models/forum_search.dart';
 import '../models/post.dart';
@@ -72,6 +73,17 @@ abstract class ForumRepository {
     String username, {
     bool forceRefresh = false,
   });
+  Future<ForumActivityCounts> fetchActivityCounts({
+    bool forceRefresh = false,
+  });
+  Future<List<ForumActivityItem>> fetchUserActivity(
+    ForumActivityKind kind, {
+    bool forceRefresh = false,
+  });
+  Future<ForumBookmark?> findTopicBookmark(
+    int topicId, {
+    bool forceRefresh = false,
+  });
   Future<TopicDetail?> fetchTopicDetail(
     int id, {
     bool forceRefresh = false,
@@ -94,6 +106,8 @@ abstract class ForumRepository {
     bool forceRefresh = false,
   });
   Future<Post> likePost(int postId);
+  Future<ForumBookmark> bookmarkTopic(int topicId);
+  Future<void> unbookmarkTopic(int bookmarkId);
   Future<void> deletePost(Post post);
   Future<void> clearLoginCookies();
 }
@@ -322,6 +336,40 @@ class FixtureForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumActivityCounts> fetchActivityCounts({
+    bool forceRefresh = false,
+  }) async {
+    return ForumActivityCounts(
+      topics: userSummary.topicCount,
+      read: userSummary.topicsEntered,
+      bookmarks: 0,
+    );
+  }
+
+  @override
+  Future<List<ForumActivityItem>> fetchUserActivity(
+    ForumActivityKind kind, {
+    bool forceRefresh = false,
+  }) async {
+    final topics = switch (kind) {
+      ForumActivityKind.topics => _latestTopics
+          .where((topic) => topic.originalPosterId == profile.id)
+          .toList(),
+      ForumActivityKind.read => _latestTopics,
+      ForumActivityKind.bookmarks => const <TopicListItem>[],
+    };
+    return topics.map(ForumActivityItem.fromTopic).toList(growable: false);
+  }
+
+  @override
+  Future<ForumBookmark?> findTopicBookmark(
+    int topicId, {
+    bool forceRefresh = false,
+  }) async {
+    return null;
+  }
+
+  @override
   Future<Post> createTopic(CreateTopicDraft draft) {
     throw const ForumAuthException('请先登录后再发帖');
   }
@@ -382,6 +430,16 @@ class FixtureForumRepository implements ForumRepository {
   @override
   Future<Post> likePost(int postId) {
     throw const ForumAuthException('请先登录后再点赞');
+  }
+
+  @override
+  Future<ForumBookmark> bookmarkTopic(int topicId) {
+    throw const ForumAuthException('请先登录后再收藏');
+  }
+
+  @override
+  Future<void> unbookmarkTopic(int bookmarkId) {
+    throw const ForumAuthException('请先登录后再取消收藏');
   }
 
   @override
@@ -492,8 +550,10 @@ class OnlineForumRepository implements ForumRepository {
   final Map<String, UserSummary> _userSummaries = {};
   final Map<String, List<TopicListItem>> _feedTopics = {};
   final Map<String, String?> _feedMorePaths = {};
+  final Map<ForumActivityKind, List<ForumActivityItem>> _activityItems = {};
   final Map<NotificationFeedFilter, List<ForumNotification>> _notifications =
       {};
+  ForumActivityCounts? _activityCounts;
   List<TopicListItem>? _privateMessages;
 
   @override
@@ -680,6 +740,56 @@ class OnlineForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumActivityCounts> fetchActivityCounts({
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _activityCounts != null) {
+      return _activityCounts!;
+    }
+    final bookmarks = await fetchUserActivity(
+      ForumActivityKind.bookmarks,
+      forceRefresh: forceRefresh,
+    );
+    return _activityCounts = ForumActivityCounts(
+      topics: _userSummary.topicCount,
+      read: _userSummary.topicsEntered,
+      bookmarks: bookmarks.length,
+    );
+  }
+
+  @override
+  Future<List<ForumActivityItem>> fetchUserActivity(
+    ForumActivityKind kind, {
+    bool forceRefresh = false,
+  }) async {
+    if (!forceRefresh && _activityItems[kind] != null) {
+      return _activityItems[kind]!;
+    }
+    final json = await _apiClient.getJson(_activityPath(kind));
+    _mergeUsers(json);
+    final items = _parseActivityItems(kind, json);
+    return _activityItems[kind] = items;
+  }
+
+  @override
+  Future<ForumBookmark?> findTopicBookmark(
+    int topicId, {
+    bool forceRefresh = false,
+  }) async {
+    final bookmarks = await fetchUserActivity(
+      ForumActivityKind.bookmarks,
+      forceRefresh: forceRefresh,
+    );
+    for (final item in bookmarks) {
+      final bookmarkId = item.bookmarkId;
+      if (item.topicId == topicId && bookmarkId != null && bookmarkId > 0) {
+        return ForumBookmark(id: bookmarkId, topicId: topicId);
+      }
+    }
+    return null;
+  }
+
+  @override
   Future<Post> createTopic(CreateTopicDraft draft) async {
     final payload = PayloadFactory.createTopic(draft);
     final json =
@@ -692,6 +802,8 @@ class OnlineForumRepository implements ForumRepository {
     _topicDetails.remove(post.topicId);
     _feedTopics.clear();
     _feedMorePaths.clear();
+    _activityItems.remove(ForumActivityKind.topics);
+    _activityCounts = null;
     return post;
   }
 
@@ -912,6 +1024,33 @@ class OnlineForumRepository implements ForumRepository {
   }
 
   @override
+  Future<ForumBookmark> bookmarkTopic(int topicId) async {
+    final body = Uri(
+      queryParameters: {
+        'reminder_at': '',
+        'auto_delete_preference': '3',
+        'bookmarkable_id': '$topicId',
+        'bookmarkable_type': 'Topic',
+      },
+    ).query;
+    final json = await _apiClient.postForm('/bookmarks.json', body);
+    final bookmark = ForumBookmark(
+      id: intValue(json['id']),
+      topicId: topicId,
+    );
+    _activityItems.remove(ForumActivityKind.bookmarks);
+    _activityCounts = null;
+    return bookmark;
+  }
+
+  @override
+  Future<void> unbookmarkTopic(int bookmarkId) async {
+    await _apiClient.deleteForm('/bookmarks/$bookmarkId.json', '');
+    _activityItems.remove(ForumActivityKind.bookmarks);
+    _activityCounts = null;
+  }
+
+  @override
   Future<void> deletePost(Post post) async {
     final payload = PayloadFactory.deletePost(post);
     await _apiClient.deleteForm(
@@ -1053,6 +1192,38 @@ class OnlineForumRepository implements ForumRepository {
     final mode = query.hot ? 'hot' : 'latest';
     final filter = query.hot ? 'hot' : 'default';
     return '/c/$slug/$categoryId/l/$mode.json?filter=$filter';
+  }
+
+  String _activityPath(ForumActivityKind kind) {
+    final username = profile.username;
+    final lower = username.toLowerCase();
+    return switch (kind) {
+      ForumActivityKind.topics => '/topics/created-by/$lower.json',
+      ForumActivityKind.read => '/read.json',
+      ForumActivityKind.bookmarks =>
+        '/u/${Uri.encodeComponent(username)}/bookmarks.json?q=&acting_username=',
+    };
+  }
+
+  List<ForumActivityItem> _parseActivityItems(
+    ForumActivityKind kind,
+    JsonMap json,
+  ) {
+    if (kind == ForumActivityKind.bookmarks) {
+      final list = json['user_bookmark_list'];
+      final bookmarks = list is JsonMap ? list['bookmarks'] : null;
+      if (bookmarks is! List) {
+        return const [];
+      }
+      return bookmarks
+          .whereType<JsonMap>()
+          .map(ForumActivityItem.fromBookmark)
+          .where((item) => item.topicId > 0)
+          .toList(growable: false);
+    }
+    return FixtureForumRepository._parseTopics(json)
+        .map(ForumActivityItem.fromTopic)
+        .toList(growable: false);
   }
 
   String _notificationPath(NotificationFeedFilter filter) {
