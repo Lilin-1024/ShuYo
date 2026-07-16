@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../data/models/forum_activity.dart';
 import '../../data/models/user_profile.dart';
+import '../../shared/compact_number.dart';
 import 'profile_header.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -12,8 +14,8 @@ class ProfilePage extends StatelessWidget {
     required this.isBusy,
     required this.onLogin,
     required this.onEditProfile,
-    required this.onRelogin,
-    required this.onLogout,
+    required this.activityCountsFuture,
+    required this.onOpenActivity,
   });
 
   final UserProfile profile;
@@ -22,8 +24,8 @@ class ProfilePage extends StatelessWidget {
   final bool isBusy;
   final VoidCallback onLogin;
   final VoidCallback onEditProfile;
-  final VoidCallback onRelogin;
-  final VoidCallback onLogout;
+  final Future<ForumActivityCounts>? activityCountsFuture;
+  final ValueChanged<ForumActivityKind> onOpenActivity;
 
   @override
   Widget build(BuildContext context) {
@@ -46,12 +48,16 @@ class ProfilePage extends StatelessWidget {
                 )
               : const Icon(Icons.chevron_right),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
         if (isOnline) ...[
-          _AccountActions(
-            isBusy: isBusy,
-            onRelogin: onRelogin,
-            onLogout: onLogout,
+          _ActivitySummaryBar(
+            fallback: ForumActivityCounts(
+              topics: summary.topicCount,
+              read: summary.topicsEntered,
+              bookmarks: 0,
+            ),
+            future: activityCountsFuture,
+            onOpenActivity: isBusy ? null : onOpenActivity,
           ),
           const SizedBox(height: 20),
         ],
@@ -72,73 +78,125 @@ const _zeroSummary = UserSummary(
   timeReadSeconds: 0,
 );
 
-class _AccountActions extends StatelessWidget {
-  const _AccountActions({
-    required this.isBusy,
-    required this.onRelogin,
-    required this.onLogout,
+class _ActivitySummaryBar extends StatelessWidget {
+  const _ActivitySummaryBar({
+    required this.fallback,
+    required this.future,
+    required this.onOpenActivity,
   });
 
-  final bool isBusy;
-  final VoidCallback onRelogin;
-  final VoidCallback onLogout;
+  final ForumActivityCounts fallback;
+  final Future<ForumActivityCounts>? future;
+  final ValueChanged<ForumActivityKind>? onOpenActivity;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _ActionRow(
-          icon: Icons.sync,
-          label: '重新登录',
-          onTap: isBusy ? null : onRelogin,
-        ),
-        const Divider(height: 1, color: Color(0xFF202020)),
-        _ActionRow(
-          icon: Icons.logout,
-          label: '退出登录',
-          onTap: isBusy ? null : onLogout,
-        ),
-      ],
+    final future = this.future;
+    if (future == null) {
+      return _ActivitySummaryContent(
+        counts: fallback,
+        loadingBookmarks: false,
+        onOpenActivity: onOpenActivity,
+      );
+    }
+    return FutureBuilder<ForumActivityCounts>(
+      future: future,
+      builder: (context, snapshot) {
+        return _ActivitySummaryContent(
+          counts: snapshot.data ?? fallback,
+          loadingBookmarks: snapshot.connectionState != ConnectionState.done &&
+              snapshot.data == null,
+          onOpenActivity: onOpenActivity,
+        );
+      },
     );
   }
 }
 
-class _ActionRow extends StatelessWidget {
-  const _ActionRow({
-    required this.icon,
-    required this.label,
-    required this.onTap,
+class _ActivitySummaryContent extends StatelessWidget {
+  const _ActivitySummaryContent({
+    required this.counts,
+    required this.loadingBookmarks,
+    required this.onOpenActivity,
   });
 
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
+  final ForumActivityCounts counts;
+  final bool loadingBookmarks;
+  final ValueChanged<ForumActivityKind>? onOpenActivity;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: SizedBox(
-        height: 50,
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: const Color(0xFFD6D6D6)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFF202020)),
+        ),
+      ),
+      child: Row(
+        children: [
+          _ActivityStatButton(
+            kind: ForumActivityKind.topics,
+            value: compactCount(counts.topics),
+            onTap: onOpenActivity,
+          ),
+          _ActivityStatButton(
+            kind: ForumActivityKind.read,
+            value: compactCount(counts.read),
+            onTap: onOpenActivity,
+          ),
+          _ActivityStatButton(
+            kind: ForumActivityKind.bookmarks,
+            value: loadingBookmarks ? '-' : compactCount(counts.bookmarks),
+            onTap: onOpenActivity,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActivityStatButton extends StatelessWidget {
+  const _ActivityStatButton({
+    required this.kind,
+    required this.value,
+    required this.onTap,
+  });
+
+  final ForumActivityKind kind;
+  final String value;
+  final ValueChanged<ForumActivityKind>? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap == null ? null : () => onTap!(kind),
+        child: SizedBox(
+          height: 64,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                kind.title,
                 style: const TextStyle(
-                  color: Color(0xFFD6D6D6),
-                  fontSize: 15,
+                  color: Color(0xFFAAAAAA),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            const Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: Color(0xFF8A8A8A),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

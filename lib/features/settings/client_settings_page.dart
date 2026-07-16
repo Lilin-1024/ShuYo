@@ -9,10 +9,14 @@ class ClientSettingsPage extends StatelessWidget {
     super.key,
     required this.settingsService,
     required this.scheduleNotificationService,
+    this.isOnline = false,
+    this.onLogout,
   });
 
   final ClientSettingsService settingsService;
   final AcademicScheduleNotificationService scheduleNotificationService;
+  final bool isOnline;
+  final Future<void> Function()? onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +53,11 @@ class ClientSettingsPage extends StatelessWidget {
             title: '功能反馈',
             onTap: () => _showSnack(context, '功能反馈后续接入'),
           ),
+          if (isOnline && onLogout != null)
+            _SettingsRow(
+              title: '退出登录',
+              onTap: () => _confirmLogout(context),
+            ),
           _SettingsRow(
             title: '关于客户端',
             onTap: () => _showAbout(context),
@@ -56,6 +65,35 @@ class ClientSettingsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('退出登录'),
+          content: const Text('退出后论坛相关功能需要重新登录。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('退出'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true) {
+      return;
+    }
+    await onLogout?.call();
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   void _showAbout(BuildContext context) {
