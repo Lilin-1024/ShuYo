@@ -6,6 +6,7 @@ import '../../data/models/topic.dart';
 import '../../data/services/html_text.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
+import '../../shared/widgets/forum_network_image.dart';
 
 class TopicListPage extends StatefulWidget {
   const TopicListPage({
@@ -324,7 +325,7 @@ class _SinglePreviewImage extends StatelessWidget {
       borderRadius: BorderRadius.circular(6),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 260),
-        child: Image.network(
+        child: ForumNetworkImage(
           url,
           width: double.infinity,
           fit: BoxFit.contain,
@@ -389,7 +390,7 @@ class _SquareThumbnail extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.network(
+            ForumNetworkImage(
               url,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/local_image_picker.dart';
@@ -303,10 +303,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
   }
 
   String _absoluteUrl(String value) {
-    if (value.isEmpty || value.startsWith('http')) {
-      return value;
-    }
-    return '${ForumConstants.baseUrl}$value';
+    return ForumUrlResolver.resolve(value);
   }
 }
 

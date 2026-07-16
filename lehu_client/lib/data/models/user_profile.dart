@@ -1,4 +1,4 @@
-import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 import 'common.dart';
 import 'discourse_user.dart';
 import '../services/html_text.dart';
@@ -150,10 +150,7 @@ int? _nullableInt(Object? value) {
 }
 
 String _absoluteUploadUrl(String value) {
-  if (value.isEmpty || value.startsWith('http')) {
-    return value;
-  }
-  return '${ForumConstants.baseUrl}$value';
+  return ForumUrlResolver.resolve(value);
 }
 
 class UserSummary {

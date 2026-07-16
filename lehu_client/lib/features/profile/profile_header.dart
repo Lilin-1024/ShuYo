@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile.dart';
 import '../../shared/widgets/avatar.dart';
+import '../../shared/widgets/forum_network_image.dart';
 
 class ProfileHeader extends StatelessWidget {
   const ProfileHeader({
@@ -125,7 +126,7 @@ class _ProfileBackground extends StatelessWidget {
         ),
       );
     }
-    return Image.network(
+    return ForumNetworkImage(
       url,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {

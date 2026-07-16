@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'forum_network_image.dart';
+
 class ForumAvatar extends StatelessWidget {
   const ForumAvatar({
     super.key,
@@ -16,7 +18,7 @@ class ForumAvatar extends StatelessWidget {
       return _AvatarFallback(size: size);
     }
     return ClipOval(
-      child: Image.network(
+      child: ForumNetworkImage(
         url,
         width: size,
         height: size,

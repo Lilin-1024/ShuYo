@@ -1,4 +1,4 @@
-import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 import 'common.dart';
 
 class PostActionSummary {
@@ -86,10 +86,7 @@ class Post {
 
   String avatarUrl({int size = 96}) {
     final resolved = avatarTemplate.replaceAll('{size}', '$size');
-    if (resolved.startsWith('http')) {
-      return resolved;
-    }
-    return '${ForumConstants.baseUrl}$resolved';
+    return ForumUrlResolver.resolve(resolved);
   }
 
   int get likeCount {

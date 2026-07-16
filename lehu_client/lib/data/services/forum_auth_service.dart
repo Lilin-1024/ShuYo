@@ -1,6 +1,6 @@
 import 'package:webview_flutter/webview_flutter.dart';
 
-import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 
 class ForumAuthService {
   ForumAuthService({WebViewCookieManager? cookieManager})
@@ -9,9 +9,15 @@ class ForumAuthService {
   final WebViewCookieManager _cookieManager;
 
   Future<String?> cookieHeader() async {
-    final cookies = await _cookieManager.getCookies(
-      domain: Uri.parse(ForumConstants.baseUrl),
-    );
+    final cookies = [
+      if (ForumUrlResolver.usesWebVpn)
+        ...await _cookieManager.getCookies(
+          domain: Uri.parse(ForumUrlResolver.webVpnPortalUrl),
+        ),
+      ...await _cookieManager.getCookies(
+        domain: ForumUrlResolver.baseUri,
+      ),
+    ];
     final values = <String, String>{};
     for (final cookie in cookies) {
       if (cookie.name.isNotEmpty && cookie.value.isNotEmpty) {

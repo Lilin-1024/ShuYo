@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 
+import 'forum_image_headers.dart';
+
 class ImageSaver {
   const ImageSaver._();
 
@@ -27,6 +29,8 @@ class ImageSaver {
       final request = await client.getUrl(uri).timeout(
             const Duration(seconds: 12),
           );
+      final headers = await ForumImageHeaders.forUrl(uri.toString());
+      headers?.forEach(request.headers.set);
       final response = await request.close().timeout(
             const Duration(seconds: 20),
           );

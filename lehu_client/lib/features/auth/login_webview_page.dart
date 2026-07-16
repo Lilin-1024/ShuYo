@@ -5,7 +5,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../core/certificate_policy.dart';
-import '../../core/forum_constants.dart';
+import '../../core/forum_url_resolver.dart';
 import '../../shared/widgets/info_confirm_dialog.dart';
 
 class LoginWebViewPage extends StatefulWidget {
@@ -49,7 +49,7 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
           onSslAuthError: _handleSslAuthError,
         ),
       )
-      ..loadRequest(Uri.parse('${ForumConstants.baseUrl}/latest'));
+      ..loadRequest(ForumUrlResolver.uri('/latest'));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_showLoginNotice());
     });
@@ -131,7 +131,7 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
   }
 
   bool _isForumLoggedInPage(Uri? uri) {
-    if (uri == null || uri.host != ForumConstants.host) {
+    if (uri == null || !ForumUrlResolver.isActiveForumHost(uri.host)) {
       return false;
     }
     final path = uri.path.toLowerCase();

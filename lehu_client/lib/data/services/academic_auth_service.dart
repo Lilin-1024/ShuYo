@@ -1,6 +1,8 @@
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../core/academic_constants.dart';
+import '../../core/academic_url_resolver.dart';
+import '../../core/forum_url_resolver.dart';
 
 class AcademicAuthService {
   AcademicAuthService({WebViewCookieManager? cookieManager})
@@ -10,13 +12,17 @@ class AcademicAuthService {
 
   Future<String?> cookieHeader() async {
     final cookies = [
+      if (AcademicUrlResolver.usesWebVpn)
+        ...await _cookieManager.getCookies(
+          domain: Uri.parse(ForumUrlResolver.webVpnPortalUrl),
+        ),
       ...await _cookieManager.getCookies(
         domain: Uri.parse(
-          '${AcademicConstants.baseUrl}${AcademicConstants.scheduleIndexPath}',
+          '${AcademicUrlResolver.baseUrl}${AcademicConstants.scheduleIndexPath}',
         ),
       ),
       ...await _cookieManager.getCookies(
-        domain: Uri.parse(AcademicConstants.baseUrl),
+        domain: AcademicUrlResolver.baseUri,
       ),
     ];
     final values = <String, String>{};

@@ -24,6 +24,22 @@ class ClientNotificationSettings {
   }
 }
 
+class ClientNetworkSettings {
+  const ClientNetworkSettings({
+    required this.autoUseWebVpnProxy,
+  });
+
+  final bool autoUseWebVpnProxy;
+
+  ClientNetworkSettings copyWith({
+    bool? autoUseWebVpnProxy,
+  }) {
+    return ClientNetworkSettings(
+      autoUseWebVpnProxy: autoUseWebVpnProxy ?? this.autoUseWebVpnProxy,
+    );
+  }
+}
+
 class ClientSettingsService {
   ClientSettingsService({
     Future<SharedPreferences> Function()? preferencesLoader,
@@ -34,6 +50,7 @@ class ClientSettingsService {
       'client.notifications.schedule.enabled';
   static const forumNotificationsEnabledKey =
       'client.notifications.forum.enabled';
+  static const autoUseWebVpnProxyKey = 'client.network.webvpn.auto_proxy';
 
   final Future<SharedPreferences> Function() _preferencesLoader;
 
@@ -56,6 +73,24 @@ class ClientSettingsService {
       settings.scheduleEnabled,
     );
     await prefs.setBool(forumNotificationsEnabledKey, settings.forumEnabled);
+    return settings;
+  }
+
+  Future<ClientNetworkSettings> loadNetworkSettings() async {
+    final prefs = await _preferencesLoader();
+    return ClientNetworkSettings(
+      autoUseWebVpnProxy: prefs.getBool(autoUseWebVpnProxyKey) ?? false,
+    );
+  }
+
+  Future<ClientNetworkSettings> saveNetworkSettings(
+    ClientNetworkSettings settings,
+  ) async {
+    final prefs = await _preferencesLoader();
+    await prefs.setBool(
+      autoUseWebVpnProxyKey,
+      settings.autoUseWebVpnProxy,
+    );
     return settings;
   }
 }
