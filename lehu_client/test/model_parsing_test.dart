@@ -14,6 +14,7 @@ import 'package:lehu_client/data/models/topic_detail.dart';
 import 'package:lehu_client/data/repositories/classroom_repository.dart';
 import 'package:lehu_client/data/services/announcement_api_client.dart';
 import 'package:lehu_client/data/services/classroom_api_client.dart';
+import 'package:lehu_client/data/services/course_rating_api_client.dart';
 import 'package:lehu_client/data/services/emoji_text.dart';
 import 'package:lehu_client/data/services/html_text.dart';
 import 'package:lehu_client/data/services/payload_factory.dart';
@@ -364,6 +365,71 @@ void main() {
     expect(rooms.first.isFreeFor(5, 6), isTrue);
     expect(rooms.last.isFreeFor(5, 6), isFalse);
     expect(rooms.last.coursesFor(5, 6).single.courseName, contains('日语'));
+  });
+
+  test('parses course rating search and detail json', () {
+    final search = CourseRatingApiClient.parseSearchResult({
+      'query': '微积分',
+      'courses': [
+        {
+          'CourseCode': 'GBK0101005',
+          'CourseCodes': ['GBK0101005'],
+          'ID': 17,
+          'Name': '微积分',
+          'Count': 3,
+        },
+      ],
+      'teachers': [
+        {'ID': 207, 'Name': '丁洋'},
+      ],
+    });
+
+    expect(search.courses.single.displayCode, 'GBK0101005');
+    expect(search.courses.single.lookupForRatings, 'GBK0101005');
+    expect(search.teachers.single.name, '丁洋');
+
+    final detail = CourseRatingApiClient.parseRatingDetail({
+      'average': 10,
+      'course': {
+        'CourseCodes': ['GBK0101005'],
+        'ID': 17,
+        'Name': '微积分',
+      },
+      'teacher_id': 207,
+      'teacher_name': '丁洋',
+      'page': 1,
+      'per_page': 10,
+      'total': 1,
+      'radar': {
+        'categories': ['教师给分情况'],
+        'values': [1],
+      },
+      'ratings': [
+        {
+          'ID': 1631,
+          'Score': 10,
+          'Content': '课挺好的，给分也不赖',
+          'CreatedAt': 1783639234,
+          'Upvotes': 0,
+          'user': {'id': 8, 'username': '蓝河ovo'},
+          'tags': [
+            {
+              'id': 1,
+              'prefix': '给分',
+              'name': '高于预期',
+              'category': '教师给分情况',
+              'weight': 3,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(detail.course.name, '微积分');
+    expect(detail.teacher.name, '丁洋');
+    expect(detail.average, 10);
+    expect(detail.ratings.single.tags.single.displayText, '给分：高于预期');
+    expect(detail.ratings.single.createdAt, isA<DateTime>());
   });
 
   test('parses academic schedule bitmasks and untimed courses', () {

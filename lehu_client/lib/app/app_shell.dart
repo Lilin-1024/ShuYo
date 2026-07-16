@@ -9,6 +9,7 @@ import '../data/models/topic_detail.dart';
 import '../data/repositories/academic_schedule_repository.dart';
 import '../data/repositories/announcement_repository.dart';
 import '../data/repositories/classroom_repository.dart';
+import '../data/repositories/course_rating_repository.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/academic_schedule_notification_service.dart';
 import '../data/services/discourse_api_client.dart';
@@ -19,6 +20,7 @@ import '../features/forum/forum_filter_bar.dart';
 import '../features/forum/forum_search_page.dart';
 import '../features/home/academic_schedule_page.dart';
 import '../features/home/announcements_page.dart';
+import '../features/home/course_rating_page.dart';
 import '../features/home/empty_classroom_page.dart';
 import '../features/home/home_dashboard_page.dart';
 import '../features/home/topic_list_page.dart';
@@ -59,6 +61,7 @@ class _AppShellState extends State<AppShell> {
   late final AcademicScheduleNotificationService _scheduleNotificationService;
   late final AnnouncementRepository _announcementRepository;
   late final ClassroomRepository _classroomRepository;
+  late final CourseRatingRepository _courseRatingRepository;
   late Future<List<TopicListItem>> _feedFuture;
   Timer? _scheduleSummaryTimer;
   Timer? _announcementSummaryTimer;
@@ -77,6 +80,7 @@ class _AppShellState extends State<AppShell> {
     );
     _announcementRepository = AnnouncementRepository();
     _classroomRepository = ClassroomRepository();
+    _courseRatingRepository = CourseRatingRepository();
     _resetFeedFuture();
     unawaited(_refreshScheduleSummaryQuietly());
     unawaited(_loadAnnouncementSummaryFromCache());
@@ -219,6 +223,7 @@ class _AppShellState extends State<AppShell> {
       onOpenAcademicSystem: () => unawaited(_openAcademicSystem()),
       onOpenAnnouncements: () => unawaited(_openAnnouncements()),
       onOpenEmptyClassroom: () => unawaited(_openEmptyClassroom()),
+      onOpenCourseRatings: () => unawaited(_openCourseRatings()),
       todayCourseContent: _scheduleSummaryText,
       announcementContent: _announcementSummaryText,
       onPlaceholder: (name) => _showSnack('$name 后续接入'),
@@ -814,6 +819,16 @@ class _AppShellState extends State<AppShell> {
       MaterialPageRoute(
         builder: (context) => EmptyClassroomPage(
           repository: _classroomRepository,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openCourseRatings() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => CourseRatingPage(
+          repository: _courseRatingRepository,
         ),
       ),
     );

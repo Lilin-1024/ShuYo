@@ -13,6 +13,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.onOpenAcademicSystem,
     required this.onOpenAnnouncements,
     required this.onOpenEmptyClassroom,
+    required this.onOpenCourseRatings,
     required this.todayCourseContent,
     required this.announcementContent,
     required this.onPlaceholder,
@@ -26,6 +27,7 @@ class HomeDashboardPage extends StatelessWidget {
   final VoidCallback onOpenAcademicSystem;
   final VoidCallback onOpenAnnouncements;
   final VoidCallback onOpenEmptyClassroom;
+  final VoidCallback onOpenCourseRatings;
   final String todayCourseContent;
   final String announcementContent;
   final ValueChanged<String> onPlaceholder;
@@ -74,8 +76,8 @@ class HomeDashboardPage extends StatelessWidget {
         ),
         _HomeRow(
           title: '课程评价',
-          content: '点击以查看',
-          onTap: () => onPlaceholder('课程评价'),
+          content: '搜索课程、课程号或教师',
+          onTap: onOpenCourseRatings,
         ),
         _HomeRow(
           title: '检查更新',
