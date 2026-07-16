@@ -100,7 +100,7 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final profile = _repo.profile;
     final isProfileTab = _tabIndex == 3 && _openedTopic == null;
-    final isForumTab = _tabIndex == 1 && _openedTopic == null;
+    final isForumTab = _tabIndex == 1 && _openedTopic == null && _repo.isOnline;
 
     return PopScope(
       canPop: _openedTopic == null,
@@ -116,11 +116,12 @@ class _AppShellState extends State<AppShell> {
               AppHeader(
                 title: _headerTitle,
                 showBack: _openedTopic != null,
-                showSettings: isProfileTab,
+                showSettings: isProfileTab && _repo.isOnline,
                 showMore: _openedTopic != null,
                 showSearch: isForumTab,
                 showCreate: isForumTab,
-                notificationCount: _repo.unreadNotificationCount,
+                notificationCount:
+                    _repo.isOnline ? _repo.unreadNotificationCount : 0,
                 onBack: () => setState(() => _openedTopic = null),
                 onMore: _openedTopic == null
                     ? null
@@ -153,14 +154,12 @@ class _AppShellState extends State<AppShell> {
             }
           },
           items: const [
-            BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined), label: '首页'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.forum_outlined), label: '论坛'),
+            BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: '首页'),
+            BottomNavigationBarItem(icon: Icon(Icons.forum), label: '论坛'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.chat_bubble_outline), label: '消息'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline), label: '我'),
+                icon: Icon(Icons.account_circle), label: '我'),
           ],
         ),
       ),
@@ -195,11 +194,25 @@ class _AppShellState extends State<AppShell> {
 
     return switch (_tabIndex) {
       0 => _homeBody(),
-      1 => _forumBody(),
-      2 => MessagesPage(
-          repository: _repo,
-          onLoginRequired: _login,
-        ),
+      1 => _repo.isOnline
+          ? _forumBody()
+          : _LoginRequiredTab(
+              icon: Icons.forum,
+              title: '登录后查看论坛',
+              message: '论坛列表需要乐乎登录态',
+              onTap: _openProfileLoginTab,
+            ),
+      2 => _repo.isOnline
+          ? MessagesPage(
+              repository: _repo,
+              onLoginRequired: _openProfileLoginTab,
+            )
+          : _LoginRequiredTab(
+              icon: Icons.chat_bubble,
+              title: '登录后查看消息',
+              message: '私信和通知需要乐乎登录态',
+              onTap: _openProfileLoginTab,
+            ),
       3 => ProfilePage(
           profile: _repo.profile,
           summary: _repo.userSummary,
@@ -517,7 +530,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _openNotifications() async {
     if (!_repo.isOnline) {
-      await _login();
+      _openProfileLoginTab();
       return;
     }
     await Navigator.of(context).push<void>(
@@ -563,6 +576,16 @@ class _AppShellState extends State<AppShell> {
         message: _loginError(error),
       );
     }
+  }
+
+  void _openProfileLoginTab() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _tabIndex = 3;
+      _openedTopic = null;
+    });
   }
 
   Future<void> _relogin() async {
@@ -996,6 +1019,37 @@ class _TopicActionButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(label, style: const TextStyle(fontSize: 14)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoginRequiredTab extends StatelessWidget {
+  const _LoginRequiredTab({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: EmptyState(
+        icon: icon,
+        title: title,
+        message: message,
+        action: FilledButton.icon(
+          onPressed: onTap,
+          icon: const Icon(Icons.login),
+          label: const Text('去登录'),
         ),
       ),
     );

@@ -25,37 +25,55 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visibleSummary = isOnline ? summary : _zeroSummary;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
-        Row(
-          children: [
-            ForumAvatar(url: profile.avatarUrl(size: 144), size: 64),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile.username,
-                    style: const TextStyle(
-                        fontSize: 24, fontWeight: FontWeight.w800),
+        InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: isOnline || isBusy ? null : onLogin,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(
+              children: [
+                ForumAvatar(
+                  url: isOnline ? profile.avatarUrl(size: 144) : '',
+                  size: 64,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isOnline ? profile.username : '立即登录',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isOnline ? 'ID ${profile.id}' : '登录后查看个人资料',
+                        style: const TextStyle(color: Color(0xFFBDBDBD)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'ID ${profile.id}',
-                    style: const TextStyle(color: Color(0xFFBDBDBD)),
-                  ),
-                ],
-              ),
+                ),
+                if (!isOnline)
+                  isBusy
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.chevron_right),
+              ],
             ),
-          ],
+          ),
         ),
         const SizedBox(height: 24),
-        if (!isOnline) ...[
-          _LoginPrompt(isBusy: isBusy, onLogin: onLogin),
-          const SizedBox(height: 20),
-        ] else ...[
+        if (isOnline) ...[
           _AccountActions(
             isBusy: isBusy,
             onRelogin: onRelogin,
@@ -63,49 +81,22 @@ class ProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 20),
         ],
-        _StatList(summary: summary),
+        _StatList(summary: visibleSummary),
       ],
     );
   }
 }
 
-class _LoginPrompt extends StatelessWidget {
-  const _LoginPrompt({
-    required this.isBusy,
-    required this.onLogin,
-  });
-
-  final bool isBusy;
-  final VoidCallback onLogin;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '当前显示本地样例数据',
-          style: TextStyle(color: Color(0xFFBDBDBD), fontSize: 14),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: isBusy ? null : onLogin,
-            icon: isBusy
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.login),
-            label: Text(isBusy ? '正在接入...' : '登录乐乎'),
-          ),
-        ),
-      ],
-    );
-  }
-}
+const _zeroSummary = UserSummary(
+  likesGiven: 0,
+  likesReceived: 0,
+  topicsEntered: 0,
+  postsReadCount: 0,
+  daysVisited: 0,
+  topicCount: 0,
+  postCount: 0,
+  timeReadSeconds: 0,
+);
 
 class _AccountActions extends StatelessWidget {
   const _AccountActions({

@@ -37,13 +37,9 @@ class HomeDashboardPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       children: [
-        if (!isOnline) ...[
-          _CampusNetworkNotice(onTap: () => onPlaceholder('校园 VPN')),
-          const SizedBox(height: 8),
-        ],
         _HomeRow(
-          title: isOnline ? '欢迎回来，${profile.username}' : '点此登录',
-          content: _greeting(),
+          title: isOnline ? '欢迎回来，${profile.username}' : '立即登录',
+          content: isOnline ? _greeting() : '登录后同步论坛消息和个人数据',
           trailing: isOnline
               ? IconButton(
                   tooltip: '重新登录',
@@ -60,21 +56,25 @@ class HomeDashboardPage extends StatelessWidget {
           onTap: isOnline ? null : onLogin,
         ),
         _HomeRow(
+          icon: Icons.event,
           title: '今日课程',
           content: todayCourseContent,
           onTap: onOpenAcademicSystem,
         ),
         _HomeRow(
+          icon: Icons.developer_board,
           title: '通知公告',
           content: announcementContent,
           onTap: onOpenAnnouncements,
         ),
         _HomeRow(
+          icon: Icons.location_on,
           title: '空教室查询',
           content: '选择校区、教学楼和节次后查询',
           onTap: onOpenEmptyClassroom,
         ),
         _HomeRow(
+          icon: Icons.egg_alt,
           title: '课程评价',
           content: '搜索课程、课程号或教师',
           onTap: onOpenCourseRatings,
@@ -106,60 +106,18 @@ class HomeDashboardPage extends StatelessWidget {
   }
 }
 
-class _CampusNetworkNotice extends StatelessWidget {
-  const _CampusNetworkNotice({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF171717),
-        border: Border.all(color: const Color(0xFF2A2A2A)),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.vpn_lock_outlined, color: Color(0xFFBDBDBD)),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '未检测到校园内网',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                SizedBox(height: 3),
-                Text(
-                  '部分校园服务可能需要校园网或 VPN',
-                  style: TextStyle(color: Color(0xFF9A9A9A), fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: onTap,
-            child: const Text('校园 VPN'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _HomeRow extends StatelessWidget {
   const _HomeRow({
     required this.title,
     required this.content,
+    this.icon,
     this.trailing,
     this.onTap,
   });
 
   final String title;
   final String content;
+  final IconData? icon;
   final Widget? trailing;
   final VoidCallback? onTap;
 
@@ -175,6 +133,19 @@ class _HomeRow extends StatelessWidget {
         ),
         child: Row(
           children: [
+            if (icon != null) ...[
+              SizedBox(
+                width: 40,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFFBDBDBD),
+                    size: 24,
+                  ),
+                ),
+              ),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
