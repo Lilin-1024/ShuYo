@@ -1,6 +1,7 @@
 import '../../core/forum_constants.dart';
 import '../models/composer.dart';
 import '../models/post.dart';
+import '../models/user_profile.dart';
 
 class ReplyDraft {
   const ReplyDraft({
@@ -148,6 +149,49 @@ class PayloadFactory {
       url: '${ForumConstants.baseUrl}${ForumConstants.postsPath}/${post.id}',
       body: _formEncode({
         'context': '/t/topic/${post.topicId}/${post.postNumber}',
+      }),
+    );
+  }
+
+  static RequestPayload updateProfileSettings(
+    String username,
+    ProfileSettingsDraft draft,
+  ) {
+    final lower = username.toLowerCase();
+    return RequestPayload(
+      method: 'PUT',
+      url: '${ForumConstants.baseUrl}/u/$lower.json',
+      body: _formEncode({
+        'bio_raw': draft.bioRaw,
+        'profile_background_upload_url': draft.profileBackgroundUploadUrl,
+        'card_background_upload_url': draft.cardBackgroundUploadUrl,
+        'hide_profile': draft.hideProfile ? 'true' : 'false',
+        'timezone': draft.timezone,
+        'default_calendar': draft.defaultCalendar,
+      }),
+    );
+  }
+
+  static RequestPayload pickSystemAvatar(String username) {
+    return RequestPayload(
+      method: 'PUT',
+      url:
+          '${ForumConstants.baseUrl}/u/${username.toLowerCase()}/preferences/avatar/pick',
+      body: _formEncode({
+        'upload_id': '',
+        'type': 'system',
+      }),
+    );
+  }
+
+  static RequestPayload pickCustomAvatar(String username, int uploadId) {
+    return RequestPayload(
+      method: 'PUT',
+      url:
+          '${ForumConstants.baseUrl}/u/${username.toLowerCase()}/preferences/avatar/pick',
+      body: _formEncode({
+        'upload_id': '$uploadId',
+        'type': 'custom',
       }),
     );
   }

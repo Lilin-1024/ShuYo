@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile.dart';
-import '../../shared/widgets/avatar.dart';
+import 'profile_header.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({
@@ -11,6 +11,7 @@ class ProfilePage extends StatelessWidget {
     required this.isOnline,
     required this.isBusy,
     required this.onLogin,
+    required this.onEditProfile,
     required this.onRelogin,
     required this.onLogout,
   });
@@ -20,6 +21,7 @@ class ProfilePage extends StatelessWidget {
   final bool isOnline;
   final bool isBusy;
   final VoidCallback onLogin;
+  final VoidCallback onEditProfile;
   final VoidCallback onRelogin;
   final VoidCallback onLogout;
 
@@ -29,48 +31,20 @@ class ProfilePage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
-        InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: isOnline || isBusy ? null : onLogin,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2),
-            child: Row(
-              children: [
-                ForumAvatar(
-                  url: isOnline ? profile.avatarUrl(size: 144) : '',
-                  size: 64,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isOnline ? profile.username : '立即登录',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isOnline ? 'ID ${profile.id}' : '登录后查看个人资料',
-                        style: const TextStyle(color: Color(0xFFBDBDBD)),
-                      ),
-                    ],
-                  ),
-                ),
-                if (!isOnline)
-                  isBusy
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.chevron_right),
-              ],
-            ),
-          ),
+        ProfileHeader(
+          profile: profile,
+          title: isOnline ? profile.username : '立即登录',
+          subtitle: isOnline ? 'ID ${profile.id}' : '登录后查看个人资料',
+          avatarUrl: isOnline ? null : '',
+          backgroundUrl: isOnline ? null : '',
+          onTap: isBusy ? null : (isOnline ? onEditProfile : onLogin),
+          trailing: isBusy
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.chevron_right),
         ),
         const SizedBox(height: 24),
         if (isOnline) ...[

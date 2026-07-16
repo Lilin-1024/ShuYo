@@ -11,6 +11,7 @@ import 'package:lehu_client/data/models/forum_notification.dart';
 import 'package:lehu_client/data/models/post.dart';
 import 'package:lehu_client/data/models/topic.dart';
 import 'package:lehu_client/data/models/topic_detail.dart';
+import 'package:lehu_client/data/models/user_profile.dart';
 import 'package:lehu_client/data/repositories/classroom_repository.dart';
 import 'package:lehu_client/data/services/announcement_api_client.dart';
 import 'package:lehu_client/data/services/classroom_api_client.dart';
@@ -430,6 +431,55 @@ void main() {
     expect(detail.average, 10);
     expect(detail.ratings.single.tags.single.displayText, '给分：高于预期');
     expect(detail.ratings.single.createdAt, isA<DateTime>());
+  });
+
+  test('parses editable profile fields and builds settings payloads', () {
+    final profile = UserProfile.fromJson({
+      'user': {
+        'id': 669,
+        'username': 'Lilin',
+        'avatar_template': '/user_avatar/bbs.shu.edu.cn/lilin/{size}/95_2.png',
+        'bio_raw': "Here's an introduction!",
+        'bio_excerpt': 'Here’s an introduction!',
+        'profile_background_upload_url': '/uploads/default/original/bg.jpeg',
+        'card_background_upload_url': '/uploads/default/original/card.jpeg',
+        'system_avatar_template':
+            '/letter_avatar_proxy/v4/letter/l/ea666f/{size}.png',
+        'custom_avatar_upload_id': 95,
+        'can_edit': true,
+        'can_upload_profile_header': true,
+        'user_option': {
+          'hide_profile': true,
+          'timezone': 'Asia/Shanghai',
+          'default_calendar': 'none_selected',
+        },
+      },
+    });
+
+    expect(profile.bioRaw, "Here's an introduction!");
+    expect(profile.hideProfile, isTrue);
+    expect(profile.profileBackgroundUrl(), endsWith('/bg.jpeg'));
+    expect(profile.customAvatarUploadId, 95);
+
+    final settingsPayload = PayloadFactory.updateProfileSettings(
+      profile.username,
+      ProfileSettingsDraft.fromProfile(profile),
+    );
+    final fields = PayloadFactory.decodeForm(settingsPayload.body);
+    expect(settingsPayload.method, 'PUT');
+    expect(fields['hide_profile'], 'true');
+    expect(fields['profile_background_upload_url'],
+        '/uploads/default/original/bg.jpeg');
+    expect(fields['card_background_upload_url'],
+        '/uploads/default/original/card.jpeg');
+
+    final systemAvatar = PayloadFactory.pickSystemAvatar(profile.username);
+    expect(PayloadFactory.decodeForm(systemAvatar.body)['type'], 'system');
+    expect(PayloadFactory.decodeForm(systemAvatar.body)['upload_id'], '');
+
+    final customAvatar = PayloadFactory.pickCustomAvatar(profile.username, 95);
+    expect(PayloadFactory.decodeForm(customAvatar.body)['type'], 'custom');
+    expect(PayloadFactory.decodeForm(customAvatar.body)['upload_id'], '95');
   });
 
   test('parses academic schedule bitmasks and untimed courses', () {

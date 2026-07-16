@@ -63,6 +63,9 @@ abstract class ForumRepository {
     String username, {
     bool forceRefresh = false,
   });
+  Future<UserProfile> fetchCurrentUserProfile({
+    bool forceRefresh = false,
+  });
   Future<UserSummary> fetchUserSummary(
     String username, {
     bool forceRefresh = false,
@@ -74,6 +77,13 @@ abstract class ForumRepository {
   Future<TopicPreview> fetchTopicPreview(int id);
   Future<Post> createTopic(CreateTopicDraft draft);
   Future<UploadedImage> uploadImage(PickedImage image);
+  Future<ProfileImageUpload> uploadProfileImage(
+    PickedImage image,
+    ProfileImageUploadType type,
+  );
+  Future<UserProfile> updateProfileSettings(ProfileSettingsDraft draft);
+  Future<UserProfile> useSystemAvatar();
+  Future<UserProfile> useCustomAvatar(int uploadId);
   Future<Post> createReply(ReplyDraft draft);
   Future<List<TopicListItem>> fetchPrivateMessages({bool forceRefresh = false});
   Future<Post> createPrivateMessage(PrivateMessageDraft draft);
@@ -284,6 +294,13 @@ class FixtureForumRepository implements ForumRepository {
   }
 
   @override
+  Future<UserProfile> fetchCurrentUserProfile({
+    bool forceRefresh = false,
+  }) {
+    return fetchUserProfile(profile.username, forceRefresh: forceRefresh);
+  }
+
+  @override
   Future<UserSummary> fetchUserSummary(
     String username, {
     bool forceRefresh = false,
@@ -310,6 +327,29 @@ class FixtureForumRepository implements ForumRepository {
   @override
   Future<UploadedImage> uploadImage(PickedImage image) {
     throw const ForumAuthException('请先登录后再上传图片');
+  }
+
+  @override
+  Future<ProfileImageUpload> uploadProfileImage(
+    PickedImage image,
+    ProfileImageUploadType type,
+  ) {
+    throw const ForumAuthException('请先登录后再上传图片');
+  }
+
+  @override
+  Future<UserProfile> updateProfileSettings(ProfileSettingsDraft draft) {
+    throw const ForumAuthException('请先登录后再修改资料');
+  }
+
+  @override
+  Future<UserProfile> useSystemAvatar() {
+    throw const ForumAuthException('请先登录后再修改头像');
+  }
+
+  @override
+  Future<UserProfile> useCustomAvatar(int uploadId) {
+    throw const ForumAuthException('请先登录后再修改头像');
   }
 
   @override
@@ -401,6 +441,7 @@ class OnlineForumRepository implements ForumRepository {
         _authService = authService,
         _fallback = fallback,
         _session = session,
+        _profile = session.profile,
         _userSummary = userSummary,
         _categories = categories,
         users = Map<int, DiscourseUser>.of(fallback.users) {
@@ -427,6 +468,11 @@ class OnlineForumRepository implements ForumRepository {
       userSummary: summary,
       categories: categories,
     );
+    try {
+      await repository.fetchCurrentUserProfile(forceRefresh: true);
+    } on ForumApiException {
+      // 简略 session 资料足够启动应用，完整资料可稍后进入页面时再刷新。
+    }
     await repository.fetchLatestTopics();
     return repository;
   }
@@ -435,6 +481,7 @@ class OnlineForumRepository implements ForumRepository {
   final ForumAuthService _authService;
   final FixtureForumRepository _fallback;
   final CurrentUserSession _session;
+  UserProfile _profile;
   final UserSummary _userSummary;
   final Map<int, ForumCategory> _categories;
   final Map<int, TopicDetail> _topicDetails = {};
@@ -457,7 +504,7 @@ class OnlineForumRepository implements ForumRepository {
   bool get isOnline => true;
 
   @override
-  UserProfile get profile => _session.profile;
+  UserProfile get profile => _profile;
 
   @override
   UserSummary get userSummary => _userSummary;
@@ -605,8 +652,14 @@ class OnlineForumRepository implements ForumRepository {
     final json =
         await _apiClient.getJson('/u/${Uri.encodeComponent(key)}.json');
     final profile = UserProfile.fromJson(json);
-    users[profile.id] = profile.user;
-    return _userProfiles[key] = profile;
+    return _storeProfile(profile);
+  }
+
+  @override
+  Future<UserProfile> fetchCurrentUserProfile({
+    bool forceRefresh = false,
+  }) {
+    return fetchUserProfile(profile.username, forceRefresh: forceRefresh);
   }
 
   @override
@@ -666,6 +719,69 @@ class OnlineForumRepository implements ForumRepository {
       thumbnailWidth: intValue(json['thumbnail_width']),
       thumbnailHeight: intValue(json['thumbnail_height']),
     );
+  }
+
+  @override
+  Future<ProfileImageUpload> uploadProfileImage(
+    PickedImage image,
+    ProfileImageUploadType type,
+  ) async {
+    final clientId = _uploadClientId();
+    final fields = <String, String>{
+      'client_id': clientId,
+      'upload_type': switch (type) {
+        ProfileImageUploadType.avatar => 'avatar',
+        ProfileImageUploadType.profileBackground => 'profile_background',
+      },
+      'pasted': 'undefined',
+      'name': image.filename,
+      'type': image.mimeType,
+      'sha1_checksum': Sha1Hash.hex(image.bytes),
+    };
+    if (type == ProfileImageUploadType.avatar) {
+      fields['user_id'] = '${profile.id}';
+    }
+    final json = await _apiClient.postMultipart(
+      path: '/uploads.json?client_id=$clientId',
+      fields: fields,
+      fileField: 'file',
+      fileBytes: image.bytes,
+      filename: image.filename,
+    );
+    return ProfileImageUpload.fromJson(json);
+  }
+
+  @override
+  Future<UserProfile> updateProfileSettings(ProfileSettingsDraft draft) async {
+    final payload = PayloadFactory.updateProfileSettings(
+      profile.username,
+      draft,
+    );
+    final json = await _apiClient.putForm(
+      '/u/${profile.username.toLowerCase()}.json',
+      payload.body,
+    );
+    return _profileFromMutationResponse(json);
+  }
+
+  @override
+  Future<UserProfile> useSystemAvatar() async {
+    final payload = PayloadFactory.pickSystemAvatar(profile.username);
+    await _apiClient.putForm(
+      '/u/${profile.username.toLowerCase()}/preferences/avatar/pick',
+      payload.body,
+    );
+    return fetchCurrentUserProfile(forceRefresh: true);
+  }
+
+  @override
+  Future<UserProfile> useCustomAvatar(int uploadId) async {
+    final payload = PayloadFactory.pickCustomAvatar(profile.username, uploadId);
+    await _apiClient.putForm(
+      '/u/${profile.username.toLowerCase()}/preferences/avatar/pick',
+      payload.body,
+    );
+    return fetchCurrentUserProfile(forceRefresh: true);
   }
 
   @override
@@ -885,6 +1001,24 @@ class OnlineForumRepository implements ForumRepository {
 
   void _mergeUsers(JsonMap json) {
     users.addAll(FixtureForumRepository._parseUsers(json));
+  }
+
+  UserProfile _storeProfile(UserProfile profile) {
+    users[profile.id] = profile.user;
+    final key = profile.username.toLowerCase();
+    _userProfiles[key] = profile;
+    if (key == _session.username.toLowerCase()) {
+      _profile = profile;
+    }
+    return profile;
+  }
+
+  UserProfile _profileFromMutationResponse(JsonMap json) {
+    final user = json['user'];
+    if (user is! JsonMap) {
+      throw const ForumApiException('资料已提交，但返回内容无法解析');
+    }
+    return _storeProfile(UserProfile.fromJson({'user': user}));
   }
 
   Future<List<TopicListItem>> _loadMoreTopics({
