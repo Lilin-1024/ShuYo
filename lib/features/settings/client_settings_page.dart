@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../data/services/client_settings_service.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class ClientSettingsPage extends StatelessWidget {
@@ -27,7 +28,7 @@ class ClientSettingsPage extends StatelessWidget {
           _SettingsRow(
             title: '通知设置',
             onTap: () => Navigator.of(context).push<void>(
-              MaterialPageRoute(
+              lehuRoute(
                 builder: (context) => _NotificationSettingsPage(
                   settingsService: settingsService,
                   scheduleNotificationService: scheduleNotificationService,
@@ -38,7 +39,7 @@ class ClientSettingsPage extends StatelessWidget {
           _SettingsRow(
             title: 'WebVPN代理',
             onTap: () => Navigator.of(context).push<void>(
-              MaterialPageRoute(
+              lehuRoute(
                 builder: (context) => _NetworkSettingsPage(
                   settingsService: settingsService,
                 ),

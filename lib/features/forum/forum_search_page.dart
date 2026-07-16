@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/forum_search.dart';
-import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
-import '../../data/models/topic_detail.dart';
 import '../../data/repositories/forum_repository.dart';
-import '../../data/services/payload_factory.dart';
 import '../../features/profile/user_profile_page.dart';
-import '../../features/topic/topic_page.dart';
+import '../../features/topic/topic_detail_page.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -17,10 +15,14 @@ class ForumSearchPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.onLoginRequired,
+    this.onSessionExpired,
+    this.onBookmarkChanged,
   });
 
   final ForumRepository repository;
-  final VoidCallback onLoginRequired;
+  final Future<void> Function() onLoginRequired;
+  final Future<void> Function()? onSessionExpired;
+  final VoidCallback? onBookmarkChanged;
 
   @override
   State<ForumSearchPage> createState() => _ForumSearchPageState();
@@ -153,12 +155,13 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
 
   Future<void> _openTopic(TopicListItem topic) async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
-        builder: (context) => _SearchTopicPage(
+      lehuRoute(
+        builder: (context) => TopicDetailPage(
           repository: widget.repository,
           topic: topic,
           onLoginRequired: widget.onLoginRequired,
-          onOpenUser: _openUser,
+          onSessionExpired: widget.onSessionExpired,
+          onBookmarkChanged: widget.onBookmarkChanged,
         ),
       ),
     );
@@ -166,7 +169,7 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
 
   Future<void> _openUser(String username) async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => UserProfilePage(
           repository: widget.repository,
           username: username,
@@ -410,162 +413,6 @@ class _SearchRow extends StatelessWidget {
               meta,
               style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
             ),
-    );
-  }
-}
-
-class _SearchTopicPage extends StatefulWidget {
-  const _SearchTopicPage({
-    required this.repository,
-    required this.topic,
-    required this.onLoginRequired,
-    required this.onOpenUser,
-  });
-
-  final ForumRepository repository;
-  final TopicListItem topic;
-  final VoidCallback onLoginRequired;
-  final ValueChanged<String> onOpenUser;
-
-  @override
-  State<_SearchTopicPage> createState() => _SearchTopicPageState();
-}
-
-class _SearchTopicPageState extends State<_SearchTopicPage> {
-  Future<TopicDetail?>? _future;
-  bool _submittingReply = false;
-  final _likingPostIds = <int>{};
-  final _deletingPostIds = <int>{};
-
-  @override
-  void initState() {
-    super.initState();
-    _future = widget.repository.fetchTopicDetail(widget.topic.id);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('帖子')),
-      body: FutureBuilder<TopicDetail?>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return EmptyState(
-              icon: Icons.error_outline,
-              title: '帖子加载失败',
-              message: snapshot.error.toString(),
-              action: TextButton.icon(
-                onPressed: _refresh,
-                icon: const Icon(Icons.refresh),
-                label: const Text('重试'),
-              ),
-            );
-          }
-          return TopicPage(
-            item: widget.topic,
-            detail: snapshot.data,
-            category: widget.repository.categoryById(widget.topic.categoryId),
-            isOnline: widget.repository.isOnline,
-            isSubmittingReply: _submittingReply,
-            busyLikePostIds: _likingPostIds,
-            busyDeletePostIds: _deletingPostIds,
-            onLikePost: _likePost,
-            onDeletePost: _deletePost,
-            onUploadImage: widget.repository.uploadImage,
-            onCreateReply: _createReply,
-            onLoginRequired: widget.onLoginRequired,
-            onOpenUser: _openUser,
-          );
-        },
-      ),
-    );
-  }
-
-  Future<void> _refresh() async {
-    setState(() {
-      _future = widget.repository.fetchTopicDetail(
-        widget.topic.id,
-        forceRefresh: true,
-      );
-    });
-  }
-
-  Future<void> _createReply(ReplyDraft draft) async {
-    if (_submittingReply) {
-      return;
-    }
-    setState(() => _submittingReply = true);
-    try {
-      await widget.repository.createReply(draft);
-      if (mounted) {
-        await _refresh();
-      }
-    } on Object catch (error) {
-      _showSnack('评论失败：$error');
-    } finally {
-      if (mounted) {
-        setState(() => _submittingReply = false);
-      }
-    }
-  }
-
-  Future<void> _likePost(int postId) async {
-    if (_likingPostIds.contains(postId)) {
-      return;
-    }
-    setState(() => _likingPostIds.add(postId));
-    try {
-      final post = await widget.repository.likePost(postId);
-      if (mounted) {
-        setState(() {
-          _future = widget.repository.fetchTopicDetail(
-            post.topicId,
-            forceRefresh: true,
-          );
-        });
-      }
-    } on Object catch (error) {
-      _showSnack('点赞失败：$error');
-    } finally {
-      if (mounted) {
-        setState(() => _likingPostIds.remove(postId));
-      }
-    }
-  }
-
-  Future<void> _deletePost(Post post) async {
-    if (_deletingPostIds.contains(post.id)) {
-      return;
-    }
-    setState(() => _deletingPostIds.add(post.id));
-    try {
-      await widget.repository.deletePost(post);
-      if (mounted) {
-        await _refresh();
-      }
-    } on Object catch (error) {
-      _showSnack('删除失败：$error');
-    } finally {
-      if (mounted) {
-        setState(() => _deletingPostIds.remove(post.id));
-      }
-    }
-  }
-
-  void _openUser(String username) {
-    widget.onOpenUser(username);
-  }
-
-  void _showSnack(String message) {
-    if (!mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/course_rating.dart';
 import '../../data/repositories/course_rating_repository.dart';
 import '../../data/services/course_rating_api_client.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/info_confirm_dialog.dart';
 
@@ -113,7 +114,7 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
 
   void _openCourse(CourseRatingCourse course) {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => CourseRatingCourseTeachersPage(
           repository: widget.repository,
           course: course,
@@ -124,7 +125,7 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
 
   void _openTeacher(CourseRatingTeacher teacher) {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => CourseRatingTeacherCoursesPage(
           repository: widget.repository,
           teacher: teacher,
@@ -251,7 +252,7 @@ class _CourseRatingCourseTeachersPageState
 
   void _openDetail(CourseRatingCourse course, CourseRatingTeacher teacher) {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => CourseRatingDetailPage(
           repository: widget.repository,
           course: course,
@@ -381,7 +382,7 @@ class _CourseRatingTeacherCoursesPageState
 
   void _openDetail(CourseRatingCourse course, CourseRatingTeacher teacher) {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => CourseRatingDetailPage(
           repository: widget.repository,
           course: course,

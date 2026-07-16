@@ -11,6 +11,7 @@ import '../../data/repositories/forum_repository.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -252,7 +253,7 @@ class _MessagesPageState extends State<MessagesPage> {
       await _openMessage(group.topics.first, group.displayName);
     } else {
       await Navigator.of(context).push<void>(
-        MaterialPageRoute(
+        lehuRoute(
           builder: (context) => _MessageTopicSelectionPage(
             repository: widget.repository,
             group: group,
@@ -268,7 +269,7 @@ class _MessagesPageState extends State<MessagesPage> {
 
   Future<void> _openMessage(TopicListItem topic, String counterpartTitle) {
     return Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => _MessageDetailPage(
           repository: widget.repository,
           topic: topic,
@@ -317,7 +318,7 @@ class _MessageTopicSelectionPage extends StatelessWidget {
             ),
             onTap: () {
               Navigator.of(context).push<void>(
-                MaterialPageRoute(
+                lehuRoute(
                   builder: (context) => _MessageDetailPage(
                     repository: repository,
                     topic: topic,
@@ -644,7 +645,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
 
   void _openImagePreview(List<String> urls, int initialIndex) {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         fullscreenDialog: true,
         builder: (context) => FullscreenImagePage(
           urls: urls,

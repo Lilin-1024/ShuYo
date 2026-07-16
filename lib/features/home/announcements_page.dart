@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/announcement.dart';
 import '../../data/repositories/announcement_repository.dart';
 import '../../data/services/announcement_api_client.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class AnnouncementsPage extends StatefulWidget {
@@ -89,7 +90,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
 
   void _openDetail(AnnouncementListItem item) {
     Navigator.of(context).push<void>(
-      MaterialPageRoute(
+      lehuRoute(
         builder: (context) => AnnouncementDetailPage(
           repository: widget.repository,
           item: item,
