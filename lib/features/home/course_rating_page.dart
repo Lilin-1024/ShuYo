@@ -4,6 +4,7 @@ import '../../data/models/course_rating.dart';
 import '../../data/repositories/course_rating_repository.dart';
 import '../../data/services/course_rating_api_client.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/info_confirm_dialog.dart';
 
 class CourseRatingPage extends StatefulWidget {
   const CourseRatingPage({
@@ -31,7 +32,16 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('课程评价')),
+      appBar: AppBar(
+        title: const Text('课程评价'),
+        actions: [
+          IconButton(
+            tooltip: '说明',
+            onPressed: _showInfo,
+            icon: const Icon(Icons.info),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           _CourseRatingSearchBar(
@@ -120,6 +130,15 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
           teacher: teacher,
         ),
       ),
+    );
+  }
+
+  Future<void> _showInfo() async {
+    await showInfoConfirmDialog(
+      context,
+      title: '课程评价说明',
+      message:
+          '该功能由 https://course-rate.icu/ 提供。感谢学盟的付出！\n\n当前客户端仅支持浏览课程与教师评价，暂不能发表评价。\n\n如需评价课程，请访问网站注册登录后进行。\n\n再次感谢学盟的付出！',
     );
   }
 }

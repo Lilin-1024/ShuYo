@@ -197,8 +197,8 @@ class _AppShellState extends State<AppShell> {
           ? _forumBody()
           : _LoginRequiredTab(
               icon: Icons.forum,
-              title: '登录后查看论坛',
-              message: '论坛列表需要乐乎登录态',
+              title: '登录以查看论坛',
+              message: '论坛需要登录后访问哦',
               onTap: _openProfileLoginTab,
             ),
       2 => _repo.isOnline
@@ -209,7 +209,7 @@ class _AppShellState extends State<AppShell> {
           : _LoginRequiredTab(
               icon: Icons.chat_bubble,
               title: '登录后查看消息',
-              message: '私信和通知需要乐乎登录态',
+              message: '立即登录！查看论坛私信',
               onTap: _openProfileLoginTab,
             ),
       3 => ProfilePage(
@@ -891,6 +891,10 @@ class _AppShellState extends State<AppShell> {
         builder: (context) => const ForumWebViewPage(
           title: '教务系统',
           url: 'https://jwxt.shu.edu.cn',
+          initialNoticeTitle: '教务系统登录',
+          initialNoticeMessage:
+              '教务系统为独立系统，需要你在网页中单独登录一次。\n\n本应用只读取课表数据，不会收集或保存你的账号密码。',
+          initialNoticeDelay: Duration(seconds: 5),
         ),
       ),
     );
