@@ -12,6 +12,7 @@ import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/emoji_picker.dart';
 import '../../shared/widgets/forum_network_image.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
@@ -227,10 +228,10 @@ class _TopicHeader extends StatelessWidget {
         children: [
           Text(
             detail.title,
-            style: const TextStyle(
-              fontSize: 24,
-              height: 1.16,
-              fontWeight: FontWeight.w800,
+            style: LehuTextStyles.title(
+              size: 20.5,
+              height: 1.2,
+              weight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 10),
@@ -445,7 +446,11 @@ class _PostView extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               segment.value,
-              style: TextStyle(fontSize: textSize, height: 1.46),
+              style: TextStyle(
+                fontSize: textSize,
+                height: 1.46,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
         );
@@ -503,7 +508,10 @@ class _PostView extends StatelessWidget {
                         post.username,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14.5,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -512,7 +520,7 @@ class _PostView extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Color(0xFF8A8A8A),
-                          fontSize: 12,
+                          fontSize: 12.5,
                         ),
                       ),
                     ],
@@ -525,7 +533,7 @@ class _PostView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               replyContext!,
-              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
+              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
             ),
           ],
           const SizedBox(height: 12),
@@ -648,7 +656,7 @@ class _ReplyComposerState extends State<_ReplyComposer> {
         children: [
           Text(
             replyTo == null ? '评论主题' : '回复 #$replyTo',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           TextField(

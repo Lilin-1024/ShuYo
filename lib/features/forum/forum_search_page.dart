@@ -6,6 +6,7 @@ import '../../data/repositories/forum_repository.dart';
 import '../../features/profile/user_profile_page.dart';
 import '../../features/topic/topic_detail_page.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -273,8 +274,8 @@ class _OptionChip extends StatelessWidget {
           label,
           style: TextStyle(
             color: selected ? Colors.black : const Color(0xFFD6D6D6),
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 12.5,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ),
@@ -369,7 +370,7 @@ class _UserResults extends StatelessWidget {
           leading: ForumAvatar(url: user.avatarUrl(size: 96), size: 38),
           title: Text(
             user.username,
-            style: const TextStyle(fontWeight: FontWeight.w700),
+            style: const TextStyle(fontWeight: FontWeight.w500),
           ),
           subtitle: Text('ID ${user.id}'),
           onTap: () => onOpenUser(user.username),
@@ -400,18 +401,25 @@ class _SearchRow extends StatelessWidget {
         title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w700),
+        style: LehuTextStyles.title(
+          size: 15.5,
+          weight: FontWeight.w500,
+        ),
       ),
       subtitle: Text(
         subtitle,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          fontSize: 14,
+          height: 1.46,
+        ),
       ),
       trailing: meta.isEmpty
           ? null
           : Text(
               meta,
-              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
+              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
             ),
     );
   }

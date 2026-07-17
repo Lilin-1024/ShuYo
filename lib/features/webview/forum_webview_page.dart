@@ -488,7 +488,7 @@ class _WebViewErrorOverlay extends StatelessWidget {
               const SizedBox(height: 14),
               const Text(
                 '网页加载失败',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               Text(

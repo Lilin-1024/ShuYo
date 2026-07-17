@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/course_rating.dart';
 import '../../data/repositories/course_rating_repository.dart';
 import '../../data/services/course_rating_api_client.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/info_confirm_dialog.dart';
@@ -331,14 +332,14 @@ class _CourseRatingTeacherCoursesPageState
                 Text(
                   data.teacher.name,
                   style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 5),
                 const Text(
                   '选择课程查看这位老师的评价',
-                  style: TextStyle(color: Color(0xFF9A9A9A)),
+                  style: TextStyle(color: Color(0xFF9A9A9A), fontSize: 14.5),
                 ),
                 const SizedBox(height: 16),
                 if (data.courses.isEmpty)
@@ -652,7 +653,10 @@ class _CourseRatingSearchResultList extends StatelessWidget {
       children: [
         Text(
           '搜索：$query',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          style: LehuTextStyles.title(
+            size: 16.5,
+            weight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 16),
         if (result.courses.isNotEmpty) ...[
@@ -689,7 +693,10 @@ class _CourseHeader extends StatelessWidget {
       children: [
         Text(
           course.name,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+          style: LehuTextStyles.title(
+            size: 19,
+            weight: FontWeight.w600,
+          ),
         ),
         if (course.displayCode.isNotEmpty) ...[
           const SizedBox(height: 5),
@@ -728,7 +735,8 @@ class _RatingDetailHeader extends StatelessWidget {
                 detail.total == 0 ? '暂无评分' : '${_scoreText(detail.average)}/10',
                 style: const TextStyle(
                   color: Color(0xFF66E0A3),
-                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -827,12 +835,16 @@ class _RatingTile extends StatelessWidget {
                   rating.user.username.isEmpty ? '匿名' : rating.user.username,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               Text(
                 _dateText(rating.createdAt),
-                style: const TextStyle(color: Color(0xFF888888), fontSize: 12),
+                style:
+                    const TextStyle(color: Color(0xFF888888), fontSize: 12.5),
               ),
             ],
           ),
@@ -843,7 +855,9 @@ class _RatingTile extends StatelessWidget {
               color: rating.content.isEmpty
                   ? const Color(0xFF8A8A8A)
                   : const Color(0xFFE5E5E5),
+              fontSize: 15.5,
               height: 1.45,
+              fontWeight: FontWeight.w400,
             ),
           ),
           if (rating.tags.isNotEmpty) ...[
@@ -897,8 +911,8 @@ class _PlainTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                   if (subtitle.isNotEmpty) ...[
@@ -909,7 +923,7 @@ class _PlainTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF9A9A9A),
-                        fontSize: 13,
+                        fontSize: 14,
                       ),
                     ),
                   ],
@@ -944,8 +958,8 @@ class _ScorePill extends StatelessWidget {
           color: rating.hasScore
               ? const Color(0xFF66E0A3)
               : const Color(0xFFBDBDBD),
-          fontWeight: FontWeight.w800,
-          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          fontSize: 12.5,
         ),
       ),
     );
@@ -967,7 +981,7 @@ class _SoftLabel extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 12),
+        style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 12.5),
       ),
     );
   }
@@ -984,7 +998,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+        style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
       ),
     );
   }

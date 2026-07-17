@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/classroom.dart';
 import '../../data/repositories/classroom_repository.dart';
 import '../../data/services/classroom_api_client.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class EmptyClassroomPage extends StatefulWidget {
@@ -584,7 +585,10 @@ class _ClassroomResultList extends StatelessWidget {
         Text(
           '${result.scopeLabel} · ${_dateLabel(result.date)} · '
           '${result.startSection}-${result.endSection}节',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+          style: LehuTextStyles.title(
+            size: 16.5,
+            weight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 5),
         if (normalizedKeyword.isNotEmpty) ...[
@@ -646,9 +650,9 @@ class _BuildingAvailableRooms extends StatelessWidget {
           if (showBuildingName) ...[
             Text(
               '${result.building.name} · ${result.availableCount}间',
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
+              style: LehuTextStyles.title(
+                size: 15.5,
+                weight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
@@ -683,7 +687,7 @@ class _CourseMatches extends StatelessWidget {
       children: [
         const Text(
           '课程位置',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         for (final match in matches)
@@ -735,7 +739,7 @@ class _FloorAvailableRooms extends StatelessWidget {
         children: [
           Text(
             '${floor.floor.name} · ${floor.availableRooms.length}间',
-            style: const TextStyle(fontWeight: FontWeight.w800),
+            style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -806,8 +810,8 @@ class _RoomChip extends StatelessWidget {
                 Text(
                   room.name,
                   style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (room.fullName.isNotEmpty) ...[
@@ -824,7 +828,8 @@ class _RoomChip extends StatelessWidget {
                       : '$startSection-$endSection节已有安排',
                   style: const TextStyle(
                     color: Color(0xFF66E0A3),
-                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -840,7 +845,7 @@ class _RoomChip extends StatelessWidget {
                       child: Text(
                         '${course.sectionText} · ${course.courseName}'
                         '${course.teacherName.isEmpty ? '' : ' · ${course.teacherName}'}',
-                        style: const TextStyle(height: 1.35),
+                        style: const TextStyle(fontSize: 14.5, height: 1.46),
                       ),
                     ),
               ],

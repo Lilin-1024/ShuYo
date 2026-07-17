@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../lehu_text_styles.dart';
+
 class AppHeader extends StatelessWidget {
   const AppHeader({
     super.key,
@@ -58,7 +60,7 @@ class AppHeader extends StatelessWidget {
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+              style: LehuTextStyles.headerTitle(),
             ),
           ),
           if (showSettings)
@@ -123,11 +125,8 @@ class _NotificationIcon extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
+              style: LehuTextStyles.chip(
+                  color: Colors.white, size: 10, weight: FontWeight.w600),
             ),
           ),
         ),

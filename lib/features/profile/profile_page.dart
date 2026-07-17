@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/forum_activity.dart';
 import '../../data/models/user_profile.dart';
 import '../../shared/compact_number.dart';
+import '../../shared/lehu_text_styles.dart';
 import 'profile_header.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -178,10 +179,10 @@ class _ActivityStatButton extends StatelessWidget {
             children: [
               Text(
                 kind.title,
-                style: const TextStyle(
-                  color: Color(0xFFAAAAAA),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                style: LehuTextStyles.chip(
+                  color: const Color(0xFFAAAAAA),
+                  size: 12.5,
+                  weight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 6),
@@ -189,10 +190,10 @@ class _ActivityStatButton extends StatelessWidget {
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: LehuTextStyles.title(
                   color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+                  size: 16.5,
+                  weight: FontWeight.w600,
                 ),
               ),
             ],
@@ -247,15 +248,18 @@ class _StatRow extends StatelessWidget {
           Expanded(
             child: Text(
               item.label,
-              style: const TextStyle(color: Color(0xFFD6D6D6), fontSize: 15),
+              style: const TextStyle(
+                color: Color(0xFFD6D6D6),
+                fontSize: 14.5,
+              ),
             ),
           ),
           Text(
             item.value,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
+              fontSize: 15.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

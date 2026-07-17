@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/repositories/forum_repository.dart';
 import 'app_shell.dart';
+import '../shared/lehu_text_styles.dart';
 
 class LehuApp extends StatelessWidget {
   const LehuApp({super.key});
@@ -20,16 +21,29 @@ class LehuApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         scaffoldBackgroundColor: Colors.black,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.black,
           selectedItemColor: Colors.white,
           unselectedItemColor: Color(0xFF8A8A8A),
           type: BottomNavigationBarType.fixed,
+        ),
+        textTheme: LehuTextStyles.theme,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          titleTextStyle: TextStyle(
+            fontSize: 17.5,
+            height: 1.22,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+          toolbarTextStyle: TextStyle(
+            fontSize: 14.5,
+            height: 1.2,
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
         ),
       ),
       home: FutureBuilder<ForumRepository>(
@@ -79,7 +93,7 @@ class _StartupError extends StatelessWidget {
             children: [
               const Text(
                 '启动失败',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
               Text(error, style: const TextStyle(color: Color(0xFFBDBDBD))),

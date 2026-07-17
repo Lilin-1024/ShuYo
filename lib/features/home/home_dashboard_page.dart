@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile.dart';
+import '../../shared/lehu_text_styles.dart';
 
 class HomeDashboardPage extends StatelessWidget {
   const HomeDashboardPage({
@@ -140,7 +141,7 @@ class _CampusNetworkWarningCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '未能连接到校园内网',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -161,7 +162,7 @@ class _CampusNetworkWarningCard extends StatelessWidget {
                 TextSpan(text: '如果不起作用，请尝试使用校园VPN（'),
                 TextSpan(
                   text: 'aTrustVPN',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 TextSpan(text: '）或连接ShuWlan校园网以访问内网资源。'),
               ],
@@ -201,8 +202,8 @@ class _HomeRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 72),
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        constraints: const BoxConstraints(minHeight: 68),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(color: Color(0xFF202020))),
         ),
@@ -216,7 +217,7 @@ class _HomeRow extends StatelessWidget {
                   child: Icon(
                     icon,
                     color: const Color(0xFFBDBDBD),
-                    size: 24,
+                    size: 22,
                   ),
                 ),
               ),
@@ -229,20 +230,20 @@ class _HomeRow extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
+                    style: LehuTextStyles.title(
+                      size: 16,
+                      weight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 4),
                   Text(
                     content,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Color(0xFFAAAAAA),
-                      fontSize: 14,
-                      height: 1.3,
+                      fontSize: 13.5,
+                      height: 1.46,
                     ),
                   ),
                 ],

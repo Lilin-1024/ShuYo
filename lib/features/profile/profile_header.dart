@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/forum_network_image.dart';
 
@@ -72,9 +73,10 @@ class ProfileHeader extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 23,
-                          fontWeight: FontWeight.w800,
+                        style: LehuTextStyles.title(
+                          size: 19,
+                          height: 1.22,
+                          weight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: 4),

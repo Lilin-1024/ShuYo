@@ -377,7 +377,8 @@ class _TopicMoreSheet extends StatelessWidget {
                 const Expanded(
                   child: Text(
                     '更多',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    style:
+                        TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
                   ),
                 ),
                 IconButton(

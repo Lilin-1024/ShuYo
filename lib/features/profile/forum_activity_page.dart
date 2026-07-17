@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/forum_activity.dart';
 import '../../data/models/topic.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class ForumActivityPage extends StatefulWidget {
@@ -152,10 +153,10 @@ class _ActivityRow extends StatelessWidget {
                     item.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                    style: LehuTextStyles.title(
+                      size: 15.5,
                       height: 1.25,
+                      weight: FontWeight.w500,
                     ),
                   ),
                   if (item.excerpt.isNotEmpty) ...[
@@ -166,8 +167,8 @@ class _ActivityRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFFAAAAAA),
-                        fontSize: 13,
-                        height: 1.3,
+                        fontSize: 14,
+                        height: 1.46,
                       ),
                     ),
                   ],
@@ -179,7 +180,7 @@ class _ActivityRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF8A8A8A),
-                        fontSize: 12,
+                        fontSize: 12.5,
                       ),
                     ),
                   ],
