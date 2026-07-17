@@ -19,7 +19,6 @@ class HomeDashboardPage extends StatelessWidget {
     required this.onOpenWebVpnProxy,
     required this.todayCourseContent,
     required this.announcementContent,
-    required this.onPlaceholder,
   });
 
   final UserProfile profile;
@@ -35,7 +34,6 @@ class HomeDashboardPage extends StatelessWidget {
   final VoidCallback onOpenWebVpnProxy;
   final String todayCourseContent;
   final String announcementContent;
-  final ValueChanged<String> onPlaceholder;
 
   @override
   Widget build(BuildContext context) {
@@ -87,11 +85,6 @@ class HomeDashboardPage extends StatelessWidget {
           title: '课程评价',
           content: '搜索课程、课程号或教师',
           onTap: onOpenCourseRatings,
-        ),
-        _HomeRow(
-          title: '检查更新',
-          content: '当前版本 0.1.0',
-          onTap: () => onPlaceholder('检查更新'),
         ),
       ],
     );

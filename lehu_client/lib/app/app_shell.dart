@@ -252,7 +252,6 @@ class _AppShellState extends State<AppShell> {
       todayCourseContent:
           _syncingAcademicSchedule ? '课表获取中...' : _scheduleSummaryText,
       announcementContent: _announcementSummaryText,
-      onPlaceholder: (name) => _showSnack('$name 后续接入'),
     );
   }
 
