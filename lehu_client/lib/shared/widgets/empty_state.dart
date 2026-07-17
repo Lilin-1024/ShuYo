@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../lehu_text_styles.dart';
+
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -24,14 +26,15 @@ class EmptyState extends StatelessWidget {
           children: [
             Icon(icon, size: 48, color: const Color(0xFF8A8A8A)),
             const SizedBox(height: 16),
-            Text(title,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(title, style: LehuTextStyles.sectionTitle()),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFFBDBDBD), height: 1.35),
+              style: LehuTextStyles.bodyCompact(
+                color: const Color(0xFFBDBDBD),
+                height: 1.4,
+              ),
             ),
             if (action != null) ...[
               const SizedBox(height: 14),

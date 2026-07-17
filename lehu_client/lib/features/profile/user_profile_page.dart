@@ -144,7 +144,11 @@ class _ProfileContent extends StatelessWidget {
           const SizedBox(height: 18),
           Text(
             profile.bioExcerpt,
-            style: const TextStyle(color: Color(0xFFD6D6D6), height: 1.42),
+            style: const TextStyle(
+              color: Color(0xFFD6D6D6),
+              fontSize: 14.5,
+              height: 1.46,
+            ),
           ),
         ],
         const SizedBox(height: 20),
@@ -206,7 +210,7 @@ class _ProfileStatList extends StatelessWidget {
                   stats[i].value,
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -259,7 +263,7 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
         children: [
           Text(
             '发给 ${widget.recipient}',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           TextField(

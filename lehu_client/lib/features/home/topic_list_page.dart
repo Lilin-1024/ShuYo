@@ -4,6 +4,7 @@ import '../../data/models/category.dart';
 import '../../data/models/discourse_user.dart';
 import '../../data/models/topic.dart';
 import '../../data/services/html_text.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/forum_network_image.dart';
@@ -192,9 +193,10 @@ class _TopicListRow extends StatelessWidget {
                           user?.username ?? '未知用户',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFD6D6D6),
-                            fontWeight: FontWeight.w600,
+                          style: LehuTextStyles.title(
+                            color: const Color(0xFFD6D6D6),
+                            size: 14.5,
+                            weight: FontWeight.w500,
                           ),
                         ),
                         if (metaText.isNotEmpty) ...[
@@ -218,8 +220,11 @@ class _TopicListRow extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               topic.title,
-              style: const TextStyle(
-                  fontSize: 18, height: 1.22, fontWeight: FontWeight.w700),
+              style: LehuTextStyles.title(
+                size: 16.5,
+                height: 1.24,
+                weight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 8),
             FutureBuilder<TopicPreview>(
@@ -230,7 +235,12 @@ class _TopicListRow extends StatelessWidget {
                     '摘要加载失败',
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Color(0xFFBDBDBD), height: 1.35),
+                    style: TextStyle(
+                      color: Color(0xFFBDBDBD),
+                      fontSize: 16,
+                      height: 1.46,
+                      fontWeight: FontWeight.w400,
+                    ),
                   );
                 }
                 final preview = snapshot.data;
@@ -239,7 +249,12 @@ class _TopicListRow extends StatelessWidget {
                     '摘要加载中...',
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: Color(0xFFBDBDBD), height: 1.35),
+                    style: TextStyle(
+                      color: Color(0xFFBDBDBD),
+                      fontSize: 16,
+                      height: 1.46,
+                      fontWeight: FontWeight.w400,
+                    ),
                   );
                 }
                 return _PreviewContent(preview: preview);
@@ -284,14 +299,24 @@ class _PreviewContent extends StatelessWidget {
             '暂无摘要',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Color(0xFFBDBDBD), height: 1.35),
+            style: TextStyle(
+              color: Color(0xFFBDBDBD),
+              fontSize: 16,
+              height: 1.46,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         if (preview.hasText)
           Text(
             preview.text,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Color(0xFFBDBDBD), height: 1.35),
+            style: const TextStyle(
+              color: Color(0xFFBDBDBD),
+              fontSize: 16,
+              height: 1.46,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         if (preview.hasText && preview.hasImages) const SizedBox(height: 10),
         if (preview.hasImages) _PreviewImages(urls: preview.imageUrls),
@@ -413,7 +438,7 @@ class _SquareThumbnail extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -463,7 +488,7 @@ class _CategoryChip extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           category?.name ?? '未知分区',
-          style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 13),
+          style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 12.5),
         ),
       ],
     );
@@ -483,7 +508,7 @@ class _Metric extends StatelessWidget {
         Icon(icon, size: 16, color: const Color(0xFF8A8A8A)),
         const SizedBox(width: 4),
         Text(value,
-            style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 13)),
+            style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 12.5)),
       ],
     );
   }

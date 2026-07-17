@@ -11,6 +11,7 @@ import '../../data/repositories/forum_repository.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
@@ -126,14 +127,17 @@ class _MessagesPageState extends State<MessagesPage> {
               group.displayName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: LehuTextStyles.title(
+                size: 15.5,
+                weight: FontWeight.w500,
+              ),
             ),
             subtitle: _TopicPreviewLine(
               future: _previewForTopic(group.latestTopic),
             ),
             trailing: Text(
               TimeFormat.compact(group.latestTime),
-              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
+              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
             ),
             onTap: () => _openGroup(group),
           );
@@ -309,12 +313,15 @@ class _MessageTopicSelectionPage extends StatelessWidget {
               topic.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+              style: LehuTextStyles.title(
+                size: 15.5,
+                weight: FontWeight.w500,
+              ),
             ),
             subtitle: _TopicPreviewLine(future: previewForTopic(topic)),
             trailing: Text(
               TimeFormat.compact(topic.lastPostedAt ?? topic.createdAt),
-              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
+              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
             ),
             onTap: () {
               Navigator.of(context).push<void>(
@@ -696,7 +703,10 @@ class _MessageDetailHeader extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: LehuTextStyles.title(
+                    size: 15.5,
+                    weight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -705,7 +715,7 @@ class _MessageDetailHeader extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF8A8A8A),
-                    fontSize: 12,
+                    fontSize: 12.5,
                   ),
                 ),
               ],
@@ -829,7 +839,7 @@ class _MessageBubble extends StatelessWidget {
                 post.username,
                 style: TextStyle(
                   color: mine ? Colors.black54 : const Color(0xFF9A9A9A),
-                  fontSize: 12,
+                  fontSize: 12.5,
                 ),
               ),
               const SizedBox(height: 4),
@@ -843,7 +853,7 @@ class _MessageBubble extends StatelessWidget {
                 TimeFormat.compact(post.createdAt),
                 style: TextStyle(
                   color: mine ? Colors.black45 : const Color(0xFF777777),
-                  fontSize: 11,
+                  fontSize: 11.5,
                 ),
               ),
             ],
@@ -1042,7 +1052,12 @@ class _MessageCookedContent extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               segment.value,
-              style: TextStyle(color: textColor, height: 1.38),
+              style: TextStyle(
+                color: textColor,
+                fontSize: 15,
+                height: 1.46,
+                fontWeight: FontWeight.w400,
+              ),
             ),
           ),
         );
@@ -1095,7 +1110,10 @@ class _TopicPreviewLine extends StatelessWidget {
           text,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Color(0xFFBDBDBD)),
+          style: const TextStyle(
+            color: Color(0xFFBDBDBD),
+            fontSize: 14.5,
+          ),
         );
       },
     );

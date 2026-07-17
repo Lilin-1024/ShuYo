@@ -4,6 +4,7 @@ import '../../data/models/academic_schedule.dart';
 import '../../data/repositories/academic_schedule_repository.dart';
 import '../../data/services/academic_schedule_api_client.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/widgets/empty_state.dart';
 
 const _scheduleEmptyCellColor = Color.fromARGB(255, 85, 85, 85);
@@ -376,7 +377,8 @@ class _NotificationSettingsSheetState
                 const Expanded(
                   child: Text(
                     '通知设置',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                    style:
+                        TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
                   ),
                 ),
                 IconButton(
@@ -536,9 +538,9 @@ class _WeekSwitcher extends StatelessWidget {
             child: Text(
               '第 $week 周',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+              style: LehuTextStyles.title(
+                size: 16.5,
+                weight: FontWeight.w600,
               ),
             ),
           ),
@@ -704,12 +706,12 @@ class _DayHeader extends StatelessWidget {
       children: [
         Text(
           _weekdayName(weekday),
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
         ),
         const SizedBox(height: 3),
         Text(
           '${date.month}/${date.day}',
-          style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12),
+          style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 11.5),
         ),
       ],
     );
@@ -730,7 +732,7 @@ class _SectionLabel extends StatelessWidget {
         children: [
           Text(
             '$section',
-            style: const TextStyle(fontWeight: FontWeight.w700),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
           ),
           const SizedBox(height: 3),
           Text(
@@ -738,8 +740,8 @@ class _SectionLabel extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: Color(0xFF777777),
-              fontSize: 10,
-              height: 1.15,
+              fontSize: 9.5,
+              height: 1.2,
             ),
           ),
         ],
@@ -776,9 +778,9 @@ class _CourseBlock extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: _scheduleCourseTextColor,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                  height: 1.15,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11.5,
+                  height: 1.2,
                 ),
               ),
               const Spacer(),
@@ -789,7 +791,7 @@ class _CourseBlock extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: _scheduleCourseMetaTextColor,
-                    fontSize: 11,
+                    fontSize: 10.5,
                   ),
                 ),
             ],
@@ -837,8 +839,8 @@ class _CourseBlock extends StatelessWidget {
                       child: Text(
                         session.courseName,
                         style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 17.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -901,7 +903,7 @@ class _UntimedCourseList extends StatelessWidget {
         '其它课程：$courseText；',
         style: const TextStyle(
           color: Color(0xFFBDBDBD),
-          fontSize: 13,
+          fontSize: 12.5,
           height: 1.45,
         ),
       ),

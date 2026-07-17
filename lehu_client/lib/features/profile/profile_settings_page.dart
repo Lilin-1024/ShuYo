@@ -4,6 +4,7 @@ import '../../core/forum_url_resolver.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/local_image_picker.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/widgets/empty_state.dart';
 import 'profile_header.dart';
 
@@ -385,7 +386,7 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+      style: LehuTextStyles.sectionTitle(),
     );
   }
 }

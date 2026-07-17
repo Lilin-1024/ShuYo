@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/announcement.dart';
 import '../../data/repositories/announcement_repository.dart';
 import '../../data/services/announcement_api_client.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/widgets/empty_state.dart';
 
@@ -156,10 +157,10 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
             children: [
               Text(
                 detail.title,
-                style: const TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w800,
-                  height: 1.25,
+                style: LehuTextStyles.title(
+                  size: 20,
+                  height: 1.22,
+                  weight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 12),
@@ -240,10 +241,10 @@ class _AnnouncementTile extends StatelessWidget {
                 children: [
                   Text(
                     item.title,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      height: 1.28,
+                    style: LehuTextStyles.title(
+                      size: 16,
+                      height: 1.26,
+                      weight: FontWeight.w500,
                     ),
                   ),
                   if (item.summary.isNotEmpty) ...[
@@ -254,8 +255,8 @@ class _AnnouncementTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFFAAAAAA),
-                        fontSize: 14,
-                        height: 1.35,
+                        fontSize: 14.5,
+                        height: 1.46,
                       ),
                     ),
                   ],
@@ -265,7 +266,7 @@ class _AnnouncementTile extends StatelessWidget {
                       item.dateText,
                       style: const TextStyle(
                         color: Color(0xFF7D7D7D),
-                        fontSize: 13,
+                        fontSize: 12.5,
                       ),
                     ),
                   ],

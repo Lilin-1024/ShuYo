@@ -60,7 +60,7 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
                 padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: Text(
                   'Emoji',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
                 ),
               ),
               TabBar(
