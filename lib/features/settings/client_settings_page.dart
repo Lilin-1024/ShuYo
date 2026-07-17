@@ -51,8 +51,8 @@ class ClientSettingsPage extends StatelessWidget {
             onTap: () => _showSnack(context, '主题切换后续接入'),
           ),
           _SettingsRow(
-            title: '功能反馈',
-            onTap: () => _showSnack(context, '功能反馈后续接入'),
+            title: '问题与反馈',
+            onTap: () => _showSnack(context, '问题与反馈后续接入'),
           ),
           if (isOnline && onLogout != null)
             _SettingsRow(
@@ -62,6 +62,10 @@ class ClientSettingsPage extends StatelessWidget {
           _SettingsRow(
             title: '关于客户端',
             onTap: () => _showAbout(context),
+          ),
+          _SettingsRow(
+            title: '检查更新',
+            onTap: () => _showSnack(context, '检查更新后续接入'),
           ),
         ],
       ),
