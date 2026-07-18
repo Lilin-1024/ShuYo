@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../core/forum_url_resolver.dart';
 import '../../data/models/category.dart';
 import '../../data/models/composer.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
+import '../../data/services/emoji_recent_store.dart';
+import '../../data/services/emoji_text.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
-import '../../shared/widgets/emoji_picker.dart';
 import '../../shared/widgets/forum_network_image.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
@@ -58,6 +61,7 @@ class _TopicPageState extends State<TopicPage> {
   static const _collapsedReplyCount = 2;
 
   final _expandedReplyParents = <int>{};
+  final _replyBarKey = GlobalKey<_TopicReplyBarState>();
 
   @override
   Widget build(BuildContext context) {
@@ -77,48 +81,58 @@ class _TopicPageState extends State<TopicPage> {
     return Column(
       children: [
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-            children: [
-              _TopicHeader(detail: detail, category: widget.category),
-              for (final thread in threads)
-                _ThreadedPostView(
-                  thread: thread,
-                  canReply: detail.canCreatePost,
-                  isSubmittingReply: widget.isSubmittingReply,
-                  busyLikePostIds: widget.busyLikePostIds,
-                  busyDeletePostIds: widget.busyDeletePostIds,
-                  expanded: _expandedReplyParents.contains(
-                    thread.post.postNumber,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _handleContentTap,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+              children: [
+                _TopicHeader(detail: detail, category: widget.category),
+                for (final thread in threads)
+                  _ThreadedPostView(
+                    thread: thread,
+                    canReply: detail.canCreatePost,
+                    isSubmittingReply: widget.isSubmittingReply,
+                    busyLikePostIds: widget.busyLikePostIds,
+                    busyDeletePostIds: widget.busyDeletePostIds,
+                    expanded: _expandedReplyParents.contains(
+                      thread.post.postNumber,
+                    ),
+                    collapsedReplyCount: _collapsedReplyCount,
+                    onToggleExpanded: () {
+                      setState(() {
+                        final parent = thread.post.postNumber;
+                        if (!_expandedReplyParents.add(parent)) {
+                          _expandedReplyParents.remove(parent);
+                        }
+                      });
+                    },
+                    onReply: _replyTo,
+                    onLike: _like,
+                    onDelete: _confirmDelete,
+                    onOpenUser: widget.onOpenUser,
+                    onOpenImage: _openImagePreview,
                   ),
-                  collapsedReplyCount: _collapsedReplyCount,
-                  onToggleExpanded: () {
-                    setState(() {
-                      final parent = thread.post.postNumber;
-                      if (!_expandedReplyParents.add(parent)) {
-                        _expandedReplyParents.remove(parent);
-                      }
-                    });
-                  },
-                  onReply: _replyTo,
-                  onLike: _like,
-                  onDelete: _confirmDelete,
-                  onOpenUser: widget.onOpenUser,
-                  onOpenImage: _openImagePreview,
-                ),
-            ],
+              ],
+            ),
           ),
         ),
         _ReplyBar(
+          key: _replyBarKey,
           enabled: detail.canCreatePost && !widget.isSubmittingReply,
           isOnline: widget.isOnline,
           isSubmitting: widget.isSubmittingReply,
-          onTap: () => widget.isOnline
-              ? _openComposer(context)
-              : widget.onLoginRequired(),
+          detail: detail,
+          onLoginRequired: widget.onLoginRequired,
+          onUploadImage: widget.onUploadImage,
+          onSubmit: widget.onCreateReply,
         ),
       ],
     );
+  }
+
+  void _handleContentTap() {
+    _replyBarKey.currentState?.handleOutsideTap();
   }
 
   void _replyTo(Post post) {
@@ -126,7 +140,7 @@ class _TopicPageState extends State<TopicPage> {
       widget.onLoginRequired();
       return;
     }
-    _openComposer(context, replyToPostNumber: post.postNumber);
+    _replyBarKey.currentState?.replyTo(post.postNumber);
   }
 
   void _like(Post post) {
@@ -166,38 +180,6 @@ class _TopicPageState extends State<TopicPage> {
     if (confirmed == true) {
       widget.onDeletePost(post);
     }
-  }
-
-  void _openComposer(BuildContext context, {int? replyToPostNumber}) {
-    final detail = widget.detail;
-    if (detail == null || !detail.canCreatePost || widget.isSubmittingReply) {
-      return;
-    }
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF111111),
-      showDragHandle: true,
-      builder: (context) {
-        return _ReplyComposer(
-          replyToPostNumber: replyToPostNumber,
-          onUploadImage: widget.onUploadImage,
-          onSubmit: (raw, images) {
-            Navigator.of(context).pop();
-            widget.onCreateReply(
-              ReplyDraft(
-                topicId: detail.id,
-                categoryId: detail.categoryId,
-                raw: raw,
-                replyToPostNumber: replyToPostNumber,
-                archetype: detail.archetype,
-                images: images,
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 
   void _openImagePreview(List<String> urls, int initialIndex) {
@@ -573,158 +555,375 @@ class _PostView extends StatelessWidget {
   }
 }
 
-class _ReplyBar extends StatelessWidget {
+class _ReplyBar extends StatefulWidget {
   const _ReplyBar({
+    super.key,
     required this.enabled,
     required this.isOnline,
     required this.isSubmitting,
-    required this.onTap,
+    required this.detail,
+    required this.onLoginRequired,
+    required this.onUploadImage,
+    required this.onSubmit,
   });
 
   final bool enabled;
   final bool isOnline;
   final bool isSubmitting;
-  final VoidCallback onTap;
+  final TopicDetail detail;
+  final VoidCallback onLoginRequired;
+  final Future<UploadedImage> Function(PickedImage image) onUploadImage;
+  final ValueChanged<ReplyDraft> onSubmit;
+
+  @override
+  State<_ReplyBar> createState() => _TopicReplyBarState();
+}
+
+class _TopicReplyBarState extends State<_ReplyBar> {
+  final _controller = TextEditingController();
+  final _focusNode = FocusNode();
+  final _images = <UploadedImage>[];
+  List<String> _recentShortcodes = const [];
+  bool _uploading = false;
+  bool _composerOpen = false;
+  bool _showEmojiPanel = false;
+  int? _replyToPostNumber;
+
+  bool get _canType =>
+      widget.enabled && widget.isOnline && !widget.isSubmitting && !_uploading;
+
+  bool get _expanded =>
+      _composerOpen ||
+      _focusNode.hasFocus ||
+      _showEmojiPanel ||
+      _controller.text.trim().isNotEmpty ||
+      _images.isNotEmpty ||
+      _replyToPostNumber != null;
+
+  bool get _canSend =>
+      widget.isOnline &&
+      !widget.isSubmitting &&
+      !_uploading &&
+      (_controller.text.trim().isNotEmpty || _images.isNotEmpty);
+
+  bool get _hasDraft =>
+      _controller.text.trim().isNotEmpty ||
+      _images.isNotEmpty ||
+      _replyToPostNumber != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_handleFocusChanged);
+    _controller.addListener(_handleDraftChanged);
+    _loadRecentEmoji();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
+    _controller.removeListener(_handleDraftChanged);
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void replyTo(int postNumber) {
+    if (!_canType) {
+      _handleInputTap();
+      return;
+    }
+    setState(() {
+      _composerOpen = true;
+      _replyToPostNumber = postNumber;
+      _showEmojiPanel = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  void handleOutsideTap() {
+    if (!_expanded) {
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    if (_hasDraft) {
+      if (_showEmojiPanel) {
+        setState(() => _showEmojiPanel = false);
+      }
+      return;
+    }
+    setState(() {
+      _composerOpen = false;
+      _showEmojiPanel = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final canType = _canType;
+    final expanded = _expanded;
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
       decoration: const BoxDecoration(
         color: Colors.black,
         border: Border(top: BorderSide(color: Color(0xFF202020))),
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: enabled ? onTap : null,
-            icon: isSubmitting
-                ? const _TinyProgress(color: Colors.black)
-                : const Icon(Icons.edit_outlined),
-            label: Text(
-              isSubmitting
-                  ? '发布中...'
-                  : enabled
-                      ? (isOnline ? '写评论' : '登录后评论')
-                      : '当前帖子不可回复',
-            ),
-          ),
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 190),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: expanded
+              ? Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_replyToPostNumber != null) ...[
+                      _ReplyTargetChip(
+                        postNumber: _replyToPostNumber!,
+                        onClear: widget.isSubmitting
+                            ? null
+                            : () => setState(() => _replyToPostNumber = null),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    if (_images.isNotEmpty) ...[
+                      _AttachmentPreviewRow(
+                        images: _images,
+                        onRemove: widget.isSubmitting || _uploading
+                            ? null
+                            : (image) => setState(() => _images.remove(image)),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    _ComposerFrame(
+                      focused: _focusNode.hasFocus || _showEmojiPanel,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: _controller,
+                            focusNode: _focusNode,
+                            readOnly: !canType,
+                            minLines: 1,
+                            maxLines: 4,
+                            textInputAction: TextInputAction.newline,
+                            onTap: _handleInputTap,
+                            decoration: InputDecoration(
+                              hintText: _hintText,
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.fromLTRB(
+                                12,
+                                10,
+                                12,
+                                8,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 44,
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  tooltip: '添加图片',
+                                  onPressed: canType ? _pickAndUpload : null,
+                                  icon: _uploading
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.image_outlined),
+                                ),
+                                IconButton(
+                                  tooltip: 'Emoji',
+                                  onPressed: canType ? _toggleEmojiPanel : null,
+                                  icon: Icon(
+                                    _showEmojiPanel
+                                        ? Icons.keyboard_alt_outlined
+                                        : Icons.emoji_emotions_outlined,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: FilledButton(
+                                    onPressed: _canSend ? _submit : null,
+                                    style: FilledButton.styleFrom(
+                                      minimumSize: const Size(64, 34),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                    ),
+                                    child: widget.isSubmitting
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Text('发送'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 180),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      child: _showEmojiPanel
+                          ? _InlineEmojiPanel(
+                              key: const ValueKey('emoji-panel'),
+                              recentShortcodes: _recentShortcodes,
+                              controller: _controller,
+                              onPicked: _recordRecentEmoji,
+                            )
+                          : const SizedBox.shrink(
+                              key: ValueKey('emoji-empty'),
+                            ),
+                    ),
+                  ],
+                )
+              : SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: widget.enabled ? _activateComposer : null,
+                    icon: widget.isSubmitting
+                        ? const _TinyProgress()
+                        : const Icon(Icons.edit_outlined),
+                    label: Text(
+                      widget.isSubmitting
+                          ? '发布中...'
+                          : widget.enabled
+                              ? (widget.isOnline ? '写评论' : '登录后评论')
+                              : '当前帖子不可回复',
+                    ),
+                  ),
+                ),
         ),
       ),
     );
   }
-}
 
-class _ReplyComposer extends StatefulWidget {
-  const _ReplyComposer({
-    required this.onSubmit,
-    required this.onUploadImage,
-    this.replyToPostNumber,
-  });
-
-  final int? replyToPostNumber;
-  final void Function(String raw, List<UploadedImage> images) onSubmit;
-  final Future<UploadedImage> Function(PickedImage image) onUploadImage;
-
-  @override
-  State<_ReplyComposer> createState() => _ReplyComposerState();
-}
-
-class _ReplyComposerState extends State<_ReplyComposer> {
-  final _controller = TextEditingController();
-  final _images = <UploadedImage>[];
-  bool _uploading = false;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void _activateComposer() {
+    if (!widget.isOnline) {
+      widget.onLoginRequired();
+      return;
+    }
+    if (!widget.enabled || widget.isSubmitting) {
+      return;
+    }
+    setState(() {
+      _composerOpen = true;
+      _showEmojiPanel = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.viewInsetsOf(context);
-    final replyTo = widget.replyToPostNumber;
+  String get _hintText {
+    if (widget.isSubmitting) {
+      return '发布中...';
+    }
+    if (!widget.isOnline) {
+      return '登录后评论';
+    }
+    if (!widget.enabled) {
+      return '当前帖子不可回复';
+    }
+    return _replyToPostNumber == null ? '写评论' : '回复 #$_replyToPostNumber';
+  }
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20, 4, 20, 20 + viewInsets.bottom),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            replyTo == null ? '评论主题' : '回复 #$replyTo',
-            style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _controller,
-            minLines: 4,
-            maxLines: 8,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: '写点什么...',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final image in _images)
-                InputChip(
-                  label: Text(image.filename),
-                  onDeleted: _uploading
-                      ? null
-                      : () => setState(() => _images.remove(image)),
-                ),
-              ActionChip(
-                avatar: _uploading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.image_outlined, size: 18),
-                label: const Text('添加图片'),
-                onPressed: _uploading ? null : _pickAndUpload,
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.emoji_emotions_outlined, size: 18),
-                label: const Text('Emoji'),
-                onPressed: () => showEmojiPicker(
-                  context: context,
-                  controller: _controller,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: _uploading
-                  ? null
-                  : () {
-                      final text = _controller.text.trim();
-                      if (text.isEmpty) {
-                        return;
-                      }
-                      widget.onSubmit(text, List<UploadedImage>.of(_images));
-                    },
-              child: const Text('发布评论'),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _handleFocusChanged() {
+    if (!mounted) {
+      return;
+    }
+    if (_focusNode.hasFocus && _showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+      return;
+    }
+    setState(() {});
+  }
+
+  void _handleDraftChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _handleInputTap() {
+    if (!widget.isOnline) {
+      widget.onLoginRequired();
+      return;
+    }
+    if (!widget.enabled || widget.isSubmitting) {
+      return;
+    }
+    _composerOpen = true;
+    if (_showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+    }
+  }
+
+  Future<void> _loadRecentEmoji() async {
+    final recents = await EmojiRecentStore.load();
+    if (mounted) {
+      setState(() => _recentShortcodes = recents);
+    }
+  }
+
+  Future<void> _recordRecentEmoji(String shortcode) async {
+    final recents = await EmojiRecentStore.record(shortcode);
+    if (mounted) {
+      setState(() => _recentShortcodes = recents);
+    }
+  }
+
+  void _toggleEmojiPanel() {
+    if (!_canType) {
+      _handleInputTap();
+      return;
+    }
+    if (_showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+      _focusNode.requestFocus();
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    setState(() {
+      _composerOpen = true;
+      _showEmojiPanel = true;
+    });
   }
 
   Future<void> _pickAndUpload() async {
-    setState(() => _uploading = true);
+    if (!_canType) {
+      return;
+    }
+    setState(() {
+      _uploading = true;
+      _composerOpen = true;
+      _showEmojiPanel = false;
+    });
     try {
       final picked = await LocalImagePicker.pickImage();
       if (picked == null) {
@@ -732,12 +931,6 @@ class _ReplyComposerState extends State<_ReplyComposer> {
       }
       final uploaded = await widget.onUploadImage(picked);
       _images.add(uploaded);
-      final current = _controller.text.trimRight();
-      _controller.text = current.isEmpty
-          ? uploaded.markdown
-          : '$current\n${uploaded.markdown}';
-      _controller.selection =
-          TextSelection.collapsed(offset: _controller.text.length);
       if (mounted) {
         setState(() {});
       }
@@ -753,12 +946,467 @@ class _ReplyComposerState extends State<_ReplyComposer> {
       }
     }
   }
+
+  void _submit() {
+    final text = _controller.text.trim();
+    if ((text.isEmpty && _images.isEmpty) ||
+        widget.isSubmitting ||
+        _uploading) {
+      return;
+    }
+    final images = List<UploadedImage>.of(_images);
+    widget.onSubmit(
+      ReplyDraft(
+        topicId: widget.detail.id,
+        categoryId: widget.detail.categoryId,
+        raw: _composeRaw(text, images),
+        replyToPostNumber: _replyToPostNumber,
+        archetype: widget.detail.archetype,
+        images: images,
+      ),
+    );
+    setState(() {
+      _controller.clear();
+      _images.clear();
+      _composerOpen = false;
+      _replyToPostNumber = null;
+      _showEmojiPanel = false;
+    });
+  }
+
+  String _composeRaw(String text, List<UploadedImage> images) {
+    if (images.isEmpty) {
+      return text;
+    }
+    final imageMarkdown = images.map((image) => image.markdown).join('\n');
+    if (text.isEmpty) {
+      return imageMarkdown;
+    }
+    return '$text\n\n$imageMarkdown';
+  }
+}
+
+class _ComposerFrame extends StatelessWidget {
+  const _ComposerFrame({
+    required this.focused,
+    required this.child,
+  });
+
+  final bool focused;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = focused
+        ? Theme.of(context).colorScheme.primary
+        : const Color(0xFF444444);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        border: Border.all(color: borderColor, width: focused ? 1.4 : 1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    );
+  }
+}
+
+class _ReplyTargetChip extends StatelessWidget {
+  const _ReplyTargetChip({
+    required this.postNumber,
+    required this.onClear,
+  });
+
+  final int postNumber;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: InputChip(
+        label: Text('回复 #$postNumber'),
+        onDeleted: onClear,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+}
+
+class _AttachmentPreviewRow extends StatelessWidget {
+  const _AttachmentPreviewRow({
+    required this.images,
+    required this.onRemove,
+  });
+
+  final List<UploadedImage> images;
+  final ValueChanged<UploadedImage>? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 74,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: images.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final image = images[index];
+          return _AttachmentPreviewTile(
+            image: image,
+            onRemove: onRemove == null ? null : () => onRemove!(image),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AttachmentPreviewTile extends StatelessWidget {
+  const _AttachmentPreviewTile({
+    required this.image,
+    required this.onRemove,
+  });
+
+  final UploadedImage image;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: 74,
+      height: 74,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                color: const Color(0xFF202020),
+                child: image.url.isEmpty
+                    ? const _AttachmentImageFallback()
+                    : ForumNetworkImage(
+                        ForumUrlResolver.resolve(image.url),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const _AttachmentImageFallback();
+                        },
+                      ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: const Color(0xFF383838)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -6,
+            top: -6,
+            child: IconButton.filled(
+              tooltip: '移除图片',
+              onPressed: onRemove,
+              style: IconButton.styleFrom(
+                minimumSize: const Size.square(24),
+                fixedSize: const Size.square(24),
+                padding: EdgeInsets.zero,
+                backgroundColor: colorScheme.surface,
+                foregroundColor: colorScheme.onSurface,
+                disabledBackgroundColor: const Color(0xFF2A2A2A),
+                disabledForegroundColor: const Color(0xFF707070),
+              ),
+              icon: const Icon(Icons.close, size: 15),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentImageFallback extends StatelessWidget {
+  const _AttachmentImageFallback();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Icon(
+        Icons.image_outlined,
+        size: 26,
+        color: Color(0xFF9A9A9A),
+      ),
+    );
+  }
+}
+
+class _InlineEmojiPanel extends StatefulWidget {
+  const _InlineEmojiPanel({
+    super.key,
+    required this.recentShortcodes,
+    required this.controller,
+    required this.onPicked,
+  });
+
+  final List<String> recentShortcodes;
+  final TextEditingController controller;
+  final Future<void> Function(String shortcode) onPicked;
+
+  @override
+  State<_InlineEmojiPanel> createState() => _InlineEmojiPanelState();
+}
+
+class _InlineEmojiPanelState extends State<_InlineEmojiPanel>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(
+      length: _categoryCount,
+      vsync: this,
+      initialIndex: _categoryCount > 1 ? 1 : 0,
+      animationDuration: const Duration(milliseconds: 120),
+    )..addListener(_handleTabChanged);
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final recentEntries = EmojiText.entriesForShortcodes(
+      widget.recentShortcodes,
+    );
+    final categories = [
+      EmojiCategory('常用', recentEntries),
+      ...EmojiText.categories.where((category) => category.label != '常用'),
+    ];
+    return SizedBox(
+      height: 282,
+      child: Column(
+        children: [
+          TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            labelColor: Colors.white,
+            unselectedLabelColor: const Color(0xFF9A9A9A),
+            indicatorColor: Colors.white,
+            tabs: [
+              for (final category in categories) Tab(text: category.label),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              physics: _FastEmojiTabScrollPhysics(
+                currentIndex: _tabController.index,
+              ),
+              children: [
+                for (final category in categories)
+                  _InlineEmojiGrid(
+                    entries: category.entries,
+                    controller: widget.controller,
+                    onPicked: widget.onPicked,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int get _categoryCount => EmojiText.categories.length;
+
+  void _handleTabChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+}
+
+class _FastEmojiTabScrollPhysics extends PageScrollPhysics {
+  const _FastEmojiTabScrollPhysics({
+    required this.currentIndex,
+    super.parent,
+  });
+
+  static const _switchThreshold = 0.25;
+
+  final int currentIndex;
+
+  @override
+  _FastEmojiTabScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return _FastEmojiTabScrollPhysics(
+      currentIndex: currentIndex,
+      parent: buildParent(ancestor),
+    );
+  }
+
+  @override
+  SpringDescription get spring => SpringDescription.withDampingRatio(
+        mass: 1,
+        stiffness: 850,
+        ratio: 1.08,
+      );
+
+  @override
+  Simulation? createBallisticSimulation(
+    ScrollMetrics position,
+    double velocity,
+  ) {
+    if ((velocity <= 0.0 && position.pixels <= position.minScrollExtent) ||
+        (velocity >= 0.0 && position.pixels >= position.maxScrollExtent)) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+    final tolerance = toleranceFor(position);
+    final target = _targetPixels(position, tolerance, velocity);
+    if ((target - position.pixels).abs() <= tolerance.distance) {
+      return null;
+    }
+    return ScrollSpringSimulation(
+      spring,
+      position.pixels,
+      target,
+      velocity,
+      tolerance: tolerance,
+    );
+  }
+
+  double _targetPixels(
+    ScrollMetrics position,
+    Tolerance tolerance,
+    double velocity,
+  ) {
+    final page = _pageFor(position);
+    final currentPage = currentIndex.toDouble();
+    final delta = page - currentPage;
+    var targetPage = currentPage;
+
+    if (velocity > tolerance.velocity || delta >= _switchThreshold) {
+      targetPage = currentPage + 1;
+    } else if (velocity < -tolerance.velocity || delta <= -_switchThreshold) {
+      targetPage = currentPage - 1;
+    }
+
+    final minPage = _pageFor(position, pixels: position.minScrollExtent);
+    final maxPage = _pageFor(position, pixels: position.maxScrollExtent);
+    final clampedPage = targetPage.clamp(minPage, maxPage).toDouble();
+    return _pixelsFor(position, clampedPage)
+        .clamp(position.minScrollExtent, position.maxScrollExtent)
+        .toDouble();
+  }
+
+  double _pageFor(ScrollMetrics position, {double? pixels}) {
+    final pagePixels = pixels ?? position.pixels;
+    if (position is PageMetrics) {
+      final viewport = position.viewportDimension * position.viewportFraction;
+      if (viewport <= 0) {
+        return 0;
+      }
+      final initialOffset = position.viewportFraction > 1
+          ? position.viewportDimension * (position.viewportFraction - 1) / 2
+          : 0.0;
+      return (pagePixels - initialOffset) / viewport;
+    }
+    if (position.viewportDimension <= 0) {
+      return 0;
+    }
+    return pagePixels / position.viewportDimension;
+  }
+
+  double _pixelsFor(ScrollMetrics position, double page) {
+    if (position is PageMetrics) {
+      final initialOffset = position.viewportFraction > 1
+          ? position.viewportDimension * (position.viewportFraction - 1) / 2
+          : 0.0;
+      return page * position.viewportDimension * position.viewportFraction +
+          initialOffset;
+    }
+    return page * position.viewportDimension;
+  }
+}
+
+class _InlineEmojiGrid extends StatelessWidget {
+  const _InlineEmojiGrid({
+    required this.entries,
+    required this.controller,
+    required this.onPicked,
+  });
+
+  final List<EmojiEntry> entries;
+  final TextEditingController controller;
+  final Future<void> Function(String shortcode) onPicked;
+
+  @override
+  Widget build(BuildContext context) {
+    if (entries.isEmpty) {
+      return const Center(
+        child: Text(
+          '最近使用过的 Emoji 会显示在这里',
+          style: TextStyle(color: Color(0xFF9A9A9A)),
+        ),
+      );
+    }
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+      itemCount: entries.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 7,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      ),
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        return Tooltip(
+          message: entry.markup,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              _insertText(controller, entry.value);
+              onPicked(entry.shortcode);
+            },
+            child: Center(
+              child: Text(
+                entry.value,
+                style: const TextStyle(fontSize: 26),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _insertText(TextEditingController controller, String value) {
+    final text = controller.text;
+    final selection = controller.selection;
+    final start = selection.isValid ? selection.start : text.length;
+    final end = selection.isValid ? selection.end : text.length;
+    final before = text.substring(0, start);
+    final after = text.substring(end);
+    controller.text = '$before$value$after';
+    controller.selection = TextSelection.collapsed(
+      offset: before.length + value.length,
+    );
+  }
 }
 
 class _TinyProgress extends StatelessWidget {
-  const _TinyProgress({this.color});
-
-  final Color? color;
+  const _TinyProgress();
 
   @override
   Widget build(BuildContext context) {
@@ -767,7 +1415,6 @@ class _TinyProgress extends StatelessWidget {
       height: 18,
       child: CircularProgressIndicator(
         strokeWidth: 2,
-        color: color,
       ),
     );
   }
