@@ -236,9 +236,8 @@ class _TopicListRow extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Color(0xFFBDBDBD),
-                      fontSize: 16,
-                      height: 1.46,
+                      fontSize: 14,
+                      height: 1.42,
                       fontWeight: FontWeight.w400,
                     ),
                   );
@@ -250,9 +249,8 @@ class _TopicListRow extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: Color(0xFFBDBDBD),
-                      fontSize: 16,
-                      height: 1.46,
+                      fontSize: 14,
+                      height: 1.42,
                       fontWeight: FontWeight.w400,
                     ),
                   );
@@ -300,9 +298,8 @@ class _PreviewContent extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: Color(0xFFBDBDBD),
-              fontSize: 16,
-              height: 1.46,
+              fontSize: 14,
+              height: 1.42,
               fontWeight: FontWeight.w400,
             ),
           ),
@@ -312,9 +309,8 @@ class _PreviewContent extends StatelessWidget {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Color(0xFFBDBDBD),
-              fontSize: 16,
-              height: 1.46,
+              fontSize: 14,
+              height: 1.42,
               fontWeight: FontWeight.w400,
             ),
           ),
