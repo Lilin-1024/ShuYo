@@ -64,11 +64,21 @@ class MainActivity : FlutterActivity() {
             return
         }
         pendingResult = result
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "image/*"
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Intent(MediaStore.ACTION_PICK_IMAGES).apply {
+                type = "image/*"
+            }
+        } else {
+            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+                type = "image/*"
+            }
         }
-        startActivityForResult(intent, REQUEST_PICK_IMAGE)
+        try {
+            startActivityForResult(intent, REQUEST_PICK_IMAGE)
+        } catch (error: Exception) {
+            pendingResult = null
+            result.error("picker_unavailable", error.message, null)
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
