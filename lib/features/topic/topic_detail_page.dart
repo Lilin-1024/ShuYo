@@ -117,7 +117,9 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       widget.topic.id,
       forceRefresh: true,
     );
-    setState(() => _future = future);
+    setState(() {
+      _future = future;
+    });
     try {
       final detail = await future;
       if (mounted) {

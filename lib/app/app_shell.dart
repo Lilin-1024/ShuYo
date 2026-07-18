@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 
 import '../core/academic_constants.dart';
 import '../core/academic_url_resolver.dart';
+import '../core/client_app_info.dart';
 import '../core/forum_url_resolver.dart';
 import '../data/models/forum_activity.dart';
 import '../data/models/topic.dart';
+import '../data/repositories/client_backend_repository.dart';
 import '../data/repositories/academic_schedule_repository.dart';
 import '../data/repositories/announcement_repository.dart';
 import '../data/repositories/classroom_repository.dart';
@@ -39,6 +41,8 @@ import '../features/topic/topic_detail_page.dart';
 import '../features/webview/academic_webvpn_preloader.dart';
 import '../features/webview/forum_webview_page.dart';
 import '../shared/navigation/lehu_route.dart';
+import '../shared/widgets/client_update_prompt.dart';
+import '../shared/widgets/info_confirm_dialog.dart';
 import '../shared/widgets/app_header.dart';
 import '../shared/widgets/empty_state.dart';
 
@@ -65,6 +69,7 @@ class _AppShellState extends State<AppShell> {
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
   late final ClientSettingsService _clientSettingsService;
+  late final ClientBackendRepository _clientBackendRepository;
   late final ForumReachabilityService _forumReachabilityService;
   late final AnnouncementRepository _announcementRepository;
   late final ClassroomRepository _classroomRepository;
@@ -77,6 +82,7 @@ class _AppShellState extends State<AppShell> {
   bool _syncingAcademicSchedule = false;
   bool _loadingAnnouncementSummary = false;
   bool _checkingForumReachability = false;
+  bool _checkingClientBackendPrompts = false;
   bool _forumNetworkUnavailable = false;
   bool _autoUseWebVpnProxy = ForumUrlResolver.usesWebVpn;
   DateTime? _lastForumReachabilityCheck;
@@ -94,6 +100,7 @@ class _AppShellState extends State<AppShell> {
       repository: _scheduleRepository,
     );
     _clientSettingsService = ClientSettingsService();
+    _clientBackendRepository = ClientBackendRepository();
     _forumReachabilityService = const ForumReachabilityService();
     _announcementRepository = AnnouncementRepository();
     _classroomRepository = ClassroomRepository();
@@ -113,11 +120,15 @@ class _AppShellState extends State<AppShell> {
       (_) => _refreshAnnouncementSummaryQuietly(),
     );
     unawaited(_scheduleNotificationService.syncScheduleReminders());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_checkClientBackendPrompts());
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final canOpenClientSettings = _tabIndex == 0 || _tabIndex == 3;
+    final canOpenClientSettings =
+        _tabIndex == 0 || _tabIndex == 1 || _tabIndex == 3;
     final isForumTab = _tabIndex == 1 && _repo.isOnline;
 
     return Scaffold(
@@ -562,7 +573,9 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _refreshFeed() async {
     final future = _repo.fetchTopicFeed(_feedQuery, forceRefresh: true);
-    setState(() => _feedFuture = future);
+    setState(() {
+      _feedFuture = future;
+    });
     await future;
     if (mounted) {
       setState(() {});
@@ -579,7 +592,9 @@ class _AppShellState extends State<AppShell> {
       if (!mounted) {
         return;
       }
-      setState(() => _feedFuture = Future.value(topics));
+      setState(() {
+        _feedFuture = Future.value(topics);
+      });
     } on Object catch (error) {
       await _handleOperationError(error, title: '加载更多失败');
     } finally {
@@ -708,6 +723,7 @@ class _AppShellState extends State<AppShell> {
         builder: (context) => ClientSettingsPage(
           settingsService: _clientSettingsService,
           scheduleNotificationService: _scheduleNotificationService,
+          backendRepository: _clientBackendRepository,
           isOnline: _repo.isOnline,
           onLogout: _logout,
         ),
@@ -799,6 +815,7 @@ class _AppShellState extends State<AppShell> {
         _resetFeedFuture();
       });
       _showSnack('已加载论坛');
+      unawaited(_checkClientBackendPrompts());
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -987,6 +1004,7 @@ class _AppShellState extends State<AppShell> {
       _tabIndex = 0;
     });
     unawaited(_refreshForumReachabilityQuietly(force: true));
+    unawaited(_checkClientBackendPrompts());
     if (completed == true) {
       await _syncScheduleAfterWebVpnLogin();
     }
@@ -997,6 +1015,75 @@ class _AppShellState extends State<AppShell> {
       lehuRoute(
         builder: (context) => CourseRatingPage(
           repository: _courseRatingRepository,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _checkClientBackendPrompts() async {
+    if (_checkingClientBackendPrompts) {
+      return;
+    }
+    _checkingClientBackendPrompts = true;
+    try {
+      final bootstrap =
+          await _clientBackendRepository.fetchBootstrap(forceRefresh: true);
+      if (!mounted) {
+        return;
+      }
+      final version = bootstrap.version;
+      if (version.isNewerThan(ClientAppInfo.buildNumber)) {
+        final shouldPrompt = await _clientBackendRepository.shouldPromptUpdate(
+          version.latestBuild,
+        );
+        if (mounted && shouldPrompt) {
+          final openDownload = await showClientUpdatePrompt(
+            context,
+            update: version,
+          );
+          await _clientBackendRepository.markUpdatePrompted(
+            version.latestBuild,
+          );
+          if (openDownload == true && version.hasDownloadUrl && mounted) {
+            await _openUpdateDownload(version.downloadUrl);
+          }
+          return;
+        }
+      }
+
+      if (!mounted) {
+        return;
+      }
+      final announcement = bootstrap.latestAnnouncement;
+      if (announcement == null) {
+        await _clientBackendRepository.ensureAnnouncementBaselineInitialized();
+        return;
+      }
+      final shouldPrompt = await _clientBackendRepository
+          .shouldPromptAnnouncement(announcement.id);
+      if (!mounted || !shouldPrompt) {
+        return;
+      }
+      await showInfoConfirmDialog(
+        context,
+        title: announcement.title,
+        message: announcement.content,
+        confirmText: '知道了',
+      );
+      await _clientBackendRepository.markAnnouncementPrompted(announcement.id);
+    } on Object {
+      // 后端检查失败时不影响主流程。
+    } finally {
+      _checkingClientBackendPrompts = false;
+    }
+  }
+
+  Future<void> _openUpdateDownload(String url) async {
+    await Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => ForumWebViewPage(
+          title: '下载更新',
+          url: url,
         ),
       ),
     );
@@ -1021,6 +1108,7 @@ class _AppShellState extends State<AppShell> {
       if (nextRepository.isOnline) {
         _showSnack('已切换论坛访问方式');
       }
+      unawaited(_checkClientBackendPrompts());
     } on Object catch (error) {
       if (!mounted) {
         return;

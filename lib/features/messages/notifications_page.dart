@@ -185,7 +185,9 @@ class _NotificationListHostState extends State<_NotificationListHost> {
       widget.filter,
       forceRefresh: force,
     );
-    setState(() => _future = future);
+    setState(() {
+      _future = future;
+    });
     await future;
   }
 
