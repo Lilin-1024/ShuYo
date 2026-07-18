@@ -286,14 +286,93 @@ function renderLoginPage({ errorMessage = '' } = {}) {
   );
 }
 
+function previewText(value, maxLength) {
+  const text = String(value ?? '');
+  return `${escapeHtml(text.slice(0, maxLength))}${text.length > maxLength ? '...' : ''}`;
+}
+
+function feedbackBadgeClass(status) {
+  if (status === 'open') {
+    return 'warn';
+  }
+
+  if (status === 'closed') {
+    return 'bad';
+  }
+
+  return 'ok';
+}
+
+function renderFeedbackItems(feedbackItems) {
+  if (!feedbackItems.length) {
+    return '<div class="small">暂无反馈。</div>';
+  }
+
+  return feedbackItems
+    .map(
+      (item) => `
+        <div class="item">
+          <div class="row" style="justify-content: space-between; align-items: start;">
+            <div>
+              <div style="font-weight: 600;">
+                <a href="/admin/feedback/${encodeURIComponent(item.id)}">${escapeHtml(item.title || '未命名反馈')}</a>
+              </div>
+              <div class="small">${previewText(item.content, 120)}</div>
+              <div class="small" style="margin-top: 6px;">${escapeHtml(formatDateTime(item.createdAt))} · ${escapeHtml(item.appVersion || '-')}</div>
+            </div>
+            <span class="badge ${feedbackBadgeClass(item.status)}">${escapeHtml(item.status)}</span>
+          </div>
+        </div>`
+    )
+    .join('');
+}
+
+function renderAnnouncementItems(announcementItems, returnTo) {
+  if (!announcementItems.length) {
+    return '<div class="small">暂无公告。</div>';
+  }
+
+  return announcementItems
+    .map((item) => {
+      const active = item.active !== false;
+      const action = active
+        ? `<form method="post" action="/admin/announcements/${encodeURIComponent(item.id)}/active">
+            <input type="hidden" name="active" value="false" />
+            <input type="hidden" name="returnTo" value="${escapeHtml(returnTo)}" />
+            <button class="btn danger" type="submit">关闭公告</button>
+          </form>`
+        : `<form method="post" action="/admin/announcements/${encodeURIComponent(item.id)}/active">
+            <input type="hidden" name="active" value="true" />
+            <input type="hidden" name="returnTo" value="${escapeHtml(returnTo)}" />
+            <button type="submit">启用公告</button>
+          </form>`;
+
+      return `
+        <div class="item">
+          <div class="row" style="justify-content: space-between; align-items: start;">
+            <div>
+              <div style="font-weight: 600;">${escapeHtml(item.title)}</div>
+              <div class="small" style="margin-top: 4px;">${previewText(item.content, 140)}</div>
+              <div class="small" style="margin-top: 4px;">${escapeHtml(formatDateTime(item.createdAt))}</div>
+            </div>
+            <span class="badge ${active ? 'ok' : ''}">${active ? '当前启用' : '未启用'}</span>
+          </div>
+          <div class="row" style="margin-top: 10px;">
+            ${action}
+          </div>
+        </div>`;
+    })
+    .join('');
+}
+
 function renderDashboard({ state, feedbackItems, announcementItems, message = '' }) {
   const meta = state.meta;
   const notice = message ? `<div class="notice">${escapeHtml(message)}</div>` : '';
   const openCount = feedbackItems.filter((item) => item.status === 'open').length;
   const repliedCount = feedbackItems.filter((item) => item.status === 'replied').length;
   const closedCount = feedbackItems.filter((item) => item.status === 'closed').length;
-  const latestFeedback = feedbackItems.slice(0, 12);
-  const latestAnnouncements = announcementItems.slice(0, 8);
+  const latestFeedback = feedbackItems.slice(0, 5);
+  const latestAnnouncements = announcementItems.slice(0, 4);
 
   return shell(
     'Lehu 后台',
@@ -334,7 +413,7 @@ function renderDashboard({ state, feedbackItems, announcementItems, message = ''
             <input id="latestVersion" name="latestVersion" type="text" value="${escapeHtml(meta.latestVersion)}" />
           </div>
           <div>
-            <label for="latestBuild">Build 号</label>
+            <label for="latestBuild">Build 号（增加会触发更新）</label>
             <input id="latestBuild" name="latestBuild" type="number" min="1" step="1" value="${escapeHtml(meta.latestBuild)}" />
           </div>
           <div>
@@ -365,37 +444,24 @@ function renderDashboard({ state, feedbackItems, announcementItems, message = ''
 
     <div class="split">
       <div class="card">
-        <h2 class="title" style="font-size: 20px;">最近反馈</h2>
+        <div class="row" style="justify-content: space-between; align-items: center;">
+          <h2 class="title" style="font-size: 20px;">最近反馈</h2>
+          <a href="/admin/feedback">查看全部</a>
+        </div>
         <p class="subtitle">点击标题进入单条详情和回复页。</p>
         <div class="item-list">
-          ${
-            latestFeedback.length
-              ? latestFeedback
-                  .map(
-                    (item) => `
-                <div class="item">
-                  <div class="row" style="justify-content: space-between; align-items: start;">
-                    <div>
-                      <div style="font-weight: 600;">
-                        <a href="/admin/feedback/${encodeURIComponent(item.id)}">${escapeHtml(item.title || '未命名反馈')}</a>
-                      </div>
-                      <div class="small">${escapeHtml(item.content.slice(0, 120))}${item.content.length > 120 ? '...' : ''}</div>
-                      <div class="small" style="margin-top: 6px;">${escapeHtml(formatDateTime(item.createdAt))} · ${escapeHtml(item.appVersion || '-')}</div>
-                    </div>
-                    <span class="badge ${item.status === 'open' ? 'warn' : item.status === 'closed' ? 'bad' : 'ok'}">${escapeHtml(item.status)}</span>
-                  </div>
-                </div>`
-                  )
-                  .join('')
-              : '<div class="small">暂无反馈。</div>'
-          }
+          ${renderFeedbackItems(latestFeedback)}
         </div>
       </div>
 
       <div class="card">
-        <h2 class="title" style="font-size: 20px;">公告</h2>
+        <div class="row" style="justify-content: space-between; align-items: center;">
+          <h2 class="title" style="font-size: 20px;">公告</h2>
+          <a href="/admin/announcements">查看全部</a>
+        </div>
         <p class="subtitle">最近创建的公告会优先显示。</p>
         <form method="post" action="/admin/announcements">
+          <input type="hidden" name="returnTo" value="/admin" />
           <label for="announcementTitle">公告标题</label>
           <input id="announcementTitle" name="title" type="text" required />
           <div style="margin-top: 12px;">
@@ -405,7 +471,7 @@ function renderDashboard({ state, feedbackItems, announcementItems, message = ''
           <div class="row" style="margin-top: 12px;">
             <label style="margin: 0; display: flex; align-items: center; gap: 8px;">
               <input type="checkbox" name="active" checked />
-              启用
+              启用为当前公告
             </label>
           </div>
           <div style="margin-top: 12px;">
@@ -413,20 +479,80 @@ function renderDashboard({ state, feedbackItems, announcementItems, message = ''
           </div>
         </form>
         <div style="margin-top: 18px;">
-          ${
-            latestAnnouncements.length
-              ? latestAnnouncements
-                  .map(
-                    (item) => `
-                <div class="item">
-                  <div style="font-weight: 600;">${escapeHtml(item.title)}</div>
-                  <div class="small" style="margin-top: 4px;">${escapeHtml(item.content.slice(0, 140))}${item.content.length > 140 ? '...' : ''}</div>
-                  <div class="small" style="margin-top: 4px;">${escapeHtml(formatDateTime(item.createdAt))}</div>
-                </div>`
-                  )
-                  .join('')
-              : '<div class="small">暂无公告。</div>'
-          }
+          ${renderAnnouncementItems(latestAnnouncements, '/admin')}
+        </div>
+      </div>
+    </div>`
+  );
+}
+
+function renderFeedbackListPage({ state, feedbackItems, message = '' }) {
+  const notice = message ? `<div class="notice">${escapeHtml(message)}</div>` : '';
+  const openCount = feedbackItems.filter((item) => item.status === 'open').length;
+
+  return shell(
+    '反馈列表',
+    `<div class="topbar">
+      <div>
+        <h1 class="title">反馈列表</h1>
+        <div class="subtitle"><a href="/admin">返回后台</a> · 共 ${feedbackItems.length} 条，${openCount} 条待处理</div>
+      </div>
+      <div class="row">
+        <a class="btn secondary" href="/admin/logout">退出登录</a>
+      </div>
+    </div>
+    ${notice}
+    <div class="card">
+      <div class="item-list">
+        ${renderFeedbackItems(feedbackItems)}
+      </div>
+    </div>`
+  );
+}
+
+function renderAnnouncementListPage({ state, announcementItems, message = '' }) {
+  const notice = message ? `<div class="notice">${escapeHtml(message)}</div>` : '';
+  const activeCount = announcementItems.filter((item) => item.active !== false).length;
+
+  return shell(
+    '公告列表',
+    `<div class="topbar">
+      <div>
+        <h1 class="title">公告列表</h1>
+        <div class="subtitle"><a href="/admin">返回后台</a> · 共 ${announcementItems.length} 条，${activeCount} 条启用中</div>
+      </div>
+      <div class="row">
+        <a class="btn secondary" href="/admin/logout">退出登录</a>
+      </div>
+    </div>
+    ${notice}
+    <div class="split">
+      <div class="card">
+        <h2 class="title" style="font-size: 20px;">发布公告</h2>
+        <form method="post" action="/admin/announcements">
+          <input type="hidden" name="returnTo" value="/admin/announcements" />
+          <label for="announcementTitle">公告标题</label>
+          <input id="announcementTitle" name="title" type="text" required />
+          <div style="margin-top: 12px;">
+            <label for="announcementContent">公告内容</label>
+            <textarea id="announcementContent" name="content" required></textarea>
+          </div>
+          <div class="row" style="margin-top: 12px;">
+            <label style="margin: 0; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" name="active" checked />
+              启用为当前公告
+            </label>
+          </div>
+          <div style="margin-top: 12px;">
+            <button type="submit">发布公告</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2 class="title" style="font-size: 20px;">全部公告</h2>
+        <div style="margin-top: 8px;">
+          ${renderAnnouncementItems(announcementItems, '/admin/announcements')}
         </div>
       </div>
     </div>`
@@ -519,8 +645,10 @@ function renderFeedbackDetail({ state, item, message = '' }) {
 export {
   escapeHtml,
   formatDateTime,
+  renderAnnouncementListPage,
   renderDashboard,
   renderFeedbackDetail,
+  renderFeedbackListPage,
   renderLoginPage,
   shell
 };

@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 
+import '../../data/repositories/client_backend_repository.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../data/services/client_settings_service.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/widgets/client_update_prompt.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../webview/forum_webview_page.dart';
+import 'client_feedback_page.dart';
 
 class ClientSettingsPage extends StatelessWidget {
   const ClientSettingsPage({
     super.key,
     required this.settingsService,
     required this.scheduleNotificationService,
+    required this.backendRepository,
     this.isOnline = false,
     this.onLogout,
   });
 
   final ClientSettingsService settingsService;
   final AcademicScheduleNotificationService scheduleNotificationService;
+  final ClientBackendRepository backendRepository;
   final bool isOnline;
   final Future<void> Function()? onLogout;
 
@@ -52,7 +58,13 @@ class ClientSettingsPage extends StatelessWidget {
           ),
           _SettingsRow(
             title: '问题与反馈',
-            onTap: () => _showSnack(context, '问题与反馈后续接入'),
+            onTap: () => Navigator.of(context).push<void>(
+              lehuRoute(
+                builder: (context) => ClientFeedbackPage(
+                  repository: backendRepository,
+                ),
+              ),
+            ),
           ),
           if (isOnline && onLogout != null)
             _SettingsRow(
@@ -65,11 +77,43 @@ class ClientSettingsPage extends StatelessWidget {
           ),
           _SettingsRow(
             title: '检查更新',
-            onTap: () => _showSnack(context, '检查更新后续接入'),
+            onTap: () => _checkForUpdate(context),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _checkForUpdate(BuildContext context) async {
+    try {
+      final update = await backendRepository.checkForUpdate(forceRefresh: true);
+      if (!context.mounted) {
+        return;
+      }
+      if (update == null) {
+        _showSnack(context, '已是最新版本');
+        return;
+      }
+      final openDownload = await showClientUpdatePrompt(
+        context,
+        update: update,
+      );
+      if (!context.mounted || !openDownload || !update.hasDownloadUrl) {
+        return;
+      }
+      await Navigator.of(context).push<void>(
+        lehuRoute(
+          builder: (context) => ForumWebViewPage(
+            title: '下载更新',
+            url: update.downloadUrl,
+          ),
+        ),
+      );
+    } on Object catch (error) {
+      if (context.mounted) {
+        _showSnack(context, '检查更新失败：$error');
+      }
+    }
   }
 
   Future<void> _confirmLogout(BuildContext context) async {
@@ -153,7 +197,11 @@ class _NetworkSettingsPageState extends State<_NetworkSettingsPage> {
               title: '设置加载失败',
               message: snapshot.error.toString(),
               action: TextButton.icon(
-                onPressed: () => setState(() => _future = _loadSettings()),
+                onPressed: () {
+                  setState(() {
+                    _future = _loadSettings();
+                  });
+                },
                 icon: const Icon(Icons.refresh),
                 label: const Text('重试'),
               ),
@@ -200,7 +248,9 @@ class _NetworkSettingsPageState extends State<_NetworkSettingsPage> {
     } on Object catch (error) {
       if (mounted) {
         _showSnack(context, '设置保存失败：$error');
-        setState(() => _future = _loadSettings());
+        setState(() {
+          _future = _loadSettings();
+        });
       }
     } finally {
       if (mounted) {
@@ -251,7 +301,11 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
               title: '设置加载失败',
               message: snapshot.error.toString(),
               action: TextButton.icon(
-                onPressed: () => setState(() => _future = _loadSettings()),
+                onPressed: () {
+                  setState(() {
+                    _future = _loadSettings();
+                  });
+                },
                 icon: const Icon(Icons.refresh),
                 label: const Text('重试'),
               ),
@@ -318,7 +372,9 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
     } on Object catch (error) {
       if (mounted) {
         _showSnack(context, '设置保存失败：$error');
-        setState(() => _future = _loadSettings());
+        setState(() {
+          _future = _loadSettings();
+        });
       }
     } finally {
       if (mounted) {

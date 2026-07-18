@@ -13,7 +13,13 @@ import {
 } from './auth.js';
 import { createRateLimit } from './rateLimit.js';
 import { hashToken, makeId, mutateState, nowIso, readState } from './store.js';
-import { renderDashboard, renderFeedbackDetail, renderLoginPage } from './views.js';
+import {
+  renderAnnouncementListPage,
+  renderDashboard,
+  renderFeedbackDetail,
+  renderFeedbackListPage,
+  renderLoginPage
+} from './views.js';
 
 const app = express();
 const port = Number.parseInt(process.env.PORT ?? '3000', 10) || 3000;
@@ -131,6 +137,12 @@ function publicVersionPayload(state) {
       announcement: publicAnnouncement(latestAnnouncement)
     }
   };
+}
+
+function adminRedirectWithMessage(res, path, message) {
+  const safePath = String(path ?? '').startsWith('/admin') ? String(path) : '/admin';
+  const separator = safePath.includes('?') ? '&' : '?';
+  res.redirect(`${safePath}${separator}message=${encodeURIComponent(message)}`);
 }
 
 async function getFeedbackById(id) {
@@ -341,6 +353,40 @@ app.get('/admin', requireAdmin, async (req, res, next) => {
   }
 });
 
+app.get('/admin/feedback', requireAdmin, async (req, res, next) => {
+  try {
+    const state = await readState();
+    const feedbackItems = [...state.feedback].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+
+    res.status(200).send(
+      renderFeedbackListPage({
+        state,
+        feedbackItems,
+        message: trimText(req.query.message ?? '')
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/admin/announcements', requireAdmin, async (req, res, next) => {
+  try {
+    const state = await readState();
+    const announcementItems = [...state.announcements].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+
+    res.status(200).send(
+      renderAnnouncementListPage({
+        state,
+        announcementItems,
+        message: trimText(req.query.message ?? '')
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/admin/version', requireAdmin, async (req, res, next) => {
   try {
     const appName = trimText(req.body.appName ?? '');
@@ -385,6 +431,7 @@ app.post('/admin/announcements', requireAdmin, async (req, res, next) => {
     const title = trimText(req.body.title ?? '');
     const content = trimText(req.body.content ?? '');
     const active = isTruthy(req.body.active);
+    const returnTo = trimText(req.body.returnTo ?? '/admin/announcements');
 
     if (!title || !content) {
       res.status(400).send('公告标题和内容不能为空。');
@@ -412,7 +459,46 @@ app.post('/admin/announcements', requireAdmin, async (req, res, next) => {
       });
     });
 
-    res.redirect('/admin?message=' + encodeURIComponent('公告已发布。'));
+    adminRedirectWithMessage(res, returnTo, '公告已发布。');
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/admin/announcements/:id/active', requireAdmin, async (req, res, next) => {
+  try {
+    const announcementId = trimText(req.params.id ?? '');
+    const active = isTruthy(req.body.active);
+    const returnTo = trimText(req.body.returnTo ?? '/admin/announcements');
+
+    const updated = await mutateState((state) => {
+      const item = state.announcements.find((announcement) => announcement.id === announcementId);
+      if (!item) {
+        return false;
+      }
+
+      if (active) {
+        const updatedAt = nowIso();
+        state.announcements = state.announcements.map((announcement) => ({
+          ...announcement,
+          active: announcement.id === announcementId,
+          updatedAt:
+            announcement.id === announcementId ? updatedAt : announcement.updatedAt
+        }));
+      } else {
+        item.active = false;
+        item.updatedAt = nowIso();
+      }
+
+      return true;
+    });
+
+    if (!updated) {
+      res.status(404).send('未找到公告。');
+      return;
+    }
+
+    adminRedirectWithMessage(res, returnTo, active ? '公告已启用。' : '公告已关闭。');
   } catch (error) {
     next(error);
   }

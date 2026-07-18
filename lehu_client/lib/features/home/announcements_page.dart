@@ -85,7 +85,9 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
 
   Future<void> _refresh() async {
     final future = widget.repository.fetchAnnouncements(forceRefresh: true);
-    setState(() => _future = future);
+    setState(() {
+      _future = future;
+    });
     await future;
   }
 

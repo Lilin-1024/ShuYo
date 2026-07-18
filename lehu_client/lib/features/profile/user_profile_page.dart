@@ -48,7 +48,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
               title: '主页加载失败',
               message: snapshot.error.toString(),
               action: TextButton.icon(
-                onPressed: () => setState(() => _future = _load()),
+                onPressed: () {
+                  setState(() {
+                    _future = _load();
+                  });
+                },
                 icon: const Icon(Icons.refresh),
                 label: const Text('重试'),
               ),
