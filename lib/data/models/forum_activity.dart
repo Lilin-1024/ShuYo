@@ -102,13 +102,14 @@ class ForumActivityItem {
       json['topic_id'],
       bookmarkableType == 'Topic' ? bookmarkableId : 0,
     );
+    final postsCount = intValue(json['posts_count'], 1);
     return ForumActivityItem(
       topicId: topicId,
       title: EmojiText.render(stringValue(json['title'], '未命名话题')),
       categoryId: intValue(json['category_id']),
       views: 0,
-      replyCount: 0,
-      postsCount: intValue(json['posts_count'], 1),
+      replyCount: postsCount > 0 ? postsCount - 1 : 0,
+      postsCount: postsCount,
       highestPostNumber: intValue(json['highest_post_number'], 1),
       showTopicStats: false,
       excerpt: rawExcerpt.isEmpty ? '' : HtmlText.preview(rawExcerpt),

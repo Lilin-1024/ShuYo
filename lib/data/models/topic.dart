@@ -53,11 +53,12 @@ class TopicListItem {
 
   factory TopicListItem.fromJson(JsonMap json) {
     final postersJson = json['posters'];
+    final postsCount = intValue(json['posts_count']);
     return TopicListItem(
       id: intValue(json['id']),
       title: EmojiText.render(stringValue(json['title'])),
-      postsCount: intValue(json['posts_count']),
-      replyCount: intValue(json['reply_count']),
+      postsCount: postsCount,
+      replyCount: postsCount > 0 ? postsCount - 1 : 0,
       highestPostNumber: intValue(json['highest_post_number']),
       views: intValue(json['views']),
       likeCount: intValue(json['like_count']),
