@@ -1085,14 +1085,6 @@ class _AppShellState extends State<AppShell> {
   Future<void> _openWebVpnProxy() async {
     final navigator = Navigator.of(context);
     debugPrint('[LEHU_WEBVPN] open webvpn proxy');
-    try {
-      await _setAutoUseWebVpnProxy(true);
-    } on Object catch (error) {
-      _showSnack('WebVPN代理设置失败：$error');
-    }
-    if (!mounted) {
-      return;
-    }
     final completed = await navigator.push<bool>(
       lehuRoute(
         builder: (context) => const ForumWebViewPage(
@@ -1106,18 +1098,24 @@ class _AppShellState extends State<AppShell> {
       ),
     );
     debugPrint('[LEHU_WEBVPN] webvpn page completed=$completed');
-    if (!mounted || !_autoUseWebVpnProxy) {
+    if (!mounted || completed != true) {
       return;
     }
-    ForumImageHeaders.clearCache();
+    try {
+      await _setAutoUseWebVpnProxy(true);
+    } on Object catch (error) {
+      _showSnack('WebVPN代理设置失败：$error');
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _tabIndex = 0;
     });
     unawaited(_refreshForumReachabilityQuietly(force: true));
     unawaited(_checkClientBackendPrompts());
-    if (completed == true) {
-      await _syncScheduleAfterWebVpnLogin();
-    }
+    await _syncScheduleAfterWebVpnLogin();
   }
 
   Future<void> _openCourseRatings() async {

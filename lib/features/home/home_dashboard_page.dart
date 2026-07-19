@@ -129,7 +129,7 @@ class _CampusNetworkWarningCard extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Icon(Icons.signal_wifi_bad, color: Color(0xFFE0B45B), size: 22),
+              Icon(Icons.signal_wifi_bad, color: Color(0xFFBDBDBD), size: 22),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
