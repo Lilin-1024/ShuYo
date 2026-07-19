@@ -43,6 +43,7 @@ abstract class ForumRepository {
   UserProfile get profile;
   UserSummary get userSummary;
   int get unreadNotificationCount;
+  int get unreadPrivateMessageCount;
   bool get canCreateTopic;
 
   ForumCategory? categoryById(int id);
@@ -194,6 +195,9 @@ class FixtureForumRepository implements ForumRepository {
 
   @override
   int get unreadNotificationCount => 0;
+
+  @override
+  int get unreadPrivateMessageCount => 0;
 
   @override
   bool get canCreateTopic => false;
@@ -590,6 +594,9 @@ class OnlineForumRepository implements ForumRepository {
 
   @override
   int get unreadNotificationCount => _session.notificationBadgeCount;
+
+  @override
+  int get unreadPrivateMessageCount => _session.privateMessageBadgeCount;
 
   @override
   bool get canCreateTopic => _session.canCreateTopic;

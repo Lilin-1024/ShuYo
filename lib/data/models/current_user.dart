@@ -20,11 +20,10 @@ class CurrentUserSession {
   String get username => user.username;
 
   int get notificationBadgeCount {
-    if (allUnreadNotifications > 0) {
-      return allUnreadNotifications;
-    }
     return unreadNotifications;
   }
+
+  int get privateMessageBadgeCount => newPersonalMessages;
 
   UserProfile get profile => UserProfile(user: user);
 
