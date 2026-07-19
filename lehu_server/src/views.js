@@ -108,8 +108,15 @@ function shell(title, body) {
       background: var(--accent-soft);
       color: var(--text);
     }
-    .btn.danger {
+    .btn.danger,
+    button.danger {
       background: var(--bad);
+    }
+    .btn.small-btn,
+    button.small-btn {
+      padding: 6px 9px;
+      border-radius: 8px;
+      font-size: 12px;
     }
     .card {
       background: var(--panel);
@@ -226,6 +233,10 @@ function shell(title, body) {
       font-size: 12px;
       color: var(--muted);
     }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      word-break: break-all;
+    }
     .notice {
       background: var(--accent-soft);
       border: 1px solid var(--line);
@@ -303,14 +314,44 @@ function feedbackBadgeClass(status) {
   return 'ok';
 }
 
-function renderFeedbackItems(feedbackItems) {
+function blockedFeedbackDevice(state, deviceId) {
+  const normalized = String(deviceId ?? '').trim();
+  if (!normalized) {
+    return null;
+  }
+
+  return (state?.blockedFeedbackDevices ?? []).find((item) => item.deviceId === normalized) ?? null;
+}
+
+function feedbackDeviceText(item) {
+  const deviceId = String(item?.deviceId ?? '').trim();
+  return deviceId || '-';
+}
+
+function renderFeedbackDeviceBlockForm({ deviceId, blocked, returnTo }) {
+  const normalized = String(deviceId ?? '').trim();
+  if (!normalized || normalized === '-') {
+    return '';
+  }
+
+  return `<form method="post" action="/admin/feedback/device-block" style="display: inline;">
+    <input type="hidden" name="deviceId" value="${escapeHtml(normalized)}" />
+    <input type="hidden" name="blocked" value="${blocked ? 'false' : 'true'}" />
+    <input type="hidden" name="returnTo" value="${escapeHtml(returnTo)}" />
+    <button class="${blocked ? 'small-btn' : 'small-btn danger'}" type="submit">${blocked ? '解除拉黑' : '拉黑'}</button>
+  </form>`;
+}
+
+function renderFeedbackItems(feedbackItems, state, returnTo) {
   if (!feedbackItems.length) {
     return '<div class="small">暂无反馈。</div>';
   }
 
   return feedbackItems
-    .map(
-      (item) => `
+    .map((item) => {
+      const deviceId = feedbackDeviceText(item);
+      const blocked = Boolean(blockedFeedbackDevice(state, deviceId));
+      return `
         <div class="item">
           <div class="row" style="justify-content: space-between; align-items: start;">
             <div>
@@ -319,8 +360,39 @@ function renderFeedbackItems(feedbackItems) {
               </div>
               <div class="small">${previewText(item.content, 120)}</div>
               <div class="small" style="margin-top: 6px;">${escapeHtml(formatDateTime(item.createdAt))} · ${escapeHtml(item.appVersion || '-')}</div>
+              <div class="small mono" style="margin-top: 4px;">发送者：${escapeHtml(deviceId)}</div>
             </div>
-            <span class="badge ${feedbackBadgeClass(item.status)}">${escapeHtml(item.status)}</span>
+            <div class="row" style="justify-content: flex-end;">
+              ${blocked ? '<span class="badge bad">已拉黑</span>' : ''}
+              <span class="badge ${feedbackBadgeClass(item.status)}">${escapeHtml(item.status)}</span>
+              ${renderFeedbackDeviceBlockForm({ deviceId, blocked, returnTo })}
+            </div>
+          </div>
+        </div>`;
+    })
+    .join('');
+}
+
+function renderBlockedFeedbackDevices(state) {
+  const devices = state.blockedFeedbackDevices ?? [];
+  if (!devices.length) {
+    return '<div class="small">暂无拉黑标识。</div>';
+  }
+
+  return devices
+    .map(
+      (item) => `
+        <div class="item">
+          <div class="row" style="justify-content: space-between; align-items: start;">
+            <div>
+              <div class="mono">${escapeHtml(item.deviceId)}</div>
+              <div class="small" style="margin-top: 4px;">拉黑时间：${escapeHtml(formatDateTime(item.blockedAt))}</div>
+            </div>
+            ${renderFeedbackDeviceBlockForm({
+              deviceId: item.deviceId,
+              blocked: true,
+              returnTo: '/admin/feedback'
+            })}
           </div>
         </div>`
     )
@@ -450,7 +522,7 @@ function renderDashboard({ state, feedbackItems, announcementItems, message = ''
         </div>
         <p class="subtitle">点击标题进入单条详情和回复页。</p>
         <div class="item-list">
-          ${renderFeedbackItems(latestFeedback)}
+          ${renderFeedbackItems(latestFeedback, state, '/admin')}
         </div>
       </div>
 
@@ -504,7 +576,14 @@ function renderFeedbackListPage({ state, feedbackItems, message = '' }) {
     ${notice}
     <div class="card">
       <div class="item-list">
-        ${renderFeedbackItems(feedbackItems)}
+        ${renderFeedbackItems(feedbackItems, state, '/admin/feedback')}
+      </div>
+    </div>
+    <div class="card">
+      <h2 class="title" style="font-size: 20px;">已拉黑发送者</h2>
+      <p class="subtitle">命中的客户端将无法继续提交问题反馈。</p>
+      <div class="item-list">
+        ${renderBlockedFeedbackDevices(state)}
       </div>
     </div>`
   );
@@ -562,6 +641,9 @@ function renderAnnouncementListPage({ state, announcementItems, message = '' }) 
 function renderFeedbackDetail({ state, item, message = '' }) {
   const notice = message ? `<div class="notice">${escapeHtml(message)}</div>` : '';
   const replies = Array.isArray(item.replies) ? item.replies : [];
+  const deviceId = feedbackDeviceText(item);
+  const blockedDevice = blockedFeedbackDevice(state, deviceId);
+  const isBlocked = Boolean(blockedDevice);
 
   return shell(
     `反馈 ${item.id}`,
@@ -572,6 +654,7 @@ function renderFeedbackDetail({ state, item, message = '' }) {
       </div>
       <div class="row">
         <span class="badge ${item.status === 'open' ? 'warn' : item.status === 'closed' ? 'bad' : 'ok'}">${escapeHtml(item.status)}</span>
+        ${isBlocked ? '<span class="badge bad">发送者已拉黑</span>' : ''}
       </div>
     </div>
     ${notice}
@@ -593,6 +676,22 @@ function renderFeedbackDetail({ state, item, message = '' }) {
           <div class="small">联系方式</div>
           <div style="margin-top: 6px;">${escapeHtml(item.contact || '-')}</div>
         </div>
+        <div>
+          <div class="small">平台</div>
+          <div style="margin-top: 6px;">${escapeHtml(item.platform || '-')}</div>
+        </div>
+        <div>
+          <div class="small">发送者唯一标识</div>
+          <div class="mono" style="margin-top: 6px;">${escapeHtml(deviceId)}</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top: 16px;">
+        ${isBlocked ? `<span class="small">已于 ${escapeHtml(formatDateTime(blockedDevice.blockedAt))} 拉黑。</span>` : '<span class="small">该发送者当前未被拉黑。</span>'}
+        ${renderFeedbackDeviceBlockForm({
+          deviceId,
+          blocked: isBlocked,
+          returnTo: `/admin/feedback/${encodeURIComponent(item.id)}`
+        })}
       </div>
       <div style="margin-top: 16px;">
         <div class="small">内容</div>

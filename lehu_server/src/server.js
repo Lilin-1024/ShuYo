@@ -119,6 +119,16 @@ function publicFeedback(item) {
   };
 }
 
+function isFeedbackDeviceBlocked(state, deviceId) {
+  const normalized = trimText(deviceId);
+  if (!normalized) {
+    return false;
+  }
+  return (state.blockedFeedbackDevices ?? []).some(
+    (item) => item.deviceId === normalized
+  );
+}
+
 function publicVersionPayload(state) {
   const latestAnnouncement = selectLatestAnnouncement(state.announcements);
   return {
@@ -231,6 +241,15 @@ app.post('/api/v1/feedback', feedbackRateLimit, async (req, res, next) => {
     validateLength(deviceId, 120, '设备标识');
     validateLength(appVersion, 60, '客户端版本');
     validateLength(platform, 60, '平台信息');
+
+    const state = await readState();
+    if (isFeedbackDeviceBlocked(state, deviceId)) {
+      res.status(403).json({
+        success: false,
+        error: '该设备暂无法提交反馈。'
+      });
+      return;
+    }
 
     const createdAt = nowIso();
     const lookupToken = crypto.randomBytes(24).toString('hex');
@@ -499,6 +518,49 @@ app.post('/admin/announcements/:id/active', requireAdmin, async (req, res, next)
     }
 
     adminRedirectWithMessage(res, returnTo, active ? '公告已启用。' : '公告已关闭。');
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/admin/feedback/device-block', requireAdmin, async (req, res, next) => {
+  try {
+    const deviceId = trimText(req.body.deviceId ?? '');
+    const blocked = isTruthy(req.body.blocked);
+    const returnTo = trimText(req.body.returnTo ?? '/admin/feedback');
+
+    if (!deviceId) {
+      res.status(400).send('设备标识不能为空。');
+      return;
+    }
+
+    validateLength(deviceId, 120, '设备标识');
+
+    await mutateState((state) => {
+      state.blockedFeedbackDevices = Array.isArray(state.blockedFeedbackDevices)
+        ? state.blockedFeedbackDevices
+        : [];
+
+      if (blocked) {
+        if (!isFeedbackDeviceBlocked(state, deviceId)) {
+          state.blockedFeedbackDevices.unshift({
+            deviceId,
+            blockedAt: nowIso()
+          });
+        }
+        return;
+      }
+
+      state.blockedFeedbackDevices = state.blockedFeedbackDevices.filter(
+        (item) => item.deviceId !== deviceId
+      );
+    });
+
+    adminRedirectWithMessage(
+      res,
+      returnTo,
+      blocked ? '发送者已拉黑。' : '发送者已解除拉黑。'
+    );
   } catch (error) {
     next(error);
   }

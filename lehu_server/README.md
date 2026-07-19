@@ -5,6 +5,7 @@
 - 健康检查
 - 版本检查与更新说明
 - 问题反馈提交与回复
+- 反馈发送者标识展示与拉黑
 - 简单管理后台
 
 ## 本地启动
@@ -37,8 +38,12 @@ docker-compose up -d --build
 
 - `GET /admin/login`
 - `GET /admin`
+- `GET /admin/feedback`
+- `POST /admin/feedback/device-block`
 
 默认的管理员密码来自 `.env` 里的 `ADMIN_PASSWORD`。
+
+反馈会保存客户端提交的 `deviceId`，后台可按该标识拉黑或解除拉黑。被拉黑的标识再次提交反馈时会收到拒绝响应。
 
 ## 备注
 

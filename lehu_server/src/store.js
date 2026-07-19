@@ -34,8 +34,29 @@ function defaultState() {
   return {
     meta: defaultMeta(),
     announcements: [],
-    feedback: []
+    feedback: [],
+    blockedFeedbackDevices: []
   };
+}
+
+function normalizeBlockedFeedbackDevices(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const seen = new Set();
+  return value
+    .map((item) => ({
+      deviceId: String(item?.deviceId ?? '').trim(),
+      blockedAt: item?.blockedAt ?? nowIso()
+    }))
+    .filter((item) => {
+      if (!item.deviceId || seen.has(item.deviceId)) {
+        return false;
+      }
+      seen.add(item.deviceId);
+      return true;
+    });
 }
 
 function normalizeState(raw) {
@@ -57,8 +78,9 @@ function normalizeState(raw) {
 
   const announcements = Array.isArray(raw?.announcements) ? raw.announcements : [];
   const feedback = Array.isArray(raw?.feedback) ? raw.feedback : [];
+  const blockedFeedbackDevices = normalizeBlockedFeedbackDevices(raw?.blockedFeedbackDevices);
 
-  return { meta, announcements, feedback };
+  return { meta, announcements, feedback, blockedFeedbackDevices };
 }
 
 async function ensureStorage() {
