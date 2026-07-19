@@ -573,7 +573,7 @@ class OnlineForumRepository implements ForumRepository {
   final FixtureForumRepository _fallback;
   final CurrentUserSession _session;
   UserProfile _profile;
-  final UserSummary _userSummary;
+  UserSummary _userSummary;
   final Map<int, ForumCategory> _categories;
   final Map<int, TopicDetail> _topicDetails = {};
   final Map<int, Future<TopicDetail?>> _pendingTopicDetails = {};
@@ -802,7 +802,12 @@ class OnlineForumRepository implements ForumRepository {
     final json = await _apiClient.getJson(
       '/u/${Uri.encodeComponent(key)}/summary.json',
     );
-    return _userSummaries[key] = UserSummary.fromJson(json);
+    final summary = UserSummary.fromJson(json);
+    _userSummaries[key] = summary;
+    if (key == profile.username.toLowerCase()) {
+      _userSummary = summary;
+    }
+    return summary;
   }
 
   @override
@@ -812,16 +817,29 @@ class OnlineForumRepository implements ForumRepository {
     if (!forceRefresh && _activityCounts != null) {
       return _activityCounts!;
     }
-    final bookmarks = await fetchUserActivity(
-      ForumActivityKind.bookmarks,
+    final summary = await fetchUserSummary(
+      profile.username,
       forceRefresh: forceRefresh,
     );
+    final activities = await Future.wait([
+      fetchUserActivity(ForumActivityKind.topics, forceRefresh: forceRefresh),
+      fetchUserActivity(ForumActivityKind.read, forceRefresh: forceRefresh),
+      fetchUserActivity(
+        ForumActivityKind.bookmarks,
+        forceRefresh: forceRefresh,
+      ),
+    ]);
+    final topics = activities[0];
+    final read = activities[1];
+    final bookmarks = activities[2];
     return _activityCounts = ForumActivityCounts(
-      topics: _userSummary.topicCount,
-      read: _userSummary.topicsEntered,
+      topics: _largerCount(summary.topicCount, topics.length),
+      read: _largerCount(summary.topicsEntered, read.length),
       bookmarks: bookmarks.length,
     );
   }
+
+  int _largerCount(int left, int right) => left > right ? left : right;
 
   @override
   Future<List<ForumActivityItem>> fetchUserActivity(
