@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/academic_constants.dart';
 import '../core/academic_url_resolver.dart';
@@ -85,6 +86,8 @@ class _AppShellState extends State<AppShell> {
   bool _checkingClientBackendPrompts = false;
   bool _forumNetworkUnavailable = false;
   bool _autoUseWebVpnProxy = ForumUrlResolver.usesWebVpn;
+  int _seenNotificationBadgeCount = 0;
+  int _seenMessageBadgeCount = 0;
   DateTime? _lastForumReachabilityCheck;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
@@ -106,6 +109,7 @@ class _AppShellState extends State<AppShell> {
     _classroomRepository = ClassroomRepository();
     _courseRatingRepository = CourseRatingRepository();
     _resetFeedFuture();
+    unawaited(_loadLocalForumBadges());
     unawaited(_refreshScheduleSummaryQuietly());
     unawaited(_loadNetworkSettings());
     unawaited(_refreshForumReachabilityQuietly(force: true));
@@ -142,8 +146,7 @@ class _AppShellState extends State<AppShell> {
                   showSettings: canOpenClientSettings,
                   showSearch: isForumTab,
                   showCreate: isForumTab,
-                  notificationCount:
-                      _repo.isOnline ? _repo.unreadNotificationCount : 0,
+                  notificationCount: _notificationBadgeCount,
                   onSearch: _openSearch,
                   onCreate: _openCreateTopic,
                   onSettings: _openClientSettings,
@@ -168,18 +171,28 @@ class _AppShellState extends State<AppShell> {
         currentIndex: _tabIndex,
         onTap: (index) {
           setState(() => _tabIndex = index);
+          if (index == 2) {
+            unawaited(_markMessageBadgeSeen());
+          }
           if (index == 0) {
             unawaited(_refreshScheduleSummaryQuietly());
             unawaited(_refreshForumReachabilityQuietly());
             unawaited(_refreshAnnouncementSummaryQuietly());
           }
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: '首页'),
-          BottomNavigationBarItem(icon: Icon(Icons.forum), label: '论坛'),
+        items: [
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard), label: '首页'),
+          const BottomNavigationBarItem(icon: Icon(Icons.forum), label: '论坛'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.chat_bubble_outline), label: '消息'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: '我'),
+            icon: _TabBadgeIcon(
+              icon: Icons.chat_bubble_outline,
+              count: _messageBadgeCount,
+            ),
+            label: '消息',
+          ),
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.account_circle), label: '我'),
         ],
       ),
     );
@@ -200,6 +213,97 @@ class _AppShellState extends State<AppShell> {
       3 => '我',
       _ => '乐乎',
     };
+  }
+
+  int get _notificationBadgeCount {
+    if (!_repo.isOnline) {
+      return 0;
+    }
+    final count = _repo.unreadNotificationCount;
+    return count <= _seenNotificationBadgeCount
+        ? 0
+        : count - _seenNotificationBadgeCount;
+  }
+
+  int get _messageBadgeCount {
+    if (!_repo.isOnline) {
+      return 0;
+    }
+    final count = _repo.unreadPrivateMessageCount;
+    return count <= _seenMessageBadgeCount ? 0 : count - _seenMessageBadgeCount;
+  }
+
+  String get _forumBadgeCacheUserKey => _repo.profile.username.toLowerCase();
+
+  String _notificationBadgeSeenKey(String username) {
+    return 'forum.badge.seen.notifications.$username';
+  }
+
+  String _messageBadgeSeenKey(String username) {
+    return 'forum.badge.seen.messages.$username';
+  }
+
+  Future<void> _loadLocalForumBadges() async {
+    if (!_repo.isOnline) {
+      if (mounted) {
+        setState(() {
+          _seenNotificationBadgeCount = 0;
+          _seenMessageBadgeCount = 0;
+        });
+      }
+      return;
+    }
+    final username = _forumBadgeCacheUserKey;
+    final prefs = await SharedPreferences.getInstance();
+    final notificationCount =
+        prefs.getInt(_notificationBadgeSeenKey(username)) ?? 0;
+    final messageCount = prefs.getInt(_messageBadgeSeenKey(username)) ?? 0;
+    final normalizedNotificationCount =
+        notificationCount.clamp(0, _repo.unreadNotificationCount);
+    final normalizedMessageCount =
+        messageCount.clamp(0, _repo.unreadPrivateMessageCount);
+    if (!mounted || username != _forumBadgeCacheUserKey) {
+      return;
+    }
+    setState(() {
+      _seenNotificationBadgeCount = normalizedNotificationCount;
+      _seenMessageBadgeCount = normalizedMessageCount;
+    });
+    if (normalizedNotificationCount != notificationCount) {
+      unawaited(
+        prefs.setInt(
+          _notificationBadgeSeenKey(username),
+          normalizedNotificationCount,
+        ),
+      );
+    }
+    if (normalizedMessageCount != messageCount) {
+      unawaited(
+        prefs.setInt(_messageBadgeSeenKey(username), normalizedMessageCount),
+      );
+    }
+  }
+
+  Future<void> _markNotificationBadgeSeen() async {
+    if (!_repo.isOnline) {
+      return;
+    }
+    final username = _forumBadgeCacheUserKey;
+    final count = _repo.unreadNotificationCount;
+    setState(() => _seenNotificationBadgeCount = count);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_notificationBadgeSeenKey(username), count);
+  }
+
+  Future<void> _markMessageBadgeSeen() async {
+    if (!_repo.isOnline) {
+      return;
+    }
+    final username = _forumBadgeCacheUserKey;
+    final count = _repo.unreadPrivateMessageCount;
+    setState(() => _seenMessageBadgeCount = count);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_messageBadgeSeenKey(username), count);
   }
 
   Widget _bodyForTab() {
@@ -780,6 +884,7 @@ class _AppShellState extends State<AppShell> {
       _openProfileLoginTab();
       return;
     }
+    unawaited(_markNotificationBadgeSeen());
     await Navigator.of(context).push<void>(
       lehuRoute(
         builder: (context) => NotificationsPage(
@@ -815,6 +920,7 @@ class _AppShellState extends State<AppShell> {
         _activityCountsFuture = null;
         _resetFeedFuture();
       });
+      unawaited(_loadLocalForumBadges());
       _showSnack('已加载论坛');
       unawaited(_checkClientBackendPrompts());
     } on Object catch (error) {
@@ -855,6 +961,7 @@ class _AppShellState extends State<AppShell> {
         _activityCountsFuture = null;
         _resetFeedFuture();
       });
+      unawaited(_loadLocalForumBadges());
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -886,6 +993,7 @@ class _AppShellState extends State<AppShell> {
         _activityCountsFuture = null;
         _resetFeedFuture();
       });
+      unawaited(_loadLocalForumBadges());
       _showSnack('已退出登录');
     } on Object catch (error) {
       if (!mounted) {
@@ -929,6 +1037,7 @@ class _AppShellState extends State<AppShell> {
       _activityCountsFuture = null;
       _resetFeedFuture();
     });
+    unawaited(_loadLocalForumBadges());
   }
 
   Future<void> _openAcademicSystem() async {
@@ -1106,6 +1215,7 @@ class _AppShellState extends State<AppShell> {
         _activityCountsFuture = null;
         _resetFeedFuture();
       });
+      unawaited(_loadLocalForumBadges());
       if (nextRepository.isOnline) {
         _showSnack('已切换论坛访问方式');
       }
@@ -1237,6 +1347,52 @@ class _LoginRequiredTab extends StatelessWidget {
           label: const Text('去登录'),
         ),
       ),
+    );
+  }
+}
+
+class _TabBadgeIcon extends StatelessWidget {
+  const _TabBadgeIcon({
+    required this.icon,
+    required this.count,
+  });
+
+  final IconData icon;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) {
+      return Icon(icon);
+    }
+    final label = count > 99 ? '99+' : '$count';
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon),
+        Positioned(
+          right: -10,
+          top: -6,
+          child: Container(
+            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE53935),
+              borderRadius: BorderRadius.all(Radius.circular(9)),
+            ),
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 9.5,
+                height: 1,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
