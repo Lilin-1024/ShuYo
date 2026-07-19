@@ -57,6 +57,29 @@ void main() {
     expect(preview.text, isNot(contains('KB')));
   });
 
+  test('renders discourse emoji aliases in cooked content', () {
+    const cooked = '<p>:face_savouring_food: :raised_back_of_hand:</p>'
+        '<p><img src="/images/emoji/twitter/heart.png" '
+        'alt=":red_heart:" width="20" height="20"></p>';
+
+    expect(
+      HtmlText.toPlainText(cooked),
+      contains('\u{1F60B} \u{1F91A}'),
+    );
+    expect(HtmlText.toPlainText(cooked), contains('\u{2764}\u{FE0F}'));
+    expect(EmojiText.render(':face_savoring_food:'), '\u{1F60B}');
+  });
+
+  test('renders generated unicode emoji shortcodes', () {
+    final rendered = EmojiText.render(
+      ':melting_face: :flag_china: :cn: :person_medium_dark_skin_tone:',
+    );
+
+    expect(rendered, contains('\u{1FAE0}'));
+    expect(rendered, contains('\u{1F1E8}\u{1F1F3}'));
+    expect(rendered, contains('\u{1F9D1}\u{1F3FE}'));
+  });
+
   test('merges topic posts by id and keeps post-number order', () {
     final topic = TopicDetail(
       id: 1,
