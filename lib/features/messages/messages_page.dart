@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/models/composer.dart';
 import '../../data/models/discourse_user.dart';
@@ -37,11 +38,19 @@ class MessagesPage extends StatefulWidget {
 }
 
 class _MessagesPageState extends State<MessagesPage> {
+  static const _hiddenPrivateMessagesPrefix = 'forum.privateMessages.hidden.';
+
   final _previewFutures = <int, Future<_MessageTopicPreview>>{};
   List<TopicListItem>? _topics;
+  Set<int> _hiddenTopicIds = const {};
   Object? _error;
   bool _loading = true;
   bool _refreshing = false;
+
+  String get _hiddenPrivateMessagesKey {
+    return '$_hiddenPrivateMessagesPrefix'
+        '${widget.repository.profile.username.toLowerCase()}';
+  }
 
   @override
   void initState() {
@@ -55,6 +64,7 @@ class _MessagesPageState extends State<MessagesPage> {
     if (oldWidget.repository != widget.repository) {
       _previewFutures.clear();
       _topics = null;
+      _hiddenTopicIds = const {};
       _error = null;
       _loading = true;
       unawaited(_loadInitial());
@@ -96,7 +106,7 @@ class _MessagesPageState extends State<MessagesPage> {
       );
     }
 
-    final groups = _conversationGroups(_topics ?? const []);
+    final groups = _conversationGroups(_visibleTopics);
     if (groups.isEmpty) {
       return RefreshIndicator(
         onRefresh: _refreshList,
@@ -142,20 +152,34 @@ class _MessagesPageState extends State<MessagesPage> {
               style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
             ),
             onTap: () => _openGroup(group),
+            onLongPress: () => _handleGroupLongPress(group),
           );
         },
       ),
     );
   }
 
+  List<TopicListItem> get _visibleTopics {
+    final topics = _topics;
+    if (topics == null || _hiddenTopicIds.isEmpty) {
+      return topics ?? const [];
+    }
+    return topics
+        .where((topic) => !_hiddenTopicIds.contains(topic.id))
+        .toList(growable: false);
+  }
+
   Future<void> _loadInitial() async {
     try {
+      final hiddenTopicIdsFuture = _loadHiddenTopicIds();
       final topics = await widget.repository.fetchPrivateMessages();
+      final hiddenTopicIds = await hiddenTopicIdsFuture;
       if (!mounted) {
         return;
       }
       setState(() {
         _topics = topics;
+        _hiddenTopicIds = hiddenTopicIds;
         _error = null;
         _loading = false;
       });
@@ -176,14 +200,17 @@ class _MessagesPageState extends State<MessagesPage> {
     }
     setState(() => _refreshing = true);
     try {
+      final hiddenTopicIdsFuture = _loadHiddenTopicIds();
       final topics = await widget.repository.fetchPrivateMessages(
         forceRefresh: true,
       );
+      final hiddenTopicIds = await hiddenTopicIdsFuture;
       if (!mounted) {
         return;
       }
       setState(() {
         _topics = topics;
+        _hiddenTopicIds = hiddenTopicIds;
         _previewFutures.clear();
         _error = null;
       });
@@ -203,6 +230,62 @@ class _MessagesPageState extends State<MessagesPage> {
         setState(() => _refreshing = false);
       }
     }
+  }
+
+  Future<Set<int>> _loadHiddenTopicIds() async {
+    final prefs = await SharedPreferences.getInstance();
+    final values = prefs.getStringList(_hiddenPrivateMessagesKey) ?? const [];
+    return values
+        .map(int.tryParse)
+        .whereType<int>()
+        .where((id) => id > 0)
+        .toSet();
+  }
+
+  Future<void> _saveHiddenTopicIds(Set<int> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    final values = ids.map((id) => '$id').toList()..sort();
+    await prefs.setStringList(_hiddenPrivateMessagesKey, values);
+  }
+
+  Future<void> _hidePrivateMessageTopic(int topicId) async {
+    final next = {..._hiddenTopicIds, topicId};
+    await _saveHiddenTopicIds(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _hiddenTopicIds = next;
+      _previewFutures.remove(topicId);
+    });
+  }
+
+  void _handleGroupLongPress(_PrivateConversationGroup group) {
+    if (group.topics.length > 1) {
+      return;
+    }
+    unawaited(_deleteLocalConversation(group.topics.first));
+  }
+
+  Future<bool> _deleteLocalConversation(TopicListItem topic) async {
+    final confirmed = await _confirmLocalConversationDeletion(context, topic);
+    if (!confirmed) {
+      return false;
+    }
+    await _hidePrivateMessageTopic(topic.id);
+    if (mounted) {
+      _showSnack('会话已删除');
+    }
+    return true;
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   List<_PrivateConversationGroup> _conversationGroups(
@@ -267,6 +350,7 @@ class _MessagesPageState extends State<MessagesPage> {
             repository: widget.repository,
             group: group,
             previewForTopic: _previewForTopic,
+            onHideTopic: _hidePrivateMessageTopic,
           ),
         ),
       );
@@ -289,30 +373,47 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 }
 
-class _MessageTopicSelectionPage extends StatelessWidget {
+class _MessageTopicSelectionPage extends StatefulWidget {
   const _MessageTopicSelectionPage({
     required this.repository,
     required this.group,
     required this.previewForTopic,
+    required this.onHideTopic,
   });
 
   final ForumRepository repository;
   final _PrivateConversationGroup group;
   final Future<_MessageTopicPreview> Function(TopicListItem topic)
       previewForTopic;
+  final Future<void> Function(int topicId) onHideTopic;
+
+  @override
+  State<_MessageTopicSelectionPage> createState() =>
+      _MessageTopicSelectionPageState();
+}
+
+class _MessageTopicSelectionPageState
+    extends State<_MessageTopicSelectionPage> {
+  late List<TopicListItem> _topics;
+
+  @override
+  void initState() {
+    super.initState();
+    _topics = widget.group.topics.toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: Text(group.displayName)),
+      appBar: AppBar(title: Text(widget.group.displayName)),
       body: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: group.topics.length,
+        itemCount: _topics.length,
         separatorBuilder: (context, index) =>
             const Divider(height: 1, color: Color(0xFF202020)),
         itemBuilder: (context, index) {
-          final topic = group.topics[index];
+          final topic = _topics[index];
           return ListTile(
             title: Text(
               topic.title,
@@ -323,18 +424,19 @@ class _MessageTopicSelectionPage extends StatelessWidget {
                 weight: FontWeight.w500,
               ),
             ),
-            subtitle: _TopicPreviewLine(future: previewForTopic(topic)),
+            subtitle: _TopicPreviewLine(future: widget.previewForTopic(topic)),
             trailing: Text(
               TimeFormat.compact(topic.lastPostedAt ?? topic.createdAt),
               style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
             ),
+            onLongPress: () => unawaited(_deleteLocalConversation(topic)),
             onTap: () {
               Navigator.of(context).push<void>(
                 lehuRoute(
                   builder: (context) => _MessageDetailPage(
-                    repository: repository,
+                    repository: widget.repository,
                     topic: topic,
-                    counterpartTitle: group.displayName,
+                    counterpartTitle: widget.group.displayName,
                   ),
                 ),
               );
@@ -344,6 +446,96 @@ class _MessageTopicSelectionPage extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _deleteLocalConversation(TopicListItem topic) async {
+    final confirmed = await _confirmLocalConversationDeletion(context, topic);
+    if (!confirmed) {
+      return;
+    }
+    await widget.onHideTopic(topic.id);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _topics = _topics.where((item) => item.id != topic.id).toList();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('会话已删除')),
+    );
+    if (_topics.isEmpty) {
+      Navigator.of(context).pop(true);
+    }
+  }
+}
+
+Future<bool> _confirmLocalConversationDeletion(
+  BuildContext context,
+  TopicListItem topic,
+) async {
+  final wantsDelete = await showModalBottomSheet<bool>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.black.withValues(alpha: 0.58),
+    builder: (context) {
+      final colors = Theme.of(context).colorScheme;
+      return SafeArea(
+        top: false,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('删除'),
+                subtitle: Text(
+                  topic.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => Navigator.of(context).pop(true),
+              ),
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: const Text('取消'),
+                onTap: () => Navigator.of(context).pop(false),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+  if (wantsDelete != true || !context.mounted) {
+    return false;
+  }
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('删除此会话？'),
+        content: const Text(
+          '将从本机永久删除此私信会话记录！！',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('删除'),
+          ),
+        ],
+      );
+    },
+  );
+  return confirmed == true;
 }
 
 class _MessageDetailPage extends StatefulWidget {
