@@ -66,11 +66,6 @@ class ClientSettingsPage extends StatelessWidget {
               ),
             ),
           ),
-          if (isOnline && onLogout != null)
-            _SettingsRow(
-              title: '退出登录',
-              onTap: () => _confirmLogout(context),
-            ),
           _SettingsRow(
             title: '关于客户端',
             onTap: () => _showAbout(context),
@@ -79,6 +74,13 @@ class ClientSettingsPage extends StatelessWidget {
             title: '检查更新',
             onTap: () => _checkForUpdate(context),
           ),
+          if (isOnline && onLogout != null) ...[
+            const SizedBox(height: 14),
+            _SettingsRow(
+              title: '退出登录',
+              onTap: () => _confirmLogout(context),
+            ),
+          ],
         ],
       ),
     );
