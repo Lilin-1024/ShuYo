@@ -6,9 +6,4 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">shu.edu.cn</domain>
     </domain-config>
-
-    <!-- Temporary backend address before shuyo.work is switched to HTTPS. -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain>8.213.159.150</domain>
-    </domain-config>
 </network-security-config>
