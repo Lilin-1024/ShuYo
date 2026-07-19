@@ -2,6 +2,7 @@ import '../../core/forum_constants.dart';
 import '../../core/forum_url_resolver.dart';
 import '../models/composer.dart';
 import '../models/post.dart';
+import '../models/topic.dart';
 import '../models/user_profile.dart';
 
 class ReplyDraft {
@@ -144,6 +145,16 @@ class PayloadFactory {
     );
   }
 
+  static RequestPayload unlikePost(int postId) {
+    return RequestPayload(
+      method: 'DELETE',
+      url: ForumUrlResolver.resolve('/post_actions/$postId'),
+      body: _formEncode({
+        'post_action_type_id': '2',
+      }),
+    );
+  }
+
   static RequestPayload topicTiming({
     required int topicId,
     required int postNumber,
@@ -166,6 +177,16 @@ class PayloadFactory {
       url: ForumUrlResolver.resolve('${ForumConstants.postsPath}/${post.id}'),
       body: _formEncode({
         'context': '/t/topic/${post.topicId}/${post.postNumber}',
+      }),
+    );
+  }
+
+  static RequestPayload deleteTopic(TopicListItem topic) {
+    return RequestPayload(
+      method: 'DELETE',
+      url: ForumUrlResolver.resolve('/t/${topic.id}'),
+      body: _formEncode({
+        'context': '/t/topic/${topic.id}',
       }),
     );
   }

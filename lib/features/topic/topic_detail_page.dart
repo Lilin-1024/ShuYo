@@ -43,6 +43,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   Future<TopicDetail?>? _future;
   TopicDetail? _detail;
   bool _submittingReply = false;
+  bool _deletingTopic = false;
   bool _topicTimingScheduled = false;
   Timer? _topicTimingTimer;
   final _likingPostIds = <int>{};
@@ -110,7 +111,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       isSubmittingReply: _submittingReply,
                       busyLikePostIds: _likingPostIds,
                       busyDeletePostIds: _deletingPostIds,
-                      onLikePost: _likePost,
+                      onLikePost: _togglePostLike,
                       onDeletePost: _deletePost,
                       onUploadImage: widget.repository.uploadImage,
                       onCreateReply: _createReply,
@@ -204,27 +205,35 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     }
   }
 
-  Future<void> _likePost(int postId) async {
+  Future<void> _togglePostLike(Post post) async {
     if (!widget.repository.isOnline) {
       await _requireLogin();
       return;
     }
-    if (_likingPostIds.contains(postId)) {
+    if (_likingPostIds.contains(post.id)) {
       return;
     }
-    setState(() => _likingPostIds.add(postId));
+    setState(() => _likingPostIds.add(post.id));
     try {
-      await widget.repository.likePost(postId);
+      if (post.liked) {
+        await widget.repository.unlikePost(post.id);
+      } else {
+        await widget.repository.likePost(post.id);
+      }
       if (!mounted) {
         return;
       }
-      _showSnack('已点赞');
+      _showSnack(post.liked ? '已取消点赞' : '已点赞');
       await _refresh();
     } on Object catch (error) {
-      await _handleOperationError(error, title: '点赞失败');
+      await _handleOperationError(
+        error,
+        title: post.liked ? '无法取消点赞' : '点赞失败',
+        fallbackMessage: post.liked ? '该点赞已超过论坛允许取消的时限' : null,
+      );
     } finally {
       if (mounted) {
-        setState(() => _likingPostIds.remove(postId));
+        setState(() => _likingPostIds.remove(post.id));
       }
     }
   }
@@ -246,7 +255,11 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       _showSnack('回复已删除');
       await _refresh();
     } on Object catch (error) {
-      await _handleOperationError(error, title: '删除失败');
+      await _handleOperationError(
+        error,
+        title: '无法删除回复',
+        fallbackMessage: '该回复已超过论坛允许删除的时限，需联系版主处理。',
+      );
     } finally {
       if (mounted) {
         setState(() => _deletingPostIds.remove(post.id));
@@ -266,6 +279,13 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     final bookmarkFuture = widget.repository.isOnline
         ? widget.repository.findTopicBookmark(topic.id)
         : Future<ForumBookmark?>.value();
+    final detail = _detail;
+    final firstPost = detail?.firstPost;
+    final isOwnTopic = detail != null &&
+        !detail.isPrivateMessage &&
+        (firstPost?.yours == true ||
+            topic.originalPosterId == widget.repository.profile.id);
+    final canDeleteTopic = isOwnTopic && detail.canDelete;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -273,6 +293,9 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       builder: (context) {
         return _TopicMoreSheet(
           bookmarkFuture: bookmarkFuture,
+          showDeleteTopic: isOwnTopic,
+          canDeleteTopic: canDeleteTopic,
+          deletingTopic: _deletingTopic,
           onClose: () => Navigator.of(context).pop(),
           onShare: () {
             Navigator.of(context).pop();
@@ -286,9 +309,90 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
             Navigator.of(context).pop();
             unawaited(_toggleTopicBookmark(topic, bookmark));
           },
+          onDeleteTopic: () {
+            Navigator.of(context).pop();
+            unawaited(_deleteTopic(topic));
+          },
+          onDeleteTopicUnavailable: () {
+            Navigator.of(context).pop();
+            unawaited(_showTopicDeleteUnavailable());
+          },
         );
       },
     );
+  }
+
+  Future<void> _showTopicDeleteUnavailable() async {
+    await _showErrorDialog(
+      title: '无法删除主题',
+      message: '该主题已有回复或超过论坛允许删除的时限，需联系版主处理。',
+    );
+  }
+
+  Future<void> _deleteTopic(TopicListItem topic) async {
+    if (!widget.repository.isOnline) {
+      await _requireLogin();
+      return;
+    }
+    if (_deletingTopic) {
+      return;
+    }
+    final detail = _detail;
+    final firstPost = detail?.firstPost;
+    final isOwnTopic = detail != null &&
+        !detail.isPrivateMessage &&
+        (firstPost?.yours == true ||
+            topic.originalPosterId == widget.repository.profile.id);
+    if (detail == null ||
+        detail.isPrivateMessage ||
+        !isOwnTopic ||
+        !detail.canDelete) {
+      await _showTopicDeleteUnavailable();
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('删除这个主题？'),
+          content: const Text(
+            '删除后帖子将无法恢复。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('删除'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    setState(() => _deletingTopic = true);
+    try {
+      await widget.repository.deleteTopic(topic);
+      if (!mounted) {
+        return;
+      }
+      _showSnack('主题已删除');
+      Navigator.of(context).pop(true);
+    } on Object catch (error) {
+      await _handleOperationError(
+        error,
+        title: '无法删除主题',
+        fallbackMessage: '该主题已有回复或超过论坛允许删除的时限，需联系版主处理。',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _deletingTopic = false);
+      }
+    }
   }
 
   Future<void> _toggleTopicBookmark(
@@ -338,6 +442,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   Future<void> _handleOperationError(
     Object error, {
     required String title,
+    String? fallbackMessage,
   }) async {
     if (error is ForumAuthException) {
       await widget.onSessionExpired?.call();
@@ -347,7 +452,10 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       );
       return;
     }
-    await _showErrorDialog(title: title, message: _friendlyError(error));
+    await _showErrorDialog(
+      title: title,
+      message: _friendlyError(error, fallbackMessage: fallbackMessage),
+    );
   }
 
   void _showSnack(String message) {
@@ -383,28 +491,50 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     );
   }
 
-  String _friendlyError(Object error) {
+  String _friendlyError(Object error, {String? fallbackMessage}) {
     if (error is ForumApiException) {
+      if (fallbackMessage != null && _isGenericForumError(error.message)) {
+        return fallbackMessage;
+      }
       return error.message;
     }
-    return '操作失败，请稍后重试';
+    return fallbackMessage ?? '操作失败，请稍后重试';
+  }
+
+  bool _isGenericForumError(String message) {
+    return message == '论坛请求失败' ||
+        message == '论坛返回的不是 JSON，可能需要重新登录' ||
+        message == '操作失败，请稍后重试' ||
+        message.contains('无权') ||
+        message.contains('没有权限') ||
+        message.toLowerCase().contains('forbidden');
   }
 }
 
 class _TopicMoreSheet extends StatelessWidget {
   const _TopicMoreSheet({
     required this.bookmarkFuture,
+    required this.showDeleteTopic,
+    required this.canDeleteTopic,
+    required this.deletingTopic,
     required this.onClose,
     required this.onShare,
     required this.onReport,
     required this.onBookmark,
+    required this.onDeleteTopic,
+    required this.onDeleteTopicUnavailable,
   });
 
   final Future<ForumBookmark?> bookmarkFuture;
+  final bool showDeleteTopic;
+  final bool canDeleteTopic;
+  final bool deletingTopic;
   final VoidCallback onClose;
   final VoidCallback onShare;
   final VoidCallback onReport;
   final ValueChanged<ForumBookmark?> onBookmark;
+  final VoidCallback onDeleteTopic;
+  final VoidCallback onDeleteTopicUnavailable;
 
   @override
   Widget build(BuildContext context) {
@@ -471,6 +601,18 @@ class _TopicMoreSheet extends StatelessWidget {
                     },
                   ),
                 ),
+                if (showDeleteTopic)
+                  Expanded(
+                    child: _TopicActionButton(
+                      icon: Icons.delete_outline,
+                      label: canDeleteTopic ? '删除主题' : '无法删帖',
+                      onTap: deletingTopic
+                          ? null
+                          : canDeleteTopic
+                              ? onDeleteTopic
+                              : onDeleteTopicUnavailable,
+                    ),
+                  ),
               ],
             ),
           ],

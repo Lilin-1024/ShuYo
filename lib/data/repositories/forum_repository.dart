@@ -114,8 +114,10 @@ abstract class ForumRepository {
     bool forceRefresh = false,
   });
   Future<Post> likePost(int postId);
+  Future<Post> unlikePost(int postId);
   Future<ForumBookmark> bookmarkTopic(int topicId);
   Future<void> unbookmarkTopic(int bookmarkId);
+  Future<void> deleteTopic(TopicListItem topic);
   Future<void> deletePost(Post post);
   Future<void> clearLoginCookies();
 }
@@ -452,6 +454,11 @@ class FixtureForumRepository implements ForumRepository {
   }
 
   @override
+  Future<Post> unlikePost(int postId) {
+    throw const ForumAuthException('请先登录后再取消点赞');
+  }
+
+  @override
   Future<ForumBookmark> bookmarkTopic(int topicId) {
     throw const ForumAuthException('请先登录后再收藏');
   }
@@ -459,6 +466,11 @@ class FixtureForumRepository implements ForumRepository {
   @override
   Future<void> unbookmarkTopic(int bookmarkId) {
     throw const ForumAuthException('请先登录后再取消收藏');
+  }
+
+  @override
+  Future<void> deleteTopic(TopicListItem topic) {
+    throw const ForumAuthException('请先登录后再删除');
   }
 
   @override
@@ -1108,6 +1120,18 @@ class OnlineForumRepository implements ForumRepository {
   }
 
   @override
+  Future<Post> unlikePost(int postId) async {
+    final payload = PayloadFactory.unlikePost(postId);
+    final json = await _apiClient.deleteForm(
+      '/post_actions/$postId',
+      payload.body,
+    );
+    final post = Post.fromJson(json);
+    _topicDetails.remove(post.topicId);
+    return post;
+  }
+
+  @override
   Future<ForumBookmark> bookmarkTopic(int topicId) async {
     final body = Uri(
       queryParameters: {
@@ -1131,6 +1155,20 @@ class OnlineForumRepository implements ForumRepository {
   Future<void> unbookmarkTopic(int bookmarkId) async {
     await _apiClient.deleteForm('/bookmarks/$bookmarkId.json', '');
     _activityItems.remove(ForumActivityKind.bookmarks);
+    _activityCounts = null;
+  }
+
+  @override
+  Future<void> deleteTopic(TopicListItem topic) async {
+    final payload = PayloadFactory.deleteTopic(topic);
+    await _apiClient.deleteForm('/t/${topic.id}', payload.body);
+    _topicDetails.remove(topic.id);
+    _pendingTopicDetails.remove(topic.id);
+    for (final key in _feedTopics.keys.toList()) {
+      _feedTopics[key] =
+          _feedTopics[key]!.where((item) => item.id != topic.id).toList();
+    }
+    _activityItems.remove(ForumActivityKind.topics);
     _activityCounts = null;
   }
 

@@ -65,6 +65,7 @@ void main() {
       postsCount: 2,
       highestPostNumber: 2,
       canCreatePost: true,
+      canDelete: false,
       posts: [
         _post(id: 10, postNumber: 1),
       ],

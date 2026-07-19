@@ -10,6 +10,7 @@ class TopicDetail {
     required this.postsCount,
     required this.highestPostNumber,
     required this.canCreatePost,
+    required this.canDelete,
     required this.posts,
     this.postStreamIds = const [],
     this.archetype = 'regular',
@@ -22,6 +23,7 @@ class TopicDetail {
   final int postsCount;
   final int highestPostNumber;
   final bool canCreatePost;
+  final bool canDelete;
   final List<Post> posts;
   final List<int> postStreamIds;
   final String archetype;
@@ -44,6 +46,9 @@ class TopicDetail {
       slug: stringValue(json['slug'], 'topic'),
       canCreatePost:
           details is JsonMap ? boolValue(details['can_create_post']) : false,
+      canDelete: details is JsonMap
+          ? boolValue(details['can_delete'])
+          : boolValue(json['can_delete']),
       posts: postsJson is List
           ? postsJson.whereType<JsonMap>().map(Post.fromJson).toList()
           : const [],
@@ -58,6 +63,7 @@ class TopicDetail {
   TopicDetail copyWith({
     int? postsCount,
     int? highestPostNumber,
+    bool? canDelete,
     List<Post>? posts,
     List<int>? postStreamIds,
   }) {
@@ -68,6 +74,7 @@ class TopicDetail {
       postsCount: postsCount ?? this.postsCount,
       highestPostNumber: highestPostNumber ?? this.highestPostNumber,
       canCreatePost: canCreatePost,
+      canDelete: canDelete ?? this.canDelete,
       posts: posts ?? this.posts,
       postStreamIds: postStreamIds ?? this.postStreamIds,
       archetype: archetype,
