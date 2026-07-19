@@ -882,11 +882,19 @@ class _MessageReplyBar extends StatefulWidget {
 }
 
 class _MessageReplyBarState extends State<_MessageReplyBar> {
+  static const _fallbackKeyboardHeight = 282.0;
+  static const _inputRowHeight = 48.0;
+  static const _messageFieldHeight = 42.0;
+  static const _keyboardHandoffDuration = Duration(milliseconds: 360);
+
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   final _images = <UploadedImage>[];
+  Timer? _keyboardHandoffTimer;
+  double _lastKeyboardHeight = _fallbackKeyboardHeight;
   bool _uploading = false;
   bool _showEmojiPanel = false;
+  bool _switchingEmojiToKeyboard = false;
 
   @override
   void initState() {
@@ -896,6 +904,7 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
 
   @override
   void dispose() {
+    _keyboardHandoffTimer?.cancel();
     _focusNode.removeListener(_handleFocusChanged);
     _controller.dispose();
     _focusNode.dispose();
@@ -904,8 +913,16 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
+    if (!_showEmojiPanel && keyboardBottom > 0) {
+      _lastKeyboardHeight = keyboardBottom;
+    }
+    final emojiHeight = _emojiPanelHeightFor(keyboardBottom);
+    _completeKeyboardHandoffIfReady(keyboardBottom);
+
     return SafeArea(
       top: false,
+      maintainBottomViewPadding: true,
       child: Container(
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
         decoration: const BoxDecoration(
@@ -924,71 +941,90 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
               ),
               const SizedBox(height: 8),
             ],
-            Row(
-              children: [
-                IconButton(
-                  tooltip: '添加图片',
-                  onPressed:
-                      widget.submitting || _uploading ? null : _pickAndUpload,
-                  icon: _uploading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.image_outlined),
-                ),
-                IconButton(
-                  tooltip: 'Emoji',
-                  onPressed: widget.submitting || _uploading
-                      ? null
-                      : _toggleEmojiPanel,
-                  icon: Icon(
-                    _showEmojiPanel
-                        ? Icons.keyboard_alt_outlined
-                        : Icons.emoji_emotions_outlined,
+            SizedBox(
+              height: _inputRowHeight,
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: '添加图片',
+                    onPressed:
+                        widget.submitting || _uploading ? null : _pickAndUpload,
+                    icon: _uploading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.image_outlined),
                   ),
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    minLines: 1,
-                    maxLines: 4,
-                    onTap: _handleInputTap,
-                    decoration: const InputDecoration(
-                      hintText: '写私信',
-                      border: OutlineInputBorder(),
-                      isDense: true,
+                  IconButton(
+                    tooltip: 'Emoji',
+                    onPressed: widget.submitting || _uploading
+                        ? null
+                        : _toggleEmojiPanel,
+                    icon: Icon(
+                      _showEmojiPanel
+                          ? Icons.keyboard_alt_outlined
+                          : Icons.emoji_emotions_outlined,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  tooltip: '发送',
-                  onPressed: widget.submitting || _uploading ? null : _submit,
-                  icon: widget.submitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send),
-                ),
-              ],
+                  Expanded(
+                    child: SizedBox(
+                      height: _messageFieldHeight,
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        maxLines: 1,
+                        onTap: _handleInputTap,
+                        decoration: const InputDecoration(
+                          hintText: '写私信',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    tooltip: '发送',
+                    onPressed: widget.submitting || _uploading ? null : _submit,
+                    icon: widget.submitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send),
+                  ),
+                ],
+              ),
             ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeInCubic,
-              child: _showEmojiPanel
-                  ? InlineEmojiPanel(
-                      key: const ValueKey('emoji-panel'),
-                      controller: _controller,
-                    )
-                  : const SizedBox.shrink(
-                      key: ValueKey('emoji-empty'),
-                    ),
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(end: emojiHeight),
+              duration: const Duration(milliseconds: 140),
+              curve: Curves.easeOutCubic,
+              builder: (context, height, child) {
+                return ClipRect(
+                  child: SizedBox(
+                    height: height,
+                    width: double.infinity,
+                    child: child,
+                  ),
+                );
+              },
+              child: OverflowBox(
+                alignment: Alignment.topCenter,
+                minHeight: _lastKeyboardHeight,
+                maxHeight: _lastKeyboardHeight,
+                child: InlineEmojiPanel(
+                  controller: _controller,
+                  height: _lastKeyboardHeight,
+                ),
+              ),
             ),
           ],
         ),
@@ -996,12 +1032,34 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
     );
   }
 
+  double _emojiPanelHeightFor(double keyboardBottom) {
+    if (!_showEmojiPanel) {
+      return 0;
+    }
+    final handoffHeight = _lastKeyboardHeight - keyboardBottom;
+    return handoffHeight.clamp(0.0, _lastKeyboardHeight).toDouble();
+  }
+
+  void _completeKeyboardHandoffIfReady(double keyboardBottom) {
+    if (!_switchingEmojiToKeyboard || !_showEmojiPanel) {
+      return;
+    }
+    final remainingEmojiHeight = _lastKeyboardHeight - keyboardBottom;
+    if (keyboardBottom > 0 && remainingEmojiHeight <= 8) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _switchingEmojiToKeyboard) {
+          _hideEmojiPanel();
+        }
+      });
+    }
+  }
+
   void _handleFocusChanged() {
     if (!mounted) {
       return;
     }
     if (_focusNode.hasFocus && _showEmojiPanel) {
-      setState(() => _showEmojiPanel = false);
+      _switchEmojiToKeyboard();
       return;
     }
     setState(() {});
@@ -1009,25 +1067,61 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
 
   void _handleInputTap() {
     if (_showEmojiPanel) {
-      setState(() => _showEmojiPanel = false);
+      _switchEmojiToKeyboard();
     }
   }
 
   void _toggleEmojiPanel() {
     if (_showEmojiPanel) {
-      setState(() => _showEmojiPanel = false);
+      _switchEmojiToKeyboard();
+      return;
+    }
+    final keyboardBottom = MediaQuery.viewInsetsOf(context).bottom;
+    if (keyboardBottom > 0) {
+      _lastKeyboardHeight = keyboardBottom;
+    }
+    _keyboardHandoffTimer?.cancel();
+    FocusScope.of(context).unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    setState(() {
+      _showEmojiPanel = true;
+      _switchingEmojiToKeyboard = false;
+    });
+  }
+
+  void _switchEmojiToKeyboard() {
+    if (!_showEmojiPanel) {
       _focusNode.requestFocus();
       return;
     }
-    FocusScope.of(context).unfocus();
-    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
-    setState(() => _showEmojiPanel = true);
+    _keyboardHandoffTimer?.cancel();
+    _keyboardHandoffTimer = Timer(_keyboardHandoffDuration, () {
+      if (mounted && _switchingEmojiToKeyboard) {
+        _hideEmojiPanel();
+      }
+    });
+    setState(() => _switchingEmojiToKeyboard = true);
+    _focusNode.requestFocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.show');
+  }
+
+  void _hideEmojiPanel() {
+    _keyboardHandoffTimer?.cancel();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _showEmojiPanel = false;
+      _switchingEmojiToKeyboard = false;
+    });
   }
 
   Future<void> _pickAndUpload() async {
+    _keyboardHandoffTimer?.cancel();
     setState(() {
       _uploading = true;
       _showEmojiPanel = false;
+      _switchingEmojiToKeyboard = false;
     });
     try {
       final picked = await LocalImagePicker.pickImage();
@@ -1064,7 +1158,11 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
     final raw = composeRawWithImages(text, images);
     _controller.clear();
     _images.clear();
-    setState(() => _showEmojiPanel = false);
+    _keyboardHandoffTimer?.cancel();
+    setState(() {
+      _showEmojiPanel = false;
+      _switchingEmojiToKeyboard = false;
+    });
     widget.onSubmit(raw, images);
   }
 }
