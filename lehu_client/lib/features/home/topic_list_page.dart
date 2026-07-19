@@ -236,7 +236,7 @@ class _TopicListRow extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       height: 1.42,
                       fontWeight: FontWeight.w400,
                     ),
@@ -249,7 +249,7 @@ class _TopicListRow extends StatelessWidget {
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       height: 1.42,
                       fontWeight: FontWeight.w400,
                     ),
@@ -298,7 +298,7 @@ class _PreviewContent extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               height: 1.42,
               fontWeight: FontWeight.w400,
             ),
@@ -309,7 +309,7 @@ class _PreviewContent extends StatelessWidget {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 15,
               height: 1.42,
               fontWeight: FontWeight.w400,
             ),
