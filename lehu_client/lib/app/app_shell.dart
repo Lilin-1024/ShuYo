@@ -734,7 +734,7 @@ class _AppShellState extends State<AppShell> {
     if (!mounted) {
       return;
     }
-    await Navigator.of(context).push<void>(
+    final deleted = await Navigator.of(context).push<bool>(
       lehuRoute(
         builder: (context) => TopicDetailPage(
           repository: _repo,
@@ -745,6 +745,9 @@ class _AppShellState extends State<AppShell> {
         ),
       ),
     );
+    if (deleted == true && mounted) {
+      await _refreshFeed();
+    }
   }
 
   void _refreshProfileActivityCounts() {

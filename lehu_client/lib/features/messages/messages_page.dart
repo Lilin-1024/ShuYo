@@ -613,6 +613,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
           postsCount: 1,
           highestPostNumber: post.postNumber,
           canCreatePost: true,
+          canDelete: false,
           posts: [post],
           postStreamIds: [post.id],
           archetype: 'private_message',

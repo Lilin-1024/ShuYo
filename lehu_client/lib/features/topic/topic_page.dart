@@ -48,7 +48,7 @@ class TopicPage extends StatefulWidget {
   final Set<int> busyDeletePostIds;
   final ValueChanged<ReplyDraft> onCreateReply;
   final Future<UploadedImage> Function(PickedImage image) onUploadImage;
-  final ValueChanged<int> onLikePost;
+  final ValueChanged<Post> onLikePost;
   final ValueChanged<Post> onDeletePost;
   final ValueChanged<String> onOpenUser;
   final VoidCallback onLoginRequired;
@@ -155,7 +155,7 @@ class _TopicPageState extends State<TopicPage> {
     if (widget.busyLikePostIds.contains(post.id)) {
       return;
     }
-    widget.onLikePost(post.id);
+    widget.onLikePost(post);
   }
 
   Future<void> _confirmDelete(Post post) async {
