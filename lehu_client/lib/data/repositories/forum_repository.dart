@@ -979,11 +979,23 @@ class OnlineForumRepository implements ForumRepository {
     if (!forceRefresh && _privateMessages != null) {
       return _privateMessages!;
     }
-    final path =
-        '/topics/private-messages/${profile.username.toLowerCase()}.json';
-    final json = await _apiClient.getJson(path);
-    _mergeUsers(json);
-    final messages = FixtureForumRepository._parseTopics(json);
+    final username = profile.username.toLowerCase();
+    final responses = await Future.wait([
+      _apiClient.getJson('/topics/private-messages/$username.json'),
+      _apiClient.getJson('/topics/private-messages-sent/$username.json'),
+    ]);
+    final messagesById = <int, TopicListItem>{};
+    for (final json in responses) {
+      _mergeUsers(json);
+      for (final message in FixtureForumRepository._parseTopics(json)) {
+        final existing = messagesById[message.id];
+        messagesById[message.id] = existing == null
+            ? message
+            : _newerPrivateMessageTopic(existing, message);
+      }
+    }
+    final messages = messagesById.values.toList()
+      ..sort((a, b) => _topicActivityTime(b).compareTo(_topicActivityTime(a)));
     if (forceRefresh) {
       for (final message in messages) {
         _pendingTopicDetails.remove(message.id);
@@ -993,6 +1005,24 @@ class OnlineForumRepository implements ForumRepository {
       }
     }
     return _privateMessages = messages;
+  }
+
+  TopicListItem _newerPrivateMessageTopic(
+    TopicListItem current,
+    TopicListItem next,
+  ) {
+    final currentTime = _topicActivityTime(current);
+    final nextTime = _topicActivityTime(next);
+    if (nextTime.isAfter(currentTime)) {
+      return next;
+    }
+    return current;
+  }
+
+  DateTime _topicActivityTime(TopicListItem topic) {
+    return topic.lastPostedAt ??
+        topic.createdAt ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   @override

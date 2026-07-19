@@ -26,6 +26,7 @@ class TopicListItem {
     required this.likeCount,
     required this.categoryId,
     required this.posters,
+    this.participants = const [],
     this.imageUrl,
     this.archetype = 'regular',
     this.allowedUserCount = 0,
@@ -47,12 +48,14 @@ class TopicListItem {
   final DateTime? createdAt;
   final DateTime? lastPostedAt;
   final List<TopicPoster> posters;
+  final List<TopicPoster> participants;
 
   int? get originalPosterId => posters.isEmpty ? null : posters.first.userId;
   bool get isPrivateMessage => archetype == 'private_message';
 
   factory TopicListItem.fromJson(JsonMap json) {
     final postersJson = json['posters'];
+    final participantsJson = json['participants'];
     final postsCount = intValue(json['posts_count']);
     return TopicListItem(
       id: intValue(json['id']),
@@ -70,6 +73,12 @@ class TopicListItem {
       lastPostedAt: dateValue(json['last_posted_at']),
       posters: postersJson is List
           ? postersJson.whereType<JsonMap>().map(TopicPoster.fromJson).toList()
+          : const [],
+      participants: participantsJson is List
+          ? participantsJson
+              .whereType<JsonMap>()
+              .map(TopicPoster.fromJson)
+              .toList()
           : const [],
     );
   }
