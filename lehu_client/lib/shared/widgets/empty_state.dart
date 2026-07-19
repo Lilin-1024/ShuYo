@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../lehu_text_styles.dart';
+import '../theme/lehu_theme.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -18,21 +19,25 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 48, color: const Color(0xFF8A8A8A)),
+            Icon(icon, size: 48, color: colors.textMuted),
             const SizedBox(height: 16),
-            Text(title, style: LehuTextStyles.sectionTitle()),
+            Text(
+              title,
+              style: LehuTextStyles.sectionTitle(color: colors.textPrimary),
+            ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
               style: LehuTextStyles.bodyCompact(
-                color: const Color(0xFFBDBDBD),
+                color: colors.textSecondary,
                 height: 1.4,
               ),
             ),

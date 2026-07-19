@@ -1,53 +1,37 @@
 import 'package:flutter/material.dart';
 
 import '../data/repositories/forum_repository.dart';
+import '../data/services/client_settings_service.dart';
 import 'app_shell.dart';
-import '../shared/lehu_text_styles.dart';
+import '../shared/theme/lehu_theme.dart';
 
-class LehuApp extends StatelessWidget {
+class LehuApp extends StatefulWidget {
   const LehuApp({super.key});
+
+  @override
+  State<LehuApp> createState() => _LehuAppState();
+}
+
+class _LehuAppState extends State<LehuApp> {
+  final _settingsService = ClientSettingsService();
+  late final Future<ForumRepository> _repositoryFuture;
+  LehuThemeSpec _theme = LehuThemes.byId(LehuThemes.defaultId);
+
+  @override
+  void initState() {
+    super.initState();
+    _repositoryFuture = ForumRepositoryFactory.load();
+    _loadTheme();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: '乐乎',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF66E0A3),
-          brightness: Brightness.dark,
-        ),
-        scaffoldBackgroundColor: Colors.black,
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.black,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Color(0xFF8A8A8A),
-          type: BottomNavigationBarType.fixed,
-        ),
-        textTheme: LehuTextStyles.theme,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          titleTextStyle: TextStyle(
-            fontSize: 17.5,
-            height: 1.22,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-          toolbarTextStyle: TextStyle(
-            fontSize: 14.5,
-            height: 1.2,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-          ),
-        ),
-      ),
+      theme: _theme.themeData(),
       home: FutureBuilder<ForumRepository>(
-        future: ForumRepositoryFactory.load(),
+        future: _repositoryFuture,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return _StartupError(error: snapshot.error.toString());
@@ -58,10 +42,28 @@ class LehuApp extends StatelessWidget {
           return AppShell(
             repository: snapshot.data!,
             reloadRepository: ForumRepositoryFactory.loadOnline,
+            selectedThemeId: _theme.id,
+            onThemeChanged: _changeTheme,
           );
         },
       ),
     );
+  }
+
+  Future<void> _loadTheme() async {
+    final themeId = await _settingsService.loadThemeId();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _theme = LehuThemes.byId(themeId));
+  }
+
+  Future<void> _changeTheme(String themeId) async {
+    final theme = LehuThemes.byId(themeId);
+    await _settingsService.saveThemeId(theme.id);
+    if (mounted) {
+      setState(() => _theme = theme);
+    }
   }
 }
 
@@ -83,6 +85,7 @@ class _StartupError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -96,7 +99,7 @@ class _StartupError extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 12),
-              Text(error, style: const TextStyle(color: Color(0xFFBDBDBD))),
+              Text(error, style: TextStyle(color: colors.textSecondary)),
             ],
           ),
         ),

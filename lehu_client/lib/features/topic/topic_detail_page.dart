@@ -12,6 +12,7 @@ import '../../data/services/discourse_api_client.dart';
 import '../../data/services/payload_factory.dart';
 import '../../features/profile/user_profile_page.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/app_header.dart';
 import '../../shared/widgets/empty_state.dart';
 import 'topic_page.dart';
@@ -538,7 +539,7 @@ class _TopicMoreSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final colors = context.lehuColors;
     return SafeArea(
       top: false,
       child: Container(
@@ -553,11 +554,14 @@ class _TopicMoreSheet extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     '更多',
-                    style:
-                        TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -636,6 +640,7 @@ class _TopicActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
+    final colors = context.lehuColors;
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,
@@ -647,14 +652,14 @@ class _TopicActionButton extends StatelessWidget {
             Icon(
               icon,
               size: 26,
-              color: enabled ? null : const Color(0xFF666666),
+              color: enabled ? colors.textSecondary : colors.textMuted,
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 14,
-                color: enabled ? null : const Color(0xFF666666),
+                color: enabled ? colors.textPrimary : colors.textMuted,
               ),
             ),
           ],
@@ -671,13 +676,14 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const CircularProgressIndicator(),
           const SizedBox(height: 14),
-          Text(message, style: const TextStyle(color: Color(0xFFBDBDBD))),
+          Text(message, style: TextStyle(color: colors.textSecondary)),
         ],
       ),
     );

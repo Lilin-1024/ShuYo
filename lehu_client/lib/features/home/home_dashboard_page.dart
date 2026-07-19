@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/theme/lehu_theme.dart';
 
 class HomeDashboardPage extends StatelessWidget {
   const HomeDashboardPage({
@@ -117,37 +118,43 @@ class _CampusNetworkWarningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 12, 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF2A2A2A)),
+        border: Border.all(color: colors.borderStrong),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.signal_wifi_bad, color: Color(0xFFBDBDBD), size: 22),
-              SizedBox(width: 10),
+              Icon(Icons.signal_wifi_bad,
+                  color: colors.textSecondary, size: 22),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   '未能连接到校园内网',
-                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 9),
           RichText(
-            text: const TextSpan(
+            text: TextSpan(
               style: TextStyle(
-                color: Color(0xFFBDBDBD),
+                color: colors.textSecondary,
                 fontSize: 13.5,
                 height: 1.45,
               ),
-              children: [
+              children: const [
                 TextSpan(
                   text:
                       '无法连接到上海大学内部网络，部分功能可能不可用。然而，如果你开启了“自动使用WebVPN代理”，并且已进行统一身份认证，你仍然可以直接使用这些功能。\n\n',
@@ -192,13 +199,14 @@ class _HomeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return InkWell(
       onTap: onTap,
       child: Container(
         constraints: const BoxConstraints(minHeight: 68),
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colors.border)),
         ),
         child: Row(
           children: [
@@ -209,7 +217,7 @@ class _HomeRow extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Icon(
                     icon,
-                    color: const Color(0xFFBDBDBD),
+                    color: colors.textSecondary,
                     size: 22,
                   ),
                 ),
@@ -224,6 +232,7 @@ class _HomeRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: LehuTextStyles.title(
+                      color: colors.textPrimary,
                       size: 16,
                       weight: FontWeight.w600,
                     ),
@@ -233,8 +242,8 @@ class _HomeRow extends StatelessWidget {
                     content,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFAAAAAA),
+                    style: TextStyle(
+                      color: colors.textTertiary,
                       fontSize: 13.5,
                       height: 1.46,
                     ),

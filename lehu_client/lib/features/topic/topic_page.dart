@@ -16,6 +16,7 @@ import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/forum_network_image.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
@@ -204,6 +205,7 @@ class _TopicHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -212,6 +214,7 @@ class _TopicHeader extends StatelessWidget {
           Text(
             detail.title,
             style: LehuTextStyles.title(
+              color: colors.textPrimary,
               size: 20.5,
               height: 1.2,
               weight: FontWeight.w500,
@@ -220,7 +223,7 @@ class _TopicHeader extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             '${category?.name ?? '未知分区'} · ${detail.postsCount} 楼',
-            style: const TextStyle(color: Color(0xFFBDBDBD)),
+            style: TextStyle(color: colors.textSecondary),
           ),
         ],
       ),
@@ -337,11 +340,12 @@ class _NestedReplies extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       margin: const EdgeInsets.only(left: 46, bottom: 8),
       padding: const EdgeInsets.only(left: 12),
-      decoration: const BoxDecoration(
-        border: Border(left: BorderSide(color: Color(0xFF2A2A2A))),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: colors.borderStrong)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,6 +414,7 @@ class _PostView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final textSize = compact ? 15.0 : 16.0;
     final timeText = TimeFormat.compact(post.createdAt);
     final metaText = timeText.isEmpty
@@ -430,6 +435,7 @@ class _PostView extends StatelessWidget {
             child: Text(
               segment.value,
               style: TextStyle(
+                color: colors.textPrimary,
                 fontSize: textSize,
                 height: 1.46,
                 fontWeight: FontWeight.w400,
@@ -454,10 +460,10 @@ class _PostView extends StatelessWidget {
                   return Container(
                     height: 160,
                     alignment: Alignment.center,
-                    color: const Color(0xFF1C1C1C),
-                    child: const Text(
+                    color: colors.surfaceMuted,
+                    child: Text(
                       '图片加载失败',
-                      style: TextStyle(color: Color(0xFFBDBDBD)),
+                      style: TextStyle(color: colors.textSecondary),
                     ),
                   );
                 },
@@ -469,8 +475,8 @@ class _PostView extends StatelessWidget {
     }
     return Container(
       padding: EdgeInsets.symmetric(vertical: compact ? 12 : 16),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,8 +497,8 @@ class _PostView extends StatelessWidget {
                         post.username,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFFD6D6D6),
+                        style: TextStyle(
+                          color: colors.detailAuthor,
                           fontWeight: FontWeight.w500,
                           fontSize: 14.5,
                         ),
@@ -502,8 +508,8 @@ class _PostView extends StatelessWidget {
                         metaText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF8A8A8A),
+                        style: TextStyle(
+                          color: colors.textMuted,
                           fontSize: 12.5,
                         ),
                       ),
@@ -517,7 +523,7 @@ class _PostView extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               replyContext!,
-              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
+              style: TextStyle(color: colors.textMuted, fontSize: 12.5),
             ),
           ],
           const SizedBox(height: 12),
@@ -666,11 +672,12 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   Widget build(BuildContext context) {
     final canType = _canType;
     final expanded = _expanded;
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        border: Border(top: BorderSide(color: Color(0xFF202020))),
+      decoration: BoxDecoration(
+        color: colors.background,
+        border: Border(top: BorderSide(color: colors.border)),
       ),
       child: SafeArea(
         top: false,
@@ -976,7 +983,7 @@ class _ComposerFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final borderColor = focused
         ? Theme.of(context).colorScheme.primary
-        : const Color(0xFF444444);
+        : context.lehuColors.borderStrong;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
       curve: Curves.easeOutCubic,
@@ -1053,6 +1060,7 @@ class _AttachmentPreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.lehuColors;
     return SizedBox(
       width: 74,
       height: 74,
@@ -1063,7 +1071,7 @@ class _AttachmentPreviewTile extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                color: const Color(0xFF202020),
+                color: colors.surfaceMuted,
                 child: image.url.isEmpty
                     ? const _AttachmentImageFallback()
                     : ForumNetworkImage(
@@ -1079,7 +1087,7 @@ class _AttachmentPreviewTile extends StatelessWidget {
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFF383838)),
+                border: Border.all(color: colors.borderStrong),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -1096,8 +1104,8 @@ class _AttachmentPreviewTile extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 backgroundColor: colorScheme.surface,
                 foregroundColor: colorScheme.onSurface,
-                disabledBackgroundColor: const Color(0xFF2A2A2A),
-                disabledForegroundColor: const Color(0xFF707070),
+                disabledBackgroundColor: colors.disabledFill,
+                disabledForegroundColor: colors.textMuted,
               ),
               icon: const Icon(Icons.close, size: 15),
             ),
@@ -1113,11 +1121,12 @@ class _AttachmentImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final colors = context.lehuColors;
+    return Center(
       child: Icon(
         Icons.image_outlined,
         size: 26,
-        color: Color(0xFF9A9A9A),
+        color: colors.textTertiary,
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/forum_url_resolver.dart';
 import '../../data/models/composer.dart';
+import '../theme/lehu_theme.dart';
 import 'forum_network_image.dart';
 
 String composeRawWithImages(String text, List<UploadedImage> images) {
@@ -58,6 +59,7 @@ class _AttachmentPreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.lehuColors;
     return SizedBox(
       width: 74,
       height: 74,
@@ -68,7 +70,7 @@ class _AttachmentPreviewTile extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Container(
-                color: const Color(0xFF202020),
+                color: colors.surfaceMuted,
                 child: image.url.isEmpty
                     ? const _AttachmentImageFallback()
                     : ForumNetworkImage(
@@ -84,7 +86,7 @@ class _AttachmentPreviewTile extends StatelessWidget {
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFF383838)),
+                border: Border.all(color: colors.borderStrong),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -101,8 +103,8 @@ class _AttachmentPreviewTile extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 backgroundColor: colorScheme.surface,
                 foregroundColor: colorScheme.onSurface,
-                disabledBackgroundColor: const Color(0xFF2A2A2A),
-                disabledForegroundColor: const Color(0xFF707070),
+                disabledBackgroundColor: colors.disabledFill,
+                disabledForegroundColor: colors.textMuted,
               ),
               icon: const Icon(Icons.close, size: 15),
             ),
@@ -118,11 +120,12 @@ class _AttachmentImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    final colors = context.lehuColors;
+    return Center(
       child: Icon(
         Icons.image_outlined,
         size: 26,
-        color: Color(0xFF9A9A9A),
+        color: colors.textTertiary,
       ),
     );
   }

@@ -51,6 +51,7 @@ class ClientSettingsService {
   static const forumNotificationsEnabledKey =
       'client.notifications.forum.enabled';
   static const autoUseWebVpnProxyKey = 'client.network.webvpn.auto_proxy';
+  static const themeIdKey = 'client.theme.id';
 
   final Future<SharedPreferences> Function() _preferencesLoader;
 
@@ -92,5 +93,15 @@ class ClientSettingsService {
       settings.autoUseWebVpnProxy,
     );
     return settings;
+  }
+
+  Future<String?> loadThemeId() async {
+    final prefs = await _preferencesLoader();
+    return prefs.getString(themeIdKey);
+  }
+
+  Future<void> saveThemeId(String themeId) async {
+    final prefs = await _preferencesLoader();
+    await prefs.setString(themeIdKey, themeId);
   }
 }

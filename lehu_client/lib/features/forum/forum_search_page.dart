@@ -7,6 +7,7 @@ import '../../features/profile/user_profile_page.dart';
 import '../../features/topic/topic_detail_page.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -195,10 +196,11 @@ class _SearchOptions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.border)),
       ),
       child: Column(
         children: [
@@ -256,6 +258,7 @@ class _OptionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: selected ? null : onTap,
@@ -264,16 +267,16 @@ class _OptionChip extends StatelessWidget {
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFEDEDED) : const Color(0xFF171717),
+          color: selected ? colors.selectedFill : colors.chipFill,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: selected ? const Color(0xFFEDEDED) : const Color(0xFF303030),
+            color: selected ? colors.selectedFill : colors.chipBorder,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.black : const Color(0xFFD6D6D6),
+            color: selected ? colors.onSelectedFill : colors.textSecondary,
             fontSize: 12.5,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
           ),
@@ -308,7 +311,7 @@ class _PostResults extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: rows.length,
       separatorBuilder: (context, index) =>
-          const Divider(height: 1, color: Color(0xFF202020)),
+          Divider(height: 1, color: context.lehuColors.border),
       itemBuilder: (context, index) {
         final row = rows[index];
         final post = row.post;
@@ -363,16 +366,22 @@ class _UserResults extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: result.users.length,
       separatorBuilder: (context, index) =>
-          const Divider(height: 1, color: Color(0xFF202020)),
+          Divider(height: 1, color: context.lehuColors.border),
       itemBuilder: (context, index) {
         final user = result.users[index];
         return ListTile(
           leading: ForumAvatar(url: user.avatarUrl(size: 96), size: 38),
           title: Text(
             user.username,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: context.lehuColors.detailAuthor,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-          subtitle: Text('ID ${user.id}'),
+          subtitle: Text(
+            'ID ${user.id}',
+            style: TextStyle(color: context.lehuColors.textMuted),
+          ),
           onTap: () => onOpenUser(user.username),
         );
       },
@@ -395,6 +404,7 @@ class _SearchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return ListTile(
       onTap: onTap,
       title: Text(
@@ -402,6 +412,7 @@ class _SearchRow extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: LehuTextStyles.title(
+          color: colors.textPrimary,
           size: 15.5,
           weight: FontWeight.w500,
         ),
@@ -410,7 +421,8 @@ class _SearchRow extends StatelessWidget {
         subtitle,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
+        style: TextStyle(
+          color: colors.textSecondary,
           fontSize: 14,
           height: 1.46,
         ),
@@ -419,7 +431,7 @@ class _SearchRow extends StatelessWidget {
           ? null
           : Text(
               meta,
-              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
+              style: TextStyle(color: colors.textMuted, fontSize: 12.5),
             ),
     );
   }

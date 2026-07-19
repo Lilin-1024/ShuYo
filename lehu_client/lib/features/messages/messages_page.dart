@@ -15,6 +15,7 @@ import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/composer_attachments.dart';
@@ -129,8 +130,9 @@ class _MessagesPageState extends State<MessagesPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 16),
         itemCount: groups.length,
-        separatorBuilder: (context, index) =>
-            const Divider(height: 1, color: Color(0xFF202020)),
+        separatorBuilder: (context, index) {
+          return Divider(height: 1, color: context.lehuColors.border);
+        },
         itemBuilder: (context, index) {
           final group = groups[index];
           return ListTile(
@@ -140,6 +142,7 @@ class _MessagesPageState extends State<MessagesPage> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: LehuTextStyles.title(
+                color: context.lehuColors.textPrimary,
                 size: 15.5,
                 weight: FontWeight.w500,
               ),
@@ -149,7 +152,10 @@ class _MessagesPageState extends State<MessagesPage> {
             ),
             trailing: Text(
               TimeFormat.compact(group.latestTime),
-              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
+              style: TextStyle(
+                color: context.lehuColors.textMuted,
+                fontSize: 12.5,
+              ),
             ),
             onTap: () => _openGroup(group),
             onLongPress: () => _handleGroupLongPress(group),
@@ -404,14 +410,15 @@ class _MessageTopicSelectionPageState
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colors.background,
       appBar: AppBar(title: Text(widget.group.displayName)),
       body: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _topics.length,
         separatorBuilder: (context, index) =>
-            const Divider(height: 1, color: Color(0xFF202020)),
+            Divider(height: 1, color: colors.border),
         itemBuilder: (context, index) {
           final topic = _topics[index];
           return ListTile(
@@ -420,6 +427,7 @@ class _MessageTopicSelectionPageState
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: LehuTextStyles.title(
+                color: colors.textPrimary,
                 size: 15.5,
                 weight: FontWeight.w500,
               ),
@@ -427,7 +435,7 @@ class _MessageTopicSelectionPageState
             subtitle: _TopicPreviewLine(future: widget.previewForTopic(topic)),
             trailing: Text(
               TimeFormat.compact(topic.lastPostedAt ?? topic.createdAt),
-              style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 12.5),
+              style: TextStyle(color: colors.textMuted, fontSize: 12.5),
             ),
             onLongPress: () => unawaited(_deleteLocalConversation(topic)),
             onTap: () {
@@ -584,8 +592,9 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colors.background,
       body: SafeArea(
         child: Column(
           children: [
@@ -878,12 +887,13 @@ class _MessageDetailHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       height: 62,
       padding: const EdgeInsets.only(right: 12),
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+      decoration: BoxDecoration(
+        color: colors.background,
+        border: Border(bottom: BorderSide(color: colors.border)),
       ),
       child: Row(
         children: [
@@ -902,6 +912,7 @@ class _MessageDetailHeader extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: LehuTextStyles.title(
+                    color: colors.textPrimary,
                     size: 15.5,
                     weight: FontWeight.w500,
                   ),
@@ -911,8 +922,8 @@ class _MessageDetailHeader extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF8A8A8A),
+                  style: TextStyle(
+                    color: colors.textMuted,
                     fontSize: 12.5,
                   ),
                 ),
@@ -1016,6 +1027,14 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = post.yours;
+    final colors = context.lehuColors;
+    final bubbleColor = mine ? colors.selectedFill : colors.surfaceAlt;
+    final primaryText = mine ? colors.onSelectedFill : colors.textPrimary;
+    final secondaryText = mine
+        ? colors.onSelectedFill.withValues(alpha: 0.62)
+        : colors.textTertiary;
+    final timeText =
+        mine ? colors.onSelectedFill.withValues(alpha: 0.48) : colors.textMuted;
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
@@ -1026,7 +1045,7 @@ class _MessageBubble extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 5),
           padding: const EdgeInsets.fromLTRB(12, 9, 12, 8),
           decoration: BoxDecoration(
-            color: mine ? const Color(0xFFEDEDED) : const Color(0xFF1A1A1A),
+            color: bubbleColor,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
@@ -1036,21 +1055,21 @@ class _MessageBubble extends StatelessWidget {
               Text(
                 post.username,
                 style: TextStyle(
-                  color: mine ? Colors.black54 : const Color(0xFF9A9A9A),
+                  color: secondaryText,
                   fontSize: 12.5,
                 ),
               ),
               const SizedBox(height: 4),
               _MessageCookedContent(
                 cooked: post.cooked,
-                textColor: mine ? Colors.black : const Color(0xFFE8E8E8),
+                textColor: primaryText,
                 onOpenImage: onOpenImage,
               ),
               const SizedBox(height: 4),
               Text(
                 TimeFormat.compact(post.createdAt),
                 style: TextStyle(
-                  color: mine ? Colors.black45 : const Color(0xFF777777),
+                  color: timeText,
                   fontSize: 11.5,
                 ),
               ),
@@ -1115,15 +1134,16 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
     }
     final emojiHeight = _emojiPanelHeightFor(keyboardBottom);
     _completeKeyboardHandoffIfReady(keyboardBottom);
+    final colors = context.lehuColors;
 
     return SafeArea(
       top: false,
       maintainBottomViewPadding: true,
       child: Container(
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          border: Border(top: BorderSide(color: Color(0xFF202020))),
+        decoration: BoxDecoration(
+          color: colors.background,
+          border: Border(top: BorderSide(color: colors.border)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1416,11 +1436,15 @@ class _MessageCookedContent extends StatelessWidget {
                 segment.value,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
+                  final colors = context.lehuColors;
                   return Container(
                     height: 130,
                     alignment: Alignment.center,
-                    color: const Color(0xFF252525),
-                    child: const Text('图片加载失败'),
+                    color: colors.surfaceMuted,
+                    child: Text(
+                      '图片加载失败',
+                      style: TextStyle(color: colors.textSecondary),
+                    ),
                   );
                 },
               ),
@@ -1451,8 +1475,8 @@ class _TopicPreviewLine extends StatelessWidget {
           text,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Color(0xFFBDBDBD),
+          style: TextStyle(
+            color: context.lehuColors.textSecondary,
             fontSize: 14.5,
           ),
         );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/forum_network_image.dart';
 
@@ -27,6 +28,7 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final header = SizedBox(
       height: 176,
       child: Stack(
@@ -49,8 +51,8 @@ class ProfileHeader extends StatelessWidget {
             top: 88,
             child: Container(
               padding: const EdgeInsets.all(3),
-              decoration: const BoxDecoration(
-                color: Colors.black,
+              decoration: BoxDecoration(
+                color: colors.background,
                 shape: BoxShape.circle,
               ),
               child: ForumAvatar(
@@ -74,6 +76,7 @@ class ProfileHeader extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: LehuTextStyles.title(
+                          color: colors.textPrimary,
                           size: 19,
                           height: 1.22,
                           weight: FontWeight.w600,
@@ -84,7 +87,7 @@ class ProfileHeader extends StatelessWidget {
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Color(0xFFBDBDBD)),
+                        style: TextStyle(color: colors.textSecondary),
                       ),
                     ],
                   ),
@@ -114,13 +117,14 @@ class _ProfileBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     if (url.isEmpty) {
-      return const DecoratedBox(
+      return DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF26332F),
-              Color(0xFF171717),
+              colors.accentSoft,
+              colors.surfaceAlt,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -132,8 +136,8 @@ class _ProfileBackground extends StatelessWidget {
       url,
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) {
-        return const DecoratedBox(
-          decoration: BoxDecoration(color: Color(0xFF202020)),
+        return DecoratedBox(
+          decoration: BoxDecoration(color: colors.surfaceMuted),
         );
       },
     );

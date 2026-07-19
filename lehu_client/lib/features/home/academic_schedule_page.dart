@@ -5,12 +5,9 @@ import '../../data/repositories/academic_schedule_repository.dart';
 import '../../data/services/academic_schedule_api_client.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 
-const _scheduleEmptyCellColor = Color.fromARGB(255, 85, 85, 85);
-const _scheduleCourseBlockColor = Color.fromARGB(255, 255, 255, 255);
-const _scheduleCourseTextColor = Color.fromARGB(255, 36, 36, 36);
-const _scheduleCourseMetaTextColor = Color.fromARGB(255, 57, 57, 57);
 const _scheduleCellInset = 2.5;
 const _scheduleCourseInset = 2.5;
 const _scheduleCellRadius = 4.0;
@@ -203,15 +200,18 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+        final colors = context.lehuColors;
         return SafeArea(
           top: false,
           bottom: false,
           child: Container(
             width: double.infinity,
             padding: EdgeInsets.fromLTRB(12, 8, 12, 12 + bottomPadding),
-            decoration: const BoxDecoration(
-              color: Color(0xFF111111),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(8),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -349,6 +349,7 @@ class _NotificationSettingsSheetState
     final minuteOptions =
         <int>{5, 10, 15, 20, 30, 45, 60, _leadMinutes}.toList()..sort();
     final mediaQuery = MediaQuery.of(context);
+    final colors = context.lehuColors;
     final bottomInset = mediaQuery.viewInsets.bottom > 0
         ? mediaQuery.viewInsets.bottom
         : mediaQuery.viewPadding.bottom;
@@ -364,9 +365,9 @@ class _NotificationSettingsSheetState
           20,
           18 + bottomInset,
         ),
-        decoration: const BoxDecoration(
-          color: Color(0xFF111111),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -374,11 +375,14 @@ class _NotificationSettingsSheetState
           children: [
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
                     '通知设置',
-                    style:
-                        TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -641,6 +645,7 @@ class _GridBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Stack(
       children: [
         for (var index = 0; index < weekdays.length; index++)
@@ -679,7 +684,7 @@ class _GridBackground extends StatelessWidget {
                       padding: const EdgeInsets.all(_scheduleCellInset),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: _scheduleEmptyCellColor,
+                          color: colors.scheduleEmptyCell,
                           borderRadius:
                               BorderRadius.circular(_scheduleCellRadius),
                         ),
@@ -703,17 +708,22 @@ class _DayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           _weekdayName(weekday),
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 12.5,
+          ),
         ),
         const SizedBox(height: 3),
         Text(
           '${date.month}/${date.day}',
-          style: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 11.5),
+          style: TextStyle(color: colors.textMuted, fontSize: 11.5),
         ),
       ],
     );
@@ -727,6 +737,7 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Column(
@@ -734,14 +745,18 @@ class _SectionLabel extends StatelessWidget {
         children: [
           Text(
             '$section',
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 12.5,
+            ),
           ),
           const SizedBox(height: 3),
           Text(
             AcademicScheduleRepository.sectionTimeText(section),
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF777777),
+            style: TextStyle(
+              color: colors.textMuted,
               fontSize: 9.5,
               height: 1.2,
             ),
@@ -759,9 +774,10 @@ class _CourseBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _courseColor(session.courseName);
+    final colors = context.lehuColors;
+    final color = _courseColor(context, session.courseName);
     return Material(
-      color: _scheduleCourseBlockColor,
+      color: colors.scheduleCourseFill,
       borderRadius: BorderRadius.circular(_scheduleCourseRadius),
       child: InkWell(
         borderRadius: BorderRadius.circular(_scheduleCourseRadius),
@@ -778,8 +794,8 @@ class _CourseBlock extends StatelessWidget {
                 session.courseName,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: _scheduleCourseTextColor,
+                style: TextStyle(
+                  color: colors.scheduleCourseText,
                   fontWeight: FontWeight.w600,
                   fontSize: 11.5,
                   height: 1.2,
@@ -791,8 +807,8 @@ class _CourseBlock extends StatelessWidget {
                   session.location,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: _scheduleCourseMetaTextColor,
+                  style: TextStyle(
+                    color: colors.scheduleCourseMetaText,
                     fontSize: 10.5,
                   ),
                 ),
@@ -812,15 +828,18 @@ class _CourseBlock extends StatelessWidget {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final colors = context.lehuColors;
         return SafeArea(
           top: false,
           bottom: false,
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-            decoration: const BoxDecoration(
-              color: Color(0xFF111111),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(8),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -840,7 +859,8 @@ class _CourseBlock extends StatelessWidget {
                     Expanded(
                       child: Text(
                         session.courseName,
-                        style: const TextStyle(
+                        style: TextStyle(
+                          color: colors.textPrimary,
                           fontSize: 17.5,
                           fontWeight: FontWeight.w600,
                         ),
@@ -874,13 +894,16 @@ class _DetailLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFFAAAAAA)),
+          Icon(icon, size: 18, color: colors.textTertiary),
           const SizedBox(width: 10),
-          Expanded(child: Text(text)),
+          Expanded(
+            child: Text(text, style: TextStyle(color: colors.textPrimary)),
+          ),
         ],
       ),
     );
@@ -894,6 +917,7 @@ class _UntimedCourseList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final courseText = courses
         .map(_formatUntimedCourse)
         .where((text) => text.isNotEmpty)
@@ -903,8 +927,8 @@ class _UntimedCourseList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Text(
         '其它课程：$courseText；',
-        style: const TextStyle(
-          color: Color(0xFFBDBDBD),
+        style: TextStyle(
+          color: colors.textSecondary,
           fontSize: 12.5,
           height: 1.45,
         ),
@@ -963,15 +987,8 @@ String _weekdayName(int weekday) {
   };
 }
 
-Color _courseColor(String seed) {
-  const colors = [
-    Color(0xFF66E0A3),
-    Color(0xFF7EB6FF),
-    Color(0xFFFFD166),
-    Color(0xFFFF8A80),
-    Color(0xFFB39DDB),
-    Color(0xFF80CBC4),
-  ];
+Color _courseColor(BuildContext context, String seed) {
+  final colors = context.lehuColors.schedulePalette;
   var hash = 0;
   for (final unit in seed.codeUnits) {
     hash = (hash + unit) & 0x7fffffff;

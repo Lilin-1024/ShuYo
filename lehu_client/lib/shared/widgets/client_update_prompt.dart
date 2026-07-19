@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/client_app_info.dart';
 import '../../data/models/client_backend.dart';
+import '../theme/lehu_theme.dart';
 
 Future<bool> showClientUpdatePrompt(
   BuildContext context, {
@@ -11,6 +12,7 @@ Future<bool> showClientUpdatePrompt(
     context: context,
     barrierDismissible: false,
     builder: (dialogContext) {
+      final colors = dialogContext.lehuColors;
       return AlertDialog(
         title: Text(update.updateTitle),
         content: SingleChildScrollView(
@@ -29,7 +31,7 @@ Future<bool> showClientUpdatePrompt(
                 const SizedBox(height: 14),
                 Text(
                   update.noticeText,
-                  style: const TextStyle(color: Color(0xFFBDBDBD)),
+                  style: TextStyle(color: colors.textSecondary),
                 ),
               ],
             ],

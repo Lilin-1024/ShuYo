@@ -5,6 +5,7 @@ import '../../data/models/composer.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/local_image_picker.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -103,7 +104,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF111111),
+      backgroundColor: context.lehuColors.surface,
       showDragHandle: true,
       builder: (context) {
         return _PrivateMessageSheet(
@@ -138,6 +139,7 @@ class _ProfileContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final profile = bundle.profile;
     final summary = bundle.summary;
+    final colors = context.lehuColors;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
@@ -150,8 +152,8 @@ class _ProfileContent extends StatelessWidget {
           const SizedBox(height: 18),
           Text(
             profile.bioExcerpt,
-            style: const TextStyle(
-              color: Color(0xFFD6D6D6),
+            style: TextStyle(
+              color: colors.textSecondary,
               fontSize: 14.5,
               height: 1.46,
             ),
@@ -190,6 +192,7 @@ class _ProfileStatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final stats = [
       _StatItem('发帖', '${summary.topicCount}'),
       _StatItem('回复', '${summary.postCount}'),
@@ -206,15 +209,16 @@ class _ProfileStatList extends StatelessWidget {
                 Expanded(
                   child: Text(
                     stats[i].label,
-                    style: const TextStyle(
-                      color: Color(0xFFD6D6D6),
+                    style: TextStyle(
+                      color: colors.textSecondary,
                       fontSize: 15,
                     ),
                   ),
                 ),
                 Text(
                   stats[i].value,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -222,8 +226,7 @@ class _ProfileStatList extends StatelessWidget {
               ],
             ),
           ),
-          if (i != stats.length - 1)
-            const Divider(height: 1, color: Color(0xFF202020)),
+          if (i != stats.length - 1) Divider(height: 1, color: colors.border),
         ],
       ],
     );

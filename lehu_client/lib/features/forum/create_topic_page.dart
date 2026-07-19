@@ -6,6 +6,7 @@ import '../../data/models/composer.dart';
 import '../../data/models/post.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/local_image_picker.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
 
@@ -134,7 +135,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     final focused = _rawFocusNode.hasFocus || _showEmojiPanel;
     final borderColor = focused
         ? Theme.of(context).colorScheme.primary
-        : const Color(0xFF555555);
+        : context.lehuColors.borderStrong;
     final enabled = !_submitting && !_uploading;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
