@@ -62,6 +62,8 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
+  static const _forumAccessModeReloadTimeout = Duration(seconds: 12);
+
   int _tabIndex = 0;
   TopicFeedQuery _feedQuery = const TopicFeedQuery();
   bool _reloadingSession = false;
@@ -93,6 +95,7 @@ class _AppShellState extends State<AppShell> {
   String _announcementSummaryText = '正在读取通知公告...';
   Completer<bool>? _academicWebVpnPreloadCompleter;
   int _academicWebVpnPreloadToken = 0;
+  int _forumRepositoryReloadToken = 0;
 
   @override
   void initState() {
@@ -373,6 +376,11 @@ class _AppShellState extends State<AppShell> {
   Future<void> _loadNetworkSettings() async {
     try {
       final settings = await _clientSettingsService.loadNetworkSettings();
+      final accessModeChanged =
+          ForumUrlResolver.usesWebVpn != settings.autoUseWebVpnProxy;
+      if (accessModeChanged) {
+        _invalidateForumRepositoryReloads();
+      }
       ForumUrlResolver.configure(
         useWebVpn: settings.autoUseWebVpnProxy,
       );
@@ -423,10 +431,20 @@ class _AppShellState extends State<AppShell> {
         settings.copyWith(autoUseWebVpnProxy: value),
       );
     }
+    final accessModeChanged =
+        ForumUrlResolver.usesWebVpn != value || _autoUseWebVpnProxy != value;
+    if (accessModeChanged) {
+      _invalidateForumRepositoryReloads();
+    }
     ForumUrlResolver.configure(useWebVpn: value);
     ForumImageHeaders.clearCache();
     if (mounted) {
-      setState(() => _autoUseWebVpnProxy = value);
+      setState(() {
+        _autoUseWebVpnProxy = value;
+        if (accessModeChanged && _reloadingSession) {
+          _reloadingSession = false;
+        }
+      });
     }
   }
 
@@ -1201,10 +1219,12 @@ class _AppShellState extends State<AppShell> {
     if (_reloadingSession) {
       return;
     }
+    final reloadToken = _nextForumRepositoryReloadToken();
+    final accessMode = ForumUrlResolver.mode;
     setState(() => _reloadingSession = true);
     try {
-      final nextRepository = await ForumRepositoryFactory.load();
-      if (!mounted) {
+      final nextRepository = await _loadForumRepositoryForAccessModeChange();
+      if (!_isCurrentForumRepositoryReload(reloadToken, accessMode)) {
         return;
       }
       setState(() {
@@ -1219,7 +1239,7 @@ class _AppShellState extends State<AppShell> {
       }
       unawaited(_checkClientBackendPrompts());
     } on Object catch (error) {
-      if (!mounted) {
+      if (!_isCurrentForumRepositoryReload(reloadToken, accessMode)) {
         return;
       }
       setState(() => _reloadingSession = false);
@@ -1228,6 +1248,31 @@ class _AppShellState extends State<AppShell> {
         message: _friendlyError(error),
       );
     }
+  }
+
+  int _nextForumRepositoryReloadToken() {
+    _forumRepositoryReloadToken++;
+    return _forumRepositoryReloadToken;
+  }
+
+  void _invalidateForumRepositoryReloads() {
+    _forumRepositoryReloadToken++;
+  }
+
+  bool _isCurrentForumRepositoryReload(
+    int reloadToken,
+    ForumAccessMode accessMode,
+  ) {
+    return mounted &&
+        reloadToken == _forumRepositoryReloadToken &&
+        ForumUrlResolver.mode == accessMode;
+  }
+
+  Future<ForumRepository> _loadForumRepositoryForAccessModeChange() {
+    return ForumRepositoryFactory.load().timeout(
+      _forumAccessModeReloadTimeout,
+      onTimeout: () => FixtureForumRepository.load(),
+    );
   }
 
   Future<void> _openAcademicLogin() async {
