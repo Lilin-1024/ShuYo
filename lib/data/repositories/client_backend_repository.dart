@@ -19,6 +19,8 @@ class ClientBackendRepository {
   static const _feedbackTicketsKey = 'client.backend.feedback.tickets';
   static const _deviceIdKey = 'client.backend.device.id';
   static const _lastPromptedBuildKey = 'client.backend.update.last_prompted';
+  static const _updateBaselineInitializedKey =
+      'client.backend.update.baseline_initialized';
   static const _lastPromptedAnnouncementIdKey =
       'client.backend.announcement.last_prompted';
   static const _announcementBaselineInitializedKey =
@@ -59,12 +61,35 @@ class ClientBackendRepository {
 
   Future<bool> shouldPromptUpdate(int buildNumber) async {
     final prefs = await _preferencesLoader();
+    final initialized = prefs.getBool(_updateBaselineInitializedKey) ?? false;
+    if (!initialized) {
+      final lastPrompted = prefs.getInt(_lastPromptedBuildKey);
+      await prefs.setBool(_updateBaselineInitializedKey, true);
+      if (lastPrompted != null) {
+        return lastPrompted != buildNumber;
+      }
+      await prefs.setInt(_lastPromptedBuildKey, buildNumber);
+      return false;
+    }
     return prefs.getInt(_lastPromptedBuildKey) != buildNumber;
   }
 
   Future<void> markUpdatePrompted(int buildNumber) async {
     final prefs = await _preferencesLoader();
+    await prefs.setBool(_updateBaselineInitializedKey, true);
     await prefs.setInt(_lastPromptedBuildKey, buildNumber);
+  }
+
+  Future<void> ensureUpdateBaselineInitialized(int buildNumber) async {
+    final prefs = await _preferencesLoader();
+    final initialized = prefs.getBool(_updateBaselineInitializedKey) ?? false;
+    if (initialized) {
+      return;
+    }
+    await prefs.setBool(_updateBaselineInitializedKey, true);
+    if (prefs.getInt(_lastPromptedBuildKey) == null) {
+      await prefs.setInt(_lastPromptedBuildKey, buildNumber);
+    }
   }
 
   Future<bool> shouldPromptAnnouncement(String announcementId) async {
