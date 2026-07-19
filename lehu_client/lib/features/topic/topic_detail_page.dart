@@ -53,6 +53,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     super.initState();
     _future = widget.repository.fetchTopicDetail(
       widget.topic.id,
+      forceRefresh: true,
       trackVisit: true,
     );
   }
@@ -97,22 +98,25 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       onRetry: _refresh,
                     );
                   }
-                  return TopicPage(
-                    item: widget.topic,
-                    detail: detail,
-                    category: widget.repository.categoryById(
-                      detail?.categoryId ?? widget.topic.categoryId,
+                  return RefreshIndicator(
+                    onRefresh: _refresh,
+                    child: TopicPage(
+                      item: widget.topic,
+                      detail: detail,
+                      category: widget.repository.categoryById(
+                        detail?.categoryId ?? widget.topic.categoryId,
+                      ),
+                      isOnline: widget.repository.isOnline,
+                      isSubmittingReply: _submittingReply,
+                      busyLikePostIds: _likingPostIds,
+                      busyDeletePostIds: _deletingPostIds,
+                      onLikePost: _likePost,
+                      onDeletePost: _deletePost,
+                      onUploadImage: widget.repository.uploadImage,
+                      onCreateReply: _createReply,
+                      onOpenUser: _openUserProfile,
+                      onLoginRequired: () => unawaited(_requireLogin()),
                     ),
-                    isOnline: widget.repository.isOnline,
-                    isSubmittingReply: _submittingReply,
-                    busyLikePostIds: _likingPostIds,
-                    busyDeletePostIds: _deletingPostIds,
-                    onLikePost: _likePost,
-                    onDeletePost: _deletePost,
-                    onUploadImage: widget.repository.uploadImage,
-                    onCreateReply: _createReply,
-                    onOpenUser: _openUserProfile,
-                    onLoginRequired: () => unawaited(_requireLogin()),
                   );
                 },
               ),

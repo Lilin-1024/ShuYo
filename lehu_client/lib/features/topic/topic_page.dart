@@ -85,6 +85,7 @@ class _TopicPageState extends State<TopicPage> {
             behavior: HitTestBehavior.opaque,
             onTap: _handleContentTap,
             child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
               children: [
                 _TopicHeader(detail: detail, category: widget.category),
