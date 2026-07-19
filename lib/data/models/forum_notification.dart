@@ -11,6 +11,7 @@ class ForumNotification {
     required this.message,
     required this.kind,
     required this.read,
+    this.categoryId = 0,
     this.topicId,
     this.postNumber,
     this.createdAt,
@@ -21,6 +22,7 @@ class ForumNotification {
   final String message;
   final String kind;
   final bool read;
+  final int categoryId;
   final int? topicId;
   final int? postNumber;
   final DateTime? createdAt;
@@ -44,6 +46,7 @@ class ForumNotification {
       message: EmojiText.render(_messageForNotification(type, actor, map)),
       kind: _kindForNotification(type),
       read: boolValue(json['read']),
+      categoryId: intValue(json['category_id'] ?? map['category_id']),
       topicId: _nullableInt(json['topic_id']),
       postNumber: _nullableInt(json['post_number']),
       createdAt: dateValue(json['created_at']),
@@ -52,17 +55,14 @@ class ForumNotification {
 
   factory ForumNotification.fromUserActionJson(JsonMap json, String kind) {
     final title = stringValue(json['title'], '通知');
-    final actor = stringValue(
-      json['acting_username'] ?? json['username'] ?? json['name'],
-    );
+    final excerpt = HtmlText.toPlainText(stringValue(json['excerpt']));
     return ForumNotification(
       id: intValue(json['id'] ?? json['post_id']),
       title: EmojiText.render(title),
-      message: actor.isEmpty
-          ? HtmlText.toPlainText(stringValue(json['excerpt']))
-          : EmojiText.render(actor),
+      message: excerpt.isEmpty ? kind : excerpt,
       kind: kind,
       read: true,
+      categoryId: intValue(json['category_id']),
       topicId: _nullableInt(json['topic_id']),
       postNumber: _nullableInt(json['post_number']),
       createdAt: dateValue(json['created_at']),

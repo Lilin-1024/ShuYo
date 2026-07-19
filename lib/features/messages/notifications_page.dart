@@ -3,16 +3,24 @@ import 'package:flutter/material.dart';
 import '../../data/models/forum_notification.dart';
 import '../../data/models/topic.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../topic/topic_detail_page.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({
     super.key,
     required this.repository,
+    this.onLoginRequired,
+    this.onSessionExpired,
+    this.onBookmarkChanged,
   });
 
   final ForumRepository repository;
+  final Future<void> Function()? onLoginRequired;
+  final Future<void> Function()? onSessionExpired;
+  final VoidCallback? onBookmarkChanged;
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -60,6 +68,9 @@ class _NotificationsPageState extends State<NotificationsPage>
           return _NotificationListHost(
             repository: widget.repository,
             filter: child.filter,
+            onLoginRequired: widget.onLoginRequired,
+            onSessionExpired: widget.onSessionExpired,
+            onBookmarkChanged: widget.onBookmarkChanged,
           );
         }).toList(),
       ),
@@ -77,10 +88,16 @@ class _NotificationListHost extends StatefulWidget {
   const _NotificationListHost({
     required this.repository,
     required this.filter,
+    this.onLoginRequired,
+    this.onSessionExpired,
+    this.onBookmarkChanged,
   });
 
   final ForumRepository repository;
   final NotificationFeedFilter filter;
+  final Future<void> Function()? onLoginRequired;
+  final Future<void> Function()? onSessionExpired;
+  final VoidCallback? onBookmarkChanged;
 
   @override
   State<_NotificationListHost> createState() => _NotificationListHostState();
@@ -153,25 +170,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
                     fontSize: 12,
                   ),
                 ),
-                onTap: item.canOpenTopic
-                    ? () {
-                        Navigator.of(context).pop<TopicListItem>(
-                          TopicListItem(
-                            id: item.topicId!,
-                            title: item.title,
-                            postsCount: 0,
-                            replyCount: 0,
-                            highestPostNumber: item.postNumber ?? 0,
-                            views: 0,
-                            likeCount: 0,
-                            categoryId: 0,
-                            posters: const [],
-                            lastPostedAt: item.createdAt,
-                            createdAt: item.createdAt,
-                          ),
-                        );
-                      }
-                    : null,
+                onTap: item.canOpenTopic ? () => _openTopic(item) : null,
               );
             },
           ),
@@ -189,6 +188,32 @@ class _NotificationListHostState extends State<_NotificationListHost> {
       _future = future;
     });
     await future;
+  }
+
+  Future<void> _openTopic(ForumNotification item) async {
+    await Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => TopicDetailPage(
+          repository: widget.repository,
+          topic: TopicListItem(
+            id: item.topicId!,
+            title: item.title,
+            postsCount: 0,
+            replyCount: 0,
+            highestPostNumber: item.postNumber ?? 0,
+            views: 0,
+            likeCount: 0,
+            categoryId: item.categoryId,
+            posters: const [],
+            lastPostedAt: item.createdAt,
+            createdAt: item.createdAt,
+          ),
+          onLoginRequired: widget.onLoginRequired,
+          onSessionExpired: widget.onSessionExpired,
+          onBookmarkChanged: widget.onBookmarkChanged,
+        ),
+      ),
+    );
   }
 
   IconData _iconFor(String kind) {

@@ -780,15 +780,16 @@ class _AppShellState extends State<AppShell> {
       _openProfileLoginTab();
       return;
     }
-    final topic = await Navigator.of(context).push<TopicListItem>(
+    await Navigator.of(context).push<void>(
       lehuRoute(
-        builder: (context) => NotificationsPage(repository: _repo),
+        builder: (context) => NotificationsPage(
+          repository: _repo,
+          onLoginRequired: _login,
+          onSessionExpired: _clearExpiredLogin,
+          onBookmarkChanged: _refreshProfileActivityCounts,
+        ),
       ),
     );
-    if (!mounted || topic == null) {
-      return;
-    }
-    await _openTopic(topic);
   }
 
   Future<void> _login() async {
