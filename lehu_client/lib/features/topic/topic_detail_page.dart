@@ -37,16 +37,30 @@ class TopicDetailPage extends StatefulWidget {
 }
 
 class _TopicDetailPageState extends State<TopicDetailPage> {
+  static const _topicTimingDelay = Duration(milliseconds: 1100);
+  static const _topicTimingMs = 1000;
+
   Future<TopicDetail?>? _future;
   TopicDetail? _detail;
   bool _submittingReply = false;
+  bool _topicTimingScheduled = false;
+  Timer? _topicTimingTimer;
   final _likingPostIds = <int>{};
   final _deletingPostIds = <int>{};
 
   @override
   void initState() {
     super.initState();
-    _future = widget.repository.fetchTopicDetail(widget.topic.id);
+    _future = widget.repository.fetchTopicDetail(
+      widget.topic.id,
+      trackVisit: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _topicTimingTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -69,6 +83,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     _detail = snapshot.data;
+                    _scheduleTopicTiming(snapshot.data);
                   }
                   final detail = _detail;
                   if (detail == null &&
@@ -110,6 +125,34 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
 
   Future<void> _requireLogin() async {
     await widget.onLoginRequired?.call();
+  }
+
+  void _scheduleTopicTiming(TopicDetail? detail) {
+    if (_topicTimingScheduled ||
+        detail == null ||
+        detail.isPrivateMessage ||
+        !widget.repository.isOnline) {
+      return;
+    }
+    final postNumber = detail.firstPost?.postNumber;
+    if (postNumber == null || postNumber <= 0) {
+      return;
+    }
+    _topicTimingScheduled = true;
+    _topicTimingTimer = Timer(_topicTimingDelay, () {
+      if (!mounted) {
+        return;
+      }
+      unawaited(
+        widget.repository
+            .recordTopicTiming(
+              detail.id,
+              postNumber: postNumber,
+              topicTimeMs: _topicTimingMs,
+            )
+            .catchError((Object error) {}),
+      );
+    });
   }
 
   Future<void> _refresh() async {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
@@ -87,6 +88,12 @@ abstract class ForumRepository {
   Future<TopicDetail?> fetchTopicDetail(
     int id, {
     bool forceRefresh = false,
+    bool trackVisit = false,
+  });
+  Future<void> recordTopicTiming(
+    int topicId, {
+    required int postNumber,
+    required int topicTimeMs,
   });
   Future<TopicPreview> fetchTopicPreview(int id);
   Future<Post> createTopic(CreateTopicDraft draft);
@@ -248,9 +255,17 @@ class FixtureForumRepository implements ForumRepository {
   Future<TopicDetail?> fetchTopicDetail(
     int id, {
     bool forceRefresh = false,
+    bool trackVisit = false,
   }) async {
     return _topicDetails[id];
   }
+
+  @override
+  Future<void> recordTopicTiming(
+    int topicId, {
+    required int postNumber,
+    required int topicTimeMs,
+  }) async {}
 
   @override
   Future<TopicPreview> fetchTopicPreview(int id) async {
@@ -546,6 +561,8 @@ class OnlineForumRepository implements ForumRepository {
   final Map<int, ForumCategory> _categories;
   final Map<int, TopicDetail> _topicDetails = {};
   final Map<int, Future<TopicDetail?>> _pendingTopicDetails = {};
+  final Set<int> _trackedTopicVisits = {};
+  final Set<int> _trackedTopicTimings = {};
   final Map<String, UserProfile> _userProfiles = {};
   final Map<String, UserSummary> _userSummaries = {};
   final Map<String, List<TopicListItem>> _feedTopics = {};
@@ -646,19 +663,26 @@ class OnlineForumRepository implements ForumRepository {
   Future<TopicDetail?> fetchTopicDetail(
     int id, {
     bool forceRefresh = false,
+    bool trackVisit = false,
   }) {
     if (!forceRefresh) {
       final cached = _topicDetails[id];
       if (cached != null) {
+        if (trackVisit) {
+          _trackTopicVisit(id);
+        }
         return Future.value(cached);
       }
       final pending = _pendingTopicDetails[id];
       if (pending != null) {
+        if (trackVisit) {
+          _trackTopicVisit(id);
+        }
         return pending;
       }
     }
 
-    final future = _fetchTopicDetail(id);
+    final future = _fetchTopicDetail(id, trackVisit: trackVisit);
     _pendingTopicDetails[id] = future;
     return future.whenComplete(() => _pendingTopicDetails.remove(id));
   }
@@ -671,6 +695,29 @@ class OnlineForumRepository implements ForumRepository {
       return const TopicPreview(text: '暂无摘要', imageUrls: []);
     }
     return HtmlText.topicPreview(first.cooked);
+  }
+
+  @override
+  Future<void> recordTopicTiming(
+    int topicId, {
+    required int postNumber,
+    required int topicTimeMs,
+  }) async {
+    if (_trackedTopicTimings.contains(topicId)) {
+      return;
+    }
+    _trackedTopicTimings.add(topicId);
+    final payload = PayloadFactory.topicTiming(
+      topicId: topicId,
+      postNumber: postNumber,
+      topicTimeMs: topicTimeMs,
+    );
+    try {
+      await _apiClient.postForm('/topics/timings', payload.body);
+    } on Object {
+      _trackedTopicTimings.remove(topicId);
+      rethrow;
+    }
   }
 
   @override
@@ -1060,11 +1107,44 @@ class OnlineForumRepository implements ForumRepository {
     _topicDetails.remove(post.topicId);
   }
 
-  Future<TopicDetail?> _fetchTopicDetail(int id) async {
-    final json = await _apiClient.getJson('/t/topic/$id.json');
+  Future<TopicDetail?> _fetchTopicDetail(
+    int id, {
+    bool trackVisit = false,
+  }) async {
+    if (trackVisit) {
+      _trackedTopicVisits.add(id);
+    }
+    final JsonMap json;
+    try {
+      json = await _apiClient.getJson(
+        trackVisit ? _topicVisitPath(id) : '/t/topic/$id.json',
+      );
+    } on Object {
+      if (trackVisit) {
+        _trackedTopicVisits.remove(id);
+      }
+      rethrow;
+    }
     final detail = await _hydrateMissingPosts(TopicDetail.fromJson(json));
     _topicDetails[id] = detail;
     return detail;
+  }
+
+  void _trackTopicVisit(int id) {
+    if (_trackedTopicVisits.contains(id)) {
+      return;
+    }
+    _trackedTopicVisits.add(id);
+    unawaited(
+      _apiClient.getJson(_topicVisitPath(id)).catchError((Object error) {
+        _trackedTopicVisits.remove(id);
+        return <String, dynamic>{};
+      }),
+    );
+  }
+
+  String _topicVisitPath(int id) {
+    return '/t/$id/1.json?track_visit=true&forceLoad=true';
   }
 
   Future<TopicDetail> _hydrateMissingPosts(TopicDetail detail) async {
