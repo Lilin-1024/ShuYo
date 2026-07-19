@@ -45,6 +45,7 @@ abstract class ForumRepository {
   int get unreadNotificationCount;
   int get unreadPrivateMessageCount;
   bool get canCreateTopic;
+  Future<void> refreshSession();
 
   ForumCategory? categoryById(int id);
   bool get canLoadMoreLatest;
@@ -203,6 +204,9 @@ class FixtureForumRepository implements ForumRepository {
 
   @override
   bool get canCreateTopic => false;
+
+  @override
+  Future<void> refreshSession() async {}
 
   @override
   ForumCategory? categoryById(int id) => _categories[id];
@@ -571,7 +575,7 @@ class OnlineForumRepository implements ForumRepository {
   final DiscourseApiClient _apiClient;
   final ForumAuthService _authService;
   final FixtureForumRepository _fallback;
-  final CurrentUserSession _session;
+  CurrentUserSession _session;
   UserProfile _profile;
   UserSummary _userSummary;
   final Map<int, ForumCategory> _categories;
@@ -612,6 +616,13 @@ class OnlineForumRepository implements ForumRepository {
 
   @override
   bool get canCreateTopic => _session.canCreateTopic;
+
+  @override
+  Future<void> refreshSession() async {
+    final session = await _fetchSession(_apiClient);
+    _session = session;
+    users[session.user.id] = session.user;
+  }
 
   @override
   Future<void> clearLoginCookies() => _authService.clearCookies();
