@@ -470,8 +470,10 @@ class _ScheduleBody extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final needsHorizontalScroll = weekdays.length > 5;
+              final weekdayWidth =
+                  (constraints.maxWidth - _ScheduleGrid.leftWidth) / 5;
               final gridWidth = needsHorizontalScroll
-                  ? 68.0 + weekdays.length * 96
+                  ? _ScheduleGrid.leftWidth + weekdays.length * weekdayWidth
                   : constraints.maxWidth;
               final grid = SingleChildScrollView(
                 child: Column(
@@ -563,7 +565,7 @@ class _ScheduleGrid extends StatelessWidget {
     required this.displayedWeek,
   });
 
-  static const _leftWidth = 68.0;
+  static const leftWidth = 68.0;
   static const _headerHeight = 54.0;
   static const _rowHeight = 68.0;
   static const _sectionCount = 12;
@@ -577,7 +579,7 @@ class _ScheduleGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final dayWidth = (constraints.maxWidth - _leftWidth) / weekdays.length;
+        final dayWidth = (constraints.maxWidth - leftWidth) / weekdays.length;
         final height = _headerHeight + _sectionCount * _rowHeight;
         return SizedBox(
           height: height,
@@ -586,7 +588,7 @@ class _ScheduleGrid extends StatelessWidget {
               _GridBackground(
                 weekdays: weekdays,
                 dayWidth: dayWidth,
-                leftWidth: _leftWidth,
+                leftWidth: leftWidth,
                 headerHeight: _headerHeight,
                 rowHeight: _rowHeight,
                 sectionCount: _sectionCount,
@@ -596,7 +598,7 @@ class _ScheduleGrid extends StatelessWidget {
               for (final session in sessions)
                 if (weekdays.contains(session.weekday))
                   Positioned(
-                    left: _leftWidth +
+                    left: leftWidth +
                         weekdays.indexOf(session.weekday) * dayWidth +
                         _scheduleCourseInset,
                     top: _headerHeight +
