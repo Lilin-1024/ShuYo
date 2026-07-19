@@ -63,6 +63,7 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   static const _forumAccessModeReloadTimeout = Duration(seconds: 12);
+  static const _forumBadgeRefreshInterval = Duration(seconds: 90);
 
   int _tabIndex = 0;
   TopicFeedQuery _feedQuery = const TopicFeedQuery();
@@ -81,9 +82,11 @@ class _AppShellState extends State<AppShell> {
   Future<ForumActivityCounts>? _activityCountsFuture;
   Timer? _scheduleSummaryTimer;
   Timer? _announcementSummaryTimer;
+  Timer? _forumBadgeRefreshTimer;
   bool _loadingScheduleSummary = false;
   bool _syncingAcademicSchedule = false;
   bool _loadingAnnouncementSummary = false;
+  bool _refreshingForumBadges = false;
   bool _checkingForumReachability = false;
   bool _checkingClientBackendPrompts = false;
   bool _forumNetworkUnavailable = false;
@@ -125,6 +128,10 @@ class _AppShellState extends State<AppShell> {
     _announcementSummaryTimer = Timer.periodic(
       AnnouncementRepository.defaultAutoRefreshInterval,
       (_) => _refreshAnnouncementSummaryQuietly(),
+    );
+    _forumBadgeRefreshTimer = Timer.periodic(
+      _forumBadgeRefreshInterval,
+      (_) => unawaited(_refreshForumBadgesQuietly()),
     );
     unawaited(_scheduleNotificationService.syncScheduleReminders());
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -205,6 +212,7 @@ class _AppShellState extends State<AppShell> {
   void dispose() {
     _scheduleSummaryTimer?.cancel();
     _announcementSummaryTimer?.cancel();
+    _forumBadgeRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -307,6 +315,45 @@ class _AppShellState extends State<AppShell> {
     setState(() => _seenMessageBadgeCount = count);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_messageBadgeSeenKey(username), count);
+  }
+
+  Future<void> _refreshForumBadgesQuietly() async {
+    if (_refreshingForumBadges || _reloadingSession || !_repo.isOnline) {
+      return;
+    }
+    _refreshingForumBadges = true;
+    final username = _forumBadgeCacheUserKey;
+    try {
+      await _repo.refreshSession();
+      if (!mounted || !_repo.isOnline || username != _forumBadgeCacheUserKey) {
+        return;
+      }
+      final normalizedNotificationCount =
+          _seenNotificationBadgeCount.clamp(0, _repo.unreadNotificationCount);
+      final normalizedMessageCount =
+          _seenMessageBadgeCount.clamp(0, _repo.unreadPrivateMessageCount);
+      final shouldPersist =
+          normalizedNotificationCount != _seenNotificationBadgeCount ||
+              normalizedMessageCount != _seenMessageBadgeCount;
+      setState(() {
+        _seenNotificationBadgeCount = normalizedNotificationCount;
+        _seenMessageBadgeCount = normalizedMessageCount;
+      });
+      if (shouldPersist) {
+        final prefs = await SharedPreferences.getInstance();
+        await Future.wait([
+          prefs.setInt(
+            _notificationBadgeSeenKey(username),
+            normalizedNotificationCount,
+          ),
+          prefs.setInt(_messageBadgeSeenKey(username), normalizedMessageCount),
+        ]);
+      }
+    } on Object {
+      // 后台刷新红点失败不打扰用户，下一轮会继续尝试。
+    } finally {
+      _refreshingForumBadges = false;
+    }
   }
 
   Widget _bodyForTab() {
