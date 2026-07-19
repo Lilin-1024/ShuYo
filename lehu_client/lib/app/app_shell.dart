@@ -141,8 +141,7 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final canOpenClientSettings =
-        _tabIndex == 0 || _tabIndex == 1 || _tabIndex == 3;
+    final canOpenClientSettings = _tabIndex == 0 || _tabIndex == 3;
     final isForumTab = _tabIndex == 1 && _repo.isOnline;
 
     return Scaffold(
