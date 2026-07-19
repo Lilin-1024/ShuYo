@@ -5,6 +5,7 @@ import '../../data/repositories/course_rating_repository.dart';
 import '../../data/services/course_rating_api_client.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/info_confirm_dialog.dart';
 
@@ -323,6 +324,7 @@ class _CourseRatingTeacherCoursesPageState
             );
           }
           final data = snapshot.data!;
+          final colors = context.lehuColors;
           return RefreshIndicator(
             onRefresh: _refresh,
             child: ListView(
@@ -331,15 +333,16 @@ class _CourseRatingTeacherCoursesPageState
               children: [
                 Text(
                   data.teacher.name,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 19,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 5),
-                const Text(
+                Text(
                   '选择课程查看这位老师的评价',
-                  style: TextStyle(color: Color(0xFF9A9A9A), fontSize: 14.5),
+                  style: TextStyle(color: colors.textTertiary, fontSize: 14.5),
                 ),
                 const SizedBox(height: 16),
                 if (data.courses.isEmpty)
@@ -586,9 +589,10 @@ class _CourseRatingSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.border)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -634,6 +638,7 @@ class _CourseRatingSearchResultList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     if (result.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -654,6 +659,7 @@ class _CourseRatingSearchResultList extends StatelessWidget {
         Text(
           '搜索：$query',
           style: LehuTextStyles.title(
+            color: colors.textPrimary,
             size: 16.5,
             weight: FontWeight.w600,
           ),
@@ -688,12 +694,14 @@ class _CourseHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           course.name,
           style: LehuTextStyles.title(
+            color: colors.textPrimary,
             size: 19,
             weight: FontWeight.w600,
           ),
@@ -702,7 +710,7 @@ class _CourseHeader extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             course.displayCode,
-            style: const TextStyle(color: Color(0xFF9A9A9A)),
+            style: TextStyle(color: colors.textTertiary),
           ),
         ],
       ],
@@ -718,6 +726,7 @@ class _RatingDetailHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radar = detail.radar;
+    final colors = context.lehuColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -728,13 +737,13 @@ class _RatingDetailHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color(0xFF143625),
+                color: colors.accentSoft,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
                 detail.total == 0 ? '暂无评分' : '${_scoreText(detail.average)}/10',
-                style: const TextStyle(
-                  color: Color(0xFF66E0A3),
+                style: TextStyle(
+                  color: colors.onAccentSoft,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
@@ -743,7 +752,7 @@ class _RatingDetailHeader extends StatelessWidget {
             const SizedBox(width: 10),
             Text(
               '${detail.teacher.name} · ${detail.total} 条评价',
-              style: const TextStyle(color: Color(0xFFBDBDBD)),
+              style: TextStyle(color: colors.textSecondary),
             ),
           ],
         ),
@@ -818,10 +827,11 @@ class _RatingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -835,7 +845,8 @@ class _RatingTile extends StatelessWidget {
                   rating.user.username.isEmpty ? '匿名' : rating.user.username,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: colors.detailAuthor,
                     fontSize: 14.5,
                     fontWeight: FontWeight.w500,
                   ),
@@ -843,8 +854,7 @@ class _RatingTile extends StatelessWidget {
               ),
               Text(
                 _dateText(rating.createdAt),
-                style:
-                    const TextStyle(color: Color(0xFF888888), fontSize: 12.5),
+                style: TextStyle(color: colors.textMuted, fontSize: 12.5),
               ),
             ],
           ),
@@ -853,8 +863,8 @@ class _RatingTile extends StatelessWidget {
             rating.content.isEmpty ? '未填写文字评价' : rating.content,
             style: TextStyle(
               color: rating.content.isEmpty
-                  ? const Color(0xFF8A8A8A)
-                  : const Color(0xFFE5E5E5),
+                  ? colors.textMuted
+                  : colors.textPrimary,
               fontSize: 15.5,
               height: 1.45,
               fontWeight: FontWeight.w400,
@@ -891,16 +901,17 @@ class _PlainTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 13),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colors.border)),
         ),
         child: Row(
           children: [
-            Icon(icon, color: const Color(0xFFBDBDBD)),
+            Icon(icon, color: colors.textSecondary),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -910,7 +921,8 @@ class _PlainTile extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
+                      color: colors.textPrimary,
                       fontSize: 15.5,
                       fontWeight: FontWeight.w500,
                     ),
@@ -921,8 +933,8 @@ class _PlainTile extends StatelessWidget {
                       subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF9A9A9A),
+                      style: TextStyle(
+                        color: colors.textTertiary,
                         fontSize: 14,
                       ),
                     ),
@@ -945,19 +957,17 @@ class _ScorePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color:
-            rating.hasScore ? const Color(0xFF143625) : const Color(0xFF222222),
+        color: rating.hasScore ? colors.accentSoft : colors.surfaceMuted,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         rating.hasScore ? '${rating.score}/10' : '旧版',
         style: TextStyle(
-          color: rating.hasScore
-              ? const Color(0xFF66E0A3)
-              : const Color(0xFFBDBDBD),
+          color: rating.hasScore ? colors.onAccentSoft : colors.textSecondary,
           fontWeight: FontWeight.w600,
           fontSize: 12.5,
         ),
@@ -973,15 +983,16 @@ class _SoftLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         text,
-        style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 12.5),
+        style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
       ),
     );
   }
@@ -998,7 +1009,11 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: context.lehuColors.textPrimary,
+          fontSize: 15.5,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

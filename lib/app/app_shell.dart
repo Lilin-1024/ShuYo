@@ -42,6 +42,7 @@ import '../features/topic/topic_detail_page.dart';
 import '../features/webview/academic_webvpn_preloader.dart';
 import '../features/webview/forum_webview_page.dart';
 import '../shared/navigation/lehu_route.dart';
+import '../shared/theme/lehu_theme.dart';
 import '../shared/widgets/client_update_prompt.dart';
 import '../shared/widgets/info_confirm_dialog.dart';
 import '../shared/widgets/app_header.dart';
@@ -52,10 +53,14 @@ class AppShell extends StatefulWidget {
     super.key,
     required this.repository,
     required this.reloadRepository,
+    required this.selectedThemeId,
+    required this.onThemeChanged,
   });
 
   final ForumRepository repository;
   final Future<ForumRepository> Function() reloadRepository;
+  final String selectedThemeId;
+  final Future<void> Function(String themeId) onThemeChanged;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -899,6 +904,8 @@ class _AppShellState extends State<AppShell> {
           settingsService: _clientSettingsService,
           scheduleNotificationService: _scheduleNotificationService,
           backendRepository: _clientBackendRepository,
+          selectedThemeId: widget.selectedThemeId,
+          onThemeChanged: widget.onThemeChanged,
           isOnline: _repo.isOnline,
           onLogout: _logout,
         ),
@@ -1462,6 +1469,7 @@ class _TabBadgeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     if (count <= 0) {
       return Icon(icon);
     }
@@ -1477,14 +1485,14 @@ class _TabBadgeIcon extends StatelessWidget {
             constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
             padding: const EdgeInsets.symmetric(horizontal: 4),
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: Color(0xFFE53935),
-              borderRadius: BorderRadius.all(Radius.circular(9)),
+            decoration: BoxDecoration(
+              color: colors.danger,
+              borderRadius: const BorderRadius.all(Radius.circular(9)),
             ),
             child: Text(
               label,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.onDanger,
                 fontSize: 9.5,
                 height: 1,
                 fontWeight: FontWeight.w600,
@@ -1504,13 +1512,14 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const CircularProgressIndicator(),
           const SizedBox(height: 14),
-          Text(message, style: const TextStyle(color: Color(0xFFBDBDBD))),
+          Text(message, style: TextStyle(color: colors.textSecondary)),
         ],
       ),
     );

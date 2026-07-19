@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/lehu_theme.dart';
 import 'forum_network_image.dart';
 
 class ForumAvatar extends StatelessWidget {
@@ -38,16 +39,17 @@ class _AvatarFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return ClipOval(
       child: Container(
         width: size,
         height: size,
-        color: const Color(0xFF2A2A2A),
+        color: colors.surfaceMuted,
         alignment: Alignment.center,
         child: Icon(
           Icons.person,
           size: size * 0.56,
-          color: const Color(0xFFBDBDBD),
+          color: colors.textSecondary,
         ),
       ),
     );

@@ -4,6 +4,7 @@ import '../../data/models/forum_activity.dart';
 import '../../data/models/topic.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class ForumActivityPage extends StatefulWidget {
@@ -75,7 +76,7 @@ class _ForumActivityPageState extends State<ForumActivityPage> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: items.length,
               separatorBuilder: (_, __) =>
-                  const Divider(height: 1, color: Color(0xFF202020)),
+                  Divider(height: 1, color: context.lehuColors.border),
               itemBuilder: (context, index) {
                 final item = items[index];
                 return _ActivityRow(
@@ -139,6 +140,7 @@ class _ActivityRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final meta = _metaParts();
+    final colors = context.lehuColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -154,6 +156,7 @@ class _ActivityRow extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: LehuTextStyles.title(
+                      color: colors.textPrimary,
                       size: 15.5,
                       height: 1.25,
                       weight: FontWeight.w500,
@@ -165,8 +168,8 @@ class _ActivityRow extends StatelessWidget {
                       item.excerpt,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFAAAAAA),
+                      style: TextStyle(
+                        color: colors.textTertiary,
                         fontSize: 14,
                         height: 1.46,
                       ),
@@ -178,8 +181,8 @@ class _ActivityRow extends StatelessWidget {
                       meta.join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF8A8A8A),
+                      style: TextStyle(
+                        color: colors.textMuted,
                         fontSize: 12.5,
                       ),
                     ),
@@ -188,10 +191,10 @@ class _ActivityRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               size: 20,
-              color: Color(0xFF8A8A8A),
+              color: colors.textMuted,
             ),
           ],
         ),

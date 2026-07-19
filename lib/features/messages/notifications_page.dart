@@ -4,6 +4,7 @@ import '../../data/models/forum_notification.dart';
 import '../../data/models/topic.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../topic/topic_detail_page.dart';
@@ -117,6 +118,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
     return FutureBuilder<List<ForumNotification>>(
       future: _future,
       builder: (context, snapshot) {
+        final colors = context.lehuColors;
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -145,7 +147,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
           child: ListView.separated(
             itemCount: items.length,
             separatorBuilder: (context, index) =>
-                const Divider(height: 1, color: Color(0xFF202020)),
+                Divider(height: 1, color: colors.border),
             itemBuilder: (context, index) {
               final item = items[index];
               return ListTile(
@@ -155,6 +157,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
+                    color: colors.textPrimary,
                     fontWeight: item.read ? FontWeight.w500 : FontWeight.w800,
                   ),
                 ),
@@ -162,11 +165,12 @@ class _NotificationListHostState extends State<_NotificationListHost> {
                   item.message,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.textSecondary),
                 ),
                 trailing: Text(
                   TimeFormat.compact(item.createdAt),
-                  style: const TextStyle(
-                    color: Color(0xFF8A8A8A),
+                  style: TextStyle(
+                    color: colors.textMuted,
                     fontSize: 12,
                   ),
                 ),

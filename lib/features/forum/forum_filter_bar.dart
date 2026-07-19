@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/category.dart';
+import '../../shared/theme/lehu_theme.dart';
 
 class ForumFilterBar extends StatelessWidget {
   const ForumFilterBar({
@@ -76,6 +77,7 @@ class _FilterChipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: onTap,
@@ -83,10 +85,10 @@ class _FilterChipButton extends StatelessWidget {
         height: 32,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFEDEDED) : const Color(0xFF171717),
+          color: selected ? colors.selectedFill : colors.chipFill,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: selected ? const Color(0xFFEDEDED) : const Color(0xFF303030),
+            color: selected ? colors.selectedFill : colors.chipBorder,
           ),
         ),
         child: Row(
@@ -95,14 +97,14 @@ class _FilterChipButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 15,
-                color: selected ? Colors.black : const Color(0xFFD6D6D6),
+                color: selected ? colors.onSelectedFill : colors.textSecondary,
               ),
               const SizedBox(width: 5),
             ],
             Text(
               label,
               style: TextStyle(
-                color: selected ? Colors.black : const Color(0xFFD6D6D6),
+                color: selected ? colors.onSelectedFill : colors.textSecondary,
                 fontSize: 13,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),

@@ -5,6 +5,7 @@ import '../../data/repositories/client_backend_repository.dart';
 import '../../shared/compact_number.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/empty_state.dart';
 
@@ -76,6 +77,7 @@ class _ClientFeedbackPageState extends State<ClientFeedbackPage> {
           }
 
           final tickets = snapshot.data ?? const <ClientFeedbackTicket>[];
+          final colors = context.lehuColors;
           return RefreshIndicator(
             onRefresh: () => _refresh(force: true),
             child: ListView(
@@ -93,7 +95,9 @@ class _ClientFeedbackPageState extends State<ClientFeedbackPage> {
                 const SizedBox(height: 18),
                 Text(
                   '我的反馈',
-                  style: LehuTextStyles.sectionTitle(color: Colors.white),
+                  style: LehuTextStyles.sectionTitle(
+                    color: colors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 if (tickets.isEmpty)
@@ -253,6 +257,7 @@ class _ClientFeedbackDetailPageState extends State<ClientFeedbackDetailPage> {
           }
 
           final ticket = snapshot.data!;
+          final colors = context.lehuColors;
           return RefreshIndicator(
             onRefresh: _refresh,
             child: ListView(
@@ -271,6 +276,7 @@ class _ClientFeedbackDetailPageState extends State<ClientFeedbackDetailPage> {
                             child: Text(
                               ticket.title,
                               style: LehuTextStyles.title(
+                                color: colors.textPrimary,
                                 size: 16,
                                 height: 1.24,
                                 weight: FontWeight.w500,
@@ -307,8 +313,8 @@ class _ClientFeedbackDetailPageState extends State<ClientFeedbackDetailPage> {
                   title: '内容',
                   child: Text(
                     ticket.content,
-                    style: const TextStyle(
-                      color: Color(0xFFD7D7D7),
+                    style: TextStyle(
+                      color: colors.textSecondary,
                       fontSize: 14.5,
                       height: 1.46,
                     ),
@@ -318,10 +324,10 @@ class _ClientFeedbackDetailPageState extends State<ClientFeedbackDetailPage> {
                 _Section(
                   title: '回复',
                   child: ticket.replies.isEmpty
-                      ? const Text(
+                      ? Text(
                           '暂无回复',
                           style: TextStyle(
-                            color: Color(0xFF8A8A8A),
+                            color: colors.textMuted,
                             fontSize: 13.5,
                           ),
                         )
@@ -388,12 +394,13 @@ class _ComposerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF151515),
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF242424)),
+        border: Border.all(color: colors.borderStrong),
       ),
       child: Form(
         key: formKey,
@@ -402,7 +409,7 @@ class _ComposerCard extends StatelessWidget {
           children: [
             Text(
               '提交反馈',
-              style: LehuTextStyles.sectionTitle(color: Colors.white),
+              style: LehuTextStyles.sectionTitle(color: colors.textPrimary),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -473,11 +480,12 @@ class _TicketTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF151515),
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF242424)),
+        border: Border.all(color: colors.borderStrong),
       ),
       child: Material(
         color: Colors.transparent,
@@ -488,6 +496,7 @@ class _TicketTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: LehuTextStyles.title(
+              color: colors.textPrimary,
               size: 15.5,
               height: 1.24,
               weight: FontWeight.w500,
@@ -502,8 +511,8 @@ class _TicketTile extends StatelessWidget {
                   ticket.content,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFFBDBDBD),
+                  style: TextStyle(
+                    color: colors.textSecondary,
                     fontSize: 13.5,
                     height: 1.46,
                   ),
@@ -537,28 +546,29 @@ class _ReplyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF111111),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF222222)),
+        border: Border.all(color: colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '${reply.author} · ${TimeFormat.compact(reply.createdAt)}',
-            style: const TextStyle(
-              color: Color(0xFF8A8A8A),
+            style: TextStyle(
+              color: colors.textMuted,
               fontSize: 12.5,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             reply.message,
-            style: const TextStyle(
-              color: Color(0xFFD7D7D7),
+            style: TextStyle(
+              color: colors.textSecondary,
               fontSize: 14.5,
               height: 1.46,
             ),
@@ -580,19 +590,20 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF151515),
+        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF242424)),
+        border: Border.all(color: colors.borderStrong),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: LehuTextStyles.sectionTitle(color: Colors.white),
+            style: LehuTextStyles.sectionTitle(color: colors.textPrimary),
           ),
           const SizedBox(height: 12),
           child,
@@ -613,6 +624,7 @@ class _MetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -620,8 +632,8 @@ class _MetaRow extends StatelessWidget {
           width: 76,
           child: Text(
             label,
-            style: const TextStyle(
-              color: Color(0xFF8A8A8A),
+            style: TextStyle(
+              color: colors.textMuted,
               fontSize: 12.5,
             ),
           ),
@@ -629,8 +641,8 @@ class _MetaRow extends StatelessWidget {
         Expanded(
           child: Text(
             value.isEmpty ? '-' : value,
-            style: const TextStyle(
-              color: Color(0xFFD7D7D7),
+            style: TextStyle(
+              color: colors.textSecondary,
               fontSize: 13.5,
             ),
           ),
@@ -647,10 +659,11 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final color = switch (status) {
-      'closed' => const Color(0xFFEC7063),
-      'replied' => const Color(0xFF7ED38F),
-      _ => const Color(0xFFE0B45B),
+      'closed' => colors.danger,
+      'replied' => colors.success,
+      _ => colors.warning,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -677,16 +690,17 @@ class _SmallBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: colors.surfaceMuted,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          color: Color(0xFFBDBDBD),
+        style: TextStyle(
+          color: colors.textSecondary,
           fontSize: 11.5,
         ),
       ),

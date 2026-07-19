@@ -5,6 +5,7 @@ import '../../data/models/discourse_user.dart';
 import '../../data/models/topic.dart';
 import '../../data/services/html_text.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/forum_network_image.dart';
@@ -57,13 +58,14 @@ class _TopicListPageState extends State<TopicListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return ListView.separated(
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: widget.topics.length + (_hasFooter ? 1 : 0),
       separatorBuilder: (context, index) =>
-          const Divider(height: 1, color: Color(0xFF202020)),
+          Divider(height: 1, color: colors.border),
       itemBuilder: (context, index) {
         if (index >= widget.topics.length) {
           return _LoadMoreFooter(
@@ -168,6 +170,7 @@ class _TopicListRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metaText = _topicTimeText(topic);
+    final colors = context.lehuColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -194,7 +197,7 @@ class _TopicListRow extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: LehuTextStyles.title(
-                            color: const Color(0xFF9B9B9B),
+                            color: colors.listAuthor,
                             size: 14.5,
                             weight: FontWeight.w500,
                           ),
@@ -205,8 +208,8 @@ class _TopicListRow extends StatelessWidget {
                             metaText,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF8A8A8A),
+                            style: TextStyle(
+                              color: colors.textMuted,
                               fontSize: 12,
                             ),
                           ),
@@ -221,6 +224,7 @@ class _TopicListRow extends StatelessWidget {
             Text(
               topic.title,
               style: LehuTextStyles.title(
+                color: colors.textPrimary,
                 size: 16.5,
                 height: 1.24,
                 weight: FontWeight.w500,
@@ -289,15 +293,17 @@ class _PreviewContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (!preview.hasText && !preview.hasImages)
-          const Text(
+          Text(
             '暂无摘要',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
+              color: colors.textTertiary,
               fontSize: 15,
               height: 1.42,
               fontWeight: FontWeight.w400,
@@ -308,7 +314,8 @@ class _PreviewContent extends StatelessWidget {
             preview.text,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
+              color: colors.textPrimary,
               fontSize: 15,
               height: 1.42,
               fontWeight: FontWeight.w400,
@@ -453,13 +460,14 @@ class _ImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
       height: height,
       alignment: Alignment.center,
-      color: const Color(0xFF1C1C1C),
-      child: const Icon(
+      color: colors.surfaceMuted,
+      child: Icon(
         Icons.image_not_supported_outlined,
-        color: Color(0xFF8A8A8A),
+        color: colors.textMuted,
       ),
     );
   }
@@ -473,6 +481,7 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _parseColor(category?.color);
+    final colors = context.lehuColors;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -484,7 +493,7 @@ class _CategoryChip extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           category?.name ?? '未知分区',
-          style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 12.5),
+          style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
         ),
       ],
     );
@@ -499,12 +508,15 @@ class _Metric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Row(
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF8A8A8A)),
+        Icon(icon, size: 16, color: colors.textMuted),
         const SizedBox(width: 4),
-        Text(value,
-            style: const TextStyle(color: Color(0xFFBDBDBD), fontSize: 12.5)),
+        Text(
+          value,
+          style: TextStyle(color: colors.textSecondary, fontSize: 12.5),
+        ),
       ],
     );
   }

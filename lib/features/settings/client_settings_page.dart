@@ -4,6 +4,7 @@ import '../../data/repositories/client_backend_repository.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../data/services/client_settings_service.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/client_update_prompt.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../webview/forum_webview_page.dart';
@@ -15,6 +16,8 @@ class ClientSettingsPage extends StatelessWidget {
     required this.settingsService,
     required this.scheduleNotificationService,
     required this.backendRepository,
+    required this.selectedThemeId,
+    required this.onThemeChanged,
     this.isOnline = false,
     this.onLogout,
   });
@@ -22,6 +25,8 @@ class ClientSettingsPage extends StatelessWidget {
   final ClientSettingsService settingsService;
   final AcademicScheduleNotificationService scheduleNotificationService;
   final ClientBackendRepository backendRepository;
+  final String selectedThemeId;
+  final Future<void> Function(String themeId) onThemeChanged;
   final bool isOnline;
   final Future<void> Function()? onLogout;
 
@@ -54,7 +59,14 @@ class ClientSettingsPage extends StatelessWidget {
           ),
           _SettingsRow(
             title: '主题切换',
-            onTap: () => _showSnack(context, '主题切换后续接入'),
+            onTap: () => Navigator.of(context).push<void>(
+              lehuRoute(
+                builder: (context) => _ThemeSettingsPage(
+                  selectedThemeId: selectedThemeId,
+                  onThemeChanged: onThemeChanged,
+                ),
+              ),
+            ),
           ),
           _SettingsRow(
             title: '问题与反馈',
@@ -157,6 +169,150 @@ class ClientSettingsPage extends StatelessWidget {
         SizedBox(height: 8),
         Text('名称、主题和更多说明会在后续版本中完善。'),
       ],
+    );
+  }
+}
+
+class _ThemeSettingsPage extends StatefulWidget {
+  const _ThemeSettingsPage({
+    required this.selectedThemeId,
+    required this.onThemeChanged,
+  });
+
+  final String selectedThemeId;
+  final Future<void> Function(String themeId) onThemeChanged;
+
+  @override
+  State<_ThemeSettingsPage> createState() => _ThemeSettingsPageState();
+}
+
+class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
+  late String _selectedThemeId;
+  String? _savingThemeId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedThemeId = widget.selectedThemeId;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ThemeSettingsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedThemeId != oldWidget.selectedThemeId &&
+        _savingThemeId == null) {
+      _selectedThemeId = widget.selectedThemeId;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Scaffold(
+      appBar: AppBar(title: const Text('主题切换')),
+      body: ListView.separated(
+        itemCount: LehuThemes.all.length,
+        separatorBuilder: (context, index) => Divider(color: colors.border),
+        itemBuilder: (context, index) {
+          final theme = LehuThemes.all[index];
+          final selected = theme.id == _selectedThemeId;
+          return ListTile(
+            selected: selected,
+            selectedColor: colors.textPrimary,
+            title: Text(
+              theme.name,
+              style: TextStyle(
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+            trailing: _ThemeSwatches(
+              theme: theme,
+              selected: selected,
+              saving: _savingThemeId == theme.id,
+            ),
+            onTap: _savingThemeId == null ? () => _selectTheme(theme) : null,
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _selectTheme(LehuThemeSpec theme) async {
+    if (_selectedThemeId == theme.id || _savingThemeId != null) {
+      return;
+    }
+    setState(() {
+      _selectedThemeId = theme.id;
+      _savingThemeId = theme.id;
+    });
+    try {
+      await widget.onThemeChanged(theme.id);
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      _showSnack(context, '主题保存失败：$error');
+      setState(() => _selectedThemeId = widget.selectedThemeId);
+    } finally {
+      if (mounted) {
+        setState(() => _savingThemeId = null);
+      }
+    }
+  }
+}
+
+class _ThemeSwatches extends StatelessWidget {
+  const _ThemeSwatches({
+    required this.theme,
+    required this.selected,
+    required this.saving,
+  });
+
+  final LehuThemeSpec theme;
+  final bool selected;
+  final bool saving;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return SizedBox(
+      width: 126,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (saving)
+            const SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          else if (selected)
+            Icon(Icons.check, size: 20, color: colors.accent)
+          else
+            const SizedBox(width: 20),
+          const SizedBox(width: 12),
+          for (final color in theme.previewColors) ...[
+            _ThemeSwatch(color: color),
+            const SizedBox(width: 6),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeSwatch extends StatelessWidget {
+  const _ThemeSwatch({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+      ),
+      child: const SizedBox.square(dimension: 16),
     );
   }
 }
@@ -420,11 +576,12 @@ class _SettingsSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return SwitchListTile(
       title: Text(
         title,
         style: TextStyle(
-          color: enabled ? null : const Color(0xFF777777),
+          color: enabled ? colors.textPrimary : colors.textMuted,
         ),
       ),
       value: value,

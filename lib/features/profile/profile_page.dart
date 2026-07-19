@@ -4,6 +4,7 @@ import '../../data/models/forum_activity.dart';
 import '../../data/models/user_profile.dart';
 import '../../shared/compact_number.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/theme/lehu_theme.dart';
 import 'profile_header.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -127,10 +128,11 @@ class _ActivitySummaryContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Color(0xFF202020)),
+          bottom: BorderSide(color: colors.border),
         ),
       ),
       child: Row(
@@ -169,6 +171,7 @@ class _ActivityStatButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Expanded(
       child: InkWell(
         onTap: onTap == null ? null : () => onTap!(kind),
@@ -180,7 +183,7 @@ class _ActivityStatButton extends StatelessWidget {
               Text(
                 kind.title,
                 style: LehuTextStyles.chip(
-                  color: const Color(0xFFAAAAAA),
+                  color: colors.textTertiary,
                   size: 12.5,
                   weight: FontWeight.w500,
                 ),
@@ -191,7 +194,7 @@ class _ActivityStatButton extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: LehuTextStyles.title(
-                  color: Colors.white,
+                  color: colors.textPrimary,
                   size: 16.5,
                   weight: FontWeight.w600,
                 ),
@@ -211,6 +214,7 @@ class _StatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final stats = [
       _StatItem('访问天数', '${summary.daysVisited}'),
       _StatItem('浏览主题', '${summary.topicsEntered}'),
@@ -226,8 +230,7 @@ class _StatList extends StatelessWidget {
       children: [
         for (var i = 0; i < stats.length; i++) ...[
           _StatRow(item: stats[i]),
-          if (i != stats.length - 1)
-            const Divider(height: 1, color: Color(0xFF202020)),
+          if (i != stats.length - 1) Divider(height: 1, color: colors.border),
         ],
       ],
     );
@@ -241,6 +244,7 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return SizedBox(
       height: 48,
       child: Row(
@@ -248,16 +252,16 @@ class _StatRow extends StatelessWidget {
           Expanded(
             child: Text(
               item.label,
-              style: const TextStyle(
-                color: Color(0xFFD6D6D6),
+              style: TextStyle(
+                color: colors.textSecondary,
                 fontSize: 14.5,
               ),
             ),
           ),
           Text(
             item.value,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: colors.textPrimary,
               fontSize: 15.5,
               fontWeight: FontWeight.w600,
             ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/services/emoji_recent_store.dart';
 import '../../data/services/emoji_text.dart';
+import '../theme/lehu_theme.dart';
 
 Future<void> showEmojiPicker({
   required BuildContext context,
@@ -11,7 +12,7 @@ Future<void> showEmojiPicker({
 }) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: const Color(0xFF111111),
+    backgroundColor: context.lehuColors.surface,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (context) {
@@ -40,6 +41,7 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final recentEntries = EmojiText.entriesForShortcodes(_recentShortcodes);
     final categories = [
       EmojiCategory('常用', recentEntries),
@@ -56,19 +58,23 @@ class _EmojiPickerSheetState extends State<_EmojiPickerSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: Text(
                   'Emoji',
-                  style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: colors.textPrimary,
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               TabBar(
                 isScrollable: true,
                 tabAlignment: TabAlignment.start,
-                labelColor: Colors.white,
-                unselectedLabelColor: const Color(0xFF9A9A9A),
-                indicatorColor: Colors.white,
+                labelColor: colors.textPrimary,
+                unselectedLabelColor: colors.textTertiary,
+                indicatorColor: colors.textPrimary,
                 tabs: [
                   for (final category in categories) Tab(text: category.label),
                 ],
@@ -121,10 +127,11 @@ class _EmojiGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
-      return const Center(
+      final colors = context.lehuColors;
+      return Center(
         child: Text(
           '最近使用过的 Emoji 会显示在这里',
-          style: TextStyle(color: Color(0xFF9A9A9A)),
+          style: TextStyle(color: colors.textTertiary),
         ),
       );
     }

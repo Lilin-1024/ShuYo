@@ -4,6 +4,7 @@ import '../../data/models/classroom.dart';
 import '../../data/repositories/classroom_repository.dart';
 import '../../data/services/classroom_api_client.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class EmptyClassroomPage extends StatefulWidget {
@@ -404,13 +405,14 @@ class _SearchControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final campusBuildings = options.buildings
         .where((building) =>
             selectedCampus == null || building.campusName == selectedCampus)
         .toList(growable: false);
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFF202020))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.border)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
@@ -577,6 +579,7 @@ class _ClassroomResultList extends StatelessWidget {
   Widget build(BuildContext context) {
     final normalizedKeyword = keyword.trim();
     final matches = result.courseMatches(normalizedKeyword);
+    final colors = context.lehuColors;
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -586,22 +589,23 @@ class _ClassroomResultList extends StatelessWidget {
           '${result.scopeLabel} · ${_dateLabel(result.date)} · '
           '${result.startSection}-${result.endSection}节',
           style: LehuTextStyles.title(
+            color: colors.textPrimary,
             size: 16.5,
             weight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 5),
         if (normalizedKeyword.isNotEmpty) ...[
-          const Text(
+          Text(
             '已按全天课程搜索，忽略当前节次',
-            style: TextStyle(color: Color(0xFF9A9A9A)),
+            style: TextStyle(color: colors.textTertiary),
           ),
           const SizedBox(height: 18),
           _CourseMatches(matches: matches),
         ] else ...[
           Text(
             '可用 ${result.availableCount} / ${result.totalRooms} 间',
-            style: const TextStyle(color: Color(0xFF9A9A9A)),
+            style: TextStyle(color: colors.textTertiary),
           ),
           const SizedBox(height: 18),
           if (result.availableCount == 0)
@@ -636,6 +640,7 @@ class _BuildingAvailableRooms extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     final availableFloors = result.floors
         .where((floor) => floor.availableRooms.isNotEmpty)
         .toList(growable: false);
@@ -651,6 +656,7 @@ class _BuildingAvailableRooms extends StatelessWidget {
             Text(
               '${result.building.name} · ${result.availableCount}间',
               style: LehuTextStyles.title(
+                color: colors.textPrimary,
                 size: 15.5,
                 weight: FontWeight.w600,
               ),
@@ -677,17 +683,22 @@ class _CourseMatches extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (matches.isEmpty) {
-      return const Text(
+      return Text(
         '未找到课程位置',
-        style: TextStyle(color: Color(0xFF9A9A9A)),
+        style: TextStyle(color: context.lehuColors.textTertiary),
       );
     }
+    final colors = context.lehuColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           '课程位置',
-          style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: colors.textPrimary,
+            fontSize: 15.5,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 8),
         for (final match in matches)
@@ -696,10 +707,10 @@ class _CourseMatches extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.location_on_outlined,
                   size: 18,
-                  color: Color(0xFF66E0A3),
+                  color: colors.accent,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -708,7 +719,7 @@ class _CourseMatches extends StatelessWidget {
                     '${match.building.name} ${match.room.name} · '
                     '${match.course.courseName}'
                     '${match.course.teacherName.isEmpty ? '' : ' · ${match.course.teacherName}'}',
-                    style: const TextStyle(height: 1.35),
+                    style: TextStyle(color: colors.textPrimary, height: 1.35),
                   ),
                 ),
               ],
@@ -732,6 +743,7 @@ class _FloorAvailableRooms extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: Column(
@@ -739,7 +751,11 @@ class _FloorAvailableRooms extends StatelessWidget {
         children: [
           Text(
             '${floor.floor.name} · ${floor.availableRooms.length}间',
-            style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 14.5,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -788,6 +804,7 @@ class _RoomChip extends StatelessWidget {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
+        final colors = context.lehuColors;
         return SafeArea(
           top: false,
           bottom: false,
@@ -799,9 +816,11 @@ class _RoomChip extends StatelessWidget {
               20,
               20 + MediaQuery.of(context).viewPadding.bottom,
             ),
-            decoration: const BoxDecoration(
-              color: Color(0xFF111111),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(8),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -809,7 +828,8 @@ class _RoomChip extends StatelessWidget {
               children: [
                 Text(
                   room.name,
-                  style: const TextStyle(
+                  style: TextStyle(
+                    color: colors.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -818,7 +838,7 @@ class _RoomChip extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     room.fullName,
-                    style: const TextStyle(color: Color(0xFF9A9A9A)),
+                    style: TextStyle(color: colors.textTertiary),
                   ),
                 ],
                 const SizedBox(height: 14),
@@ -826,17 +846,17 @@ class _RoomChip extends StatelessWidget {
                   selectedCourses.isEmpty
                       ? '$startSection-$endSection节空闲'
                       : '$startSection-$endSection节已有安排',
-                  style: const TextStyle(
-                    color: Color(0xFF66E0A3),
+                  style: TextStyle(
+                    color: colors.accent,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 12),
                 if (courses.isEmpty)
-                  const Text(
+                  Text(
                     '当天没有课程安排',
-                    style: TextStyle(color: Color(0xFFBDBDBD)),
+                    style: TextStyle(color: colors.textSecondary),
                   )
                 else
                   for (final course in courses)
@@ -845,7 +865,11 @@ class _RoomChip extends StatelessWidget {
                       child: Text(
                         '${course.sectionText} · ${course.courseName}'
                         '${course.teacherName.isEmpty ? '' : ' · ${course.teacherName}'}',
-                        style: const TextStyle(fontSize: 14.5, height: 1.46),
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 14.5,
+                          height: 1.46,
+                        ),
                       ),
                     ),
               ],

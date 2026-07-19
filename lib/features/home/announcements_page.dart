@@ -5,6 +5,7 @@ import '../../data/repositories/announcement_repository.dart';
 import '../../data/services/announcement_api_client.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class AnnouncementsPage extends StatefulWidget {
@@ -73,7 +74,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                 );
               },
               separatorBuilder: (context, index) {
-                return const Divider(height: 1, color: Color(0xFF202020));
+                return Divider(height: 1, color: context.lehuColors.border);
               },
               itemCount: items.length,
             ),
@@ -154,12 +155,14 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
             );
           }
           final detail = snapshot.data!;
+          final colors = context.lehuColors;
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
             children: [
               Text(
                 detail.title,
                 style: LehuTextStyles.title(
+                  color: colors.textPrimary,
                   size: 20,
                   height: 1.22,
                   weight: FontWeight.w600,
@@ -169,9 +172,9 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
               _AnnouncementMetadata(detail: detail),
               const SizedBox(height: 22),
               if (!detail.hasContent)
-                const Text(
+                Text(
                   '这条公告暂时没有解析到正文。',
-                  style: TextStyle(color: Color(0xFF9A9A9A)),
+                  style: TextStyle(color: colors.textTertiary),
                 )
               else
                 ...detail.blocks.map(_blockWidget),
@@ -192,13 +195,14 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
             block.value,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
+              final colors = context.lehuColors;
               return Container(
                 height: 120,
                 alignment: Alignment.center,
-                color: const Color(0xFF171717),
-                child: const Text(
+                color: colors.surfaceAlt,
+                child: Text(
                   '图片加载失败',
-                  style: TextStyle(color: Color(0xFF9A9A9A)),
+                  style: TextStyle(color: colors.textTertiary),
                 ),
               );
             },
@@ -210,10 +214,10 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
       padding: const EdgeInsets.only(bottom: 13),
       child: SelectableText(
         block.value,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           height: 1.7,
-          color: Color(0xFFEDEDED),
+          color: context.lehuColors.textPrimary,
         ),
       ),
     );
@@ -231,6 +235,7 @@ class _AnnouncementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.lehuColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -244,6 +249,7 @@ class _AnnouncementTile extends StatelessWidget {
                   Text(
                     item.title,
                     style: LehuTextStyles.title(
+                      color: colors.textPrimary,
                       size: 16,
                       height: 1.26,
                       weight: FontWeight.w500,
@@ -255,8 +261,8 @@ class _AnnouncementTile extends StatelessWidget {
                       item.summary,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFFAAAAAA),
+                      style: TextStyle(
+                        color: colors.textTertiary,
                         fontSize: 14.5,
                         height: 1.46,
                       ),
@@ -266,8 +272,8 @@ class _AnnouncementTile extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       item.dateText,
-                      style: const TextStyle(
-                        color: Color(0xFF7D7D7D),
+                      style: TextStyle(
+                        color: colors.textMuted,
                         fontSize: 12.5,
                       ),
                     ),
@@ -276,7 +282,7 @@ class _AnnouncementTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            const Icon(Icons.chevron_right, color: Color(0xFF7D7D7D)),
+            Icon(Icons.chevron_right, color: colors.textMuted),
           ],
         ),
       ),
@@ -301,7 +307,7 @@ class _AnnouncementMetadata extends StatelessWidget {
     }
     return Text(
       parts.join(' · '),
-      style: const TextStyle(color: Color(0xFF9A9A9A), fontSize: 13),
+      style: TextStyle(color: context.lehuColors.textTertiary, fontSize: 13),
     );
   }
 }
