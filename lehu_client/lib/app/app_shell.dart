@@ -1229,6 +1229,10 @@ class _AppShellState extends State<AppShell> {
           }
           return;
         }
+      } else {
+        await _clientBackendRepository.ensureUpdateBaselineInitialized(
+          version.latestBuild,
+        );
       }
 
       if (!mounted) {
