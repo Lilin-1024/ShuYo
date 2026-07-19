@@ -233,7 +233,10 @@ class _MessagesPageState extends State<MessagesPage> {
 
   List<int> _otherUserIds(TopicListItem topic) {
     final currentUserId = widget.repository.profile.id;
-    final ids = topic.posters.map((poster) => poster.userId).toSet()
+    final ids = [
+      ...topic.posters,
+      ...topic.participants,
+    ].map((poster) => poster.userId).toSet()
       ..remove(currentUserId);
     if (ids.isEmpty) {
       final originalPosterId = topic.originalPosterId;
