@@ -608,6 +608,7 @@ class _AppShellState extends State<AppShell> {
               categoryId: _feedQuery.categoryId,
               hot: !_feedQuery.hot,
             ),
+            forceRefresh: true,
           ),
           onSelectCategory: (id) => _setFeedQuery(
             TopicFeedQuery(categoryId: id, hot: _feedQuery.hot),
@@ -681,15 +682,18 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  void _resetFeedFuture() {
-    _feedFuture = _repo.fetchTopicFeed(_feedQuery);
+  void _resetFeedFuture({bool forceRefresh = false}) {
+    _feedFuture = _repo.fetchTopicFeed(
+      _feedQuery,
+      forceRefresh: forceRefresh,
+    );
     _loadingMoreFeed = false;
   }
 
-  void _setFeedQuery(TopicFeedQuery query) {
+  void _setFeedQuery(TopicFeedQuery query, {bool forceRefresh = false}) {
     setState(() {
       _feedQuery = query;
-      _resetFeedFuture();
+      _resetFeedFuture(forceRefresh: forceRefresh);
     });
   }
 
