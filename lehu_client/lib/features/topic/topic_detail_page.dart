@@ -101,7 +101,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                     item: widget.topic,
                     detail: detail,
                     category: widget.repository.categoryById(
-                      widget.topic.categoryId,
+                      detail?.categoryId ?? widget.topic.categoryId,
                     ),
                     isOnline: widget.repository.isOnline,
                     isSubmittingReply: _submittingReply,
