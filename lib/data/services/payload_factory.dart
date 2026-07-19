@@ -144,6 +144,22 @@ class PayloadFactory {
     );
   }
 
+  static RequestPayload topicTiming({
+    required int topicId,
+    required int postNumber,
+    required int topicTimeMs,
+  }) {
+    return RequestPayload(
+      method: 'POST',
+      url: ForumUrlResolver.resolve('/topics/timings'),
+      body: _formEncode({
+        'timings[$postNumber]': '$topicTimeMs',
+        'topic_time': '$topicTimeMs',
+        'topic_id': '$topicId',
+      }),
+    );
+  }
+
   static RequestPayload deletePost(Post post) {
     return RequestPayload(
       method: 'DELETE',
