@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/models/composer.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../shared/time_format.dart';
+import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
-import '../../shared/widgets/emoji_picker.dart';
+import '../../shared/widgets/inline_emoji_panel.dart';
 import 'profile_header.dart';
 
 class UserProfilePage extends StatefulWidget {
@@ -244,15 +246,25 @@ class _PrivateMessageSheet extends StatefulWidget {
 class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
   final _titleController = TextEditingController();
   final _rawController = TextEditingController();
+  final _rawFocusNode = FocusNode();
   final _openedAt = DateTime.now();
   final _images = <UploadedImage>[];
   bool _submitting = false;
   bool _uploading = false;
+  bool _showEmojiPanel = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _rawFocusNode.addListener(_handleRawFocusChanged);
+  }
 
   @override
   void dispose() {
+    _rawFocusNode.removeListener(_handleRawFocusChanged);
     _titleController.dispose();
     _rawController.dispose();
+    _rawFocusNode.dispose();
     super.dispose();
   }
 
@@ -281,8 +293,10 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
           const SizedBox(height: 10),
           TextField(
             controller: _rawController,
+            focusNode: _rawFocusNode,
             minLines: 4,
             maxLines: 8,
+            onTap: _handleRawTap,
             decoration: const InputDecoration(
               labelText: '内容',
               alignLabelWithHint: true,
@@ -290,15 +304,19 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
             ),
           ),
           const SizedBox(height: 10),
+          if (_images.isNotEmpty) ...[
+            ComposerAttachmentPreviewRow(
+              images: _images,
+              onRemove: _submitting || _uploading
+                  ? null
+                  : (image) => setState(() => _images.remove(image)),
+            ),
+            const SizedBox(height: 10),
+          ],
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final image in _images)
-                InputChip(
-                  label: Text(image.filename),
-                  onDeleted: () => setState(() => _images.remove(image)),
-                ),
               ActionChip(
                 avatar: _uploading
                     ? const SizedBox(
@@ -313,20 +331,28 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
               ActionChip(
                 avatar: const Icon(Icons.emoji_emotions_outlined, size: 18),
                 label: const Text('Emoji'),
-                onPressed: _submitting
-                    ? null
-                    : () => showEmojiPicker(
-                          context: context,
-                          controller: _rawController,
-                        ),
+                onPressed: _submitting || _uploading ? null : _toggleEmojiPanel,
               ),
             ],
+          ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: _showEmojiPanel
+                ? InlineEmojiPanel(
+                    key: const ValueKey('emoji-panel'),
+                    controller: _rawController,
+                  )
+                : const SizedBox.shrink(
+                    key: ValueKey('emoji-empty'),
+                  ),
           ),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: _submitting ? null : _submit,
+              onPressed: _submitting || _uploading ? null : _submit,
               icon: _submitting
                   ? const SizedBox(
                       width: 18,
@@ -342,8 +368,39 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
     );
   }
 
+  void _handleRawFocusChanged() {
+    if (!mounted) {
+      return;
+    }
+    if (_rawFocusNode.hasFocus && _showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+      return;
+    }
+    setState(() {});
+  }
+
+  void _handleRawTap() {
+    if (_showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+    }
+  }
+
+  void _toggleEmojiPanel() {
+    if (_showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+      _rawFocusNode.requestFocus();
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    setState(() => _showEmojiPanel = true);
+  }
+
   Future<void> _pickAndUpload() async {
-    setState(() => _uploading = true);
+    setState(() {
+      _uploading = true;
+      _showEmojiPanel = false;
+    });
     try {
       final picked = await LocalImagePicker.pickImage();
       if (picked == null) {
@@ -351,12 +408,6 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
       }
       final uploaded = await widget.repository.uploadImage(picked);
       _images.add(uploaded);
-      final current = _rawController.text.trimRight();
-      _rawController.text = current.isEmpty
-          ? uploaded.markdown
-          : '$current\n${uploaded.markdown}';
-      _rawController.selection =
-          TextSelection.collapsed(offset: _rawController.text.length);
       if (mounted) {
         setState(() {});
       }
@@ -372,8 +423,11 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
   }
 
   Future<void> _submit() async {
+    if (_uploading) {
+      return;
+    }
     final title = _titleController.text.trim();
-    final raw = _rawController.text.trim();
+    final raw = composeRawWithImages(_rawController.text, _images);
     if (title.length < 2) {
       _showSnack('标题至少 2 个字');
       return;

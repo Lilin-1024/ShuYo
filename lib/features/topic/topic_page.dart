@@ -7,18 +7,18 @@ import '../../data/models/composer.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
-import '../../data/services/emoji_recent_store.dart';
-import '../../data/services/emoji_text.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
 import '../../shared/widgets/avatar.dart';
+import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/forum_network_image.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
+import '../../shared/widgets/inline_emoji_panel.dart';
 import 'threaded_posts.dart';
 
 class TopicPage extends StatefulWidget {
@@ -583,7 +583,6 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   final _images = <UploadedImage>[];
-  List<String> _recentShortcodes = const [];
   bool _uploading = false;
   bool _composerOpen = false;
   bool _showEmojiPanel = false;
@@ -616,7 +615,6 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     super.initState();
     _focusNode.addListener(_handleFocusChanged);
     _controller.addListener(_handleDraftChanged);
-    _loadRecentEmoji();
   }
 
   @override
@@ -787,11 +785,9 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                       switchInCurve: Curves.easeOutCubic,
                       switchOutCurve: Curves.easeInCubic,
                       child: _showEmojiPanel
-                          ? _InlineEmojiPanel(
+                          ? InlineEmojiPanel(
                               key: const ValueKey('emoji-panel'),
-                              recentShortcodes: _recentShortcodes,
                               controller: _controller,
-                              onPicked: _recordRecentEmoji,
                             )
                           : const SizedBox.shrink(
                               key: ValueKey('emoji-empty'),
@@ -883,20 +879,6 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     }
   }
 
-  Future<void> _loadRecentEmoji() async {
-    final recents = await EmojiRecentStore.load();
-    if (mounted) {
-      setState(() => _recentShortcodes = recents);
-    }
-  }
-
-  Future<void> _recordRecentEmoji(String shortcode) async {
-    final recents = await EmojiRecentStore.record(shortcode);
-    if (mounted) {
-      setState(() => _recentShortcodes = recents);
-    }
-  }
-
   void _toggleEmojiPanel() {
     if (!_canType) {
       _handleInputTap();
@@ -975,14 +957,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   }
 
   String _composeRaw(String text, List<UploadedImage> images) {
-    if (images.isEmpty) {
-      return text;
-    }
-    final imageMarkdown = images.map((image) => image.markdown).join('\n');
-    if (text.isEmpty) {
-      return imageMarkdown;
-    }
-    return '$text\n\n$imageMarkdown';
+    return composeRawWithImages(text, images);
   }
 }
 
@@ -1142,265 +1117,6 @@ class _AttachmentImageFallback extends StatelessWidget {
         size: 26,
         color: Color(0xFF9A9A9A),
       ),
-    );
-  }
-}
-
-class _InlineEmojiPanel extends StatefulWidget {
-  const _InlineEmojiPanel({
-    super.key,
-    required this.recentShortcodes,
-    required this.controller,
-    required this.onPicked,
-  });
-
-  final List<String> recentShortcodes;
-  final TextEditingController controller;
-  final Future<void> Function(String shortcode) onPicked;
-
-  @override
-  State<_InlineEmojiPanel> createState() => _InlineEmojiPanelState();
-}
-
-class _InlineEmojiPanelState extends State<_InlineEmojiPanel>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(
-      length: _categoryCount,
-      vsync: this,
-      initialIndex: _categoryCount > 1 ? 1 : 0,
-      animationDuration: const Duration(milliseconds: 120),
-    )..addListener(_handleTabChanged);
-  }
-
-  @override
-  void dispose() {
-    _tabController.removeListener(_handleTabChanged);
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final recentEntries = EmojiText.entriesForShortcodes(
-      widget.recentShortcodes,
-    );
-    final categories = [
-      EmojiCategory('常用', recentEntries),
-      ...EmojiText.categories.where((category) => category.label != '常用'),
-    ];
-    return SizedBox(
-      height: 282,
-      child: Column(
-        children: [
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            labelColor: Colors.white,
-            unselectedLabelColor: const Color(0xFF9A9A9A),
-            indicatorColor: Colors.white,
-            tabs: [
-              for (final category in categories) Tab(text: category.label),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              physics: _FastEmojiTabScrollPhysics(
-                currentIndex: _tabController.index,
-              ),
-              children: [
-                for (final category in categories)
-                  _InlineEmojiGrid(
-                    entries: category.entries,
-                    controller: widget.controller,
-                    onPicked: widget.onPicked,
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  int get _categoryCount => EmojiText.categories.length;
-
-  void _handleTabChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-}
-
-class _FastEmojiTabScrollPhysics extends PageScrollPhysics {
-  const _FastEmojiTabScrollPhysics({
-    required this.currentIndex,
-    super.parent,
-  });
-
-  static const _switchThreshold = 0.25;
-
-  final int currentIndex;
-
-  @override
-  _FastEmojiTabScrollPhysics applyTo(ScrollPhysics? ancestor) {
-    return _FastEmojiTabScrollPhysics(
-      currentIndex: currentIndex,
-      parent: buildParent(ancestor),
-    );
-  }
-
-  @override
-  SpringDescription get spring => SpringDescription.withDampingRatio(
-        mass: 1,
-        stiffness: 850,
-        ratio: 1.08,
-      );
-
-  @override
-  Simulation? createBallisticSimulation(
-    ScrollMetrics position,
-    double velocity,
-  ) {
-    if ((velocity <= 0.0 && position.pixels <= position.minScrollExtent) ||
-        (velocity >= 0.0 && position.pixels >= position.maxScrollExtent)) {
-      return super.createBallisticSimulation(position, velocity);
-    }
-    final tolerance = toleranceFor(position);
-    final target = _targetPixels(position, tolerance, velocity);
-    if ((target - position.pixels).abs() <= tolerance.distance) {
-      return null;
-    }
-    return ScrollSpringSimulation(
-      spring,
-      position.pixels,
-      target,
-      velocity,
-      tolerance: tolerance,
-    );
-  }
-
-  double _targetPixels(
-    ScrollMetrics position,
-    Tolerance tolerance,
-    double velocity,
-  ) {
-    final page = _pageFor(position);
-    final currentPage = currentIndex.toDouble();
-    final delta = page - currentPage;
-    var targetPage = currentPage;
-
-    if (velocity > tolerance.velocity || delta >= _switchThreshold) {
-      targetPage = currentPage + 1;
-    } else if (velocity < -tolerance.velocity || delta <= -_switchThreshold) {
-      targetPage = currentPage - 1;
-    }
-
-    final minPage = _pageFor(position, pixels: position.minScrollExtent);
-    final maxPage = _pageFor(position, pixels: position.maxScrollExtent);
-    final clampedPage = targetPage.clamp(minPage, maxPage).toDouble();
-    return _pixelsFor(position, clampedPage)
-        .clamp(position.minScrollExtent, position.maxScrollExtent)
-        .toDouble();
-  }
-
-  double _pageFor(ScrollMetrics position, {double? pixels}) {
-    final pagePixels = pixels ?? position.pixels;
-    if (position is PageMetrics) {
-      final viewport = position.viewportDimension * position.viewportFraction;
-      if (viewport <= 0) {
-        return 0;
-      }
-      final initialOffset = position.viewportFraction > 1
-          ? position.viewportDimension * (position.viewportFraction - 1) / 2
-          : 0.0;
-      return (pagePixels - initialOffset) / viewport;
-    }
-    if (position.viewportDimension <= 0) {
-      return 0;
-    }
-    return pagePixels / position.viewportDimension;
-  }
-
-  double _pixelsFor(ScrollMetrics position, double page) {
-    if (position is PageMetrics) {
-      final initialOffset = position.viewportFraction > 1
-          ? position.viewportDimension * (position.viewportFraction - 1) / 2
-          : 0.0;
-      return page * position.viewportDimension * position.viewportFraction +
-          initialOffset;
-    }
-    return page * position.viewportDimension;
-  }
-}
-
-class _InlineEmojiGrid extends StatelessWidget {
-  const _InlineEmojiGrid({
-    required this.entries,
-    required this.controller,
-    required this.onPicked,
-  });
-
-  final List<EmojiEntry> entries;
-  final TextEditingController controller;
-  final Future<void> Function(String shortcode) onPicked;
-
-  @override
-  Widget build(BuildContext context) {
-    if (entries.isEmpty) {
-      return const Center(
-        child: Text(
-          '最近使用过的 Emoji 会显示在这里',
-          style: TextStyle(color: Color(0xFF9A9A9A)),
-        ),
-      );
-    }
-    return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
-      itemCount: entries.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 7,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-      ),
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        return Tooltip(
-          message: entry.markup,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: () {
-              _insertText(controller, entry.value);
-              onPicked(entry.shortcode);
-            },
-            child: Center(
-              child: Text(
-                entry.value,
-                style: const TextStyle(fontSize: 26),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _insertText(TextEditingController controller, String value) {
-    final text = controller.text;
-    final selection = controller.selection;
-    final start = selection.isValid ? selection.start : text.length;
-    final end = selection.isValid ? selection.end : text.length;
-    final before = text.substring(0, start);
-    final after = text.substring(end);
-    controller.text = '$before$value$after';
-    controller.selection = TextSelection.collapsed(
-      offset: before.length + value.length,
     );
   }
 }

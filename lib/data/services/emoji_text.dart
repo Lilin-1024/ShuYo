@@ -1134,4 +1134,20 @@ class EmojiText {
       offset: before.length + inserted.length,
     );
   }
+
+  static void insertText(
+    TextEditingController controller,
+    String value,
+  ) {
+    final text = controller.text;
+    final selection = controller.selection;
+    final start = selection.isValid ? selection.start : text.length;
+    final end = selection.isValid ? selection.end : text.length;
+    final before = text.substring(0, start);
+    final after = text.substring(end);
+    controller.text = '$before$value$after';
+    controller.selection = TextSelection.collapsed(
+      offset: before.length + value.length,
+    );
+  }
 }

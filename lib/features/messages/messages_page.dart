@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../data/models/composer.dart';
 import '../../data/models/discourse_user.dart';
@@ -15,10 +16,11 @@ import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
+import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
-import '../../shared/widgets/emoji_picker.dart';
 import '../../shared/widgets/forum_network_image.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
+import '../../shared/widgets/inline_emoji_panel.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({
@@ -881,12 +883,22 @@ class _MessageReplyBar extends StatefulWidget {
 
 class _MessageReplyBarState extends State<_MessageReplyBar> {
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   final _images = <UploadedImage>[];
   bool _uploading = false;
+  bool _showEmojiPanel = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_handleFocusChanged);
+  }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_handleFocusChanged);
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -904,21 +916,11 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_images.isNotEmpty) ...[
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    for (final image in _images)
-                      InputChip(
-                        label: Text(image.filename),
-                        onDeleted: widget.submitting
-                            ? null
-                            : () => setState(() => _images.remove(image)),
-                      ),
-                  ],
-                ),
+              ComposerAttachmentPreviewRow(
+                images: _images,
+                onRemove: widget.submitting || _uploading
+                    ? null
+                    : (image) => setState(() => _images.remove(image)),
               ),
               const SizedBox(height: 8),
             ],
@@ -938,19 +940,22 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                 ),
                 IconButton(
                   tooltip: 'Emoji',
-                  onPressed: widget.submitting
+                  onPressed: widget.submitting || _uploading
                       ? null
-                      : () => showEmojiPicker(
-                            context: context,
-                            controller: _controller,
-                          ),
-                  icon: const Icon(Icons.emoji_emotions_outlined),
+                      : _toggleEmojiPanel,
+                  icon: Icon(
+                    _showEmojiPanel
+                        ? Icons.keyboard_alt_outlined
+                        : Icons.emoji_emotions_outlined,
+                  ),
                 ),
                 Expanded(
                   child: TextField(
                     controller: _controller,
+                    focusNode: _focusNode,
                     minLines: 1,
                     maxLines: 4,
+                    onTap: _handleInputTap,
                     decoration: const InputDecoration(
                       hintText: '写私信',
                       border: OutlineInputBorder(),
@@ -961,7 +966,7 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                 const SizedBox(width: 8),
                 IconButton.filled(
                   tooltip: '发送',
-                  onPressed: widget.submitting ? null : _submit,
+                  onPressed: widget.submitting || _uploading ? null : _submit,
                   icon: widget.submitting
                       ? const SizedBox(
                           width: 18,
@@ -972,14 +977,58 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                 ),
               ],
             ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              child: _showEmojiPanel
+                  ? InlineEmojiPanel(
+                      key: const ValueKey('emoji-panel'),
+                      controller: _controller,
+                    )
+                  : const SizedBox.shrink(
+                      key: ValueKey('emoji-empty'),
+                    ),
+            ),
           ],
         ),
       ),
     );
   }
 
+  void _handleFocusChanged() {
+    if (!mounted) {
+      return;
+    }
+    if (_focusNode.hasFocus && _showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+      return;
+    }
+    setState(() {});
+  }
+
+  void _handleInputTap() {
+    if (_showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+    }
+  }
+
+  void _toggleEmojiPanel() {
+    if (_showEmojiPanel) {
+      setState(() => _showEmojiPanel = false);
+      _focusNode.requestFocus();
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    setState(() => _showEmojiPanel = true);
+  }
+
   Future<void> _pickAndUpload() async {
-    setState(() => _uploading = true);
+    setState(() {
+      _uploading = true;
+      _showEmojiPanel = false;
+    });
     try {
       final picked = await LocalImagePicker.pickImage();
       if (picked == null) {
@@ -987,12 +1036,6 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
       }
       final uploaded = await widget.repository.uploadImage(picked);
       _images.add(uploaded);
-      final current = _controller.text.trimRight();
-      _controller.text = current.isEmpty
-          ? uploaded.markdown
-          : '$current\n${uploaded.markdown}';
-      _controller.selection =
-          TextSelection.collapsed(offset: _controller.text.length);
       if (mounted) {
         setState(() {});
       }
@@ -1010,15 +1053,19 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
   }
 
   void _submit() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) {
+    if (_uploading) {
       return;
     }
-    _controller.clear();
+    final text = _controller.text.trim();
+    if (text.isEmpty && _images.isEmpty) {
+      return;
+    }
     final images = List<UploadedImage>.of(_images);
+    final raw = composeRawWithImages(text, images);
+    _controller.clear();
     _images.clear();
-    setState(() {});
-    widget.onSubmit(text, images);
+    setState(() => _showEmojiPanel = false);
+    widget.onSubmit(raw, images);
   }
 }
 
