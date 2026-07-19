@@ -143,7 +143,7 @@ class _EmojiGrid extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () {
-              EmojiText.insertShortcode(controller, entry.shortcode);
+              EmojiText.insertText(controller, entry.value);
               unawaited(onPicked(entry.shortcode));
               Navigator.of(context).pop();
             },
