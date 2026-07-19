@@ -492,6 +492,7 @@ class _PostView extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
+                          color: Color(0xFFD6D6D6),
                           fontWeight: FontWeight.w500,
                           fontSize: 14.5,
                         ),

@@ -194,7 +194,7 @@ class _TopicListRow extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: LehuTextStyles.title(
-                            color: const Color(0xFFD6D6D6),
+                            color: const Color(0xFF9B9B9B),
                             size: 14.5,
                             weight: FontWeight.w500,
                           ),
