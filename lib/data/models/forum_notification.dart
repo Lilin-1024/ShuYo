@@ -54,12 +54,18 @@ class ForumNotification {
   }
 
   factory ForumNotification.fromUserActionJson(JsonMap json, String kind) {
-    final title = stringValue(json['title'], '通知');
     final excerpt = HtmlText.toPlainText(stringValue(json['excerpt']));
+    final topicTitle = stringValue(json['title'], '通知');
+    final actor = stringValue(json['acting_username']);
+    final isLike = kind == '赞';
+    final title = isLike && actor.isNotEmpty ? actor : topicTitle;
+    final message = isLike
+        ? (excerpt.isEmpty ? '点赞了你的内容' : excerpt)
+        : (excerpt.isEmpty ? kind : excerpt);
     return ForumNotification(
       id: intValue(json['id'] ?? json['post_id']),
       title: EmojiText.render(title),
-      message: excerpt.isEmpty ? kind : excerpt,
+      message: message,
       kind: kind,
       read: true,
       categoryId: intValue(json['category_id']),
