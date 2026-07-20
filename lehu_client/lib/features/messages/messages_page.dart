@@ -23,6 +23,7 @@ import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/forum_network_image.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
+import '../profile/user_profile_page.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({
@@ -351,7 +352,11 @@ class _MessagesPageState extends State<MessagesPage> {
 
   Future<void> _openGroup(_PrivateConversationGroup group) async {
     if (group.topics.length == 1) {
-      await _openMessage(group.topics.first, group.displayName);
+      await _openMessage(
+        group.topics.first,
+        group.displayName,
+        group.singleUsername,
+      );
     } else {
       await Navigator.of(context).push<void>(
         lehuRoute(
@@ -369,13 +374,18 @@ class _MessagesPageState extends State<MessagesPage> {
     }
   }
 
-  Future<void> _openMessage(TopicListItem topic, String counterpartTitle) {
+  Future<void> _openMessage(
+    TopicListItem topic,
+    String counterpartTitle,
+    String? counterpartUsername,
+  ) {
     return Navigator.of(context).push<void>(
       lehuRoute(
         builder: (context) => _MessageDetailPage(
           repository: widget.repository,
           topic: topic,
           counterpartTitle: counterpartTitle,
+          counterpartUsername: counterpartUsername,
         ),
       ),
     );
@@ -451,6 +461,7 @@ class _MessageTopicSelectionPageState
                     repository: widget.repository,
                     topic: topic,
                     counterpartTitle: widget.group.displayName,
+                    counterpartUsername: widget.group.singleUsername,
                   ),
                 ),
               );
@@ -557,11 +568,13 @@ class _MessageDetailPage extends StatefulWidget {
     required this.repository,
     required this.topic,
     required this.counterpartTitle,
+    this.counterpartUsername,
   });
 
   final ForumRepository repository;
   final TopicListItem topic;
   final String counterpartTitle;
+  final String? counterpartUsername;
 
   @override
   State<_MessageDetailPage> createState() => _MessageDetailPageState();
@@ -608,6 +621,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
               title: widget.counterpartTitle,
               subtitle: widget.topic.title,
               onBack: () => Navigator.of(context).pop(),
+              onOpenProfile: _openCounterpartProfile,
               onRefresh: _refreshDetail,
               refreshing: _refreshing,
             ),
@@ -874,6 +888,21 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       ),
     );
   }
+
+  void _openCounterpartProfile() {
+    final username = widget.counterpartUsername;
+    if (username == null || username.isEmpty) {
+      return;
+    }
+    Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => UserProfilePage(
+          repository: widget.repository,
+          username: username,
+        ),
+      ),
+    );
+  }
 }
 
 class _MessageDetailHeader extends StatelessWidget {
@@ -881,6 +910,7 @@ class _MessageDetailHeader extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onBack,
+    this.onOpenProfile,
     required this.onRefresh,
     required this.refreshing,
   });
@@ -888,6 +918,7 @@ class _MessageDetailHeader extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onBack;
+  final VoidCallback? onOpenProfile;
   final Future<void> Function() onRefresh;
   final bool refreshing;
 
@@ -909,31 +940,38 @@ class _MessageDetailHeader extends StatelessWidget {
             icon: const Icon(Icons.arrow_back),
           ),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LehuTextStyles.title(
-                    color: colors.textPrimary,
-                    size: 15.5,
-                    weight: FontWeight.w500,
-                  ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(6),
+              onTap: onOpenProfile,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: LehuTextStyles.title(
+                        color: colors.textPrimary,
+                        size: 15.5,
+                        weight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 12.5,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
           IconButton(
@@ -1545,6 +1583,14 @@ class _PrivateConversationGroup {
 
   TopicListItem get latestTopic => topics.first;
   DateTime? get latestTime => latestTopic.lastPostedAt ?? latestTopic.createdAt;
+
+  String? get singleUsername {
+    if (userIds.length != 1) {
+      return null;
+    }
+    final username = users[userIds.first]?.username;
+    return username == null || username.isEmpty ? null : username;
+  }
 
   String get displayName {
     final names = userIds
