@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/academic_constants.dart';
@@ -73,6 +74,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   static const _forumBadgeRefreshInterval = Duration(seconds: 90);
   static const _backgroundForumBadgeRefreshInterval = Duration(minutes: 5);
   static const _feedLoadMoreThrottle = Duration(milliseconds: 900);
+  static const _exitBackPressInterval = Duration(seconds: 2);
 
   int _tabIndex = 0;
   TopicFeedQuery _feedQuery = const TopicFeedQuery();
@@ -114,6 +116,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Set<String> _seenNotificationKeys = const {};
   bool _notificationSeenKeysInitialized = false;
   DateTime? _lastForumReachabilityCheck;
+  DateTime? _lastExitBackAt;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
   Completer<bool>? _academicWebVpnPreloadCompleter;
@@ -165,76 +168,104 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final canOpenClientSettings = _tabIndex == 0 || _tabIndex == 3;
     final isForumTab = _tabIndex == 1 && _repo.isOnline;
 
-    return Scaffold(
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Column(
-              children: [
-                AppHeader(
-                  title: _headerTitle,
-                  showSettings: canOpenClientSettings,
-                  showSearch: isForumTab,
-                  showCreate: isForumTab,
-                  notificationCount: _notificationBadgeCount,
-                  onSearch: _openSearch,
-                  onCreate: _openCreateTopic,
-                  onSettings: _openClientSettings,
-                  onNotification: _openNotifications,
-                ),
-                Expanded(child: _bodyForTab()),
-              ],
-            ),
-          ),
-          if (_academicWebVpnPreloadCompleter != null)
-            Positioned(
-              left: 0,
-              top: 0,
-              child: AcademicWebVpnPreloader(
-                key: ValueKey(_academicWebVpnPreloadToken),
-                onComplete: _completeAcademicWebVpnPreload,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        _handleRootPop(didPop);
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  AppHeader(
+                    title: _headerTitle,
+                    showSettings: canOpenClientSettings,
+                    showSearch: isForumTab,
+                    showCreate: isForumTab,
+                    notificationCount: _notificationBadgeCount,
+                    onSearch: _openSearch,
+                    onCreate: _openCreateTopic,
+                    onSettings: _openClientSettings,
+                    onNotification: _openNotifications,
+                  ),
+                  Expanded(child: _bodyForTab()),
+                ],
               ),
             ),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _tabIndex,
-        onTap: (index) {
-          final shouldRefreshMessages = index == 2 &&
-              _repo.isOnline &&
-              (index == _tabIndex || _messageBadgeCount > 0);
-          setState(() {
-            _tabIndex = index;
-            if (shouldRefreshMessages) {
-              _messageRefreshSignal++;
+            if (_academicWebVpnPreloadCompleter != null)
+              Positioned(
+                left: 0,
+                top: 0,
+                child: AcademicWebVpnPreloader(
+                  key: ValueKey(_academicWebVpnPreloadToken),
+                  onComplete: _completeAcademicWebVpnPreload,
+                ),
+              ),
+          ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _tabIndex,
+          onTap: (index) {
+            final shouldRefreshMessages = index == 2 &&
+                _repo.isOnline &&
+                (index == _tabIndex || _messageBadgeCount > 0);
+            setState(() {
+              _tabIndex = index;
+              if (shouldRefreshMessages) {
+                _messageRefreshSignal++;
+              }
+            });
+            if (index == 2) {
+              unawaited(_markMessageBadgeSeen());
+              unawaited(_refreshForumBadgesQuietly());
             }
-          });
-          if (index == 2) {
-            unawaited(_markMessageBadgeSeen());
-            unawaited(_refreshForumBadgesQuietly());
-          }
-          if (index == 0) {
-            unawaited(_refreshScheduleSummaryQuietly());
-            unawaited(_refreshForumReachabilityQuietly());
-            unawaited(_refreshAnnouncementSummaryQuietly());
-          }
-        },
-        items: [
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard), label: '首页'),
-          const BottomNavigationBarItem(icon: Icon(Icons.forum), label: '论坛'),
-          BottomNavigationBarItem(
-            icon: _TabBadgeIcon(
-              icon: Icons.chat_bubble_outline,
-              count: _messageBadgeCount,
+            if (index == 0) {
+              unawaited(_refreshScheduleSummaryQuietly());
+              unawaited(_refreshForumReachabilityQuietly());
+              unawaited(_refreshAnnouncementSummaryQuietly());
+            }
+          },
+          items: [
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard), label: '首页'),
+            const BottomNavigationBarItem(icon: Icon(Icons.forum), label: '论坛'),
+            BottomNavigationBarItem(
+              icon: _TabBadgeIcon(
+                icon: Icons.chat_bubble_outline,
+                count: _messageBadgeCount,
+              ),
+              label: '消息',
             ),
-            label: '消息',
-          ),
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle), label: '我'),
-        ],
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.account_circle), label: '我'),
+          ],
+        ),
       ),
     );
+  }
+
+  void _handleRootPop(bool didPop) {
+    if (didPop) {
+      return;
+    }
+    final now = DateTime.now();
+    final lastExitBackAt = _lastExitBackAt;
+    if (lastExitBackAt != null &&
+        now.difference(lastExitBackAt) <= _exitBackPressInterval) {
+      SystemNavigator.pop();
+      return;
+    }
+    _lastExitBackAt = now;
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('再按一次退出程序'),
+          duration: _exitBackPressInterval,
+        ),
+      );
   }
 
   @override
