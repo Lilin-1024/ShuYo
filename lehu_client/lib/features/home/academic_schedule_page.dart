@@ -134,8 +134,11 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         _displayedWeek =
             widget.repository.activeWeekFromState(schedule, weekState);
       });
-      await widget.notificationService.syncScheduleReminders();
-      _showSnack('课表已同步');
+      final reminderCount =
+          await widget.notificationService.syncScheduleReminders(
+        requestPermission: true,
+      );
+      _showScheduleReminderSnack('课表已同步', reminderCount);
     } on AcademicAuthException catch (_) {
       await _handleLoginRequired();
     } on Object catch (error) {
@@ -190,8 +193,11 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       return;
     }
     setState(() => _weekState = weekState);
-    await widget.notificationService.syncScheduleReminders();
-    _showSnack('已设为当前周');
+    final reminderCount =
+        await widget.notificationService.syncScheduleReminders(
+      requestPermission: true,
+    );
+    _showScheduleReminderSnack('已设为当前周', reminderCount);
   }
 
   Future<void> _openMoreMenu() async {
@@ -275,7 +281,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       return;
     }
     if (next.enabled && !saved.enabled) {
-      _showSnack('系统通知权限未开启，课程提醒已关闭');
+      _showSnack('系统通知或精确提醒权限未开启，课程提醒已关闭');
       return;
     }
     _showSnack(
@@ -290,6 +296,14 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  void _showScheduleReminderSnack(String prefix, int reminderCount) {
+    if (reminderCount > 0) {
+      _showSnack('$prefix，已安排 $reminderCount 条课程提醒');
+      return;
+    }
+    _showSnack('$prefix，未安排课程提醒，请检查通知/精确提醒权限或当前周设置');
   }
 
   Future<void> _showErrorDialog({

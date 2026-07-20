@@ -734,8 +734,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return;
       }
       setState(() => _scheduleSummaryText = summary.text);
-      unawaited(_scheduleNotificationService.syncScheduleReminders());
-      _showSnack('WebVPN已登录，课表已同步');
+      final reminderCount =
+          await _scheduleNotificationService.syncScheduleReminders(
+        requestPermission: true,
+      );
+      _showSnack(
+        'WebVPN已登录，课表已同步'
+      );
       debugPrint('[LEHU_WEBVPN] schedule-sync success');
     } on AcademicAuthException catch (error) {
       debugPrint('[LEHU_WEBVPN] schedule-sync auth-error: $error');
