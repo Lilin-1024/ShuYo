@@ -530,11 +530,15 @@ class _PostView extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          Padding(
-            padding: EdgeInsets.only(right: compact ? 10 : 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: contentWidgets,
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onLongPress: () => _copyText(context),
+            child: Padding(
+              padding: EdgeInsets.only(right: compact ? 10 : 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: contentWidgets,
+              ),
             ),
           ),
           Row(
@@ -568,6 +572,21 @@ class _PostView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _copyText(BuildContext context) async {
+    final text = HtmlText.toPlainText(post.cooked).trim();
+    final messenger = ScaffoldMessenger.of(context);
+    if (text.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('没有可复制的文字')),
+      );
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: text));
+    messenger.showSnackBar(
+      const SnackBar(content: Text('已复制')),
     );
   }
 }
