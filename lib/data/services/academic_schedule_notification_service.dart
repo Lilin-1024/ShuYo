@@ -73,10 +73,12 @@ class AcademicScheduleNotificationService {
   }) async {
     var next = settings;
     if (next.enabled) {
-      final allowed = await _ensureNotificationPermission(
+      final notificationAllowed = await _ensureNotificationPermission(
         request: requestPermission,
       );
-      if (!allowed) {
+      final exactAllowed = notificationAllowed &&
+          await _ensureExactAlarmPermission(request: requestPermission);
+      if (!notificationAllowed || !exactAllowed) {
         next = next.copyWith(enabled: false);
       }
     }
@@ -106,6 +108,12 @@ class AcademicScheduleNotificationService {
     if (!allowed) {
       return 0;
     }
+    final exactAllowed = await _ensureExactAlarmPermission(
+      request: requestPermission,
+    );
+    if (!exactAllowed) {
+      return 0;
+    }
 
     final schedule = await _repository.loadCachedSchedule();
     if (schedule == null) {
@@ -130,7 +138,7 @@ class AcademicScheduleNotificationService {
           timezone.local,
         ),
         notificationDetails: _notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: 'course:${reminder.session.id}',
       );
     }
@@ -197,6 +205,22 @@ class AcademicScheduleNotificationService {
       }
     }
 
+    return true;
+  }
+
+  Future<bool> _ensureExactAlarmPermission({required bool request}) async {
+    await _ensureInitialized();
+    final android = _notifications.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    final canScheduleExact = await android?.canScheduleExactNotifications();
+    if (canScheduleExact == false && request) {
+      final granted = await android?.requestExactAlarmsPermission();
+      if (granted == false) {
+        return false;
+      }
+    } else if (canScheduleExact == false) {
+      return false;
+    }
     return true;
   }
 
