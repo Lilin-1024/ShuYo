@@ -96,7 +96,7 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
       context,
       title: '登录说明',
       message:
-          '这里会打开论坛网页登录页面。\n\n如果你是新用户，请点击“注册”完成注册。\n\n如果你是老用户，请直接点击登录.\n\n账号和密码只会在网页中输入，客户端不会收集或保存你的账号密码。登录完成后返回客户端即可继续使用。',
+          '这里会打开论坛网页登录页面。\n\n如果你是新用户，请点击“注册”完成注册。\n\n如果你是老用户，请直接点击登录。\n\n账号和密码只会在网页中输入，客户端不会收集或保存你的账号密码。登录完成后返回客户端即可继续使用。',
       confirmDelay: const Duration(seconds: 5),
     );
     _noticeShowing = false;
@@ -141,7 +141,7 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
     if (path.startsWith('/auth/')) {
       return false;
     }
-    return path == '/';
+    return path == '/' || path == '/latest' || path == '/latest/';
   }
 
   void _handleSslAuthError(SslAuthError error) {

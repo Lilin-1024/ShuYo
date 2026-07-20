@@ -30,10 +30,12 @@ class MessagesPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.onLoginRequired,
+    this.refreshSignal = 0,
   });
 
   final ForumRepository repository;
   final VoidCallback onLoginRequired;
+  final int refreshSignal;
 
   @override
   State<MessagesPage> createState() => _MessagesPageState();
@@ -70,6 +72,10 @@ class _MessagesPageState extends State<MessagesPage> {
       _error = null;
       _loading = true;
       unawaited(_loadInitial());
+      return;
+    }
+    if (oldWidget.refreshSignal != widget.refreshSignal) {
+      unawaited(_refreshList());
     }
   }
 

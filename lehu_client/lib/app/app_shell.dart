@@ -8,6 +8,7 @@ import '../core/academic_url_resolver.dart';
 import '../core/client_app_info.dart';
 import '../core/forum_url_resolver.dart';
 import '../data/models/forum_activity.dart';
+import '../data/models/forum_notification.dart';
 import '../data/models/topic.dart';
 import '../data/repositories/client_backend_repository.dart';
 import '../data/repositories/academic_schedule_repository.dart';
@@ -19,6 +20,7 @@ import '../data/services/academic_schedule_notification_service.dart';
 import '../data/services/academic_schedule_api_client.dart';
 import '../data/services/client_settings_service.dart';
 import '../data/services/discourse_api_client.dart';
+import '../data/services/forum_badge_notification_service.dart';
 import '../data/services/forum_image_headers.dart';
 import '../data/services/forum_reachability_service.dart';
 import '../features/auth/login_webview_page.dart';
@@ -66,9 +68,10 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   static const _forumAccessModeReloadTimeout = Duration(seconds: 12);
   static const _forumBadgeRefreshInterval = Duration(seconds: 90);
+  static const _backgroundForumBadgeRefreshInterval = Duration(minutes: 5);
   static const _feedLoadMoreThrottle = Duration(milliseconds: 900);
 
   int _tabIndex = 0;
@@ -81,6 +84,7 @@ class _AppShellState extends State<AppShell> {
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
   late final ClientSettingsService _clientSettingsService;
+  late final ForumBadgeNotificationService _forumBadgeNotificationService;
   late final ClientBackendRepository _clientBackendRepository;
   late final ForumReachabilityService _forumReachabilityService;
   late final AnnouncementRepository _announcementRepository;
@@ -97,10 +101,15 @@ class _AppShellState extends State<AppShell> {
   bool _refreshingForumBadges = false;
   bool _checkingForumReachability = false;
   bool _checkingClientBackendPrompts = false;
+  bool _appInForeground = true;
   bool _forumNetworkUnavailable = false;
   bool _autoUseWebVpnProxy = ForumUrlResolver.usesWebVpn;
   int _seenNotificationBadgeCount = 0;
   int _seenMessageBadgeCount = 0;
+  int _localNotificationBadgeCount = 0;
+  int _messageRefreshSignal = 0;
+  Set<String> _seenNotificationKeys = const {};
+  bool _notificationSeenKeysInitialized = false;
   DateTime? _lastForumReachabilityCheck;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
@@ -111,19 +120,23 @@ class _AppShellState extends State<AppShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _repo = widget.repository;
     _scheduleRepository = AcademicScheduleRepository();
     _scheduleNotificationService = AcademicScheduleNotificationService(
       repository: _scheduleRepository,
     );
     _clientSettingsService = ClientSettingsService();
+    _forumBadgeNotificationService = ForumBadgeNotificationService(
+      settingsService: _clientSettingsService,
+    );
     _clientBackendRepository = ClientBackendRepository();
     _forumReachabilityService = const ForumReachabilityService();
     _announcementRepository = AnnouncementRepository();
     _classroomRepository = ClassroomRepository();
     _courseRatingRepository = CourseRatingRepository();
     _resetFeedFuture();
-    unawaited(_loadLocalForumBadges());
+    unawaited(_initializeForumBadges());
     unawaited(_refreshScheduleSummaryQuietly());
     unawaited(_loadNetworkSettings());
     unawaited(_refreshForumReachabilityQuietly(force: true));
@@ -137,10 +150,7 @@ class _AppShellState extends State<AppShell> {
       AnnouncementRepository.defaultAutoRefreshInterval,
       (_) => _refreshAnnouncementSummaryQuietly(),
     );
-    _forumBadgeRefreshTimer = Timer.periodic(
-      _forumBadgeRefreshInterval,
-      (_) => unawaited(_refreshForumBadgesQuietly()),
-    );
+    _startForumBadgeRefreshTimer(_forumBadgeRefreshInterval);
     unawaited(_scheduleNotificationService.syncScheduleReminders());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_checkClientBackendPrompts());
@@ -187,9 +197,15 @@ class _AppShellState extends State<AppShell> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _tabIndex,
         onTap: (index) {
-          setState(() => _tabIndex = index);
+          setState(() {
+            _tabIndex = index;
+            if (index == 2 && _repo.isOnline) {
+              _messageRefreshSignal++;
+            }
+          });
           if (index == 2) {
             unawaited(_markMessageBadgeSeen());
+            unawaited(_refreshForumBadgesQuietly());
           }
           if (index == 0) {
             unawaited(_refreshScheduleSummaryQuietly());
@@ -220,7 +236,45 @@ class _AppShellState extends State<AppShell> {
     _scheduleSummaryTimer?.cancel();
     _announcementSummaryTimer?.cancel();
     _forumBadgeRefreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _appInForeground = true;
+      _startForumBadgeRefreshTimer(_forumBadgeRefreshInterval);
+      unawaited(_refreshAfterAppResumed());
+      return;
+    }
+    _appInForeground = false;
+    _startForumBadgeRefreshTimer(_backgroundForumBadgeRefreshInterval);
+  }
+
+  void _startForumBadgeRefreshTimer(Duration interval) {
+    _forumBadgeRefreshTimer?.cancel();
+    _forumBadgeRefreshTimer = Timer.periodic(
+      interval,
+      (_) => unawaited(_refreshForumBadgesFromTimer()),
+    );
+  }
+
+  Future<void> _refreshForumBadgesFromTimer() async {
+    final notify = !_appInForeground;
+    await _refreshForumBadgesQuietly(notify: notify);
+    if (notify || !mounted || _tabIndex != 2 || !_repo.isOnline) {
+      return;
+    }
+    setState(() => _messageRefreshSignal++);
+  }
+
+  Future<void> _refreshAfterAppResumed() async {
+    await _refreshForumBadgesQuietly();
+    if (!mounted || _tabIndex != 2 || !_repo.isOnline) {
+      return;
+    }
+    setState(() => _messageRefreshSignal++);
   }
 
   String get _headerTitle {
@@ -238,9 +292,12 @@ class _AppShellState extends State<AppShell> {
       return 0;
     }
     final count = _repo.unreadNotificationCount;
-    return count <= _seenNotificationBadgeCount
+    final sessionBadgeCount = count <= _seenNotificationBadgeCount
         ? 0
         : count - _seenNotificationBadgeCount;
+    return sessionBadgeCount > _localNotificationBadgeCount
+        ? sessionBadgeCount
+        : _localNotificationBadgeCount;
   }
 
   int get _messageBadgeCount {
@@ -257,8 +314,17 @@ class _AppShellState extends State<AppShell> {
     return 'forum.badge.seen.notifications.$username';
   }
 
+  String _notificationFeedSeenKeysKey(String username) {
+    return 'forum.badge.seen.notification_activity_keys.v2.$username';
+  }
+
   String _messageBadgeSeenKey(String username) {
     return 'forum.badge.seen.messages.$username';
+  }
+
+  Future<void> _initializeForumBadges() async {
+    await _loadLocalForumBadges();
+    await _refreshForumBadgesQuietly();
   }
 
   Future<void> _loadLocalForumBadges() async {
@@ -267,6 +333,9 @@ class _AppShellState extends State<AppShell> {
         setState(() {
           _seenNotificationBadgeCount = 0;
           _seenMessageBadgeCount = 0;
+          _localNotificationBadgeCount = 0;
+          _seenNotificationKeys = const {};
+          _notificationSeenKeysInitialized = false;
         });
       }
       return;
@@ -276,6 +345,8 @@ class _AppShellState extends State<AppShell> {
     final notificationCount =
         prefs.getInt(_notificationBadgeSeenKey(username)) ?? 0;
     final messageCount = prefs.getInt(_messageBadgeSeenKey(username)) ?? 0;
+    final notificationKeys =
+        prefs.getStringList(_notificationFeedSeenKeysKey(username));
     final normalizedNotificationCount =
         notificationCount.clamp(0, _repo.unreadNotificationCount);
     final normalizedMessageCount =
@@ -286,6 +357,9 @@ class _AppShellState extends State<AppShell> {
     setState(() {
       _seenNotificationBadgeCount = normalizedNotificationCount;
       _seenMessageBadgeCount = normalizedMessageCount;
+      _localNotificationBadgeCount = 0;
+      _seenNotificationKeys = notificationKeys?.toSet() ?? const {};
+      _notificationSeenKeysInitialized = notificationKeys != null;
     });
     if (normalizedNotificationCount != notificationCount) {
       unawaited(
@@ -308,9 +382,31 @@ class _AppShellState extends State<AppShell> {
     }
     final username = _forumBadgeCacheUserKey;
     final count = _repo.unreadNotificationCount;
-    setState(() => _seenNotificationBadgeCount = count);
+    Set<String>? notificationKeys;
+    try {
+      notificationKeys = await _fetchCurrentNotificationKeys();
+    } on Object {
+      notificationKeys = null;
+    }
+    if (!mounted || !_repo.isOnline || username != _forumBadgeCacheUserKey) {
+      return;
+    }
+    setState(() {
+      _seenNotificationBadgeCount = count;
+      _localNotificationBadgeCount = 0;
+      if (notificationKeys != null) {
+        _seenNotificationKeys = notificationKeys;
+        _notificationSeenKeysInitialized = true;
+      }
+    });
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_notificationBadgeSeenKey(username), count);
+    if (notificationKeys != null) {
+      await prefs.setStringList(
+        _notificationFeedSeenKeysKey(username),
+        _sortedNotificationKeys(notificationKeys),
+      );
+    }
   }
 
   Future<void> _markMessageBadgeSeen() async {
@@ -324,17 +420,38 @@ class _AppShellState extends State<AppShell> {
     await prefs.setInt(_messageBadgeSeenKey(username), count);
   }
 
-  Future<void> _refreshForumBadgesQuietly() async {
+  Future<void> _refreshForumBadgesQuietly({bool notify = false}) async {
     if (_refreshingForumBadges || _reloadingSession || !_repo.isOnline) {
       return;
     }
     _refreshingForumBadges = true;
     final username = _forumBadgeCacheUserKey;
+    final previousNotificationCount = _repo.unreadNotificationCount;
+    final previousMessageCount = _repo.unreadPrivateMessageCount;
+    final previousLocalNotificationBadgeCount = _localNotificationBadgeCount;
     try {
       await _repo.refreshSession();
       if (!mounted || !_repo.isOnline || username != _forumBadgeCacheUserKey) {
         return;
       }
+      final notificationFeedBadge = await _loadNotificationFeedBadge();
+      if (!mounted || !_repo.isOnline || username != _forumBadgeCacheUserKey) {
+        return;
+      }
+      final newNotificationCount = _positiveDelta(
+        previousNotificationCount,
+        _repo.unreadNotificationCount,
+      );
+      final newLocalNotificationCount = notificationFeedBadge == null
+          ? 0
+          : _positiveDelta(
+              previousLocalNotificationBadgeCount,
+              notificationFeedBadge.count,
+            );
+      final newMessageCount = _positiveDelta(
+        previousMessageCount,
+        _repo.unreadPrivateMessageCount,
+      );
       final normalizedNotificationCount =
           _seenNotificationBadgeCount.clamp(0, _repo.unreadNotificationCount);
       final normalizedMessageCount =
@@ -345,6 +462,13 @@ class _AppShellState extends State<AppShell> {
       setState(() {
         _seenNotificationBadgeCount = normalizedNotificationCount;
         _seenMessageBadgeCount = normalizedMessageCount;
+        if (notificationFeedBadge != null) {
+          _localNotificationBadgeCount = notificationFeedBadge.count;
+          if (notificationFeedBadge.baselineKeys != null) {
+            _seenNotificationKeys = notificationFeedBadge.baselineKeys!;
+            _notificationSeenKeysInitialized = true;
+          }
+        }
       });
       if (shouldPersist) {
         final prefs = await SharedPreferences.getInstance();
@@ -356,11 +480,69 @@ class _AppShellState extends State<AppShell> {
           prefs.setInt(_messageBadgeSeenKey(username), normalizedMessageCount),
         ]);
       }
+      final baselineKeys = notificationFeedBadge?.baselineKeys;
+      if (baselineKeys != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList(
+          _notificationFeedSeenKeysKey(username),
+          _sortedNotificationKeys(baselineKeys),
+        );
+      }
+      if (notify) {
+        unawaited(
+          _forumBadgeNotificationService.showBadgeSummary(
+            newNotifications: newNotificationCount > newLocalNotificationCount
+                ? newNotificationCount
+                : newLocalNotificationCount,
+            newMessages: newMessageCount,
+          ),
+        );
+      }
     } on Object {
       // 后台刷新红点失败不打扰用户，下一轮会继续尝试。
     } finally {
       _refreshingForumBadges = false;
     }
+  }
+
+  int _positiveDelta(int previous, int current) {
+    if (current <= previous) {
+      return 0;
+    }
+    return current - previous;
+  }
+
+  Future<_NotificationFeedBadge?> _loadNotificationFeedBadge() async {
+    final keys = await _fetchCurrentNotificationKeys();
+    if (!_notificationSeenKeysInitialized) {
+      return _NotificationFeedBadge(count: 0, baselineKeys: keys);
+    }
+    final count =
+        keys.where((key) => !_seenNotificationKeys.contains(key)).length;
+    return _NotificationFeedBadge(count: count);
+  }
+
+  Future<Set<String>> _fetchCurrentNotificationKeys() async {
+    final notifications = await _repo.fetchNotifications(
+      NotificationFeedFilter.all,
+      forceRefresh: true,
+    );
+    return notifications.map(_notificationKey).toSet();
+  }
+
+  String _notificationKey(ForumNotification notification) {
+    final createdAt = notification.createdAt?.millisecondsSinceEpoch ?? 0;
+    return [
+      notification.kind,
+      notification.topicId ?? 0,
+      notification.postNumber ?? 0,
+      notification.id,
+      createdAt,
+    ].join(':');
+  }
+
+  List<String> _sortedNotificationKeys(Set<String> keys) {
+    return keys.toList()..sort();
   }
 
   Widget _bodyForTab() {
@@ -378,6 +560,7 @@ class _AppShellState extends State<AppShell> {
           ? MessagesPage(
               repository: _repo,
               onLoginRequired: _openProfileLoginTab,
+              refreshSignal: _messageRefreshSignal,
             )
           : _LoginRequiredTab(
               icon: Icons.chat_bubble,
@@ -934,6 +1117,7 @@ class _AppShellState extends State<AppShell> {
         builder: (context) => ClientSettingsPage(
           settingsService: _clientSettingsService,
           scheduleNotificationService: _scheduleNotificationService,
+          forumBadgeNotificationService: _forumBadgeNotificationService,
           backendRepository: _clientBackendRepository,
           selectedThemeId: widget.selectedThemeId,
           onThemeChanged: widget.onThemeChanged,
@@ -1029,7 +1213,7 @@ class _AppShellState extends State<AppShell> {
         _activityCountsFuture = null;
         _resetFeedFuture();
       });
-      unawaited(_loadLocalForumBadges());
+      unawaited(_initializeForumBadges());
       _showSnack('已加载论坛');
       unawaited(_checkClientBackendPrompts());
     } on Object catch (error) {
@@ -1070,7 +1254,7 @@ class _AppShellState extends State<AppShell> {
         _activityCountsFuture = null;
         _resetFeedFuture();
       });
-      unawaited(_loadLocalForumBadges());
+      unawaited(_initializeForumBadges());
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -1102,7 +1286,7 @@ class _AppShellState extends State<AppShell> {
         _activityCountsFuture = null;
         _resetFeedFuture();
       });
-      unawaited(_loadLocalForumBadges());
+      unawaited(_initializeForumBadges());
       _showSnack('已退出登录');
     } on Object catch (error) {
       if (!mounted) {
@@ -1131,7 +1315,7 @@ class _AppShellState extends State<AppShell> {
       _activityCountsFuture = null;
       _resetFeedFuture();
     });
-    unawaited(_loadLocalForumBadges());
+    unawaited(_initializeForumBadges());
   }
 
   Future<void> _openAcademicSystem() async {
@@ -1313,7 +1497,7 @@ class _AppShellState extends State<AppShell> {
         _activityCountsFuture = null;
         _resetFeedFuture();
       });
-      unawaited(_loadLocalForumBadges());
+      unawaited(_initializeForumBadges());
       if (nextRepository.isOnline) {
         _showSnack('已切换论坛访问方式');
       }
@@ -1472,6 +1656,16 @@ class _LoginRequiredTab extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NotificationFeedBadge {
+  const _NotificationFeedBadge({
+    required this.count,
+    this.baselineKeys,
+  });
+
+  final int count;
+  final Set<String>? baselineKeys;
 }
 
 class _TabBadgeIcon extends StatelessWidget {

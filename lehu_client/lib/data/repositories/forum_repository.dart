@@ -1148,7 +1148,7 @@ class OnlineForumRepository implements ForumRepository {
         for (final list in lists)
           for (final item in list)
             if (seen.add(
-              '${item.kind}:${item.topicId ?? 0}:${item.postNumber ?? 0}:${item.id}',
+              _notificationMergeKey(item),
             ))
               item,
       ];
@@ -1489,6 +1489,19 @@ class OnlineForumRepository implements ForumRepository {
           .toList();
     }
     return const [];
+  }
+
+  String _notificationMergeKey(ForumNotification item) {
+    final createdAt = item.createdAt?.millisecondsSinceEpoch ?? 0;
+    return [
+      item.kind,
+      item.topicId ?? 0,
+      item.postNumber ?? 0,
+      item.id,
+      createdAt,
+      item.title,
+      item.message,
+    ].join(':');
   }
 
   String _notificationKind(NotificationFeedFilter filter) {

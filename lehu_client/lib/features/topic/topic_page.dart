@@ -275,7 +275,7 @@ class _ThreadedPostView extends StatelessWidget {
       children: [
         _PostView(
           post: post,
-          canLike: !post.yours,
+          canLike: true,
           canReply: canReply && !isSubmittingReply,
           canDelete: post.postNumber != 1 && post.yours && post.canDelete,
           isLiking: busyLikePostIds.contains(post.id),
@@ -357,7 +357,7 @@ class _NestedReplies extends StatelessWidget {
               replyContext: reply.replyToPostNumber == parent.postNumber
                   ? null
                   : '回复 #${reply.replyToPostNumber}',
-              canLike: !reply.yours,
+              canLike: true,
               canReply: canReply,
               canDelete:
                   reply.postNumber != 1 && reply.yours && reply.canDelete,
@@ -541,7 +541,7 @@ class _PostView extends StatelessWidget {
             children: [
               if (canLike)
                 TextButton.icon(
-                  onPressed: isLiking ? null : onLike,
+                  onPressed: post.yours || isLiking ? null : onLike,
                   icon: isLiking
                       ? const _TinyProgress()
                       : Icon(
