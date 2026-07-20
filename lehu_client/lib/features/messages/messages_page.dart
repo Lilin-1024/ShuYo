@@ -1116,42 +1116,61 @@ class _MessageBubble extends StatelessWidget {
         constraints: BoxConstraints(
           maxWidth: MediaQuery.sizeOf(context).width * 0.78,
         ),
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 5),
-          padding: const EdgeInsets.fromLTRB(12, 9, 12, 8),
-          decoration: BoxDecoration(
-            color: bubbleColor,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            crossAxisAlignment:
-                mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-            children: [
-              Text(
-                post.username,
-                style: TextStyle(
-                  color: secondaryText,
-                  fontSize: 12.5,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onLongPress: () => _copyText(context),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 5),
+            padding: const EdgeInsets.fromLTRB(12, 9, 12, 8),
+            decoration: BoxDecoration(
+              color: bubbleColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment:
+                  mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Text(
+                  post.username,
+                  style: TextStyle(
+                    color: secondaryText,
+                    fontSize: 12.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              _MessageCookedContent(
-                cooked: post.cooked,
-                textColor: primaryText,
-                onOpenImage: onOpenImage,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                TimeFormat.compact(post.createdAt),
-                style: TextStyle(
-                  color: timeText,
-                  fontSize: 11.5,
+                const SizedBox(height: 4),
+                _MessageCookedContent(
+                  cooked: post.cooked,
+                  textColor: primaryText,
+                  onOpenImage: onOpenImage,
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  TimeFormat.compact(post.createdAt),
+                  style: TextStyle(
+                    color: timeText,
+                    fontSize: 11.5,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _copyText(BuildContext context) async {
+    final text = HtmlText.toPlainText(post.cooked).trim();
+    final messenger = ScaffoldMessenger.of(context);
+    if (text.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('没有可复制的文字')),
+      );
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: text));
+    messenger.showSnackBar(
+      const SnackBar(content: Text('已复制')),
     );
   }
 }
