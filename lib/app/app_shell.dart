@@ -80,6 +80,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _loadingMoreFeed = false;
   String? _loadMoreFeedError;
   DateTime? _lastLoadMoreFeedAttempt;
+  final _feedSnapshots = <String, List<TopicListItem>>{};
+  final _feedRequestTokens = <String, int>{};
+  int _feedRequestSequence = 0;
   late ForumRepository _repo;
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
@@ -197,9 +200,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _tabIndex,
         onTap: (index) {
+          final shouldRefreshMessages = index == 2 &&
+              _repo.isOnline &&
+              (index == _tabIndex || _messageBadgeCount > 0);
           setState(() {
             _tabIndex = index;
-            if (index == 2 && _repo.isOnline) {
+            if (shouldRefreshMessages) {
               _messageRefreshSignal++;
             }
           });
@@ -546,29 +552,31 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Widget _bodyForTab() {
-    return switch (_tabIndex) {
-      0 => _homeBody(),
-      1 => _repo.isOnline
-          ? _forumBody()
-          : _LoginRequiredTab(
-              icon: Icons.forum,
-              title: '登录以查看论坛',
-              message: '论坛需要登录后访问哦',
-              onTap: _openProfileLoginTab,
-            ),
-      2 => _repo.isOnline
-          ? MessagesPage(
-              repository: _repo,
-              onLoginRequired: _openProfileLoginTab,
-              refreshSignal: _messageRefreshSignal,
-            )
-          : _LoginRequiredTab(
-              icon: Icons.chat_bubble,
-              title: '登录后查看消息',
-              message: '立即登录！查看论坛私信',
-              onTap: _openProfileLoginTab,
-            ),
-      3 => ProfilePage(
+    return IndexedStack(
+      index: _tabIndex,
+      children: [
+        _homeBody(),
+        _repo.isOnline
+            ? _forumBody()
+            : _LoginRequiredTab(
+                icon: Icons.forum,
+                title: '登录以查看论坛',
+                message: '论坛需要登录后访问哦',
+                onTap: _openProfileLoginTab,
+              ),
+        _repo.isOnline
+            ? MessagesPage(
+                repository: _repo,
+                onLoginRequired: _openProfileLoginTab,
+                refreshSignal: _messageRefreshSignal,
+              )
+            : _LoginRequiredTab(
+                icon: Icons.chat_bubble,
+                title: '登录后查看消息',
+                message: '立即登录！查看论坛私信',
+                onTap: _openProfileLoginTab,
+              ),
+        ProfilePage(
           profile: _repo.profile,
           summary: _repo.userSummary,
           isOnline: _repo.isOnline,
@@ -578,8 +586,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           activityCountsFuture: _profileActivityCountsFuture,
           onOpenActivity: (kind) => unawaited(_openProfileActivity(kind)),
         ),
-      _ => const SizedBox.shrink(),
-    };
+      ],
+    );
   }
 
   Future<ForumActivityCounts>? get _profileActivityCountsFuture {
@@ -734,13 +742,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return;
       }
       setState(() => _scheduleSummaryText = summary.text);
-      final reminderCount =
-          await _scheduleNotificationService.syncScheduleReminders(
+      await _scheduleNotificationService.syncScheduleReminders(
         requestPermission: true,
       );
-      _showSnack(
-        'WebVPN已登录，课表已同步'
-      );
+      _showSnack('WebVPN已登录，课表已同步');
       debugPrint('[LEHU_WEBVPN] schedule-sync success');
     } on AcademicAuthException catch (error) {
       debugPrint('[LEHU_WEBVPN] schedule-sync auth-error: $error');
@@ -878,21 +883,25 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     required String? loadMoreError,
     required Future<void> Function() loadMore,
   }) {
+    final cachedTopics = _feedSnapshots[_feedQuery.key];
     return FutureBuilder<List<TopicListItem>>(
       future: future,
+      initialData: cachedTopics,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        final topics = snapshot.data ?? cachedTopics;
+        if (topics == null &&
+            snapshot.connectionState != ConnectionState.done) {
           return const _LoadingState(message: '正在加载列表...');
         }
-        if (snapshot.hasError) {
+        if (topics == null && snapshot.hasError) {
           return _ErrorState(
             title: '列表加载失败',
             message: snapshot.error.toString(),
             onRetry: () => refresh(),
           );
         }
-        final topics = snapshot.data ?? const <TopicListItem>[];
-        if (topics.isEmpty) {
+        final visibleTopics = topics ?? const <TopicListItem>[];
+        if (visibleTopics.isEmpty) {
           return RefreshIndicator(
             onRefresh: refresh,
             child: ListView(
@@ -911,7 +920,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return RefreshIndicator(
           onRefresh: refresh,
           child: TopicListPage(
-            topics: topics,
+            topics: visibleTopics,
             users: _repo.users,
             previewForTopic: _repo.fetchTopicPreview,
             categoryById: _repo.categoryById,
@@ -928,12 +937,36 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   void _resetFeedFuture({bool forceRefresh = false}) {
-    _feedFuture = _repo.fetchTopicFeed(
-      _feedQuery,
-      forceRefresh: forceRefresh,
+    final query = _feedQuery;
+    _feedFuture = _cacheFeedFuture(
+      query.key,
+      _repo.fetchTopicFeed(
+        query,
+        forceRefresh: forceRefresh,
+      ),
     );
     _loadingMoreFeed = false;
     _loadMoreFeedError = null;
+  }
+
+  Future<List<TopicListItem>> _cacheFeedFuture(
+    String queryKey,
+    Future<List<TopicListItem>> future,
+  ) {
+    final token = ++_feedRequestSequence;
+    _feedRequestTokens[queryKey] = token;
+    return future.then((topics) {
+      if (_feedRequestTokens[queryKey] == token) {
+        _feedSnapshots[queryKey] = topics;
+      }
+      return topics;
+    });
+  }
+
+  void _clearFeedSnapshots() {
+    _feedSnapshots.clear();
+    _feedRequestTokens.clear();
+    _feedRequestSequence++;
   }
 
   void _setFeedQuery(TopicFeedQuery query, {bool forceRefresh = false}) {
@@ -944,14 +977,30 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshFeed() async {
-    final future = _repo.fetchTopicFeed(_feedQuery, forceRefresh: true);
+    final queryKey = _feedQuery.key;
+    final future = _cacheFeedFuture(
+      queryKey,
+      _repo.fetchTopicFeed(_feedQuery, forceRefresh: true),
+    );
     setState(() {
       _feedFuture = future;
       _loadMoreFeedError = null;
     });
-    await future;
-    if (mounted) {
-      setState(() {});
+    try {
+      await future;
+      if (mounted) {
+        setState(() {});
+      }
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      if (_feedSnapshots[queryKey] != null) {
+        _showSnack('列表刷新失败：${_friendlyError(error)}');
+        setState(() {});
+        return;
+      }
+      rethrow;
     }
   }
 
@@ -979,6 +1028,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return;
       }
       setState(() {
+        _feedSnapshots[queryKey] = topics;
         _feedFuture = Future.value(topics);
       });
     } on Object catch (error) {
@@ -1216,6 +1266,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _repo = nextRepository;
         _reloadingSession = false;
         _activityCountsFuture = null;
+        _clearFeedSnapshots();
         _resetFeedFuture();
       });
       unawaited(_initializeForumBadges());
@@ -1257,6 +1308,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _repo = nextRepository;
         _reloadingSession = false;
         _activityCountsFuture = null;
+        _clearFeedSnapshots();
         _resetFeedFuture();
       });
       unawaited(_initializeForumBadges());
@@ -1289,6 +1341,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _repo = nextRepository;
         _reloadingSession = false;
         _activityCountsFuture = null;
+        _clearFeedSnapshots();
         _resetFeedFuture();
       });
       unawaited(_initializeForumBadges());
@@ -1318,6 +1371,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     setState(() {
       _repo = nextRepository;
       _activityCountsFuture = null;
+      _clearFeedSnapshots();
       _resetFeedFuture();
     });
     unawaited(_initializeForumBadges());
@@ -1500,6 +1554,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _repo = nextRepository;
         _reloadingSession = false;
         _activityCountsFuture = null;
+        _clearFeedSnapshots();
         _resetFeedFuture();
       });
       unawaited(_initializeForumBadges());
