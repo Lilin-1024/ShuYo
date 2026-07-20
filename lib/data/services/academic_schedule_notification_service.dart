@@ -94,7 +94,7 @@ class AcademicScheduleNotificationService {
     final clientSettings = await ClientSettingsService(
       preferencesLoader: _preferencesLoader,
     ).loadNotificationSettings();
-    if (!clientSettings.enabled || !clientSettings.scheduleEnabled) {
+    if (!clientSettings.scheduleEnabled) {
       return 0;
     }
 
