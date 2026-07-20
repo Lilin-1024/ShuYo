@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/client_app_info.dart';
 import '../../data/repositories/client_backend_repository.dart';
@@ -10,7 +11,6 @@ import '../../shared/navigation/lehu_route.dart';
 import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/client_update_prompt.dart';
 import '../../shared/widgets/empty_state.dart';
-import '../webview/forum_webview_page.dart';
 import 'client_feedback_page.dart';
 
 class ClientSettingsPage extends StatelessWidget {
@@ -125,18 +125,26 @@ class ClientSettingsPage extends StatelessWidget {
       if (!context.mounted || !openDownload || !update.hasDownloadUrl) {
         return;
       }
-      await Navigator.of(context).push<void>(
-        lehuRoute(
-          builder: (context) => ForumWebViewPage(
-            title: '下载更新',
-            url: update.downloadUrl,
-          ),
-        ),
-      );
+      await _openExternalDownload(context, update.downloadUrl);
     } on Object catch (error) {
       if (context.mounted) {
         _showSnack(context, '检查更新失败：$error');
       }
+    }
+  }
+
+  Future<void> _openExternalDownload(BuildContext context, String url) async {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null || !uri.hasScheme) {
+      _showSnack(context, '下载链接无效');
+      return;
+    }
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && context.mounted) {
+      _showSnack(context, '无法打开下载链接');
     }
   }
 
