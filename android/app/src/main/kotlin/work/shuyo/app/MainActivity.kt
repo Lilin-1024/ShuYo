@@ -1,4 +1,4 @@
-package cn.edu.shu.lehu_client
+package work.shuyo.app
 
 import android.app.Activity
 import android.content.ContentValues
@@ -20,7 +20,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "cn.edu.shu.lehu_client/image_picker"
+            "work.shuyo.app/image_picker"
         ).setMethodCallHandler { call, result ->
             if (call.method == "pickImage") {
                 pickImage(result)
@@ -30,7 +30,7 @@ class MainActivity : FlutterActivity() {
         }
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "cn.edu.shu.lehu_client/image_saver"
+            "work.shuyo.app/image_saver"
         ).setMethodCallHandler { call, result ->
             if (call.method == "saveImage") {
                 saveImage(
@@ -45,7 +45,7 @@ class MainActivity : FlutterActivity() {
         }
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
-            "cn.edu.shu.lehu_client/emoji_recents"
+            "work.shuyo.app/emoji_recents"
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "getEmojiRecents" -> result.success(loadEmojiRecents())

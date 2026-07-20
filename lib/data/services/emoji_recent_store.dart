@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 class EmojiRecentStore {
   const EmojiRecentStore._();
 
-  static const _channel = MethodChannel('cn.edu.shu.lehu_client/emoji_recents');
+  static const _channel = MethodChannel('work.shuyo.app/emoji_recents');
   static const _maxRecent = 28;
   static List<String> _memoryFallback = const [];
 

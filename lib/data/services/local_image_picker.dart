@@ -5,7 +5,7 @@ import '../models/composer.dart';
 class LocalImagePicker {
   const LocalImagePicker._();
 
-  static const _channel = MethodChannel('cn.edu.shu.lehu_client/image_picker');
+  static const _channel = MethodChannel('work.shuyo.app/image_picker');
 
   static Future<PickedImage?> pickImage() async {
     final result = await _channel.invokeMapMethod<String, Object?>('pickImage');

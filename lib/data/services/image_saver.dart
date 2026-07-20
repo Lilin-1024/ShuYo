@@ -9,7 +9,7 @@ import 'forum_image_headers.dart';
 class ImageSaver {
   const ImageSaver._();
 
-  static const _channel = MethodChannel('cn.edu.shu.lehu_client/image_saver');
+  static const _channel = MethodChannel('work.shuyo.app/image_saver');
 
   static Future<void> saveNetworkImage(String url) async {
     final uri = Uri.parse(url);
