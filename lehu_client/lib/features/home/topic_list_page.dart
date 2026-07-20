@@ -42,12 +42,22 @@ class TopicListPage extends StatefulWidget {
 
 class _TopicListPageState extends State<TopicListPage> {
   final _scrollController = ScrollController();
+  final _previewFutures = <int, Future<TopicPreview>>{};
+  final _previewCache = <int, TopicPreview>{};
   bool _requestingMore = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant TopicListPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final topicIds = widget.topics.map((topic) => topic.id).toSet();
+    _previewFutures.removeWhere((id, _) => !topicIds.contains(id));
+    _previewCache.removeWhere((id, _) => !topicIds.contains(id));
   }
 
   @override
@@ -83,12 +93,29 @@ class _TopicListPageState extends State<TopicListPage> {
           topic: topic,
           user: user,
           category: widget.categoryById(topic.categoryId),
-          previewFuture: widget.previewForTopic(topic.id),
+          previewFuture: _previewForTopic(topic.id),
+          cachedPreview: _previewCache[topic.id],
           onTap: () => widget.onOpenTopic(topic),
           onOpenUser: user == null ? null : () => widget.onOpenUser?.call(user),
         );
       },
     );
+  }
+
+  Future<TopicPreview> _previewForTopic(int id) {
+    return _previewFutures[id] ??= _loadPreview(id);
+  }
+
+  Future<TopicPreview> _loadPreview(int id) async {
+    try {
+      final preview = await widget.previewForTopic(id);
+      _previewCache[id] = preview;
+      return preview;
+    } on Object {
+      _previewFutures.remove(id);
+      return _previewCache[id] ??
+          const TopicPreview(text: '暂无摘要', imageUrls: []);
+    }
   }
 
   bool get _hasFooter =>
@@ -186,6 +213,7 @@ class _TopicListRow extends StatelessWidget {
   const _TopicListRow({
     required this.topic,
     required this.previewFuture,
+    this.cachedPreview,
     required this.onTap,
     this.onOpenUser,
     this.user,
@@ -196,6 +224,7 @@ class _TopicListRow extends StatelessWidget {
   final DiscourseUser? user;
   final ForumCategory? category;
   final Future<TopicPreview> previewFuture;
+  final TopicPreview? cachedPreview;
   final VoidCallback onTap;
   final VoidCallback? onOpenUser;
 
@@ -265,33 +294,18 @@ class _TopicListRow extends StatelessWidget {
             const SizedBox(height: 8),
             FutureBuilder<TopicPreview>(
               future: previewFuture,
+              initialData: cachedPreview,
               builder: (context, snapshot) {
+                final preview = snapshot.data ?? cachedPreview;
+                if (preview != null) {
+                  return _PreviewContent(preview: preview);
+                }
                 if (snapshot.hasError) {
-                  return const Text(
-                    '摘要加载失败',
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.42,
-                      fontWeight: FontWeight.w400,
-                    ),
+                  return const _PreviewContent(
+                    preview: TopicPreview(text: '暂无摘要', imageUrls: []),
                   );
                 }
-                final preview = snapshot.data;
-                if (preview == null) {
-                  return const Text(
-                    '摘要加载中...',
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      height: 1.42,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  );
-                }
-                return _PreviewContent(preview: preview);
+                return const SizedBox.shrink();
               },
             ),
             const SizedBox(height: 12),

@@ -156,6 +156,7 @@ class _MessagesPageState extends State<MessagesPage> {
             ),
             subtitle: _TopicPreviewLine(
               future: _previewForTopic(group.latestTopic),
+              fallback: group.latestTopic.title,
             ),
             trailing: Text(
               TimeFormat.compact(
@@ -224,10 +225,16 @@ class _MessagesPageState extends State<MessagesPage> {
       if (!mounted) {
         return;
       }
+      final visibleTopicIds = topics
+          .where((topic) => !hiddenTopicIds.contains(topic.id))
+          .map((topic) => topic.id)
+          .toSet();
       setState(() {
         _topics = topics;
         _hiddenTopicIds = hiddenTopicIds;
-        _previewFutures.clear();
+        _previewFutures.removeWhere(
+          (topicId, _) => !visibleTopicIds.contains(topicId),
+        );
         _error = null;
       });
     } on Object catch (error) {
@@ -352,8 +359,13 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Future<_MessageTopicPreview> _loadPreview(TopicListItem topic) async {
-    final detail = await widget.repository.fetchTopicDetail(topic.id);
-    return _MessageTopicPreview.fromDetail(detail, topic);
+    try {
+      final detail = await widget.repository.fetchTopicDetail(topic.id);
+      return _MessageTopicPreview.fromDetail(detail, topic);
+    } on Object {
+      _previewFutures.remove(topic.id);
+      return _MessageTopicPreview.fromDetail(null, topic);
+    }
   }
 
   Future<void> _openGroup(_PrivateConversationGroup group) async {
@@ -451,7 +463,10 @@ class _MessageTopicSelectionPageState
                 weight: FontWeight.w500,
               ),
             ),
-            subtitle: _TopicPreviewLine(future: widget.previewForTopic(topic)),
+            subtitle: _TopicPreviewLine(
+              future: widget.previewForTopic(topic),
+              fallback: topic.title,
+            ),
             trailing: Text(
               TimeFormat.compact(
                 topic.lastPostedAt ?? topic.createdAt,
@@ -1511,16 +1526,26 @@ class _MessageCookedContent extends StatelessWidget {
 }
 
 class _TopicPreviewLine extends StatelessWidget {
-  const _TopicPreviewLine({required this.future});
+  const _TopicPreviewLine({
+    required this.future,
+    required this.fallback,
+  });
 
   final Future<_MessageTopicPreview> future;
+  final String fallback;
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_MessageTopicPreview>(
       future: future,
       builder: (context, snapshot) {
-        final text = snapshot.data?.text ?? '摘要加载中...';
+        final previewText = snapshot.data?.text.trim();
+        final fallbackText = fallback.trim();
+        final text = previewText != null && previewText.isNotEmpty
+            ? previewText
+            : fallbackText.isNotEmpty
+                ? fallbackText
+                : '暂无内容';
         return Text(
           text,
           maxLines: 1,
