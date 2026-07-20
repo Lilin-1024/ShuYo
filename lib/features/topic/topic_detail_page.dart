@@ -53,6 +53,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   @override
   void initState() {
     super.initState();
+    _detail = widget.repository.cachedTopicDetail(widget.topic.id);
     _future = widget.repository.fetchTopicDetail(
       widget.topic.id,
       forceRefresh: true,
@@ -86,9 +87,9 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     _detail = snapshot.data;
-                    _scheduleTopicTiming(snapshot.data);
                   }
                   final detail = _detail;
+                  _scheduleTopicTiming(detail);
                   if (detail == null &&
                       snapshot.connectionState != ConnectionState.done) {
                     return const _LoadingState(message: '正在加载帖子...');
@@ -304,7 +305,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
           },
           onReport: () {
             Navigator.of(context).pop();
-            _showSnack('举报功能后续接入');
+            _showSnack('管理层缺失，举报功能暂无效');
           },
           onBookmark: (bookmark) {
             Navigator.of(context).pop();

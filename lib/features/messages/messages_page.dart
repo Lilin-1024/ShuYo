@@ -617,7 +617,9 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadInitial());
+    _detail = widget.repository.cachedTopicDetail(widget.topic.id);
+    _loadingInitial = _detail == null;
+    unawaited(_loadInitial(showLoading: _detail == null));
     _autoRefreshTimer = Timer.periodic(
       _autoRefreshInterval,
       (_) => unawaited(_refreshDetailSilently()),
@@ -702,28 +704,36 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     );
   }
 
-  Future<void> _loadInitial() async {
-    setState(() {
-      _loadingInitial = true;
-      _error = null;
-    });
+  Future<void> _loadInitial({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _loadingInitial = true;
+        _error = null;
+      });
+    }
     try {
-      final detail = await _fetchLatestDetail();
+      final fetched = await _fetchLatestDetail();
+      final detail = _mergeWithCurrentDetail(fetched);
       if (!mounted) {
         return;
       }
       setState(() {
         _detail = detail;
         _loadingInitial = false;
+        _error = null;
       });
     } on Object catch (error) {
       if (!mounted) {
         return;
       }
-      setState(() {
-        _error = error;
-        _loadingInitial = false;
-      });
+      if (_detail == null) {
+        setState(() {
+          _error = error;
+          _loadingInitial = false;
+        });
+      } else {
+        setState(() => _loadingInitial = false);
+      }
     }
   }
 
