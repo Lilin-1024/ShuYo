@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/academic_constants.dart';
 import '../core/academic_url_resolver.dart';
@@ -1559,14 +1560,18 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _openUpdateDownload(String url) async {
-    await Navigator.of(context).push<void>(
-      lehuRoute(
-        builder: (context) => ForumWebViewPage(
-          title: '下载更新',
-          url: url,
-        ),
-      ),
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null || !uri.hasScheme) {
+      _showSnack('下载链接无效');
+      return;
+    }
+    final opened = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
     );
+    if (!opened) {
+      _showSnack('无法打开下载链接');
+    }
   }
 
   Future<void> _reloadForumRepositoryAfterAccessModeChange() async {
