@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/client_app_info.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/client_settings_service.dart';
 import 'app_shell.dart';
@@ -14,13 +15,13 @@ class LehuApp extends StatefulWidget {
 
 class _LehuAppState extends State<LehuApp> {
   final _settingsService = ClientSettingsService();
-  late final Future<ForumRepository> _repositoryFuture;
+  late final Future<ForumRepository> _startupFuture;
   LehuThemeSpec _theme = LehuThemes.byId(LehuThemes.defaultId);
 
   @override
   void initState() {
     super.initState();
-    _repositoryFuture = ForumRepositoryFactory.load();
+    _startupFuture = _loadStartup();
     _loadTheme();
   }
 
@@ -31,7 +32,7 @@ class _LehuAppState extends State<LehuApp> {
       debugShowCheckedModeBanner: false,
       theme: _theme.themeData(),
       home: FutureBuilder<ForumRepository>(
-        future: _repositoryFuture,
+        future: _startupFuture,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return _StartupError(error: snapshot.error.toString());
@@ -48,6 +49,11 @@ class _LehuAppState extends State<LehuApp> {
         },
       ),
     );
+  }
+
+  Future<ForumRepository> _loadStartup() async {
+    await ClientAppInfo.load();
+    return ForumRepositoryFactory.load();
   }
 
   Future<void> _loadTheme() async {
