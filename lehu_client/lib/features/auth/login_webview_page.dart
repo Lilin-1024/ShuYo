@@ -6,6 +6,8 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../core/certificate_policy.dart';
 import '../../core/forum_url_resolver.dart';
+import '../../data/services/discourse_api_client.dart';
+import '../../data/services/forum_auth_service.dart';
 import '../../shared/widgets/info_confirm_dialog.dart';
 
 class LoginWebViewPage extends StatefulWidget {
@@ -19,6 +21,7 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
   late final WebViewController _controller;
   bool _loading = true;
   bool _completed = false;
+  bool _checkingSession = false;
   bool _noticeShowing = false;
   bool _finishAfterNotice = false;
   Uri? _currentUri;
@@ -49,7 +52,7 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
           onSslAuthError: _handleSslAuthError,
         ),
       )
-      ..loadRequest(ForumUrlResolver.uri('/latest'));
+      ..loadRequest(ForumUrlResolver.uri('/login'));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_showLoginNotice());
     });
@@ -62,15 +65,15 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
         title: const Text('登录论坛'),
         actions: [
           TextButton(
-            onPressed: _finishManually,
-            child: const Text('完成'),
+            onPressed: _checkingSession ? null : _finishManually,
+            child: Text(_checkingSession ? '检测中' : '完成'),
           ),
         ],
       ),
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_loading)
+          if (_loading || _checkingSession)
             const LinearProgressIndicator(
               minHeight: 2,
               backgroundColor: Colors.transparent,
@@ -81,10 +84,7 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
   }
 
   void _finishManually() {
-    if (!_completed) {
-      _completed = true;
-      Navigator.of(context).pop(true);
-    }
+    unawaited(_verifyAndComplete(showFailure: true));
   }
 
   Future<void> _showLoginNotice() async {
@@ -102,7 +102,10 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
     _noticeShowing = false;
     if (_finishAfterNotice && mounted && !_completed) {
       _finishAfterNotice = false;
-      _completeLogin();
+      final url = _currentUri?.toString();
+      if (url != null) {
+        unawaited(_finishIfLoggedIn(url));
+      }
     }
   }
 
@@ -111,18 +114,47 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
       return;
     }
     final uri = Uri.tryParse(url);
-    if (!_isForumLoggedInPage(uri)) {
+    if (!_isForumCompletionCandidate(uri)) {
       return;
     }
     if (_noticeShowing) {
       _finishAfterNotice = true;
       return;
     }
-    _completed = true;
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    if (mounted) {
-      Navigator.of(context).pop(true);
+    await _verifyAndComplete();
+  }
+
+  Future<void> _verifyAndComplete({bool showFailure = false}) async {
+    if (!mounted || _completed || _checkingSession) {
+      return;
     }
+    setState(() => _checkingSession = true);
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      if (!await _hasActiveForumSession()) {
+        if (showFailure && mounted) {
+          _showSnack('还没有检测到登录态，请完成登录或注册后再试');
+        }
+        return;
+      }
+      if (mounted) {
+        _completeLogin();
+      }
+    } on Object {
+      if (showFailure && mounted) {
+        _showSnack('还没有检测到登录态，请完成登录或注册后再试');
+      }
+    } finally {
+      if (mounted && !_completed) {
+        setState(() => _checkingSession = false);
+      }
+    }
+  }
+
+  Future<bool> _hasActiveForumSession() async {
+    final client = DiscourseApiClient(authService: ForumAuthService());
+    final json = await client.getJson('/session/current.json');
+    return json['current_user'] is Map;
   }
 
   void _completeLogin() {
@@ -130,7 +162,16 @@ class _LoginWebViewPageState extends State<LoginWebViewPage> {
     Navigator.of(context).pop(true);
   }
 
-  bool _isForumLoggedInPage(Uri? uri) {
+  void _showSnack(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  bool _isForumCompletionCandidate(Uri? uri) {
     if (uri == null || !ForumUrlResolver.isActiveForumHost(uri.host)) {
       return false;
     }
