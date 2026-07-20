@@ -723,6 +723,11 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                             decoration: InputDecoration(
                               hintText: _hintText,
                               border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              focusedErrorBorder: InputBorder.none,
                               isDense: true,
                               contentPadding: const EdgeInsets.fromLTRB(
                                 12,
