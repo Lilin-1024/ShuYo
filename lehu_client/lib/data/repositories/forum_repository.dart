@@ -83,6 +83,10 @@ abstract class ForumRepository {
     ForumActivityKind kind, {
     bool forceRefresh = false,
   });
+  Future<List<ForumActivityItem>> fetchTopicsCreatedBy(
+    String username, {
+    bool forceRefresh = false,
+  });
   Future<ForumBookmark?> findTopicBookmark(
     int topicId, {
     bool forceRefresh = false,
@@ -387,6 +391,25 @@ class FixtureForumRepository implements ForumRepository {
   }
 
   @override
+  Future<List<ForumActivityItem>> fetchTopicsCreatedBy(
+    String username, {
+    bool forceRefresh = false,
+  }) async {
+    final normalized = username.toLowerCase();
+    final userIds = users.values
+        .where((user) => user.username.toLowerCase() == normalized)
+        .map((user) => user.id)
+        .toSet();
+    if (userIds.isEmpty) {
+      return const [];
+    }
+    return _latestTopics
+        .where((topic) => userIds.contains(topic.originalPosterId))
+        .map(ForumActivityItem.fromTopic)
+        .toList(growable: false);
+  }
+
+  @override
   Future<ForumBookmark?> findTopicBookmark(
     int topicId, {
     bool forceRefresh = false,
@@ -588,6 +611,7 @@ class OnlineForumRepository implements ForumRepository {
   final Map<String, List<TopicListItem>> _feedTopics = {};
   final Map<String, String?> _feedMorePaths = {};
   final Map<ForumActivityKind, List<ForumActivityItem>> _activityItems = {};
+  final Map<String, List<ForumActivityItem>> _createdTopicItems = {};
   final Map<NotificationFeedFilter, List<ForumNotification>> _notifications =
       {};
   ForumActivityCounts? _activityCounts;
@@ -867,6 +891,22 @@ class OnlineForumRepository implements ForumRepository {
   }
 
   @override
+  Future<List<ForumActivityItem>> fetchTopicsCreatedBy(
+    String username, {
+    bool forceRefresh = false,
+  }) async {
+    final key = username.toLowerCase();
+    if (!forceRefresh && _createdTopicItems[key] != null) {
+      return _createdTopicItems[key]!;
+    }
+    final encoded = Uri.encodeComponent(key);
+    final json = await _apiClient.getJson('/topics/created-by/$encoded.json');
+    _mergeUsers(json);
+    final items = _parseActivityItems(ForumActivityKind.topics, json);
+    return _createdTopicItems[key] = items;
+  }
+
+  @override
   Future<ForumBookmark?> findTopicBookmark(
     int topicId, {
     bool forceRefresh = false,
@@ -898,6 +938,7 @@ class OnlineForumRepository implements ForumRepository {
     _feedTopics.clear();
     _feedMorePaths.clear();
     _activityItems.remove(ForumActivityKind.topics);
+    _createdTopicItems.clear();
     _activityCounts = null;
     return post;
   }
@@ -1198,6 +1239,7 @@ class OnlineForumRepository implements ForumRepository {
           _feedTopics[key]!.where((item) => item.id != topic.id).toList();
     }
     _activityItems.remove(ForumActivityKind.topics);
+    _createdTopicItems.clear();
     _activityCounts = null;
   }
 

@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/models/composer.dart';
+import '../../data/models/forum_activity.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/local_image_picker.dart';
+import '../../shared/lehu_text_styles.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
+import '../topic/topic_detail_page.dart';
 import 'profile_header.dart';
 
 class UserProfilePage extends StatefulWidget {
@@ -74,6 +78,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             onMessage: data.profile.canSendPrivateMessage
                 ? () => _openMessageSheet(data.profile)
                 : null,
+            onOpenTopics: () => _openCreatedTopics(data.profile),
           );
         },
       ),
@@ -114,6 +119,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
       },
     );
   }
+
+  Future<void> _openCreatedTopics(UserProfile profile) async {
+    await Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => _UserCreatedTopicsPage(
+          repository: widget.repository,
+          username: profile.username,
+        ),
+      ),
+    );
+  }
 }
 
 class _UserProfileBundle {
@@ -130,10 +146,12 @@ class _ProfileContent extends StatelessWidget {
   const _ProfileContent({
     required this.bundle,
     required this.onMessage,
+    required this.onOpenTopics,
   });
 
   final _UserProfileBundle bundle;
   final VoidCallback? onMessage;
+  final VoidCallback onOpenTopics;
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +187,10 @@ class _ProfileContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        _ProfileStatList(summary: summary),
+        _ProfileStatList(
+          summary: summary,
+          onOpenTopics: onOpenTopics,
+        ),
       ],
     );
   }
@@ -186,15 +207,19 @@ class _ProfileContent extends StatelessWidget {
 }
 
 class _ProfileStatList extends StatelessWidget {
-  const _ProfileStatList({required this.summary});
+  const _ProfileStatList({
+    required this.summary,
+    required this.onOpenTopics,
+  });
 
   final UserSummary summary;
+  final VoidCallback onOpenTopics;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
     final stats = [
-      _StatItem('发帖', '${summary.topicCount}'),
+      _StatItem('发帖', '${summary.topicCount}', onTap: onOpenTopics),
       _StatItem('回复', '${summary.postCount}'),
       _StatItem('收到赞', '${summary.likesReceived}'),
       _StatItem('访问天数', '${summary.daysVisited}'),
@@ -202,33 +227,178 @@ class _ProfileStatList extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < stats.length; i++) ...[
-          SizedBox(
-            height: 48,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    stats[i].label,
-                    style: TextStyle(
-                      color: colors.textSecondary,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-                Text(
-                  stats[i].value,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _ProfileStatRow(item: stats[i]),
           if (i != stats.length - 1) Divider(height: 1, color: colors.border),
         ],
       ],
+    );
+  }
+}
+
+class _UserCreatedTopicsPage extends StatefulWidget {
+  const _UserCreatedTopicsPage({
+    required this.repository,
+    required this.username,
+  });
+
+  final ForumRepository repository;
+  final String username;
+
+  @override
+  State<_UserCreatedTopicsPage> createState() => _UserCreatedTopicsPageState();
+}
+
+class _UserCreatedTopicsPageState extends State<_UserCreatedTopicsPage> {
+  late Future<List<ForumActivityItem>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.repository.fetchTopicsCreatedBy(widget.username);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('${widget.username}的话题')),
+      body: FutureBuilder<List<ForumActivityItem>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return EmptyState(
+              icon: Icons.error_outline,
+              title: '话题加载失败',
+              message: snapshot.error.toString(),
+              action: TextButton.icon(
+                onPressed: () => _refresh(force: true),
+                icon: const Icon(Icons.refresh),
+                label: const Text('重试'),
+              ),
+            );
+          }
+          final items = snapshot.data ?? const <ForumActivityItem>[];
+          if (items.isEmpty) {
+            return RefreshIndicator(
+              onRefresh: () => _refresh(force: true),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 96),
+                  EmptyState(
+                    icon: Icons.forum_outlined,
+                    title: '还没有发布话题',
+                    message: '下拉可刷新',
+                  ),
+                ],
+              ),
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: () => _refresh(force: true),
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: items.length,
+              separatorBuilder: (context, index) =>
+                  Divider(height: 1, color: context.lehuColors.border),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return _CreatedTopicRow(
+                  item: item,
+                  categoryName:
+                      widget.repository.categoryById(item.categoryId)?.name,
+                  onTap: () => _openTopic(item),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _refresh({bool force = false}) async {
+    final future = widget.repository.fetchTopicsCreatedBy(
+      widget.username,
+      forceRefresh: force,
+    );
+    setState(() => _future = future);
+    await future;
+  }
+
+  Future<void> _openTopic(ForumActivityItem item) async {
+    await Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => TopicDetailPage(
+          repository: widget.repository,
+          topic: item.toTopicListItem(),
+        ),
+      ),
+    );
+  }
+}
+
+class _CreatedTopicRow extends StatelessWidget {
+  const _CreatedTopicRow({
+    required this.item,
+    required this.categoryName,
+    required this.onTap,
+  });
+
+  final ForumActivityItem item;
+  final String? categoryName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final meta = <String>[
+      if (categoryName != null && categoryName!.isNotEmpty) categoryName!,
+      '${item.views} 浏览',
+      '${item.replyCount} 回复',
+    ];
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: LehuTextStyles.title(
+                      color: colors.textPrimary,
+                      size: 15.5,
+                      height: 1.25,
+                      weight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    meta.join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.textMuted,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Icon(Icons.chevron_right, size: 20, color: colors.textMuted),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -478,8 +648,55 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
 }
 
 class _StatItem {
-  const _StatItem(this.label, this.value);
+  const _StatItem(this.label, this.value, {this.onTap});
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
+}
+
+class _ProfileStatRow extends StatelessWidget {
+  const _ProfileStatRow({required this.item});
+
+  final _StatItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final child = SizedBox(
+      height: 48,
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              item.label,
+              style: TextStyle(
+                color: colors.textSecondary,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          Text(
+            item.value,
+            style: TextStyle(
+              color: colors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (item.onTap != null) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+          ],
+        ],
+      ),
+    );
+    if (item.onTap == null) {
+      return child;
+    }
+    return InkWell(
+      onTap: item.onTap,
+      child: child,
+    );
+  }
 }
