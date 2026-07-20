@@ -282,7 +282,10 @@ class _TopicListRow extends StatelessWidget {
   }
 
   String _topicTimeText(TopicListItem topic) {
-    return TimeFormat.compact(topic.lastPostedAt ?? topic.createdAt);
+    return TimeFormat.compact(
+      topic.lastPostedAt ?? topic.createdAt,
+      relativeWithinDay: true,
+    );
   }
 }
 

@@ -1,7 +1,11 @@
 class TimeFormat {
   const TimeFormat._();
 
-  static String compact(DateTime? value, {DateTime? now}) {
+  static String compact(
+    DateTime? value, {
+    DateTime? now,
+    bool relativeWithinDay = false,
+  }) {
     if (value == null) {
       return '';
     }
@@ -15,6 +19,9 @@ class TimeFormat {
       }
       if (diff.inHours < 1) {
         return '${diff.inMinutes}分钟前';
+      }
+      if (relativeWithinDay && diff.inHours < 24) {
+        return '${diff.inHours}小时前';
       }
     }
 
