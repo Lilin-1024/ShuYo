@@ -28,7 +28,7 @@ class _LehuAppState extends State<LehuApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '乐乎',
+      title: 'ShuYo',
       debugShowCheckedModeBanner: false,
       theme: _theme.themeData(),
       home: FutureBuilder<ForumRepository>(

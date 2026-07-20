@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:lehu_client/data/models/category.dart';
-import 'package:lehu_client/data/models/common.dart';
-import 'package:lehu_client/data/models/topic.dart';
-import 'package:lehu_client/data/models/topic_detail.dart';
-import 'package:lehu_client/data/services/html_text.dart';
-import 'package:lehu_client/data/services/payload_factory.dart';
+import 'package:shuyo/data/models/category.dart';
+import 'package:shuyo/data/models/common.dart';
+import 'package:shuyo/data/models/topic.dart';
+import 'package:shuyo/data/models/topic_detail.dart';
+import 'package:shuyo/data/services/html_text.dart';
+import 'package:shuyo/data/services/payload_factory.dart';
 
 void main() {
   final latest = _fixture('assets/fixtures/api/latest/latest.json');

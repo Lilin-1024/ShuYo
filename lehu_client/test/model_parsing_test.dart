@@ -3,25 +3,25 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lehu_client/data/models/academic_schedule.dart';
-import 'package:lehu_client/data/models/category.dart';
-import 'package:lehu_client/data/models/common.dart';
-import 'package:lehu_client/data/models/composer.dart';
-import 'package:lehu_client/data/models/forum_notification.dart';
-import 'package:lehu_client/data/models/post.dart';
-import 'package:lehu_client/data/models/topic.dart';
-import 'package:lehu_client/data/models/topic_detail.dart';
-import 'package:lehu_client/data/models/user_profile.dart';
-import 'package:lehu_client/data/repositories/classroom_repository.dart';
-import 'package:lehu_client/data/services/announcement_api_client.dart';
-import 'package:lehu_client/data/services/classroom_api_client.dart';
-import 'package:lehu_client/data/services/course_rating_api_client.dart';
-import 'package:lehu_client/data/services/emoji_text.dart';
-import 'package:lehu_client/data/services/html_text.dart';
-import 'package:lehu_client/data/services/payload_factory.dart';
-import 'package:lehu_client/data/services/sha1_hash.dart';
-import 'package:lehu_client/features/topic/threaded_posts.dart';
-import 'package:lehu_client/shared/time_format.dart';
+import 'package:shuyo/data/models/academic_schedule.dart';
+import 'package:shuyo/data/models/category.dart';
+import 'package:shuyo/data/models/common.dart';
+import 'package:shuyo/data/models/composer.dart';
+import 'package:shuyo/data/models/forum_notification.dart';
+import 'package:shuyo/data/models/post.dart';
+import 'package:shuyo/data/models/topic.dart';
+import 'package:shuyo/data/models/topic_detail.dart';
+import 'package:shuyo/data/models/user_profile.dart';
+import 'package:shuyo/data/repositories/classroom_repository.dart';
+import 'package:shuyo/data/services/announcement_api_client.dart';
+import 'package:shuyo/data/services/classroom_api_client.dart';
+import 'package:shuyo/data/services/course_rating_api_client.dart';
+import 'package:shuyo/data/services/emoji_text.dart';
+import 'package:shuyo/data/services/html_text.dart';
+import 'package:shuyo/data/services/payload_factory.dart';
+import 'package:shuyo/data/services/sha1_hash.dart';
+import 'package:shuyo/features/topic/threaded_posts.dart';
+import 'package:shuyo/shared/time_format.dart';
 
 void main() {
   test('parses latest topics and categories', () {

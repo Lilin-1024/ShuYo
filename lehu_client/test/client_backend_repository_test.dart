@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lehu_client/data/repositories/client_backend_repository.dart';
+import 'package:shuyo/data/repositories/client_backend_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

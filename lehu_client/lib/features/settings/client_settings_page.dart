@@ -5,7 +5,6 @@ import '../../core/client_app_info.dart';
 import '../../data/repositories/client_backend_repository.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../data/services/client_settings_service.dart';
-import '../../data/services/forum_badge_notification_service.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/theme/lehu_theme.dart';
@@ -18,7 +17,6 @@ class ClientSettingsPage extends StatelessWidget {
     super.key,
     required this.settingsService,
     required this.scheduleNotificationService,
-    required this.forumBadgeNotificationService,
     required this.backendRepository,
     required this.selectedThemeId,
     required this.onThemeChanged,
@@ -28,7 +26,6 @@ class ClientSettingsPage extends StatelessWidget {
 
   final ClientSettingsService settingsService;
   final AcademicScheduleNotificationService scheduleNotificationService;
-  final ForumBadgeNotificationService forumBadgeNotificationService;
   final ClientBackendRepository backendRepository;
   final String selectedThemeId;
   final Future<void> Function(String themeId) onThemeChanged;
@@ -48,7 +45,6 @@ class ClientSettingsPage extends StatelessWidget {
                 builder: (context) => _NotificationSettingsPage(
                   settingsService: settingsService,
                   scheduleNotificationService: scheduleNotificationService,
-                  forumBadgeNotificationService: forumBadgeNotificationService,
                 ),
               ),
             ),
@@ -494,12 +490,10 @@ class _NotificationSettingsPage extends StatefulWidget {
   const _NotificationSettingsPage({
     required this.settingsService,
     required this.scheduleNotificationService,
-    required this.forumBadgeNotificationService,
   });
 
   final ClientSettingsService settingsService;
   final AcademicScheduleNotificationService scheduleNotificationService;
-  final ForumBadgeNotificationService forumBadgeNotificationService;
 
   @override
   State<_NotificationSettingsPage> createState() =>
@@ -547,27 +541,11 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
           return ListView(
             children: [
               _SettingsSwitchRow(
-                title: '客户端通知',
-                value: settings.enabled,
+                title: '课表提醒',
+                value: settings.scheduleEnabled,
                 enabled: true,
                 onChanged: (value) => _save(
-                  settings.copyWith(enabled: value),
-                ),
-              ),
-              _SettingsSwitchRow(
-                title: '课表通知',
-                value: settings.scheduleEnabled,
-                enabled: settings.enabled,
-                onChanged: (value) => _save(
                   settings.copyWith(scheduleEnabled: value),
-                ),
-              ),
-              _SettingsSwitchRow(
-                title: '论坛消息通知',
-                value: settings.forumEnabled,
-                enabled: settings.enabled,
-                onChanged: (value) => _save(
-                  settings.copyWith(forumEnabled: value),
                 ),
               ),
             ],
@@ -595,12 +573,8 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
       final saved =
           await widget.settingsService.saveNotificationSettings(settings);
       await widget.scheduleNotificationService.syncScheduleReminders(
-        requestPermission: saved.enabled && saved.scheduleEnabled,
+        requestPermission: saved.scheduleEnabled,
       );
-      if (saved.enabled && saved.forumEnabled && !saved.scheduleEnabled) {
-        await widget.forumBadgeNotificationService
-            .requestNotificationPermission();
-      }
       if (!mounted) {
         return;
       }

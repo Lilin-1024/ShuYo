@@ -22,7 +22,6 @@ import '../data/services/academic_schedule_notification_service.dart';
 import '../data/services/academic_schedule_api_client.dart';
 import '../data/services/client_settings_service.dart';
 import '../data/services/discourse_api_client.dart';
-import '../data/services/forum_badge_notification_service.dart';
 import '../data/services/forum_image_headers.dart';
 import '../data/services/forum_reachability_service.dart';
 import '../features/auth/login_webview_page.dart';
@@ -73,7 +72,6 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   static const _forumAccessModeReloadTimeout = Duration(seconds: 12);
   static const _forumBadgeRefreshInterval = Duration(seconds: 90);
-  static const _backgroundForumBadgeRefreshInterval = Duration(minutes: 5);
   static const _feedLoadMoreThrottle = Duration(milliseconds: 900);
   static const _exitBackPressInterval = Duration(seconds: 2);
 
@@ -90,7 +88,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
   late final ClientSettingsService _clientSettingsService;
-  late final ForumBadgeNotificationService _forumBadgeNotificationService;
   late final ClientBackendRepository _clientBackendRepository;
   late final ForumReachabilityService _forumReachabilityService;
   late final AnnouncementRepository _announcementRepository;
@@ -107,7 +104,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _refreshingForumBadges = false;
   bool _checkingForumReachability = false;
   bool _checkingClientBackendPrompts = false;
-  bool _appInForeground = true;
   bool _forumNetworkUnavailable = false;
   bool _autoUseWebVpnProxy = ForumUrlResolver.usesWebVpn;
   int _seenNotificationBadgeCount = 0;
@@ -134,9 +130,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       repository: _scheduleRepository,
     );
     _clientSettingsService = ClientSettingsService();
-    _forumBadgeNotificationService = ForumBadgeNotificationService(
-      settingsService: _clientSettingsService,
-    );
     _clientBackendRepository = ClientBackendRepository();
     _forumReachabilityService = const ForumReachabilityService();
     _announcementRepository = AnnouncementRepository();
@@ -281,13 +274,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _appInForeground = true;
       _startForumBadgeRefreshTimer(_forumBadgeRefreshInterval);
       unawaited(_refreshAfterAppResumed());
       return;
     }
-    _appInForeground = false;
-    _startForumBadgeRefreshTimer(_backgroundForumBadgeRefreshInterval);
+    _forumBadgeRefreshTimer?.cancel();
   }
 
   void _startForumBadgeRefreshTimer(Duration interval) {
@@ -299,9 +290,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshForumBadgesFromTimer() async {
-    final notify = !_appInForeground;
-    await _refreshForumBadgesQuietly(notify: notify);
-    if (notify || !mounted || _tabIndex != 2 || !_repo.isOnline) {
+    await _refreshForumBadgesQuietly();
+    if (!mounted || _tabIndex != 2 || !_repo.isOnline) {
       return;
     }
     setState(() => _messageRefreshSignal++);
@@ -321,7 +311,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       1 => '论坛',
       2 => '消息',
       3 => '我',
-      _ => '乐乎',
+      _ => 'ShuYo',
     };
   }
 
@@ -458,15 +448,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     await prefs.setInt(_messageBadgeSeenKey(username), count);
   }
 
-  Future<void> _refreshForumBadgesQuietly({bool notify = false}) async {
+  Future<void> _refreshForumBadgesQuietly() async {
     if (_refreshingForumBadges || _reloadingSession || !_repo.isOnline) {
       return;
     }
     _refreshingForumBadges = true;
     final username = _forumBadgeCacheUserKey;
-    final previousNotificationCount = _repo.unreadNotificationCount;
-    final previousMessageCount = _repo.unreadPrivateMessageCount;
-    final previousLocalNotificationBadgeCount = _localNotificationBadgeCount;
     try {
       await _repo.refreshSession();
       if (!mounted || !_repo.isOnline || username != _forumBadgeCacheUserKey) {
@@ -476,20 +463,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (!mounted || !_repo.isOnline || username != _forumBadgeCacheUserKey) {
         return;
       }
-      final newNotificationCount = _positiveDelta(
-        previousNotificationCount,
-        _repo.unreadNotificationCount,
-      );
-      final newLocalNotificationCount = notificationFeedBadge == null
-          ? 0
-          : _positiveDelta(
-              previousLocalNotificationBadgeCount,
-              notificationFeedBadge.count,
-            );
-      final newMessageCount = _positiveDelta(
-        previousMessageCount,
-        _repo.unreadPrivateMessageCount,
-      );
       final normalizedNotificationCount =
           _seenNotificationBadgeCount.clamp(0, _repo.unreadNotificationCount);
       final normalizedMessageCount =
@@ -526,28 +499,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           _sortedNotificationKeys(baselineKeys),
         );
       }
-      if (notify) {
-        unawaited(
-          _forumBadgeNotificationService.showBadgeSummary(
-            newNotifications: newNotificationCount > newLocalNotificationCount
-                ? newNotificationCount
-                : newLocalNotificationCount,
-            newMessages: newMessageCount,
-          ),
-        );
-      }
     } on Object {
-      // 后台刷新红点失败不打扰用户，下一轮会继续尝试。
+      // 刷新红点失败不打扰用户，下一轮会继续尝试。
     } finally {
       _refreshingForumBadges = false;
     }
-  }
-
-  int _positiveDelta(int previous, int current) {
-    if (current <= previous) {
-      return 0;
-    }
-    return current - previous;
   }
 
   Future<_NotificationFeedBadge?> _loadNotificationFeedBadge() async {
@@ -1204,7 +1160,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         builder: (context) => ClientSettingsPage(
           settingsService: _clientSettingsService,
           scheduleNotificationService: _scheduleNotificationService,
-          forumBadgeNotificationService: _forumBadgeNotificationService,
           backendRepository: _clientBackendRepository,
           selectedThemeId: widget.selectedThemeId,
           onThemeChanged: widget.onThemeChanged,
