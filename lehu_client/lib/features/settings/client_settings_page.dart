@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../core/client_app_info.dart';
 import '../../data/repositories/client_backend_repository.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../data/services/client_settings_service.dart';
+import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/client_update_prompt.dart';
@@ -80,7 +82,11 @@ class ClientSettingsPage extends StatelessWidget {
           ),
           _SettingsRow(
             title: '关于客户端',
-            onTap: () => _showAbout(context),
+            onTap: () => Navigator.of(context).push<void>(
+              lehuRoute(
+                builder: (context) => const _AboutClientPage(),
+              ),
+            ),
           ),
           _SettingsRow(
             title: '检查更新',
@@ -158,17 +164,81 @@ class ClientSettingsPage extends StatelessWidget {
       Navigator.of(context).pop();
     }
   }
+}
 
-  void _showAbout(BuildContext context) {
-    showAboutDialog(
-      context: context,
-      applicationName: '客户端',
-      applicationVersion: '0.1.0',
-      applicationLegalese: '用于浏览乐乎与校园服务的非官方客户端。',
-      children: const [
-        SizedBox(height: 8),
-        Text('名称、主题和更多说明会在后续版本中完善。'),
-      ],
+class _AboutClientPage extends StatelessWidget {
+  const _AboutClientPage();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Scaffold(
+      appBar: AppBar(title: const Text('关于客户端')),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+        children: [
+          Text(
+            '乐乎客户端',
+            style: LehuTextStyles.pageTitle(color: colors.textPrimary),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '版本 ${ClientAppInfo.version}',
+            style: LehuTextStyles.meta(color: colors.textMuted),
+          ),
+          const SizedBox(height: 22),
+          _AboutSection(
+            title: '简介',
+            body:
+                '这是一个围绕上海大学乐乎论坛与常用校园服务制作的非官方客户端。它希望把论坛浏览、私信通知、课表、空教室、课程评价等功能整理到一个更适合移动端使用的界面里，让日常查看和互动少一些来回跳转。',
+          ),
+          _AboutSection(
+            title: '定位',
+            body:
+                '客户端本身不替代学校或论坛官方页面，也不会收集或保存你的统一认证账号密码。涉及登录的功能会通过网页登录态或系统接口完成，客户端只在本机使用必要的登录状态来完成论坛和校园服务请求。',
+          ),
+          _AboutSection(
+            title: '说明',
+            body:
+                '项目仍在持续完善中，界面、主题、通知、反馈和更新机制都会继续调整。如果你在使用过程中遇到问题，可以通过“问题与反馈”提交具体场景，便于后续排查和修复。',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AboutSection extends StatelessWidget {
+  const _AboutSection({
+    required this.title,
+    required this.body,
+  });
+
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: LehuTextStyles.sectionTitle(color: colors.textPrimary),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            body,
+            style: LehuTextStyles.body(
+              color: colors.textSecondary,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
