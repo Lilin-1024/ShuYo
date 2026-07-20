@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../core/academic_constants.dart';
 import '../core/academic_url_resolver.dart';
 import '../core/client_app_info.dart';
 import '../core/forum_url_resolver.dart';
@@ -1612,8 +1611,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       lehuRoute(
         builder: (context) => ForumWebViewPage(
           title: '教务系统',
-          url:
-              '${AcademicUrlResolver.baseUrl}${AcademicConstants.scheduleIndexPath}',
+          url: AcademicUrlResolver.entryUri.toString(),
           initialNoticeTitle: '教务系统登录',
           initialNoticeMessage:
               '教务系统为独立系统，需要你在网页中单独登录一次。\n\n本应用只读取课表数据，不会收集或保存你的账号密码。',
