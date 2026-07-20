@@ -9,6 +9,7 @@ import '../../core/certificate_policy.dart';
 import '../../core/forum_url_resolver.dart';
 import '../models/common.dart';
 import 'forum_auth_service.dart';
+import 'http_timeout.dart';
 
 class ForumApiException implements Exception {
   const ForumApiException(this.message, {this.statusCode});
@@ -53,45 +54,57 @@ class DiscourseApiClient {
   }
 
   Future<JsonMap> getJson(String path) async {
-    final response = await _httpClient.get(
-      _uri(path),
-      headers: await _headers(),
+    final response = await HttpTimeout.request(
+      _httpClient.get(
+        _uri(path),
+        headers: await _headers(),
+      ),
+      message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
   }
 
   Future<JsonMap> postForm(String path, String body) async {
-    final response = await _httpClient.post(
-      _uri(path),
-      headers: await _headers(
-        csrfToken: await _csrf(),
-        formRequest: true,
+    final response = await HttpTimeout.request(
+      _httpClient.post(
+        _uri(path),
+        headers: await _headers(
+          csrfToken: await _csrf(),
+          formRequest: true,
+        ),
+        body: body,
       ),
-      body: body,
+      message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
   }
 
   Future<JsonMap> putForm(String path, String body) async {
-    final response = await _httpClient.put(
-      _uri(path),
-      headers: await _headers(
-        csrfToken: await _csrf(),
-        formRequest: true,
+    final response = await HttpTimeout.request(
+      _httpClient.put(
+        _uri(path),
+        headers: await _headers(
+          csrfToken: await _csrf(),
+          formRequest: true,
+        ),
+        body: body,
       ),
-      body: body,
+      message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
   }
 
   Future<JsonMap> deleteForm(String path, String body) async {
-    final response = await _httpClient.delete(
-      _uri(path),
-      headers: await _headers(
-        csrfToken: await _csrf(),
-        formRequest: true,
+    final response = await HttpTimeout.request(
+      _httpClient.delete(
+        _uri(path),
+        headers: await _headers(
+          csrfToken: await _csrf(),
+          formRequest: true,
+        ),
+        body: body,
       ),
-      body: body,
+      message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
   }
@@ -113,8 +126,17 @@ class DiscourseApiClient {
         filename: filename,
       ),
     );
-    final streamed = await _httpClient.send(request);
-    return _decode(await http.Response.fromStream(streamed));
+    final streamed = await HttpTimeout.request(
+      _httpClient.send(request),
+      timeout: HttpTimeout.upload,
+      message: '论坛上传超时，请稍后再试',
+    );
+    final response = await HttpTimeout.request(
+      http.Response.fromStream(streamed),
+      timeout: HttpTimeout.upload,
+      message: '论坛上传超时，请稍后再试',
+    );
+    return _decode(response);
   }
 
   Future<Map<String, String>> _headers({

@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import '../models/announcement.dart';
+import 'http_timeout.dart';
 
 class AnnouncementApiException implements Exception {
   const AnnouncementApiException(this.message, {this.statusCode});
@@ -33,28 +34,34 @@ class AnnouncementApiClient {
   final http.Client _httpClient;
 
   Future<List<AnnouncementListItem>> fetchAnnouncements() async {
-    final response = await _httpClient.get(
-      Uri.parse(listUrl),
-      headers: const {
-        'accept': 'text/html,application/xhtml+xml',
-        'user-agent':
-            'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
-      },
+    final response = await HttpTimeout.request(
+      _httpClient.get(
+        Uri.parse(listUrl),
+        headers: const {
+          'accept': 'text/html,application/xhtml+xml',
+          'user-agent':
+              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+        },
+      ),
+      message: '通知公告请求超时，请稍后再试',
     );
     _ensureSuccess(response);
     return parseAnnouncementList(_decodeHtml(response), baseUrl: listUrl);
   }
 
   Future<AnnouncementDetail> fetchDetail(AnnouncementListItem item) async {
-    final response = await _httpClient.get(
-      Uri.parse(item.url),
-      headers: const {
-        'accept': 'text/html,application/xhtml+xml',
-        'user-agent':
-            'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
-      },
+    final response = await HttpTimeout.request(
+      _httpClient.get(
+        Uri.parse(item.url),
+        headers: const {
+          'accept': 'text/html,application/xhtml+xml',
+          'user-agent':
+              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+        },
+      ),
+      message: '通知公告请求超时，请稍后再试',
     );
     _ensureSuccess(response);
     return parseAnnouncementDetail(

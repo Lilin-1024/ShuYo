@@ -7,6 +7,7 @@ import 'package:http/io_client.dart';
 import '../../core/client_backend_constants.dart';
 import '../models/client_backend.dart';
 import '../models/common.dart';
+import 'http_timeout.dart';
 
 class ClientBackendApiException implements Exception {
   const ClientBackendApiException(this.message, {this.statusCode});
@@ -38,14 +39,17 @@ class ClientBackendApiClient {
   final http.Client _httpClient;
 
   Future<ClientBootstrapInfo> fetchBootstrap() async {
-    final response = await _httpClient.get(
-      _uri('/api/v1/bootstrap'),
-      headers: const {
-        'accept': 'application/json',
-        'user-agent':
-            'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
-      },
+    final response = await HttpTimeout.request(
+      _httpClient.get(
+        _uri('/api/v1/bootstrap'),
+        headers: const {
+          'accept': 'application/json',
+          'user-agent':
+              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+        },
+      ),
+      message: '客户端服务请求超时，请稍后再试',
     );
     return ClientBootstrapInfo.fromJson(_decode(response));
   }
@@ -53,16 +57,19 @@ class ClientBackendApiClient {
   Future<ClientFeedbackSubmissionResult> submitFeedback(
     ClientFeedbackDraft draft,
   ) async {
-    final response = await _httpClient.post(
-      _uri('/api/v1/feedback'),
-      headers: const {
-        'accept': 'application/json',
-        'content-type': 'application/json; charset=utf-8',
-        'user-agent':
-            'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
-      },
-      body: jsonEncode(draft.toJson()),
+    final response = await HttpTimeout.request(
+      _httpClient.post(
+        _uri('/api/v1/feedback'),
+        headers: const {
+          'accept': 'application/json',
+          'content-type': 'application/json; charset=utf-8',
+          'user-agent':
+              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+        },
+        body: jsonEncode(draft.toJson()),
+      ),
+      message: '反馈提交超时，请稍后再试',
     );
     return ClientFeedbackSubmissionResult.fromJson(_decode(response));
   }
@@ -71,14 +78,18 @@ class ClientBackendApiClient {
     String id,
     String token,
   ) async {
-    final response = await _httpClient.get(
-      _uri('/api/v1/feedback/$id?token=${Uri.encodeComponent(token)}'),
-      headers: const {
-        'accept': 'application/json',
-        'user-agent':
-            'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
-      },
+    final response = await HttpTimeout.request(
+      _httpClient.get(
+        _uri('/api/v1/feedback/$id'),
+        headers: {
+          'accept': 'application/json',
+          'x-feedback-token': token,
+          'user-agent':
+              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+        },
+      ),
+      message: '反馈查看超时，请稍后再试',
     );
     final json = _decode(response);
     final data = json['data'];

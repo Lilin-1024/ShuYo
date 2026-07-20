@@ -40,19 +40,21 @@ class ClassroomRepository {
     Future<SharedPreferences> Function()? preferencesLoader,
     this.optionsCacheDuration = const Duration(days: 7),
     this.scheduleCacheDuration = const Duration(minutes: 10),
-  })  : _apiClient = apiClient ?? ClassroomApiClient(),
+  })  : _apiClient = apiClient,
         _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance;
 
   static const _optionsCacheKey = 'classroom.options.cache';
   static const _optionsLastRefreshKey = 'classroom.options.lastRefreshAt';
 
-  final ClassroomApiClient _apiClient;
+  ClassroomApiClient? _apiClient;
   final Future<SharedPreferences> Function() _preferencesLoader;
   final Duration optionsCacheDuration;
   final Duration scheduleCacheDuration;
 
   ClassroomSearchOptions? _memoryOptions;
   final _scheduleCache = <String, _CachedClassroomSchedule>{};
+
+  ClassroomApiClient get _client => _apiClient ??= ClassroomApiClient();
 
   Future<ClassroomSearchOptions> loadOptions({
     bool forceRefresh = false,
@@ -66,7 +68,7 @@ class ClassroomRepository {
       return cached;
     }
     try {
-      final options = await _apiClient.fetchSearchOptions();
+      final options = await _client.fetchSearchOptions();
       await _saveOptions(options);
       return options;
     } on Object {
@@ -118,7 +120,7 @@ class ClassroomRepository {
         DateTime.now().difference(cached.createdAt) < scheduleCacheDuration) {
       return cached.schedule;
     }
-    final schedule = await _apiClient.fetchBuildingSchedule(
+    final schedule = await _client.fetchBuildingSchedule(
       building: building,
       date: date,
     );

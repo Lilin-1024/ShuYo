@@ -8,6 +8,7 @@ import '../../core/classroom_url_resolver.dart';
 import '../models/classroom.dart';
 import '../models/common.dart';
 import 'classroom_auth_service.dart';
+import 'http_timeout.dart';
 
 class ClassroomApiException implements Exception {
   const ClassroomApiException(this.message, {this.statusCode});
@@ -100,10 +101,13 @@ class ClassroomApiClient {
     Map<String, String>? body,
   }) async {
     final headers = await _headers();
-    final response = await _httpClient.post(
-      ClassroomUrlResolver.uri(path),
-      headers: headers,
-      body: body,
+    final response = await HttpTimeout.request(
+      _httpClient.post(
+        ClassroomUrlResolver.uri(path),
+        headers: headers,
+        body: body,
+      ),
+      message: '空教室查询请求超时，请稍后再试',
     );
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ClassroomApiException(

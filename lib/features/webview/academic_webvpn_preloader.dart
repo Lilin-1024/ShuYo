@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -87,7 +88,9 @@ class _AcademicWebVpnPreloaderState extends State<AcademicWebVpnPreloader> {
     if (platform is! AndroidWebViewController) {
       return;
     }
-    await AndroidWebViewController.enableDebugging(true);
+    if (kDebugMode) {
+      await AndroidWebViewController.enableDebugging(true);
+    }
     await platform.setMediaPlaybackRequiresUserGesture(false);
     await platform.setUseWideViewPort(true);
     await platform.setMixedContentMode(MixedContentMode.compatibilityMode);
@@ -114,6 +117,9 @@ class _AcademicWebVpnPreloaderState extends State<AcademicWebVpnPreloader> {
   }
 
   void _debug(String message, [String? url]) {
+    if (!kDebugMode) {
+      return;
+    }
     debugPrint(
       '[LEHU_WEBVIEW ACADEMIC_BG_PREP] $message${url == null ? '' : ' | $url'}',
     );
