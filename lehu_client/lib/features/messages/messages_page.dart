@@ -1192,8 +1192,6 @@ class _MessageReplyBar extends StatefulWidget {
 
 class _MessageReplyBarState extends State<_MessageReplyBar> {
   static const _fallbackKeyboardHeight = 282.0;
-  static const _inputRowHeight = 48.0;
-  static const _messageFieldHeight = 42.0;
   static const _keyboardHandoffDuration = Duration(milliseconds: 360);
 
   final _controller = TextEditingController();
@@ -1251,24 +1249,30 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
               ),
               const SizedBox(height: 8),
             ],
-            SizedBox(
-              height: _inputRowHeight,
-              child: Row(
-                children: [
-                  IconButton(
-                    tooltip: '添加图片',
-                    onPressed:
-                        widget.submitting || _uploading ? null : _pickAndUpload,
-                    icon: _uploading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.image_outlined),
-                  ),
-                  IconButton(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                IconButton(
+                  tooltip: '添加图片',
+                  onPressed:
+                      widget.submitting || _uploading ? null : _pickAndUpload,
+                  icon: _uploading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.image_outlined),
+                ),
+                SizedBox(
+                  width: 40,
+                  child: IconButton(
                     tooltip: 'Emoji',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 48,
+                    ),
                     onPressed: widget.submitting || _uploading
                         ? null
                         : _toggleEmojiPanel,
@@ -1278,40 +1282,40 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                           : Icons.emoji_emotions_outlined,
                     ),
                   ),
-                  Expanded(
-                    child: SizedBox(
-                      height: _messageFieldHeight,
-                      child: TextField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        maxLines: 1,
-                        onTap: _handleInputTap,
-                        decoration: const InputDecoration(
-                          hintText: '写私信',
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                        ),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    minLines: 1,
+                    maxLines: 6,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    onTap: _handleInputTap,
+                    decoration: const InputDecoration(
+                      hintText: '写私信',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  IconButton.filled(
-                    tooltip: '发送',
-                    onPressed: widget.submitting || _uploading ? null : _submit,
-                    icon: widget.submitting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  tooltip: '发送',
+                  onPressed: widget.submitting || _uploading ? null : _submit,
+                  icon: widget.submitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send),
+                ),
+              ],
             ),
             TweenAnimationBuilder<double>(
               tween: Tween<double>(end: emojiHeight),
