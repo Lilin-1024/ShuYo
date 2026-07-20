@@ -1613,11 +1613,16 @@ List<ForumCategory> _sortedCategories(Map<int, ForumCategory> categories) {
 class ForumRepositoryFactory {
   const ForumRepositoryFactory._();
 
+  static const _startupOnlineTimeout = Duration(seconds: 5);
+  static const _requiredOnlineTimeout = Duration(seconds: 10);
+
   static Future<ForumRepository> load() async {
     await _configureForumAccessMode();
     final fixture = await FixtureForumRepository.load();
     try {
-      return await OnlineForumRepository.connect(fallback: fixture);
+      return await OnlineForumRepository.connect(
+        fallback: fixture,
+      ).timeout(_startupOnlineTimeout);
     } on Object {
       return fixture;
     }
@@ -1626,7 +1631,14 @@ class ForumRepositoryFactory {
   static Future<ForumRepository> loadOnline() async {
     await _configureForumAccessMode();
     final fixture = await FixtureForumRepository.load();
-    return OnlineForumRepository.connect(fallback: fixture);
+    return OnlineForumRepository.connect(
+      fallback: fixture,
+    ).timeout(
+      _requiredOnlineTimeout,
+      onTimeout: () {
+        throw const ForumApiException('论坛连接超时，请检查网络或开启 WebVPN 代理');
+      },
+    );
   }
 
   static Future<void> _configureForumAccessMode() async {
