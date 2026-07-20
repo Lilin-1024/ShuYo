@@ -808,6 +808,12 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                   width: double.infinity,
                   child: FilledButton.icon(
                     onPressed: widget.enabled ? _activateComposer : null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colors.largeAction,
+                      foregroundColor: colors.onLargeAction,
+                      disabledBackgroundColor: colors.disabledFill,
+                      disabledForegroundColor: colors.textMuted,
+                    ),
                     icon: widget.isSubmitting
                         ? const _TinyProgress()
                         : const Icon(Icons.edit_outlined),
