@@ -151,7 +151,10 @@ class _MessagesPageState extends State<MessagesPage> {
               future: _previewForTopic(group.latestTopic),
             ),
             trailing: Text(
-              TimeFormat.compact(group.latestTime),
+              TimeFormat.compact(
+                group.latestTime,
+                relativeWithinDay: true,
+              ),
               style: TextStyle(
                 color: context.lehuColors.textMuted,
                 fontSize: 12.5,
@@ -434,7 +437,10 @@ class _MessageTopicSelectionPageState
             ),
             subtitle: _TopicPreviewLine(future: widget.previewForTopic(topic)),
             trailing: Text(
-              TimeFormat.compact(topic.lastPostedAt ?? topic.createdAt),
+              TimeFormat.compact(
+                topic.lastPostedAt ?? topic.createdAt,
+                relativeWithinDay: true,
+              ),
               style: TextStyle(color: colors.textMuted, fontSize: 12.5),
             ),
             onLongPress: () => unawaited(_deleteLocalConversation(topic)),

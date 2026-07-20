@@ -416,7 +416,10 @@ class _PostView extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
     final textSize = compact ? 15.0 : 16.0;
-    final timeText = TimeFormat.compact(post.createdAt);
+    final timeText = TimeFormat.compact(
+      post.createdAt,
+      relativeWithinDay: true,
+    );
     final metaText = timeText.isEmpty
         ? '#${post.postNumber}'
         : '#${post.postNumber} · $timeText';
@@ -527,7 +530,13 @@ class _PostView extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 12),
-          ...contentWidgets,
+          Padding(
+            padding: EdgeInsets.only(right: compact ? 10 : 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: contentWidgets,
+            ),
+          ),
           Row(
             children: [
               if (canLike)

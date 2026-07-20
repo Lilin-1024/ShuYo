@@ -320,6 +320,7 @@ class _PostResults extends StatelessWidget {
           subtitle: post?.blurb ?? '主题',
           meta: TimeFormat.compact(
             post?.createdAt ?? row.topic.lastPostedAt ?? row.topic.createdAt,
+            relativeWithinDay: true,
           ),
           onTap: () => onOpenTopic(row.topic),
         );
