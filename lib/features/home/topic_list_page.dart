@@ -20,6 +20,7 @@ class TopicListPage extends StatefulWidget {
     required this.onOpenTopic,
     required this.canLoadMore,
     required this.isLoadingMore,
+    this.loadMoreError,
     this.onOpenUser,
     this.onLoadMore,
   });
@@ -32,6 +33,7 @@ class TopicListPage extends StatefulWidget {
   final ValueChanged<DiscourseUser>? onOpenUser;
   final bool canLoadMore;
   final bool isLoadingMore;
+  final String? loadMoreError;
   final Future<void> Function()? onLoadMore;
 
   @override
@@ -71,6 +73,7 @@ class _TopicListPageState extends State<TopicListPage> {
           return _LoadMoreFooter(
             canLoadMore: widget.canLoadMore,
             isLoadingMore: widget.isLoadingMore || _requestingMore,
+            errorMessage: widget.loadMoreError,
             onPressed: _loadMore,
           );
         }
@@ -88,10 +91,16 @@ class _TopicListPageState extends State<TopicListPage> {
     );
   }
 
-  bool get _hasFooter => widget.canLoadMore || widget.isLoadingMore;
+  bool get _hasFooter =>
+      widget.canLoadMore ||
+      widget.isLoadingMore ||
+      widget.loadMoreError != null;
 
   void _onScroll() {
     if (!_scrollController.hasClients) {
+      return;
+    }
+    if (widget.loadMoreError != null) {
       return;
     }
     if (_scrollController.position.extentAfter < 520) {
@@ -122,15 +131,19 @@ class _LoadMoreFooter extends StatelessWidget {
   const _LoadMoreFooter({
     required this.canLoadMore,
     required this.isLoadingMore,
+    this.errorMessage,
     required this.onPressed,
   });
 
   final bool canLoadMore;
   final bool isLoadingMore;
+  final String? errorMessage;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
+    final errorMessage = this.errorMessage;
+    final colors = context.lehuColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 18),
       child: Center(
@@ -140,11 +153,30 @@ class _LoadMoreFooter extends StatelessWidget {
                 height: 22,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : TextButton.icon(
-                onPressed: canLoadMore ? onPressed : null,
-                icon: const Icon(Icons.expand_more),
-                label: const Text('加载更多'),
-              ),
+            : errorMessage != null
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        errorMessage,
+                        style: TextStyle(
+                          color: colors.textMuted,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextButton.icon(
+                        onPressed: canLoadMore ? onPressed : null,
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('重试'),
+                      ),
+                    ],
+                  )
+                : TextButton.icon(
+                    onPressed: canLoadMore ? onPressed : null,
+                    icon: const Icon(Icons.expand_more),
+                    label: const Text('加载更多'),
+                  ),
       ),
     );
   }

@@ -69,11 +69,14 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   static const _forumAccessModeReloadTimeout = Duration(seconds: 12);
   static const _forumBadgeRefreshInterval = Duration(seconds: 90);
+  static const _feedLoadMoreThrottle = Duration(milliseconds: 900);
 
   int _tabIndex = 0;
   TopicFeedQuery _feedQuery = const TopicFeedQuery();
   bool _reloadingSession = false;
   bool _loadingMoreFeed = false;
+  String? _loadMoreFeedError;
+  DateTime? _lastLoadMoreFeedAttempt;
   late ForumRepository _repo;
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
@@ -671,6 +674,7 @@ class _AppShellState extends State<AppShell> {
             refresh: _refreshFeed,
             canLoadMore: _repo.canLoadMoreFeed(_feedQuery),
             isLoadingMore: _loadingMoreFeed,
+            loadMoreError: _loadMoreFeedError,
             loadMore: _loadMoreFeed,
           ),
         ),
@@ -683,6 +687,7 @@ class _AppShellState extends State<AppShell> {
     required Future<void> Function() refresh,
     required bool canLoadMore,
     required bool isLoadingMore,
+    required String? loadMoreError,
     required Future<void> Function() loadMore,
   }) {
     return FutureBuilder<List<TopicListItem>>(
@@ -726,6 +731,7 @@ class _AppShellState extends State<AppShell> {
             onOpenUser: (user) => _openUserProfile(user.username),
             canLoadMore: canLoadMore,
             isLoadingMore: isLoadingMore,
+            loadMoreError: loadMoreError,
             onLoadMore: loadMore,
           ),
         );
@@ -739,6 +745,7 @@ class _AppShellState extends State<AppShell> {
       forceRefresh: forceRefresh,
     );
     _loadingMoreFeed = false;
+    _loadMoreFeedError = null;
   }
 
   void _setFeedQuery(TopicFeedQuery query, {bool forceRefresh = false}) {
@@ -752,6 +759,7 @@ class _AppShellState extends State<AppShell> {
     final future = _repo.fetchTopicFeed(_feedQuery, forceRefresh: true);
     setState(() {
       _feedFuture = future;
+      _loadMoreFeedError = null;
     });
     await future;
     if (mounted) {
@@ -760,25 +768,48 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _loadMoreFeed() async {
-    if (_loadingMoreFeed || !_repo.canLoadMoreFeed(_feedQuery)) {
+    final query = _feedQuery;
+    if (_loadingMoreFeed || !_repo.canLoadMoreFeed(query)) {
       return;
     }
-    setState(() => _loadingMoreFeed = true);
+    final now = DateTime.now();
+    final lastAttempt = _lastLoadMoreFeedAttempt;
+    if (_loadMoreFeedError == null &&
+        lastAttempt != null &&
+        now.difference(lastAttempt) < _feedLoadMoreThrottle) {
+      return;
+    }
+    _lastLoadMoreFeedAttempt = now;
+    final queryKey = query.key;
+    setState(() {
+      _loadingMoreFeed = true;
+      _loadMoreFeedError = null;
+    });
     try {
-      final topics = await _repo.loadMoreTopicFeed(_feedQuery);
-      if (!mounted) {
+      final topics = await _repo.loadMoreTopicFeed(query);
+      if (!mounted || queryKey != _feedQuery.key) {
         return;
       }
       setState(() {
         _feedFuture = Future.value(topics);
       });
     } on Object catch (error) {
-      await _handleOperationError(error, title: '加载更多失败');
+      if (!mounted || queryKey != _feedQuery.key) {
+        return;
+      }
+      setState(() => _loadMoreFeedError = _loadMoreFeedErrorText(error));
     } finally {
       if (mounted) {
         setState(() => _loadingMoreFeed = false);
       }
     }
+  }
+
+  String _loadMoreFeedErrorText(Object error) {
+    if (error is ForumAuthException) {
+      return '加载失败，登录状态可能已变化';
+    }
+    return '加载失败，点击重试';
   }
 
   Future<void> _openTopic(TopicListItem topic) async {
@@ -1083,21 +1114,6 @@ class _AppShellState extends State<AppShell> {
         message: _friendlyError(error),
       );
     }
-  }
-
-  Future<void> _handleOperationError(
-    Object error, {
-    required String title,
-  }) async {
-    if (error is ForumAuthException) {
-      await _clearExpiredLogin();
-      await _showErrorDialog(
-        title: '登录已失效',
-        message: '请试着重新登录后再操作。',
-      );
-      return;
-    }
-    await _showErrorDialog(title: title, message: _friendlyError(error));
   }
 
   Future<void> _clearExpiredLogin() async {
