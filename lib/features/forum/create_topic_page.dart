@@ -159,6 +159,11 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
             decoration: const InputDecoration(
               hintText: '正文',
               border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              disabledBorder: InputBorder.none,
+              errorBorder: InputBorder.none,
+              focusedErrorBorder: InputBorder.none,
               isDense: true,
               contentPadding: EdgeInsets.fromLTRB(12, 12, 12, 8),
             ),
