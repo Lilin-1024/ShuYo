@@ -27,7 +27,28 @@ const port = Number.parseInt(process.env.PORT ?? '3000', 10) || 3000;
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(morgan('combined'));
+morgan.token('safe-url', (req) => {
+  const originalUrl = req.originalUrl ?? req.url ?? '';
+  try {
+    const url = new URL(originalUrl, 'http://localhost');
+    for (const key of [...url.searchParams.keys()]) {
+      if (key.toLowerCase().includes('token')) {
+        url.searchParams.set(key, '[redacted]');
+      }
+    }
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return originalUrl.replace(
+      /([?&][^=&]*token[^=&]*=)[^&]*/gi,
+      '$1[redacted]'
+    );
+  }
+});
+app.use(
+  morgan(
+    ':remote-addr - :remote-user [:date[clf]] ":method :safe-url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'
+  )
+);
 app.use(cookieParser(process.env.COOKIE_SECRET ?? 'change-this-cookie-secret'));
 app.use(express.json({ limit: '64kb' }));
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));

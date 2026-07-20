@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
@@ -166,7 +167,7 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
             const ColoredBox(color: Colors.black),
           if (_autoVisitMessage != null)
             _AutoVisitOverlay(message: _autoVisitMessage!),
-          if (widget.showDebugInfo)
+          if (kDebugMode && widget.showDebugInfo)
             _WebViewDebugPanel(
               label: widget.debugLabel ?? widget.title,
               status: _debugStatus,
@@ -201,7 +202,9 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
     if (platform is! AndroidWebViewController) {
       return;
     }
-    await AndroidWebViewController.enableDebugging(true);
+    if (kDebugMode) {
+      await AndroidWebViewController.enableDebugging(true);
+    }
     await platform.setMediaPlaybackRequiresUserGesture(false);
     await platform.setUseWideViewPort(true);
     await platform.setMixedContentMode(MixedContentMode.compatibilityMode);
@@ -356,6 +359,9 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
   void _debug(String status, [String? url]) {
     final label = widget.debugLabel ?? widget.title;
     final nextUrl = url ?? _debugUrl;
+    if (!kDebugMode) {
+      return;
+    }
     debugPrint(
       '[LEHU_WEBVIEW $label] $status${nextUrl.isEmpty ? '' : ' | $nextUrl'}',
     );

@@ -1600,8 +1600,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             initialNoticeMessage:
                 '当前已开启WebVPN代理。完成统一身份认证后，课表通常可以直接同步。\n\n本应用只读取课表数据，不会收集或保存你的账号密码。',
             initialNoticeDelay: const Duration(seconds: 5),
-            debugLabel: 'ACADEMIC_MANUAL',
-            showDebugInfo: true,
           ),
         ),
       );

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const dataDir = process.env.DATA_DIR ?? path.resolve(process.cwd(), 'data');
 const dbPath = path.join(dataDir, 'db.json');
+let mutationQueue = Promise.resolve();
 
 function nowIso() {
   return new Date().toISOString();
@@ -120,10 +121,14 @@ async function saveState(state) {
 }
 
 async function mutateState(mutator) {
-  const state = await readState();
-  const result = await mutator(state);
-  await saveState(state);
-  return result;
+  const task = mutationQueue.then(async () => {
+    const state = await readState();
+    const result = await mutator(state);
+    await saveState(state);
+    return result;
+  });
+  mutationQueue = task.catch(() => {});
+  return task;
 }
 
 function makeId(prefix) {

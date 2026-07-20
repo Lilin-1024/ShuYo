@@ -6,6 +6,7 @@ import 'package:http/io_client.dart';
 
 import '../models/common.dart';
 import '../models/course_rating.dart';
+import 'http_timeout.dart';
 
 class CourseRatingApiException implements Exception {
   const CourseRatingApiException(this.message, {this.statusCode});
@@ -94,14 +95,17 @@ class CourseRatingApiClient {
   }
 
   Future<JsonMap> _getJson(Uri uri) async {
-    final response = await _httpClient.get(
-      uri,
-      headers: const {
-        'accept': 'application/json',
-        'user-agent':
-            'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
-      },
+    final response = await HttpTimeout.request(
+      _httpClient.get(
+        uri,
+        headers: const {
+          'accept': 'application/json',
+          'user-agent':
+              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+        },
+      ),
+      message: '课程评价请求超时，请稍后再试',
     );
     if (response.statusCode == 429) {
       throw CourseRatingRateLimitedException(

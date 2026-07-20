@@ -9,6 +9,7 @@ import '../../core/academic_url_resolver.dart';
 import '../models/academic_schedule.dart';
 import '../models/common.dart';
 import 'academic_auth_service.dart';
+import 'http_timeout.dart';
 
 class AcademicApiException implements Exception {
   const AcademicApiException(this.message, {this.statusCode});
@@ -73,9 +74,12 @@ class AcademicScheduleApiClient {
   }
 
   Future<AcademicTermQuery> fetchCurrentTermQuery() async {
-    final response = await _httpClient.get(
-      _uri(AcademicConstants.scheduleIndexPath),
-      headers: await _headers(accept: 'text/html,application/xhtml+xml'),
+    final response = await HttpTimeout.request(
+      _httpClient.get(
+        _uri(AcademicConstants.scheduleIndexPath),
+        headers: await _headers(accept: 'text/html,application/xhtml+xml'),
+      ),
+      message: '教务系统请求超时，请稍后再试',
     );
     _ensureSuccess(response);
     final html = response.body;
@@ -109,13 +113,16 @@ class AcademicScheduleApiClient {
         'kclxdm': '',
       },
     ).query;
-    final response = await _httpClient.post(
-      _uri(AcademicConstants.scheduleDataPath),
-      headers: await _headers(
-        accept: '*/*',
-        formRequest: true,
+    final response = await HttpTimeout.request(
+      _httpClient.post(
+        _uri(AcademicConstants.scheduleDataPath),
+        headers: await _headers(
+          accept: '*/*',
+          formRequest: true,
+        ),
+        body: body,
       ),
-      body: body,
+      message: '教务系统请求超时，请稍后再试',
     );
     _ensureSuccess(response);
     _ensureNotLoginPage(response.body);
