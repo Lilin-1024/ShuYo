@@ -96,6 +96,7 @@ abstract class ForumRepository {
     bool forceRefresh = false,
     bool trackVisit = false,
   });
+  TopicDetail? cachedTopicDetail(int id);
   Future<void> recordTopicTiming(
     int topicId, {
     required int postNumber,
@@ -273,6 +274,9 @@ class FixtureForumRepository implements ForumRepository {
   }) async {
     return _topicDetails[id];
   }
+
+  @override
+  TopicDetail? cachedTopicDetail(int id) => _topicDetails[id];
 
   @override
   Future<void> recordTopicTiming(
@@ -604,6 +608,7 @@ class OnlineForumRepository implements ForumRepository {
   final Map<int, ForumCategory> _categories;
   final Map<int, TopicDetail> _topicDetails = {};
   final Map<int, Future<TopicDetail?>> _pendingTopicDetails = {};
+  final Set<int> _staleTopicDetailIds = {};
   final Set<int> _trackedTopicVisits = {};
   final Set<int> _trackedTopicTimings = {};
   final Map<String, UserProfile> _userProfiles = {};
@@ -721,7 +726,7 @@ class OnlineForumRepository implements ForumRepository {
   }) {
     if (!forceRefresh) {
       final cached = _topicDetails[id];
-      if (cached != null) {
+      if (cached != null && !_staleTopicDetailIds.contains(id)) {
         if (trackVisit) {
           _trackTopicVisit(id);
         }
@@ -740,6 +745,9 @@ class OnlineForumRepository implements ForumRepository {
     _pendingTopicDetails[id] = future;
     return future.whenComplete(() => _pendingTopicDetails.remove(id));
   }
+
+  @override
+  TopicDetail? cachedTopicDetail(int id) => _topicDetails[id];
 
   @override
   Future<TopicPreview> fetchTopicPreview(int id) async {
@@ -935,6 +943,7 @@ class OnlineForumRepository implements ForumRepository {
     }
     final post = Post.fromJson(postJson);
     _topicDetails.remove(post.topicId);
+    _staleTopicDetailIds.remove(post.topicId);
     _feedTopics.clear();
     _feedMorePaths.clear();
     _activityItems.remove(ForumActivityKind.topics);
@@ -1047,8 +1056,10 @@ class OnlineForumRepository implements ForumRepository {
     final cached = _topicDetails[draft.topicId];
     if (cached == null) {
       _topicDetails.remove(draft.topicId);
+      _staleTopicDetailIds.remove(draft.topicId);
     } else {
       _topicDetails[draft.topicId] = cached.mergedWithPosts([post]);
+      _staleTopicDetailIds.remove(draft.topicId);
     }
     _privateMessages = null;
     return post;
@@ -1082,7 +1093,7 @@ class OnlineForumRepository implements ForumRepository {
       for (final message in messages) {
         _pendingTopicDetails.remove(message.id);
         if (_shouldInvalidatePrivateMessageDetail(message)) {
-          _topicDetails.remove(message.id);
+          _staleTopicDetailIds.add(message.id);
         }
       }
     }
@@ -1186,6 +1197,7 @@ class OnlineForumRepository implements ForumRepository {
     );
     final post = Post.fromJson(json);
     _topicDetails.remove(post.topicId);
+    _staleTopicDetailIds.remove(post.topicId);
     return post;
   }
 
@@ -1198,6 +1210,7 @@ class OnlineForumRepository implements ForumRepository {
     );
     final post = Post.fromJson(json);
     _topicDetails.remove(post.topicId);
+    _staleTopicDetailIds.remove(post.topicId);
     return post;
   }
 
@@ -1233,6 +1246,7 @@ class OnlineForumRepository implements ForumRepository {
     final payload = PayloadFactory.deleteTopic(topic);
     await _apiClient.deleteForm('/t/${topic.id}', payload.body);
     _topicDetails.remove(topic.id);
+    _staleTopicDetailIds.remove(topic.id);
     _pendingTopicDetails.remove(topic.id);
     for (final key in _feedTopics.keys.toList()) {
       _feedTopics[key] =
@@ -1251,6 +1265,7 @@ class OnlineForumRepository implements ForumRepository {
       payload.body,
     );
     _topicDetails.remove(post.topicId);
+    _staleTopicDetailIds.remove(post.topicId);
   }
 
   Future<TopicDetail?> _fetchTopicDetail(
@@ -1273,6 +1288,7 @@ class OnlineForumRepository implements ForumRepository {
     }
     final detail = await _hydrateMissingPosts(TopicDetail.fromJson(json));
     _topicDetails[id] = detail;
+    _staleTopicDetailIds.remove(id);
     return detail;
   }
 
