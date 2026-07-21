@@ -45,6 +45,10 @@ class DiscourseApiClient {
   final http.Client _httpClient;
   String? _csrfToken;
 
+  static const _mobileChromeUserAgent =
+      'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
+      '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+
   static http.Client _defaultHttpClient() {
     final client = HttpClient()
       ..badCertificateCallback = (certificate, host, port) {
@@ -58,6 +62,24 @@ class DiscourseApiClient {
       _httpClient.get(
         _uri(path),
         headers: await _headers(),
+      ),
+      message: '论坛请求超时，请稍后再试',
+    );
+    return _decode(response);
+  }
+
+  Future<JsonMap> getTrackedTopicJson(
+    String path, {
+    required int topicId,
+  }) async {
+    final response = await HttpTimeout.request(
+      _httpClient.get(
+        _uri(path),
+        headers: await _headers(
+          csrfToken: await _csrf(),
+          referer: '${ForumUrlResolver.baseUrl}/',
+          trackViewTopicId: topicId,
+        ),
       ),
       message: '论坛请求超时，请稍后再试',
     );
@@ -142,17 +164,33 @@ class DiscourseApiClient {
   Future<Map<String, String>> _headers({
     String? csrfToken,
     bool formRequest = false,
+    String? referer,
+    int? trackViewTopicId,
   }) async {
     final headers = <String, String>{
-      'accept': formRequest ? '*/*' : 'application/json',
+      'accept': formRequest
+          ? '*/*'
+          : 'application/json, text/javascript, */*; q=0.01',
+      'user-agent': _mobileChromeUserAgent,
       'x-requested-with': 'XMLHttpRequest',
     };
     final cookie = await _authService.cookieHeader();
     if (cookie != null && cookie.isNotEmpty) {
       headers['cookie'] = cookie;
+      if (trackViewTopicId != null) {
+        headers['discourse-logged-in'] = 'true';
+      }
     }
     if (csrfToken != null && csrfToken.isNotEmpty) {
       headers['x-csrf-token'] = csrfToken;
+    }
+    if (referer != null && referer.isNotEmpty) {
+      headers['referer'] = referer;
+    }
+    if (trackViewTopicId != null) {
+      headers['discourse-present'] = 'true';
+      headers['discourse-track-view'] = 'true';
+      headers['discourse-track-view-topic-id'] = '$trackViewTopicId';
     }
     if (formRequest) {
       headers['content-type'] =

@@ -1277,9 +1277,12 @@ class OnlineForumRepository implements ForumRepository {
     }
     final JsonMap json;
     try {
-      json = await _apiClient.getJson(
-        trackVisit ? _topicVisitPath(id) : '/t/topic/$id.json',
-      );
+      json = trackVisit
+          ? await _apiClient.getTrackedTopicJson(
+              _topicVisitPath(id),
+              topicId: id,
+            )
+          : await _apiClient.getJson('/t/topic/$id.json');
     } on Object {
       if (trackVisit) {
         _trackedTopicVisits.remove(id);
@@ -1298,7 +1301,9 @@ class OnlineForumRepository implements ForumRepository {
     }
     _trackedTopicVisits.add(id);
     unawaited(
-      _apiClient.getJson(_topicVisitPath(id)).catchError((Object error) {
+      _apiClient
+          .getTrackedTopicJson(_topicVisitPath(id), topicId: id)
+          .catchError((Object error) {
         _trackedTopicVisits.remove(id);
         return <String, dynamic>{};
       }),
