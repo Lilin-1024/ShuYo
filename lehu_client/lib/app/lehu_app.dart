@@ -13,24 +13,48 @@ class LehuApp extends StatefulWidget {
   State<LehuApp> createState() => _LehuAppState();
 }
 
-class _LehuAppState extends State<LehuApp> {
+class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   final _settingsService = ClientSettingsService();
   late final Future<ForumRepository> _startupFuture;
-  LehuThemeSpec _theme = LehuThemes.byId(LehuThemes.defaultId);
+  String _manualThemeId = LehuThemes.defaultId;
+  bool _followSystemTheme = false;
+  Brightness _systemBrightness =
+      WidgetsBinding.instance.platformDispatcher.platformBrightness;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _startupFuture = _loadStartup();
     _loadTheme();
   }
 
   @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    final brightness =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    if (brightness == _systemBrightness) {
+      return;
+    }
+    _systemBrightness = brightness;
+    if (_followSystemTheme) {
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = _effectiveTheme;
     return MaterialApp(
       title: 'ShuYo',
       debugShowCheckedModeBanner: false,
-      theme: _theme.themeData(),
+      theme: theme.themeData(),
       home: FutureBuilder<ForumRepository>(
         future: _startupFuture,
         builder: (context, snapshot) {
@@ -38,17 +62,26 @@ class _LehuAppState extends State<LehuApp> {
             return _StartupError(error: snapshot.error.toString());
           }
           if (!snapshot.hasData) {
-            return _StartupLoading(theme: _theme);
+            return _StartupLoading(theme: theme);
           }
           return AppShell(
             repository: snapshot.data!,
             reloadRepository: ForumRepositoryFactory.loadOnline,
-            selectedThemeId: _theme.id,
+            selectedThemeId: theme.id,
+            followSystemTheme: _followSystemTheme,
             onThemeChanged: _changeTheme,
+            onFollowSystemThemeChanged: _changeFollowSystemTheme,
           );
         },
       ),
     );
+  }
+
+  LehuThemeSpec get _effectiveTheme {
+    final themeId = _followSystemTheme
+        ? LehuThemes.systemThemeIdFor(_systemBrightness)
+        : _manualThemeId;
+    return LehuThemes.byId(themeId);
   }
 
   Future<ForumRepository> _loadStartup() async {
@@ -58,17 +91,45 @@ class _LehuAppState extends State<LehuApp> {
 
   Future<void> _loadTheme() async {
     final themeId = await _settingsService.loadThemeId();
+    final followSystemTheme = await _settingsService.loadFollowSystemTheme();
     if (!mounted) {
       return;
     }
-    setState(() => _theme = LehuThemes.byId(themeId));
+    setState(() {
+      _manualThemeId = LehuThemes.byId(themeId).id;
+      _followSystemTheme = followSystemTheme;
+    });
   }
 
   Future<void> _changeTheme(String themeId) async {
     final theme = LehuThemes.byId(themeId);
     await _settingsService.saveThemeId(theme.id);
+    await _settingsService.saveFollowSystemTheme(false);
     if (mounted) {
-      setState(() => _theme = theme);
+      setState(() {
+        _manualThemeId = theme.id;
+        _followSystemTheme = false;
+      });
+    }
+  }
+
+  Future<void> _changeFollowSystemTheme(bool enabled) async {
+    if (enabled) {
+      await _settingsService.saveFollowSystemTheme(true);
+      if (mounted) {
+        setState(() => _followSystemTheme = true);
+      }
+      return;
+    }
+
+    final currentThemeId = _effectiveTheme.id;
+    await _settingsService.saveThemeId(currentThemeId);
+    await _settingsService.saveFollowSystemTheme(false);
+    if (mounted) {
+      setState(() {
+        _manualThemeId = currentThemeId;
+        _followSystemTheme = false;
+      });
     }
   }
 }

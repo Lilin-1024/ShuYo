@@ -19,7 +19,9 @@ class ClientSettingsPage extends StatelessWidget {
     required this.scheduleNotificationService,
     required this.backendRepository,
     required this.selectedThemeId,
+    required this.followSystemTheme,
     required this.onThemeChanged,
+    required this.onFollowSystemThemeChanged,
     this.isOnline = false,
     this.onLogout,
   });
@@ -28,7 +30,9 @@ class ClientSettingsPage extends StatelessWidget {
   final AcademicScheduleNotificationService scheduleNotificationService;
   final ClientBackendRepository backendRepository;
   final String selectedThemeId;
+  final bool followSystemTheme;
   final Future<void> Function(String themeId) onThemeChanged;
+  final Future<void> Function(bool enabled) onFollowSystemThemeChanged;
   final bool isOnline;
   final Future<void> Function()? onLogout;
 
@@ -65,7 +69,9 @@ class ClientSettingsPage extends StatelessWidget {
               lehuRoute(
                 builder: (context) => _ThemeSettingsPage(
                   selectedThemeId: selectedThemeId,
+                  followSystemTheme: followSystemTheme,
                   onThemeChanged: onThemeChanged,
+                  onFollowSystemThemeChanged: onFollowSystemThemeChanged,
                 ),
               ),
             ),
@@ -244,11 +250,15 @@ class _AboutSection extends StatelessWidget {
 class _ThemeSettingsPage extends StatefulWidget {
   const _ThemeSettingsPage({
     required this.selectedThemeId,
+    required this.followSystemTheme,
     required this.onThemeChanged,
+    required this.onFollowSystemThemeChanged,
   });
 
   final String selectedThemeId;
+  final bool followSystemTheme;
   final Future<void> Function(String themeId) onThemeChanged;
+  final Future<void> Function(bool enabled) onFollowSystemThemeChanged;
 
   @override
   State<_ThemeSettingsPage> createState() => _ThemeSettingsPageState();
@@ -256,12 +266,15 @@ class _ThemeSettingsPage extends StatefulWidget {
 
 class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
   late String _selectedThemeId;
+  late bool _followSystemTheme;
   String? _savingThemeId;
+  bool _savingFollowSystemTheme = false;
 
   @override
   void initState() {
     super.initState();
     _selectedThemeId = widget.selectedThemeId;
+    _followSystemTheme = widget.followSystemTheme;
   }
 
   @override
@@ -271,6 +284,10 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
         _savingThemeId == null) {
       _selectedThemeId = widget.selectedThemeId;
     }
+    if (widget.followSystemTheme != oldWidget.followSystemTheme &&
+        !_savingFollowSystemTheme) {
+      _followSystemTheme = widget.followSystemTheme;
+    }
   }
 
   @override
@@ -279,10 +296,18 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('主题切换')),
       body: ListView.separated(
-        itemCount: LehuThemes.all.length,
+        itemCount: LehuThemes.all.length + 1,
         separatorBuilder: (context, index) => Divider(color: colors.border),
         itemBuilder: (context, index) {
-          final theme = LehuThemes.all[index];
+          if (index == 0) {
+            return _SettingsSwitchRow(
+              title: '跟随系统',
+              value: _followSystemTheme,
+              enabled: _savingThemeId == null && !_savingFollowSystemTheme,
+              onChanged: _toggleFollowSystemTheme,
+            );
+          }
+          final theme = LehuThemes.all[index - 1];
           final selected = theme.id == _selectedThemeId;
           return ListTile(
             selected: selected,
@@ -306,11 +331,14 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
   }
 
   Future<void> _selectTheme(LehuThemeSpec theme) async {
-    if (_selectedThemeId == theme.id || _savingThemeId != null) {
+    if ((!_followSystemTheme && _selectedThemeId == theme.id) ||
+        _savingThemeId != null ||
+        _savingFollowSystemTheme) {
       return;
     }
     setState(() {
       _selectedThemeId = theme.id;
+      _followSystemTheme = false;
       _savingThemeId = theme.id;
     });
     try {
@@ -320,10 +348,45 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
         return;
       }
       _showSnack(context, '主题保存失败：$error');
-      setState(() => _selectedThemeId = widget.selectedThemeId);
+      setState(() {
+        _selectedThemeId = widget.selectedThemeId;
+        _followSystemTheme = widget.followSystemTheme;
+      });
     } finally {
       if (mounted) {
         setState(() => _savingThemeId = null);
+      }
+    }
+  }
+
+  Future<void> _toggleFollowSystemTheme(bool enabled) async {
+    if (_savingFollowSystemTheme || _savingThemeId != null) {
+      return;
+    }
+    setState(() {
+      _followSystemTheme = enabled;
+      _savingFollowSystemTheme = true;
+    });
+    try {
+      await widget.onFollowSystemThemeChanged(enabled);
+      if (mounted && enabled) {
+        final brightness = MediaQuery.platformBrightnessOf(context);
+        setState(() {
+          _selectedThemeId = LehuThemes.systemThemeIdFor(brightness);
+        });
+      }
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      _showSnack(context, '主题保存失败：$error');
+      setState(() {
+        _followSystemTheme = widget.followSystemTheme;
+        _selectedThemeId = widget.selectedThemeId;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _savingFollowSystemTheme = false);
       }
     }
   }
