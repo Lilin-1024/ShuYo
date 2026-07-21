@@ -38,7 +38,7 @@ class _LehuAppState extends State<LehuApp> {
             return _StartupError(error: snapshot.error.toString());
           }
           if (!snapshot.hasData) {
-            return const _StartupLoading();
+            return _StartupLoading(theme: _theme);
           }
           return AppShell(
             repository: snapshot.data!,
@@ -74,13 +74,34 @@ class _LehuAppState extends State<LehuApp> {
 }
 
 class _StartupLoading extends StatelessWidget {
-  const _StartupLoading();
+  const _StartupLoading({required this.theme});
+
+  final LehuThemeSpec theme;
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return Scaffold(
+      backgroundColor: theme.colors.background,
+      body: Center(
+        child: Image.asset(
+          _iconAsset,
+          width: 112,
+          height: 112,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+      ),
     );
+  }
+
+  String get _iconAsset {
+    if (theme.id == LehuThemes.defaultId) {
+      return 'assets/images/icon_clear_blue.png';
+    }
+    if (theme.colors.brightness == Brightness.light) {
+      return 'assets/images/icon_clear_black.png';
+    }
+    return 'assets/images/icon_clear.png';
   }
 }
 
