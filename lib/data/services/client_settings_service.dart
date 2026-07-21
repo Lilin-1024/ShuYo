@@ -41,6 +41,7 @@ class ClientSettingsService {
       'client.notifications.schedule.enabled';
   static const autoUseWebVpnProxyKey = 'client.network.webvpn.auto_proxy';
   static const themeIdKey = 'client.theme.id';
+  static const followSystemThemeKey = 'client.theme.follow_system';
 
   final Future<SharedPreferences> Function() _preferencesLoader;
 
@@ -88,5 +89,15 @@ class ClientSettingsService {
   Future<void> saveThemeId(String themeId) async {
     final prefs = await _preferencesLoader();
     await prefs.setString(themeIdKey, themeId);
+  }
+
+  Future<bool> loadFollowSystemTheme() async {
+    final prefs = await _preferencesLoader();
+    return prefs.getBool(followSystemThemeKey) ?? false;
+  }
+
+  Future<void> saveFollowSystemTheme(bool enabled) async {
+    final prefs = await _preferencesLoader();
+    await prefs.setBool(followSystemThemeKey, enabled);
   }
 }

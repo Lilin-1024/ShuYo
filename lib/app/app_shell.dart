@@ -56,13 +56,17 @@ class AppShell extends StatefulWidget {
     required this.repository,
     required this.reloadRepository,
     required this.selectedThemeId,
+    required this.followSystemTheme,
     required this.onThemeChanged,
+    required this.onFollowSystemThemeChanged,
   });
 
   final ForumRepository repository;
   final Future<ForumRepository> Function() reloadRepository;
   final String selectedThemeId;
+  final bool followSystemTheme;
   final Future<void> Function(String themeId) onThemeChanged;
+  final Future<void> Function(bool enabled) onFollowSystemThemeChanged;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -1161,7 +1165,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           scheduleNotificationService: _scheduleNotificationService,
           backendRepository: _clientBackendRepository,
           selectedThemeId: widget.selectedThemeId,
+          followSystemTheme: widget.followSystemTheme,
           onThemeChanged: widget.onThemeChanged,
+          onFollowSystemThemeChanged: widget.onFollowSystemThemeChanged,
           isOnline: _repo.isOnline,
           onLogout: _logout,
         ),

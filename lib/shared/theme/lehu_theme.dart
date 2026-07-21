@@ -345,6 +345,7 @@ class LehuThemes {
   const LehuThemes._();
 
   static const defaultId = 'default_dark';
+  static const systemLightId = 'paper_light';
 
   static const all = <LehuThemeSpec>[
     LehuThemeSpec(
@@ -611,6 +612,10 @@ class LehuThemes {
       }
     }
     return all.first;
+  }
+
+  static String systemThemeIdFor(Brightness brightness) {
+    return brightness == Brightness.dark ? defaultId : systemLightId;
   }
 }
 
