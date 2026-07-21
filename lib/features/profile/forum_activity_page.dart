@@ -1,21 +1,28 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/forum_activity.dart';
-import '../../data/models/topic.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../shared/lehu_text_styles.dart';
+import '../../shared/navigation/lehu_route.dart';
 import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../topic/topic_detail_page.dart';
 
 class ForumActivityPage extends StatefulWidget {
   const ForumActivityPage({
     super.key,
     required this.repository,
     required this.kind,
+    this.onLoginRequired,
+    this.onSessionExpired,
+    this.onBookmarkChanged,
   });
 
   final ForumRepository repository;
   final ForumActivityKind kind;
+  final Future<void> Function()? onLoginRequired;
+  final Future<void> Function()? onSessionExpired;
+  final VoidCallback? onBookmarkChanged;
 
   @override
   State<ForumActivityPage> createState() => _ForumActivityPageState();
@@ -84,9 +91,7 @@ class _ForumActivityPageState extends State<ForumActivityPage> {
                   kind: widget.kind,
                   categoryName:
                       widget.repository.categoryById(item.categoryId)?.name,
-                  onTap: () => Navigator.of(context).pop<TopicListItem>(
-                    item.toTopicListItem(),
-                  ),
+                  onTap: () => _openTopic(item),
                 );
               },
             ),
@@ -121,6 +126,27 @@ class _ForumActivityPageState extends State<ForumActivityPage> {
       _future = future;
     });
     await future;
+  }
+
+  Future<void> _openTopic(ForumActivityItem item) async {
+    final deleted = await Navigator.of(context).push<bool>(
+      lehuRoute(
+        builder: (context) => TopicDetailPage(
+          repository: widget.repository,
+          topic: item.toTopicListItem(),
+          onLoginRequired: widget.onLoginRequired,
+          onSessionExpired: widget.onSessionExpired,
+          onBookmarkChanged: widget.onBookmarkChanged,
+        ),
+      ),
+    );
+    if (!mounted) {
+      return;
+    }
+    widget.onBookmarkChanged?.call();
+    if (deleted == true) {
+      await _refresh(force: true);
+    }
   }
 }
 

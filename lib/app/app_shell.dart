@@ -1135,11 +1135,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       await _login();
       return;
     }
-    final topic = await Navigator.of(context).push<TopicListItem>(
+    await Navigator.of(context).push<void>(
       lehuRoute(
         builder: (context) => ForumActivityPage(
           repository: _repo,
           kind: kind,
+          onLoginRequired: _login,
+          onSessionExpired: _clearExpiredLogin,
+          onBookmarkChanged: _refreshProfileActivityCounts,
         ),
       ),
     );
@@ -1147,9 +1150,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     _refreshProfileActivityCounts();
-    if (topic != null) {
-      await _openTopic(topic);
-    }
   }
 
   Future<void> _openClientSettings() async {
