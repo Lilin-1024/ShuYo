@@ -143,6 +143,27 @@ void main() {
     );
   });
 
+  test('keeps discourse lightbox images as image segments', () {
+    const cooked = '''
+<p>小木曾雪菜镇楼喵</p>
+<p><div class="lightbox-wrapper">
+  <a class="lightbox" href="https://bbs.shu.edu.cn/uploads/default/original/1X/original.jpeg" title="photo.jpg">
+    <img src="https://bbs.shu.edu.cn/uploads/default/optimized/1X/photo_2_500x500.jpeg" alt="photo.jpg" width="500" height="500">
+    <div class="meta"><span class="filename">photo.jpg</span></div>
+  </a>
+</div></p>
+''';
+
+    final segments = HtmlText.parseSegments(cooked);
+
+    expect(segments.where((segment) => segment.isImage), hasLength(1));
+    expect(segments.where((segment) => segment.isLink), isEmpty);
+    expect(
+      segments.singleWhere((segment) => segment.isImage).value,
+      contains('photo_2_500x500.jpeg'),
+    );
+  });
+
   test('merges topic posts by id and keeps post-number order', () {
     final topic = TopicDetail(
       id: 1,
