@@ -13,6 +13,7 @@ import '../../data/services/payload_factory.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/forum_cooked_content.dart';
 import '../../shared/widgets/forum_network_image.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
@@ -33,6 +34,7 @@ class TopicPage extends StatefulWidget {
     required this.onLikePost,
     required this.onDeletePost,
     required this.onOpenUser,
+    required this.onOpenInternalTopic,
     required this.onLoginRequired,
     required this.isOnline,
     required this.isSubmittingReply,
@@ -52,6 +54,7 @@ class TopicPage extends StatefulWidget {
   final ValueChanged<Post> onLikePost;
   final ValueChanged<Post> onDeletePost;
   final ValueChanged<String> onOpenUser;
+  final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
   final VoidCallback onLoginRequired;
 
   @override
@@ -114,6 +117,7 @@ class _TopicPageState extends State<TopicPage> {
                     onDelete: _confirmDelete,
                     onOpenUser: widget.onOpenUser,
                     onOpenImage: _openImagePreview,
+                    onOpenInternalTopic: widget.onOpenInternalTopic,
                   ),
               ],
             ),
@@ -246,6 +250,7 @@ class _ThreadedPostView extends StatelessWidget {
     required this.onDelete,
     required this.onOpenUser,
     required this.onOpenImage,
+    required this.onOpenInternalTopic,
   });
 
   final ThreadedPost thread;
@@ -261,6 +266,7 @@ class _ThreadedPostView extends StatelessWidget {
   final ValueChanged<Post> onDelete;
   final ValueChanged<String> onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
+  final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
 
   @override
   Widget build(BuildContext context) {
@@ -285,6 +291,7 @@ class _ThreadedPostView extends StatelessWidget {
           onDelete: () => onDelete(post),
           onOpenUser: () => onOpenUser(post.username),
           onOpenImage: onOpenImage,
+          onOpenInternalTopic: onOpenInternalTopic,
         ),
         if (replies.isNotEmpty)
           _NestedReplies(
@@ -301,6 +308,7 @@ class _ThreadedPostView extends StatelessWidget {
             onDelete: onDelete,
             onOpenUser: onOpenUser,
             onOpenImage: onOpenImage,
+            onOpenInternalTopic: onOpenInternalTopic,
           ),
       ],
     );
@@ -322,6 +330,7 @@ class _NestedReplies extends StatelessWidget {
     required this.onDelete,
     required this.onOpenUser,
     required this.onOpenImage,
+    required this.onOpenInternalTopic,
   });
 
   final Post parent;
@@ -337,6 +346,7 @@ class _NestedReplies extends StatelessWidget {
   final ValueChanged<Post> onDelete;
   final ValueChanged<String> onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
+  final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
 
   @override
   Widget build(BuildContext context) {
@@ -368,6 +378,7 @@ class _NestedReplies extends StatelessWidget {
               onDelete: () => onDelete(reply),
               onOpenUser: () => onOpenUser(reply.username),
               onOpenImage: onOpenImage,
+              onOpenInternalTopic: onOpenInternalTopic,
             ),
           if (hiddenCount > 0 || expanded)
             TextButton.icon(
@@ -394,6 +405,7 @@ class _PostView extends StatelessWidget {
     required this.onDelete,
     required this.onOpenUser,
     required this.onOpenImage,
+    required this.onOpenInternalTopic,
     this.replyContext,
     this.compact = false,
   });
@@ -409,6 +421,7 @@ class _PostView extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
+  final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
   final String? replyContext;
   final bool compact;
 
@@ -423,59 +436,6 @@ class _PostView extends StatelessWidget {
     final metaText = timeText.isEmpty
         ? '#${post.postNumber}'
         : '#${post.postNumber} · $timeText';
-    final contentWidgets = <Widget>[];
-    final segments = HtmlText.parseSegments(post.cooked);
-    final imageUrls = [
-      for (final segment in segments)
-        if (segment.isImage) segment.value,
-    ];
-    var imageIndex = 0;
-    for (final segment in segments) {
-      if (!segment.isImage) {
-        contentWidgets.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              segment.value,
-              style: TextStyle(
-                color: colors.textPrimary,
-                fontSize: textSize,
-                height: 1.46,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-        );
-        continue;
-      }
-      final currentImageIndex = imageIndex++;
-      contentWidgets.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: GestureDetector(
-            onTap: () => onOpenImage(imageUrls, currentImageIndex),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: ForumNetworkImage(
-                segment.value,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 160,
-                    alignment: Alignment.center,
-                    color: colors.surfaceMuted,
-                    child: Text(
-                      '图片加载失败',
-                      style: TextStyle(color: colors.textSecondary),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      );
-    }
     return Container(
       padding: EdgeInsets.symmetric(vertical: compact ? 12 : 16),
       decoration: BoxDecoration(
@@ -535,9 +495,15 @@ class _PostView extends StatelessWidget {
             onLongPress: () => _copyText(context),
             child: Padding(
               padding: EdgeInsets.only(right: compact ? 10 : 14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: contentWidgets,
+              child: ForumCookedContent(
+                cooked: post.cooked,
+                textColor: colors.textPrimary,
+                textSize: textSize,
+                imageFit: BoxFit.cover,
+                imageErrorHeight: 160,
+                compactCards: compact,
+                onOpenImage: onOpenImage,
+                onOpenInternalTopic: onOpenInternalTopic,
               ),
             ),
           ),

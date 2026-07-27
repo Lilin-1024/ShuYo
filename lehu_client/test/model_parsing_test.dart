@@ -101,6 +101,48 @@ void main() {
     expect(sanitized.selection.baseOffset, 2);
   });
 
+  test('parses onebox and internal quote cooked segments', () {
+    const oneboxCooked = '''
+<aside class="onebox allowlistedgeneric" data-onebox-src="https://www.bilibili.com/video/BV1tA4y1f7bQ/">
+  <header class="source">
+    <img src="https://bbs.shu.edu.cn/uploads/default/original/1X/site.png" class="site-icon" width="32" height="32">
+    <a href="https://www.bilibili.com/video/BV1tA4y1f7bQ/">哔哩哔哩</a>
+  </header>
+  <article class="onebox-body">
+    <div class="aspect-image"><img src="https://bbs.shu.edu.cn/uploads/default/optimized/1X/thumb.jpeg" class="thumbnail" width="690" height="431"></div>
+    <h3><a href="https://www.bilibili.com/video/BV1tA4y1f7bQ/">视频标题</a></h3>
+    <p>这是一段很长的视频简介。</p>
+  </article>
+</aside>
+''';
+    final oneboxSegments = HtmlText.parseSegments(oneboxCooked);
+    final onebox = oneboxSegments.single;
+    expect(onebox.kind, CookedSegmentKind.onebox);
+    expect(onebox.link?.title, '视频标题');
+    expect(onebox.link?.source, '哔哩哔哩');
+    expect(onebox.link?.excerpt, '这是一段很长的视频简介。');
+    expect(onebox.link?.thumbnailUrl, contains('thumb.jpeg'));
+
+    const quoteCooked = '''
+<aside class="quote" data-post="1" data-topic="875">
+  <div class="title">
+    <a href="https://bbs.shu.edu.cn/t/topic/875/">内部帖子标题</a>
+  </div>
+  <blockquote>内部帖子摘要内容</blockquote>
+</aside>
+''';
+    final quote = HtmlText.parseSegments(quoteCooked).single;
+    expect(quote.kind, CookedSegmentKind.quote);
+    expect(quote.link?.topicId, 875);
+    expect(quote.link?.postNumber, 1);
+    expect(quote.link?.title, '内部帖子标题');
+    expect(quote.link?.excerpt, '内部帖子摘要内容');
+    expect(
+      HtmlText.internalTopicIdFromUrl('https://bbs.shu.edu.cn/t/topic/875/2'),
+      875,
+    );
+  });
+
   test('merges topic posts by id and keeps post-number order', () {
     final topic = TopicDetail(
       id: 1,

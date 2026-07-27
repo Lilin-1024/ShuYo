@@ -21,10 +21,11 @@ import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
-import '../../shared/widgets/forum_network_image.dart';
+import '../../shared/widgets/forum_cooked_content.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
 import '../profile/user_profile_page.dart';
+import '../topic/topic_detail_page.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({
@@ -718,6 +719,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
           child: _MessageBubble(
             post: post,
             onOpenImage: _openImagePreview,
+            onOpenInternalTopic: _openInternalTopic,
           ),
         );
       },
@@ -940,6 +942,31 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     );
   }
 
+  void _openInternalTopic(CookedLinkPreview preview) {
+    final topicId = preview.topicId;
+    if (topicId == null) {
+      return;
+    }
+    Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => TopicDetailPage(
+          repository: widget.repository,
+          topic: TopicListItem(
+            id: topicId,
+            title: preview.title,
+            postsCount: 0,
+            replyCount: 0,
+            highestPostNumber: preview.postNumber ?? 1,
+            views: 0,
+            likeCount: 0,
+            categoryId: 0,
+            posters: const [],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _openCounterpartProfile() {
     final username = widget.counterpartUsername;
     if (username == null || username.isEmpty) {
@@ -1114,10 +1141,12 @@ class _MessageBubble extends StatelessWidget {
   const _MessageBubble({
     required this.post,
     required this.onOpenImage,
+    required this.onOpenInternalTopic,
   });
 
   final Post post;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
+  final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
 
   @override
   Widget build(BuildContext context) {
@@ -1158,10 +1187,17 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                _MessageCookedContent(
+                ForumCookedContent(
                   cooked: post.cooked,
                   textColor: primaryText,
+                  textSize: 15,
+                  textBottomSpacing: 6,
+                  imageBottomSpacing: 8,
+                  imageErrorHeight: 130,
+                  imageFit: BoxFit.contain,
+                  compactCards: true,
                   onOpenImage: onOpenImage,
+                  onOpenInternalTopic: onOpenInternalTopic,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1501,83 +1537,6 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
   }
 }
 
-class _MessageCookedContent extends StatelessWidget {
-  const _MessageCookedContent({
-    required this.cooked,
-    required this.textColor,
-    required this.onOpenImage,
-  });
-
-  final String cooked;
-  final Color textColor;
-  final void Function(List<String> urls, int initialIndex) onOpenImage;
-
-  @override
-  Widget build(BuildContext context) {
-    final segments = HtmlText.parseSegments(cooked);
-    if (segments.isEmpty) {
-      return Text(' ', style: TextStyle(color: textColor));
-    }
-    final imageUrls = [
-      for (final segment in segments)
-        if (segment.isImage) segment.value,
-    ];
-    final contentWidgets = <Widget>[];
-    var imageIndex = 0;
-    for (final segment in segments) {
-      if (!segment.isImage) {
-        contentWidgets.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Text(
-              segment.value,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 15,
-                height: 1.46,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-        );
-        continue;
-      }
-      final currentImageIndex = imageIndex++;
-      contentWidgets.add(
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: GestureDetector(
-            onTap: () => onOpenImage(imageUrls, currentImageIndex),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: ForumNetworkImage(
-                segment.value,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  final colors = context.lehuColors;
-                  return Container(
-                    height: 130,
-                    alignment: Alignment.center,
-                    color: colors.surfaceMuted,
-                    child: Text(
-                      '图片加载失败',
-                      style: TextStyle(color: colors.textSecondary),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: contentWidgets,
-    );
-  }
-}
-
 class _TopicPreviewLine extends StatelessWidget {
   const _TopicPreviewLine({
     required this.future,
@@ -1642,7 +1601,16 @@ class _MessageTopicPreview {
     final hasImages = segments.any((segment) => segment.isImage);
     final text = segments
         .where((segment) => !segment.isImage)
-        .map((segment) => segment.value)
+        .map((segment) {
+          final link = segment.link;
+          if (link == null) {
+            return segment.value;
+          }
+          final excerpt = link.excerpt;
+          return excerpt == null || excerpt.isEmpty
+              ? link.title
+              : '${link.title} $excerpt';
+        })
         .join(' ')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
