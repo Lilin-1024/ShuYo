@@ -146,6 +146,10 @@ class _TopicPageState extends State<TopicPage> {
       widget.onLoginRequired();
       return;
     }
+    if (post.postNumber == 1) {
+      _replyBarKey.currentState?.replyToTopic();
+      return;
+    }
     _replyBarKey.currentState?.replyTo(post.postNumber);
   }
 
@@ -437,63 +441,94 @@ class _PostView extends StatelessWidget {
         ? '#${post.postNumber}'
         : '#${post.postNumber} · $timeText';
     return Container(
-      padding: EdgeInsets.symmetric(vertical: compact ? 12 : 16),
+      padding: EdgeInsets.symmetric(vertical: compact ? 10 : 14),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colors.border)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(6),
-            onTap: onOpenUser,
-            child: Row(
-              children: [
-                ForumAvatar(
-                    url: post.avatarUrl(size: 96), size: compact ? 30 : 36),
-                SizedBox(width: compact ? 8 : 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        post.username,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: colors.detailAuthor,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14.5,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: canReply ? onReply : null,
+        onLongPress: () => _showActionSheet(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(right: compact ? 0 : 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: onOpenUser,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 2,
+                            vertical: 2,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ForumAvatar(
+                                url: post.avatarUrl(size: 96),
+                                size: compact ? 30 : 36,
+                              ),
+                              SizedBox(width: compact ? 8 : 10),
+                              Flexible(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      post.username,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: colors.detailAuthor,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      metaText,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: colors.textMuted,
+                                        fontSize: 12.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        metaText,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: colors.textMuted,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                  if (canLike)
+                    _InlineLikeButton(
+                      count: post.likeCount,
+                      liked: post.liked,
+                      enabled: !post.yours && !isLiking,
+                      loading: isLiking,
+                      onTap: onLike,
+                    ),
+                ],
+              ),
             ),
-          ),
-          if (replyContext != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              replyContext!,
-              style: TextStyle(color: colors.textMuted, fontSize: 12.5),
-            ),
-          ],
-          const SizedBox(height: 12),
-          GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onLongPress: () => _copyText(context),
-            child: Padding(
+            if (replyContext != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                replyContext!,
+                style: TextStyle(color: colors.textMuted, fontSize: 12.5),
+              ),
+            ],
+            SizedBox(height: compact ? 9 : 11),
+            Padding(
               padding: EdgeInsets.only(right: compact ? 10 : 14),
               child: ForumCookedContent(
                 cooked: post.cooked,
@@ -506,38 +541,81 @@ class _PostView extends StatelessWidget {
                 onOpenInternalTopic: onOpenInternalTopic,
               ),
             ),
-          ),
-          Row(
-            children: [
-              if (canLike)
-                TextButton.icon(
-                  onPressed: post.yours || isLiking ? null : onLike,
-                  icon: isLiking
-                      ? const _TinyProgress()
-                      : Icon(
-                          post.liked ? Icons.favorite : Icons.favorite_border,
-                          size: 18,
-                        ),
-                  label: Text('${post.likeCount}'),
-                ),
-              if (canReply)
-                TextButton.icon(
-                  onPressed: onReply,
-                  icon: const Icon(Icons.reply, size: 18),
-                  label: const Text('回复'),
-                ),
-              if (canDelete)
-                TextButton.icon(
-                  onPressed: isDeleting ? null : onDelete,
-                  icon: isDeleting
-                      ? const _TinyProgress()
-                      : const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('删除'),
-                ),
-            ],
-          ),
-        ],
+            SizedBox(height: compact ? 4 : 6),
+          ],
+        ),
       ),
+    );
+  }
+
+  Future<void> _showActionSheet(BuildContext context) async {
+    final actions = <_PostAction>[
+      _PostAction(
+        icon: Icons.copy_outlined,
+        label: '复制',
+        onTap: () => _copyText(context),
+      ),
+      if (canDelete)
+        _PostAction(
+          icon: Icons.delete_outline,
+          label: isDeleting ? '删除中...' : '删除',
+          destructive: true,
+          onTap: isDeleting ? null : onDelete,
+        ),
+    ];
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.58),
+      builder: (context) {
+        final colors = context.lehuColors;
+        return SafeArea(
+          top: false,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(8),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '回复操作',
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: '关闭',
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                for (final action in actions)
+                  _PostActionTile(
+                    action: action,
+                    onSelected: () {
+                      Navigator.of(context).pop();
+                      action.onTap?.call();
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -551,8 +629,109 @@ class _PostView extends StatelessWidget {
       return;
     }
     await Clipboard.setData(ClipboardData(text: text));
+    if (!context.mounted) {
+      return;
+    }
     messenger.showSnackBar(
       const SnackBar(content: Text('已复制')),
+    );
+  }
+}
+
+class _PostAction {
+  const _PostAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool destructive;
+}
+
+class _PostActionTile extends StatelessWidget {
+  const _PostActionTile({
+    required this.action,
+    required this.onSelected,
+  });
+
+  final _PostAction action;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final enabled = action.onTap != null;
+    final color = action.destructive && enabled
+        ? Theme.of(context).colorScheme.error
+        : enabled
+            ? colors.textPrimary
+            : colors.textMuted;
+    return ListTile(
+      enabled: enabled,
+      onTap: enabled ? onSelected : null,
+      leading: Icon(action.icon, color: color),
+      title: Text(action.label, style: TextStyle(color: color)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+    );
+  }
+}
+
+class _InlineLikeButton extends StatelessWidget {
+  const _InlineLikeButton({
+    required this.count,
+    required this.liked,
+    required this.enabled,
+    required this.loading,
+    required this.onTap,
+  });
+
+  final int count;
+  final bool liked;
+  final bool enabled;
+  final bool loading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final activeColor = Theme.of(context).colorScheme.primary;
+    final color = liked ? activeColor : colors.textMuted;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: enabled ? onTap : () {},
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (loading)
+              const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(
+                liked ? Icons.favorite : Icons.favorite_border,
+                size: 18,
+                color: enabled || liked ? color : colors.textMuted,
+              ),
+            const SizedBox(width: 4),
+            Text(
+              '$count',
+              style: TextStyle(
+                color: enabled || liked ? color : colors.textMuted,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -636,6 +815,23 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     setState(() {
       _composerOpen = true;
       _replyToPostNumber = postNumber;
+      _showEmojiPanel = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  void replyToTopic() {
+    if (!_canType) {
+      _handleInputTap();
+      return;
+    }
+    setState(() {
+      _composerOpen = true;
+      _replyToPostNumber = null;
       _showEmojiPanel = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
