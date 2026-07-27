@@ -101,7 +101,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                   if (detail == null && snapshot.hasError) {
                     return _ErrorState(
                       title: '帖子加载失败',
-                      message: _friendlyError(snapshot.error!),
+                      message: _topicLoadError(snapshot.error!),
                       onRetry: _refresh,
                     );
                   }
@@ -538,6 +538,13 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       return error.message;
     }
     return fallbackMessage ?? '操作失败，请稍后重试';
+  }
+
+  String _topicLoadError(Object error) {
+    if (error is ForumApiException && _isGenericForumError(error.message)) {
+      return '加载失败，请稍后再试，或检查登录状态。';
+    }
+    return _friendlyError(error);
   }
 
   bool _isGenericForumError(String message) {
