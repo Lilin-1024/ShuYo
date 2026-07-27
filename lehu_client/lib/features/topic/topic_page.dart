@@ -26,6 +26,7 @@ import 'threaded_posts.dart';
 class TopicPage extends StatefulWidget {
   const TopicPage({
     super.key,
+    this.controller,
     required this.item,
     required this.detail,
     required this.category,
@@ -42,6 +43,7 @@ class TopicPage extends StatefulWidget {
     required this.busyDeletePostIds,
   });
 
+  final TopicPageController? controller;
   final TopicListItem item;
   final TopicDetail? detail;
   final ForumCategory? category;
@@ -61,11 +63,56 @@ class TopicPage extends StatefulWidget {
   State<TopicPage> createState() => _TopicPageState();
 }
 
+class TopicPageController {
+  _TopicPageState? _state;
+
+  void collapseComposer() {
+    _state?._collapseComposerForBrowsing();
+  }
+
+  void scrollToTop() {
+    _state?._scrollToTop();
+  }
+
+  void _attach(_TopicPageState state) {
+    _state = state;
+  }
+
+  void _detach(_TopicPageState state) {
+    if (_state == state) {
+      _state = null;
+    }
+  }
+}
+
 class _TopicPageState extends State<TopicPage> {
   static const _collapsedReplyCount = 2;
 
   final _expandedReplyParents = <int>{};
   final _replyBarKey = GlobalKey<_TopicReplyBarState>();
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller?._attach(this);
+  }
+
+  @override
+  void didUpdateWidget(covariant TopicPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?._detach(this);
+      widget.controller?._attach(this);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller?._detach(this);
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +136,7 @@ class _TopicPageState extends State<TopicPage> {
             behavior: HitTestBehavior.opaque,
             onTap: _handleContentTap,
             child: ListView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
               children: [
@@ -141,13 +189,24 @@ class _TopicPageState extends State<TopicPage> {
     _replyBarKey.currentState?.handleOutsideTap();
   }
 
+  void _collapseComposerForBrowsing() {
+    _replyBarKey.currentState?.collapseForBrowsing();
+  }
+
+  void _scrollToTop() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+    _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   void _replyTo(Post post) {
     if (!widget.isOnline) {
       widget.onLoginRequired();
-      return;
-    }
-    if (post.postNumber == 1) {
-      _replyBarKey.currentState?.replyToTopic();
       return;
     }
     _replyBarKey.currentState?.replyTo(post.postNumber);
@@ -767,18 +826,20 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   bool _uploading = false;
   bool _composerOpen = false;
   bool _showEmojiPanel = false;
+  bool _collapsedForBrowsing = false;
   int? _replyToPostNumber;
 
   bool get _canType =>
       widget.enabled && widget.isOnline && !widget.isSubmitting && !_uploading;
 
   bool get _expanded =>
-      _composerOpen ||
-      _focusNode.hasFocus ||
-      _showEmojiPanel ||
-      _controller.text.trim().isNotEmpty ||
-      _images.isNotEmpty ||
-      _replyToPostNumber != null;
+      !_collapsedForBrowsing &&
+      (_composerOpen ||
+          _focusNode.hasFocus ||
+          _showEmojiPanel ||
+          _controller.text.trim().isNotEmpty ||
+          _images.isNotEmpty ||
+          _replyToPostNumber != null);
 
   bool get _canSend =>
       widget.isOnline &&
@@ -814,24 +875,8 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     }
     setState(() {
       _composerOpen = true;
+      _collapsedForBrowsing = false;
       _replyToPostNumber = postNumber;
-      _showEmojiPanel = false;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
-      }
-    });
-  }
-
-  void replyToTopic() {
-    if (!_canType) {
-      _handleInputTap();
-      return;
-    }
-    setState(() {
-      _composerOpen = true;
-      _replyToPostNumber = null;
       _showEmojiPanel = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -855,6 +900,19 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     setState(() {
       _composerOpen = false;
       _showEmojiPanel = false;
+    });
+  }
+
+  void collapseForBrowsing() {
+    FocusScope.of(context).unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    if (!_expanded && !_showEmojiPanel) {
+      return;
+    }
+    setState(() {
+      _composerOpen = false;
+      _showEmojiPanel = false;
+      _collapsedForBrowsing = _hasDraft;
     });
   }
 
@@ -1036,6 +1094,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     }
     setState(() {
       _composerOpen = true;
+      _collapsedForBrowsing = false;
       _showEmojiPanel = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1084,6 +1143,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       return;
     }
     _composerOpen = true;
+    _collapsedForBrowsing = false;
     if (_showEmojiPanel) {
       setState(() => _showEmojiPanel = false);
     }
@@ -1103,6 +1163,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
     setState(() {
       _composerOpen = true;
+      _collapsedForBrowsing = false;
       _showEmojiPanel = true;
     });
   }
@@ -1114,6 +1175,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     setState(() {
       _uploading = true;
       _composerOpen = true;
+      _collapsedForBrowsing = false;
       _showEmojiPanel = false;
     });
     try {
@@ -1161,6 +1223,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _controller.clear();
       _images.clear();
       _composerOpen = false;
+      _collapsedForBrowsing = false;
       _replyToPostNumber = null;
       _showEmojiPanel = false;
     });

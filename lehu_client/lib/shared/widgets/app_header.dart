@@ -19,6 +19,8 @@ class AppHeader extends StatelessWidget {
     this.onMore,
     this.onSearch,
     this.onCreate,
+    this.onTitleTap,
+    this.onTitleDoubleTap,
   });
 
   final String title;
@@ -33,6 +35,8 @@ class AppHeader extends StatelessWidget {
   final VoidCallback? onMore;
   final VoidCallback? onSearch;
   final VoidCallback? onCreate;
+  final VoidCallback? onTitleTap;
+  final VoidCallback? onTitleDoubleTap;
   final VoidCallback onNotification;
 
   @override
@@ -58,11 +62,19 @@ class AppHeader extends StatelessWidget {
           ),
           const SizedBox(width: 2),
           Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LehuTextStyles.headerTitle(color: colors.textPrimary),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: onTitleTap,
+              onDoubleTap: onTitleDoubleTap,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LehuTextStyles.headerTitle(color: colors.textPrimary),
+                ),
+              ),
             ),
           ),
           if (showSettings)
