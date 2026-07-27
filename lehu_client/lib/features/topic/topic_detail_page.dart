@@ -97,7 +97,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                   if (detail == null && snapshot.hasError) {
                     return _ErrorState(
                       title: '帖子加载失败',
-                      message: snapshot.error.toString(),
+                      message: _friendlyError(snapshot.error!),
                       onRetry: _refresh,
                     );
                   }
@@ -505,6 +505,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
 
   bool _isGenericForumError(String message) {
     return message == '论坛请求失败' ||
+        message == forumRefreshTooFastMessage ||
         message == '论坛返回的不是 JSON，可能需要重新登录' ||
         message == '操作失败，请稍后重试' ||
         message.contains('无权') ||

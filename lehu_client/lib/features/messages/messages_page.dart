@@ -10,6 +10,7 @@ import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../data/services/discourse_api_client.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
@@ -105,7 +106,7 @@ class _MessagesPageState extends State<MessagesPage> {
       return EmptyState(
         icon: Icons.error_outline,
         title: '私信加载失败',
-        message: error.toString(),
+        message: _friendlyForumError(error),
         action: TextButton.icon(
           onPressed: () => unawaited(_refreshList()),
           icon: const Icon(Icons.refresh),
@@ -245,7 +246,11 @@ class _MessagesPageState extends State<MessagesPage> {
         setState(() => _error = error);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('私信刷新失败：$error')),
+          SnackBar(
+            content: Text(
+              _refreshFailureMessage(error, prefix: '私信刷新失败'),
+            ),
+          ),
         );
       }
     } finally {
@@ -584,6 +589,21 @@ Future<bool> _confirmLocalConversationDeletion(
   return confirmed == true;
 }
 
+String _friendlyForumError(Object error) {
+  if (error is ForumApiException) {
+    return error.message;
+  }
+  return '操作失败，请稍后重试';
+}
+
+String _refreshFailureMessage(Object error, {required String prefix}) {
+  final message = _friendlyForumError(error);
+  if (message == forumRefreshTooFastMessage) {
+    return message;
+  }
+  return '$prefix：$message';
+}
+
 class _MessageDetailPage extends StatefulWidget {
   const _MessageDetailPage({
     required this.repository,
@@ -669,7 +689,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       return EmptyState(
         icon: Icons.error_outline,
         title: '会话加载失败',
-        message: error.toString(),
+        message: _friendlyForumError(error),
         action: TextButton.icon(
           onPressed: () => unawaited(_loadInitial()),
           icon: const Icon(Icons.refresh),
@@ -760,7 +780,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       unawaited(_warmPrivateMessageList());
     } on Object catch (error) {
       if (mounted) {
-        _showSnack('发送失败：$error');
+        _showSnack('发送失败：${_friendlyForumError(error)}');
       }
     } finally {
       if (mounted) {
@@ -804,7 +824,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       if (_detail == null) {
         setState(() => _error = error);
       } else {
-        _showSnack('刷新失败：$error');
+        _showSnack(_refreshFailureMessage(error, prefix: '刷新失败'));
       }
     } finally {
       if (mounted) {

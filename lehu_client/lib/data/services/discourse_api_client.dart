@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -11,6 +12,8 @@ import '../models/common.dart';
 import 'forum_auth_service.dart';
 import 'http_timeout.dart';
 
+const forumRefreshTooFastMessage = '刷新过快，请稍后再试';
+
 class ForumApiException implements Exception {
   const ForumApiException(this.message, {this.statusCode});
 
@@ -20,7 +23,7 @@ class ForumApiException implements Exception {
   @override
   String toString() {
     final code = statusCode;
-    if (code == null) {
+    if (code == null || message == forumRefreshTooFastMessage) {
       return message;
     }
     return '$message ($code)';
@@ -44,10 +47,13 @@ class DiscourseApiClient {
   final ForumAuthService _authService;
   final http.Client _httpClient;
   String? _csrfToken;
+  Future<void> _requestStartQueue = Future<void>.value();
+  DateTime? _lastRequestStartedAt;
 
   static const _mobileChromeUserAgent =
       'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
+  static const _requestSpacing = Duration(milliseconds: 220);
 
   static http.Client _defaultHttpClient() {
     final client = HttpClient()
@@ -58,11 +64,12 @@ class DiscourseApiClient {
   }
 
   Future<JsonMap> getJson(String path) async {
+    final headers = await _headers();
     final response = await HttpTimeout.request(
-      _httpClient.get(
-        _uri(path),
-        headers: await _headers(),
-      ),
+      _send(() => _httpClient.get(
+            _uri(path),
+            headers: headers,
+          )),
       message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
@@ -72,60 +79,64 @@ class DiscourseApiClient {
     String path, {
     required int topicId,
   }) async {
+    final headers = await _headers(
+      csrfToken: await _csrf(),
+      referer: '${ForumUrlResolver.baseUrl}/',
+      trackViewTopicId: topicId,
+    );
     final response = await HttpTimeout.request(
-      _httpClient.get(
-        _uri(path),
-        headers: await _headers(
-          csrfToken: await _csrf(),
-          referer: '${ForumUrlResolver.baseUrl}/',
-          trackViewTopicId: topicId,
-        ),
-      ),
+      _send(() => _httpClient.get(
+            _uri(path),
+            headers: headers,
+          )),
       message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
   }
 
   Future<JsonMap> postForm(String path, String body) async {
+    final headers = await _headers(
+      csrfToken: await _csrf(),
+      formRequest: true,
+    );
     final response = await HttpTimeout.request(
-      _httpClient.post(
-        _uri(path),
-        headers: await _headers(
-          csrfToken: await _csrf(),
-          formRequest: true,
-        ),
-        body: body,
-      ),
+      _send(() => _httpClient.post(
+            _uri(path),
+            headers: headers,
+            body: body,
+          )),
       message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
   }
 
   Future<JsonMap> putForm(String path, String body) async {
+    final headers = await _headers(
+      csrfToken: await _csrf(),
+      formRequest: true,
+    );
     final response = await HttpTimeout.request(
-      _httpClient.put(
-        _uri(path),
-        headers: await _headers(
-          csrfToken: await _csrf(),
-          formRequest: true,
-        ),
-        body: body,
-      ),
+      _send(() => _httpClient.put(
+            _uri(path),
+            headers: headers,
+            body: body,
+          )),
       message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
   }
 
   Future<JsonMap> deleteForm(String path, String body) async {
+    final headers = await _headers(
+      csrfToken: await _csrf(),
+      formRequest: true,
+    );
     final response = await HttpTimeout.request(
-      _httpClient.delete(
-        _uri(path),
-        headers: await _headers(
-          csrfToken: await _csrf(),
-          formRequest: true,
-        ),
-        body: body,
-      ),
+      _send(() => _httpClient.delete(
+            _uri(path),
+            headers: headers,
+            body: body,
+          )),
       message: '论坛请求超时，请稍后再试',
     );
     return _decode(response);
@@ -149,7 +160,7 @@ class DiscourseApiClient {
       ),
     );
     final streamed = await HttpTimeout.request(
-      _httpClient.send(request),
+      _send(() => _httpClient.send(request)),
       timeout: HttpTimeout.upload,
       message: '论坛上传超时，请稍后再试',
     );
@@ -199,6 +210,26 @@ class DiscourseApiClient {
     return headers;
   }
 
+  Future<T> _send<T>(Future<T> Function() request) async {
+    final previous = _requestStartQueue;
+    final nextSlot = Completer<void>();
+    _requestStartQueue = nextSlot.future;
+    await previous;
+    try {
+      final lastStartedAt = _lastRequestStartedAt;
+      if (lastStartedAt != null) {
+        final wait = _requestSpacing - DateTime.now().difference(lastStartedAt);
+        if (wait > Duration.zero) {
+          await Future<void>.delayed(wait);
+        }
+      }
+      _lastRequestStartedAt = DateTime.now();
+    } finally {
+      nextSlot.complete();
+    }
+    return request();
+  }
+
   Future<String> _csrf() async {
     final cached = _csrfToken;
     if (cached != null && cached.isNotEmpty) {
@@ -223,6 +254,12 @@ class DiscourseApiClient {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return <String, dynamic>{};
       }
+      if (response.statusCode == 429) {
+        throw ForumApiException(
+          forumRefreshTooFastMessage,
+          statusCode: response.statusCode,
+        );
+      }
       throw ForumApiException(
         '论坛请求失败',
         statusCode: response.statusCode,
@@ -233,7 +270,7 @@ class DiscourseApiClient {
       decoded = jsonDecode(body);
     } on FormatException {
       throw ForumApiException(
-        '论坛返回的不是 JSON，可能需要重新登录',
+        forumRefreshTooFastMessage,
         statusCode: response.statusCode,
       );
     }
@@ -250,6 +287,12 @@ class DiscourseApiClient {
       throw ForumAuthException(
         '登录状态已失效',
         response.statusCode,
+      );
+    }
+    if (response.statusCode == 429) {
+      throw ForumApiException(
+        forumRefreshTooFastMessage,
+        statusCode: response.statusCode,
       );
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
