@@ -9,6 +9,7 @@ import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/discourse_api_client.dart';
+import '../../data/services/html_text.dart';
 import '../../data/services/payload_factory.dart';
 import '../../features/profile/user_profile_page.dart';
 import '../../shared/navigation/lehu_route.dart';
@@ -118,6 +119,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       onUploadImage: widget.repository.uploadImage,
                       onCreateReply: _createReply,
                       onOpenUser: _openUserProfile,
+                      onOpenInternalTopic: _openInternalTopic,
                       onLoginRequired: () => unawaited(_requireLogin()),
                     ),
                   );
@@ -204,6 +206,37 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       if (mounted) {
         setState(() => _submittingReply = false);
       }
+    }
+  }
+
+  Future<void> _openInternalTopic(CookedLinkPreview preview) async {
+    final topicId = preview.topicId;
+    if (topicId == null || !mounted) {
+      return;
+    }
+    final deleted = await Navigator.of(context).push<bool>(
+      lehuRoute(
+        builder: (context) => TopicDetailPage(
+          repository: widget.repository,
+          topic: TopicListItem(
+            id: topicId,
+            title: preview.title,
+            postsCount: 0,
+            replyCount: 0,
+            highestPostNumber: preview.postNumber ?? 1,
+            views: 0,
+            likeCount: 0,
+            categoryId: 0,
+            posters: const [],
+          ),
+          onLoginRequired: widget.onLoginRequired,
+          onSessionExpired: widget.onSessionExpired,
+          onBookmarkChanged: widget.onBookmarkChanged,
+        ),
+      ),
+    );
+    if (deleted == true && mounted) {
+      Navigator.of(context).pop(true);
     }
   }
 
