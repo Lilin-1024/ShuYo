@@ -42,6 +42,7 @@ import '../features/profile/user_profile_page.dart';
 import '../features/settings/client_settings_page.dart';
 import '../features/topic/topic_detail_page.dart';
 import '../features/webview/academic_webvpn_preloader.dart';
+import '../features/webview/forum_webvpn_preloader.dart';
 import '../features/webview/forum_webview_page.dart';
 import '../shared/navigation/lehu_route.dart';
 import '../shared/theme/lehu_theme.dart';
@@ -55,6 +56,7 @@ class AppShell extends StatefulWidget {
     super.key,
     required this.repository,
     required this.reloadRepository,
+    required this.initialAutoUseWebVpnProxy,
     required this.selectedThemeId,
     required this.followSystemTheme,
     required this.onThemeChanged,
@@ -63,6 +65,7 @@ class AppShell extends StatefulWidget {
 
   final ForumRepository repository;
   final Future<ForumRepository> Function() reloadRepository;
+  final bool initialAutoUseWebVpnProxy;
   final String selectedThemeId;
   final bool followSystemTheme;
   final Future<void> Function(String themeId) onThemeChanged;
@@ -108,7 +111,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _checkingForumReachability = false;
   bool _checkingClientBackendPrompts = false;
   bool _forumNetworkUnavailable = false;
-  bool _autoUseWebVpnProxy = ForumUrlResolver.usesWebVpn;
+  late bool _autoUseWebVpnProxy;
   int _seenNotificationBadgeCount = 0;
   int _seenMessageBadgeCount = 0;
   int _localNotificationBadgeCount = 0;
@@ -119,15 +122,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   DateTime? _lastExitBackAt;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
+  Completer<bool>? _forumWebVpnPreloadCompleter;
   Completer<bool>? _academicWebVpnPreloadCompleter;
+  int _forumWebVpnPreloadToken = 0;
   int _academicWebVpnPreloadToken = 0;
   int _forumRepositoryReloadToken = 0;
+  bool _recoveringForumWebVpnSession = false;
+  bool _forumWebVpnRecoveryAttempted = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _repo = widget.repository;
+    _autoUseWebVpnProxy = widget.initialAutoUseWebVpnProxy;
     _scheduleRepository = AcademicScheduleRepository();
     _scheduleNotificationService = AcademicScheduleNotificationService(
       repository: _scheduleRepository,
@@ -198,6 +206,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 child: AcademicWebVpnPreloader(
                   key: ValueKey(_academicWebVpnPreloadToken),
                   onComplete: _completeAcademicWebVpnPreload,
+                ),
+              ),
+            if (_forumWebVpnPreloadCompleter != null)
+              Positioned(
+                left: 0,
+                top: 0,
+                child: ForumWebVpnPreloader(
+                  key: ValueKey(_forumWebVpnPreloadToken),
+                  onComplete: _completeForumWebVpnPreload,
                 ),
               ),
           ],
@@ -543,6 +560,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Widget _bodyForTab() {
+    if (_isForumWebVpnRecoveryPending) {
+      return const _LoadingState(message: '正在恢复论坛登录...');
+    }
     return IndexedStack(
       index: _tabIndex,
       children: [
@@ -626,7 +646,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
       setState(() {
         _autoUseWebVpnProxy = settings.autoUseWebVpnProxy;
+        if (settings.autoUseWebVpnProxy && !_repo.isOnline) {
+          _forumWebVpnRecoveryAttempted = false;
+        }
       });
+      if (settings.autoUseWebVpnProxy && !_repo.isOnline) {
+        unawaited(_recoverForumWebVpnSessionQuietly());
+      }
     } on Object {
       // 网络设置读取失败时保留当前访问模式，不阻断首页加载。
     }
@@ -677,6 +703,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (mounted) {
       setState(() {
         _autoUseWebVpnProxy = value;
+        if (value && accessModeChanged && !_repo.isOnline) {
+          _forumWebVpnRecoveryAttempted = false;
+        }
         if (accessModeChanged && _reloadingSession) {
           _reloadingSession = false;
         }
@@ -797,6 +826,115 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (completer != null && !completer.isCompleted) {
       completer.complete(success);
     }
+  }
+
+  Future<bool> _prepareForumWebVpnSessionInBackground() async {
+    if (!ForumUrlResolver.usesWebVpn) {
+      return true;
+    }
+    if (!mounted) {
+      return false;
+    }
+    final existing = _forumWebVpnPreloadCompleter;
+    if (existing != null) {
+      return existing.future.timeout(
+        const Duration(seconds: 25),
+        onTimeout: () => false,
+      );
+    }
+    final completer = Completer<bool>();
+    setState(() {
+      _forumWebVpnPreloadCompleter = completer;
+      _forumWebVpnPreloadToken++;
+    });
+    try {
+      return await completer.future.timeout(
+        const Duration(seconds: 25),
+        onTimeout: () {
+          debugPrint('[LEHU_WEBVPN] background forum preload timeout');
+          return false;
+        },
+      );
+    } finally {
+      if (mounted && identical(_forumWebVpnPreloadCompleter, completer)) {
+        setState(() => _forumWebVpnPreloadCompleter = null);
+      }
+    }
+  }
+
+  void _completeForumWebVpnPreload(bool success) {
+    final completer = _forumWebVpnPreloadCompleter;
+    debugPrint('[LEHU_WEBVPN] background forum preload complete=$success');
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(success);
+    }
+  }
+
+  Future<void> _recoverForumWebVpnSessionQuietly() async {
+    if (_recoveringForumWebVpnSession ||
+        _reloadingSession ||
+        !_autoUseWebVpnProxy ||
+        ForumUrlResolver.mode != ForumAccessMode.webVpn ||
+        _repo.isOnline ||
+        !mounted) {
+      return;
+    }
+    _recoveringForumWebVpnSession = true;
+    _forumWebVpnRecoveryAttempted = true;
+    if (mounted) {
+      setState(() {});
+    }
+    try {
+      final prepared = await _prepareForumWebVpnSessionInBackground();
+      if (!prepared ||
+          !mounted ||
+          !_autoUseWebVpnProxy ||
+          ForumUrlResolver.mode != ForumAccessMode.webVpn ||
+          _repo.isOnline) {
+        return;
+      }
+      setState(() => _reloadingSession = true);
+      try {
+        final nextRepository = await ForumRepositoryFactory.loadOnline()
+            .timeout(_forumAccessModeReloadTimeout);
+        if (!mounted) {
+          return;
+        }
+        if (!_autoUseWebVpnProxy ||
+            ForumUrlResolver.mode != ForumAccessMode.webVpn) {
+          setState(() => _reloadingSession = false);
+          return;
+        }
+        setState(() {
+          _repo = nextRepository;
+          _reloadingSession = false;
+          _activityCountsFuture = null;
+          _clearFeedSnapshots();
+          _resetFeedFuture();
+        });
+        unawaited(_initializeForumBadges());
+      } on Object catch (error) {
+        debugPrint('[LEHU_WEBVPN] forum recovery reload failed: $error');
+        if (mounted) {
+          setState(() => _reloadingSession = false);
+        }
+      }
+    } finally {
+      _recoveringForumWebVpnSession = false;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  bool get _isForumWebVpnRecoveryPending {
+    return !_repo.isOnline &&
+        _autoUseWebVpnProxy &&
+        ForumUrlResolver.mode == ForumAccessMode.webVpn &&
+        (!_forumWebVpnRecoveryAttempted ||
+            _recoveringForumWebVpnSession ||
+            _forumWebVpnPreloadCompleter != null ||
+            _reloadingSession);
   }
 
   Future<void> _loadAnnouncementSummaryFromCache() async {
@@ -1540,10 +1678,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
     final reloadToken = _nextForumRepositoryReloadToken();
     final accessMode = ForumUrlResolver.mode;
+    final previousRepository = _repo;
     setState(() => _reloadingSession = true);
     try {
       final nextRepository = await _loadForumRepositoryForAccessModeChange();
       if (!_isCurrentForumRepositoryReload(reloadToken, accessMode)) {
+        return;
+      }
+      if (!nextRepository.isOnline &&
+          previousRepository.isOnline &&
+          accessMode == ForumAccessMode.webVpn) {
+        setState(() {
+          _reloadingSession = false;
+          _forumWebVpnRecoveryAttempted = false;
+        });
+        unawaited(_recoverForumWebVpnSessionQuietly());
         return;
       }
       setState(() {
@@ -1556,6 +1705,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       unawaited(_initializeForumBadges());
       if (nextRepository.isOnline) {
         _showSnack('已切换论坛访问方式');
+      }
+      if (!nextRepository.isOnline && accessMode == ForumAccessMode.webVpn) {
+        _forumWebVpnRecoveryAttempted = false;
+        unawaited(_recoverForumWebVpnSessionQuietly());
       }
       unawaited(_checkClientBackendPrompts());
     } on Object catch (error) {
