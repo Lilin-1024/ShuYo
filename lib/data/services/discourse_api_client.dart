@@ -13,6 +13,7 @@ import 'forum_auth_service.dart';
 import 'http_timeout.dart';
 
 const forumRefreshTooFastMessage = '刷新过快，请稍后再试';
+const forumWebVpnParseFailedMessage = 'WebVPN 解析失败，请尝试使用校园网访问';
 
 class ForumApiException implements Exception {
   const ForumApiException(this.message, {this.statusCode});
@@ -23,7 +24,9 @@ class ForumApiException implements Exception {
   @override
   String toString() {
     final code = statusCode;
-    if (code == null || message == forumRefreshTooFastMessage) {
+    if (code == null ||
+        message == forumRefreshTooFastMessage ||
+        message == forumWebVpnParseFailedMessage) {
       return message;
     }
     return '$message ($code)';
@@ -267,10 +270,12 @@ class DiscourseApiClient {
     }
     final Object? decoded;
     try {
-      decoded = jsonDecode(body);
+      decoded = _decodeJsonBody(body);
     } on FormatException {
       throw ForumApiException(
-        forumRefreshTooFastMessage,
+        ForumUrlResolver.usesWebVpn
+            ? forumWebVpnParseFailedMessage
+            : forumRefreshTooFastMessage,
         statusCode: response.statusCode,
       );
     }
@@ -314,5 +319,27 @@ class DiscourseApiClient {
       return error.toString();
     }
     return '论坛请求失败';
+  }
+
+  Object? _decodeJsonBody(String body) {
+    try {
+      return jsonDecode(body);
+    } on FormatException {
+      if (!ForumUrlResolver.usesWebVpn) {
+        rethrow;
+      }
+      final repaired = _repairWebVpnJsonEscapes(body);
+      if (repaired == body) {
+        rethrow;
+      }
+      return jsonDecode(repaired);
+    }
+  }
+
+  String _repairWebVpnJsonEscapes(String body) {
+    return body.replaceAllMapped(
+      RegExp(r'\\https?-u([0-9a-fA-F]{4})'),
+      (match) => r'\u' + (match.group(1) ?? ''),
+    );
   }
 }
