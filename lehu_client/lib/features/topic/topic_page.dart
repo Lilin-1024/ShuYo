@@ -415,10 +415,10 @@ class _NestedReplies extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
     return Container(
-      margin: const EdgeInsets.only(left: 46, bottom: 8),
-      padding: const EdgeInsets.only(left: 12),
+      margin: const EdgeInsets.only(left: 34, bottom: 8),
+      padding: const EdgeInsets.only(left: 10),
       decoration: BoxDecoration(
-        border: Border(left: BorderSide(color: colors.borderStrong)),
+        border: Border(left: BorderSide(color: colors.border)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,8 +499,11 @@ class _PostView extends StatelessWidget {
     final metaText = timeText.isEmpty
         ? '#${post.postNumber}'
         : '#${post.postNumber} · $timeText';
+    if (compact) {
+      return _buildCompact(context, colors, textSize, timeText);
+    }
     return Container(
-      padding: EdgeInsets.symmetric(vertical: compact ? 10 : 14),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colors.border)),
       ),
@@ -512,7 +515,7 @@ class _PostView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsets.only(right: compact ? 0 : 2),
+              padding: const EdgeInsets.only(right: 2),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -532,9 +535,9 @@ class _PostView extends StatelessWidget {
                             children: [
                               ForumAvatar(
                                 url: post.avatarUrl(size: 96),
-                                size: compact ? 30 : 36,
+                                size: 36,
                               ),
-                              SizedBox(width: compact ? 8 : 10),
+                              const SizedBox(width: 10),
                               Flexible(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -586,22 +589,130 @@ class _PostView extends StatelessWidget {
                 style: TextStyle(color: colors.textMuted, fontSize: 12.5),
               ),
             ],
-            SizedBox(height: compact ? 9 : 11),
+            const SizedBox(height: 11),
             Padding(
-              padding: EdgeInsets.only(right: compact ? 10 : 14),
+              padding: const EdgeInsets.only(right: 14),
               child: ForumCookedContent(
                 cooked: post.cooked,
                 textColor: colors.textPrimary,
                 textSize: textSize,
                 imageFit: BoxFit.cover,
                 imageErrorHeight: 160,
-                compactCards: compact,
+                compactCards: false,
                 onOpenImage: onOpenImage,
                 onOpenInternalTopic: onOpenInternalTopic,
               ),
             ),
-            SizedBox(height: compact ? 4 : 6),
+            const SizedBox(height: 6),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompact(
+    BuildContext context,
+    LehuColors colors,
+    double textSize,
+    String timeText,
+  ) {
+    final targetText = replyContext ?? '#${post.postNumber}';
+    final metaText = timeText.isEmpty ? targetText : '$targetText · $timeText';
+    return Padding(
+      padding: const EdgeInsets.only(top: 9, bottom: 8),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colors.border)),
+        ),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: canReply ? onReply : null,
+          onLongPress: () => _showActionSheet(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    InkWell(
+                      borderRadius: BorderRadius.circular(5),
+                      onTap: onOpenUser,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 2,
+                          vertical: 2,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ForumAvatar(
+                              url: post.avatarUrl(size: 72),
+                              size: 24,
+                            ),
+                            const SizedBox(width: 7),
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 112),
+                              child: Text(
+                                post.username,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: colors.detailAuthor,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        metaText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: colors.textMuted,
+                          fontSize: 12.5,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                    if (canLike)
+                      _InlineLikeButton(
+                        count: post.likeCount,
+                        liked: post.liked,
+                        enabled: !post.yours && !isLiking,
+                        loading: isLiking,
+                        onTap: onLike,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.only(left: 33, right: 10),
+                child: ForumCookedContent(
+                  cooked: post.cooked,
+                  textColor: colors.textPrimary,
+                  textSize: textSize,
+                  textBottomSpacing: 5,
+                  imageBottomSpacing: 7,
+                  imageFit: BoxFit.cover,
+                  imageErrorHeight: 150,
+                  compactCards: true,
+                  onOpenImage: onOpenImage,
+                  onOpenInternalTopic: onOpenInternalTopic,
+                ),
+              ),
+              const SizedBox(height: 3),
+            ],
+          ),
         ),
       ),
     );
