@@ -502,7 +502,7 @@ class _NetworkSettingsPageState extends State<_NetworkSettingsPage> {
               _SettingsSwitchRow(
                 title: '自动使用WebVPN代理',
                 value: settings.autoUseWebVpnProxy,
-                enabled: true,
+                enabled: !_saving,
                 onChanged: (value) => _save(
                   settings.copyWith(autoUseWebVpnProxy: value),
                 ),
