@@ -42,6 +42,7 @@ class CreateTopicPage extends StatefulWidget {
 class _CreateTopicPageState extends State<CreateTopicPage> {
   final _titleController = TextEditingController();
   final _rawController = TextEditingController();
+  final _titleFocusNode = FocusNode();
   final _rawFocusNode = FocusNode();
   final _openedAt = DateTime.now();
   final _images = <UploadedImage>[];
@@ -51,6 +52,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
   bool _showEmojiPanel = false;
   bool _normalizingTitle = false;
   bool _titleEmojiRejected = false;
+  bool _lastTextFocusWasTitle = false;
 
   @override
   void initState() {
@@ -58,15 +60,18 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     _categoryId = widget.initialCategoryId ??
         (widget.categories.isEmpty ? null : widget.categories.first.id);
     _titleController.addListener(_handleTitleChanged);
+    _titleFocusNode.addListener(_handleTitleFocusChanged);
     _rawFocusNode.addListener(_handleRawFocusChanged);
   }
 
   @override
   void dispose() {
     _titleController.removeListener(_handleTitleChanged);
+    _titleFocusNode.removeListener(_handleTitleFocusChanged);
     _rawFocusNode.removeListener(_handleRawFocusChanged);
     _titleController.dispose();
     _rawController.dispose();
+    _titleFocusNode.dispose();
     _rawFocusNode.dispose();
     super.dispose();
   }
@@ -94,6 +99,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
         children: [
           TextField(
             controller: _titleController,
+            focusNode: _titleFocusNode,
             textInputAction: TextInputAction.next,
             decoration: InputDecoration(
               labelText: '标题',
@@ -153,6 +159,12 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     }
     if (mounted && _titleEmojiRejected != rejected) {
       setState(() => _titleEmojiRejected = rejected);
+    }
+  }
+
+  void _handleTitleFocusChanged() {
+    if (_titleFocusNode.hasFocus) {
+      _lastTextFocusWasTitle = true;
     }
   }
 
@@ -242,6 +254,9 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     if (!mounted) {
       return;
     }
+    if (_rawFocusNode.hasFocus) {
+      _lastTextFocusWasTitle = false;
+    }
     if (_rawFocusNode.hasFocus && _showEmojiPanel) {
       setState(() => _showEmojiPanel = false);
       return;
@@ -261,9 +276,17 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
       _rawFocusNode.requestFocus();
       return;
     }
+    final shouldGuideTitleEmoji =
+        _titleFocusNode.hasFocus || _lastTextFocusWasTitle;
+    _lastTextFocusWasTitle = false;
     FocusScope.of(context).unfocus();
     SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
-    setState(() => _showEmojiPanel = true);
+    setState(() {
+      _showEmojiPanel = true;
+      if (shouldGuideTitleEmoji) {
+        _titleEmojiRejected = true;
+      }
+    });
   }
 
   Future<void> _pickAndUpload() async {
@@ -304,7 +327,6 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
         _titleController.value,
       );
       setState(() => _titleEmojiRejected = true);
-      _showSnack(ForumTitleRules.disallowedEmojiMessage);
       return;
     }
     if (title.length < 6) {
