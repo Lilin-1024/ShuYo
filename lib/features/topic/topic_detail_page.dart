@@ -50,6 +50,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   Timer? _topicTimingTimer;
   final _likingPostIds = <int>{};
   final _deletingPostIds = <int>{};
+  final _topicPageController = TopicPageController();
 
   @override
   void initState() {
@@ -80,6 +81,8 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
               showMore: true,
               onBack: () => Navigator.of(context).pop(),
               onMore: () => _showTopicMoreSheet(widget.topic),
+              onTitleTap: _topicPageController.collapseComposer,
+              onTitleDoubleTap: _topicPageController.scrollToTop,
               onNotification: () {},
             ),
             Expanded(
@@ -105,6 +108,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                   return RefreshIndicator(
                     onRefresh: _refresh,
                     child: TopicPage(
+                      controller: _topicPageController,
                       item: widget.topic,
                       detail: detail,
                       category: widget.repository.categoryById(
