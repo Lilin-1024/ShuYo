@@ -887,7 +887,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         if (topics == null && snapshot.hasError) {
           return _ErrorState(
             title: '列表加载失败',
-            message: snapshot.error.toString(),
+            message: _friendlyError(snapshot.error!),
             onRetry: () => refresh(),
           );
         }
@@ -987,7 +987,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return;
       }
       if (_feedSnapshots[queryKey] != null) {
-        _showSnack('列表刷新失败：${_friendlyError(error)}');
+        _showSnack(_refreshFailureMessage(error, prefix: '列表刷新失败'));
         setState(() {});
         return;
       }
@@ -1667,6 +1667,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return error.message;
     }
     return '操作失败，请稍后重试';
+  }
+
+  String _refreshFailureMessage(Object error, {required String prefix}) {
+    final message = _friendlyError(error);
+    if (message == forumRefreshTooFastMessage) {
+      return message;
+    }
+    return '$prefix：$message';
   }
 
   String _loginError(Object error) {
