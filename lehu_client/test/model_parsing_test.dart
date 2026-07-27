@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shuyo/data/models/academic_schedule.dart';
 import 'package:shuyo/data/models/category.dart';
@@ -17,6 +17,7 @@ import 'package:shuyo/data/services/announcement_api_client.dart';
 import 'package:shuyo/data/services/classroom_api_client.dart';
 import 'package:shuyo/data/services/course_rating_api_client.dart';
 import 'package:shuyo/data/services/emoji_text.dart';
+import 'package:shuyo/data/services/forum_title_rules.dart';
 import 'package:shuyo/data/services/html_text.dart';
 import 'package:shuyo/data/services/payload_factory.dart';
 import 'package:shuyo/data/services/sha1_hash.dart';
@@ -78,6 +79,26 @@ void main() {
     expect(rendered, contains('\u{1FAE0}'));
     expect(rendered, contains('\u{1F1E8}\u{1F1F3}'));
     expect(rendered, contains('\u{1F9D1}\u{1F3FE}'));
+  });
+
+  test('sanitizes emoji from forum titles', () {
+    const title = '标题\u{1F604}:thinking:\u{2764}\u{FE0F}'
+        '1\u{FE0F}\u{20E3}ok';
+    expect(ForumTitleRules.sanitize(title), '标题ok');
+    expect(ForumTitleRules.containsDisallowedEmoji(title), isTrue);
+    expect(
+      ForumTitleRules.sanitize('标题 :not_an_emoji: ok'),
+      '标题 :not_an_emoji: ok',
+    );
+
+    const valueText = 'ab\u{1F604}cd';
+    final value = TextEditingValue(
+      text: valueText,
+      selection: TextSelection.collapsed(offset: valueText.indexOf('c')),
+    );
+    final sanitized = ForumTitleRules.sanitizeEditingValue(value);
+    expect(sanitized.text, 'abcd');
+    expect(sanitized.selection.baseOffset, 2);
   });
 
   test('merges topic posts by id and keeps post-number order', () {

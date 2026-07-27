@@ -1172,6 +1172,25 @@ class EmojiText {
     });
   }
 
+  static bool containsKnownShortcode(String value) {
+    if (!value.contains(':')) {
+      return false;
+    }
+    return _shortcodePattern
+        .allMatches(value)
+        .any((match) => _map.containsKey(match.group(1)));
+  }
+
+  static String removeKnownShortcodes(String value) {
+    if (!value.contains(':')) {
+      return value;
+    }
+    return value.replaceAllMapped(_shortcodePattern, (match) {
+      final key = match.group(1);
+      return key != null && _map.containsKey(key) ? '' : match.group(0)!;
+    });
+  }
+
   static void insertShortcode(
     TextEditingController controller,
     String shortcode,

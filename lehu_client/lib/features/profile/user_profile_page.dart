@@ -5,6 +5,7 @@ import '../../data/models/composer.dart';
 import '../../data/models/forum_activity.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../data/services/forum_title_rules.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
@@ -425,15 +426,19 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
   bool _submitting = false;
   bool _uploading = false;
   bool _showEmojiPanel = false;
+  bool _normalizingTitle = false;
+  bool _titleEmojiRejected = false;
 
   @override
   void initState() {
     super.initState();
+    _titleController.addListener(_handleTitleChanged);
     _rawFocusNode.addListener(_handleRawFocusChanged);
   }
 
   @override
   void dispose() {
+    _titleController.removeListener(_handleTitleChanged);
     _rawFocusNode.removeListener(_handleRawFocusChanged);
     _titleController.dispose();
     _rawController.dispose();
@@ -458,9 +463,12 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
           TextField(
             controller: _titleController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: '标题',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _titleEmojiRejected
+                  ? ForumTitleRules.disallowedEmojiMessage
+                  : null,
             ),
           ),
           const SizedBox(height: 10),
@@ -541,6 +549,23 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
     );
   }
 
+  void _handleTitleChanged() {
+    if (_normalizingTitle) {
+      return;
+    }
+    final value = _titleController.value;
+    final sanitized = ForumTitleRules.sanitizeEditingValue(value);
+    final rejected = sanitized.text != value.text;
+    if (rejected) {
+      _normalizingTitle = true;
+      _titleController.value = sanitized;
+      _normalizingTitle = false;
+    }
+    if (mounted && _titleEmojiRejected != rejected) {
+      setState(() => _titleEmojiRejected = rejected);
+    }
+  }
+
   void _handleRawFocusChanged() {
     if (!mounted) {
       return;
@@ -601,6 +626,14 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
     }
     final title = _titleController.text.trim();
     final raw = composeRawWithImages(_rawController.text, _images);
+    if (ForumTitleRules.containsDisallowedEmoji(title)) {
+      _titleController.value = ForumTitleRules.sanitizeEditingValue(
+        _titleController.value,
+      );
+      setState(() => _titleEmojiRejected = true);
+      _showSnack(ForumTitleRules.disallowedEmojiMessage);
+      return;
+    }
     if (title.length < 2) {
       _showSnack('标题至少 2 个字');
       return;
