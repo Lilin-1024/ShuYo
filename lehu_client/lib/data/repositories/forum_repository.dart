@@ -36,6 +36,17 @@ class TopicFeedQuery {
   String get key => '${categoryId ?? 'all'}:${hot ? 'hot' : 'latest'}';
 }
 
+const _emptyUserSummary = UserSummary(
+  likesGiven: 0,
+  likesReceived: 0,
+  topicsEntered: 0,
+  postsReadCount: 0,
+  daysVisited: 0,
+  topicCount: 0,
+  postCount: 0,
+  timeReadSeconds: 0,
+);
+
 abstract class ForumRepository {
   bool get isOnline;
   Map<int, DiscourseUser> get users;
@@ -579,23 +590,23 @@ class OnlineForumRepository implements ForumRepository {
       throw const ForumAuthException();
     }
     final apiClient = DiscourseApiClient(authService: auth);
-    final session = await _fetchSession(apiClient);
-    final categories = await _fetchCategories(apiClient, fallback);
-    final summary = await _fetchSummary(apiClient, fallback, session.username);
+    final CurrentUserSession session;
+    try {
+      session = await _fetchSession(apiClient);
+      await auth.persistLastCookieHeader();
+    } on ForumAuthException {
+      await auth.clearCachedCookies();
+      rethrow;
+    }
     final repository = OnlineForumRepository._(
       apiClient: apiClient,
       authService: auth,
       fallback: fallback,
       session: session,
-      userSummary: summary,
-      categories: categories,
+      userSummary: _emptyUserSummary,
+      categories: Map<int, ForumCategory>.of(fallback._categories),
     );
-    try {
-      await repository.fetchCurrentUserProfile(forceRefresh: true);
-    } on ForumApiException {
-      // 简略 session 资料足够启动应用，完整资料可稍后进入页面时再刷新。
-    }
-    await repository.fetchLatestTopics();
+    unawaited(repository._warmOptionalStartupData());
     return repository;
   }
 
@@ -655,6 +666,27 @@ class OnlineForumRepository implements ForumRepository {
 
   @override
   Future<void> clearLoginCookies() => _authService.clearCookies();
+
+  Future<void> _warmOptionalStartupData() async {
+    try {
+      final categories = await _fetchCategories(_apiClient, _fallback);
+      _categories
+        ..clear()
+        ..addAll(categories);
+    } on Object {
+      // 分类数据不应影响登录态恢复；失败时保留本地兜底分类。
+    }
+    try {
+      await fetchUserSummary(profile.username, forceRefresh: true);
+    } on Object {
+      // 资料统计稍后进入个人页时仍会刷新。
+    }
+    try {
+      await fetchCurrentUserProfile(forceRefresh: true);
+    } on Object {
+      // session 中的简略资料足够让客户端先进入在线状态。
+    }
+  }
 
   @override
   ForumCategory? categoryById(int id) {
@@ -1589,20 +1621,6 @@ class OnlineForumRepository implements ForumRepository {
       }
     }
     return fallback._categories;
-  }
-
-  static Future<UserSummary> _fetchSummary(
-    DiscourseApiClient apiClient,
-    FixtureForumRepository fallback,
-    String username,
-  ) async {
-    try {
-      final json =
-          await apiClient.getJson('/u/${username.toLowerCase()}/summary.json');
-      return UserSummary.fromJson(json);
-    } on ForumApiException {
-      return fallback.userSummary;
-    }
   }
 }
 
