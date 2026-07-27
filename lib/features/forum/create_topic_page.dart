@@ -5,6 +5,7 @@ import '../../data/models/category.dart';
 import '../../data/models/composer.dart';
 import '../../data/models/post.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../data/services/forum_title_rules.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/composer_attachments.dart';
@@ -48,17 +49,21 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
   bool _submitting = false;
   bool _uploading = false;
   bool _showEmojiPanel = false;
+  bool _normalizingTitle = false;
+  bool _titleEmojiRejected = false;
 
   @override
   void initState() {
     super.initState();
     _categoryId = widget.initialCategoryId ??
         (widget.categories.isEmpty ? null : widget.categories.first.id);
+    _titleController.addListener(_handleTitleChanged);
     _rawFocusNode.addListener(_handleRawFocusChanged);
   }
 
   @override
   void dispose() {
+    _titleController.removeListener(_handleTitleChanged);
     _rawFocusNode.removeListener(_handleRawFocusChanged);
     _titleController.dispose();
     _rawController.dispose();
@@ -90,9 +95,12 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
           TextField(
             controller: _titleController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: '标题',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _titleEmojiRejected
+                  ? ForumTitleRules.disallowedEmojiMessage
+                  : null,
             ),
           ),
           const SizedBox(height: 12),
@@ -129,6 +137,23 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
         ],
       ),
     );
+  }
+
+  void _handleTitleChanged() {
+    if (_normalizingTitle) {
+      return;
+    }
+    final value = _titleController.value;
+    final sanitized = ForumTitleRules.sanitizeEditingValue(value);
+    final rejected = sanitized.text != value.text;
+    if (rejected) {
+      _normalizingTitle = true;
+      _titleController.value = sanitized;
+      _normalizingTitle = false;
+    }
+    if (mounted && _titleEmojiRejected != rejected) {
+      setState(() => _titleEmojiRejected = rejected);
+    }
   }
 
   Widget _rawComposer(BuildContext context) {
@@ -274,6 +299,14 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     final title = _titleController.text.trim();
     final raw = composeRawWithImages(_rawController.text, _images);
     final categoryId = _categoryId;
+    if (ForumTitleRules.containsDisallowedEmoji(title)) {
+      _titleController.value = ForumTitleRules.sanitizeEditingValue(
+        _titleController.value,
+      );
+      setState(() => _titleEmojiRejected = true);
+      _showSnack(ForumTitleRules.disallowedEmojiMessage);
+      return;
+    }
     if (title.length < 6) {
       _showSnack('标题至少 6 个字');
       return;
