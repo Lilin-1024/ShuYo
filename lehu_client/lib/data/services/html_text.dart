@@ -194,6 +194,12 @@ class HtmlText {
         return;
       }
       if (tag == 'a') {
+        if (_containsRenderableImage(node)) {
+          for (final child in node.nodes) {
+            appendNode(child);
+          }
+          return;
+        }
         final preview = _linkPreview(node);
         if (preview != null) {
           segments.add(
@@ -335,6 +341,13 @@ class HtmlText {
       topicId: internalTopicIdFromUrl(url),
       postNumber: internalPostNumberFromUrl(url),
     );
+  }
+
+  static bool _containsRenderableImage(dom.Element element) {
+    return element
+        .querySelectorAll('img')
+        .map(_HtmlImage.fromElement)
+        .any((image) => image.shouldRenderAsImage);
   }
 
   static int? internalTopicIdFromUrl(String value) {
