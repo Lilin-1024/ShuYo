@@ -339,13 +339,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (!_repo.isOnline) {
       return 0;
     }
-    final count = _repo.unreadNotificationCount;
-    final sessionBadgeCount = count <= _seenNotificationBadgeCount
-        ? 0
-        : count - _seenNotificationBadgeCount;
-    return sessionBadgeCount > _localNotificationBadgeCount
-        ? sessionBadgeCount
-        : _localNotificationBadgeCount;
+    return _localNotificationBadgeCount;
   }
 
   int get _messageBadgeCount {

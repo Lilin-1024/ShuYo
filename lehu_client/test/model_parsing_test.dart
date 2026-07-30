@@ -342,6 +342,37 @@ void main() {
 
     expect(notification.kind, '回复');
     expect(notification.canOpenTopic, isTrue);
+    expect(notification.isClientVisible, isTrue);
+
+    final badgeNotificationJson = <String, dynamic>{
+      'id': 1924,
+      'user_id': 669,
+      'notification_type': 12,
+      'read': true,
+      'high_priority': false,
+      'created_at': '2026-07-27T09:18:44.898Z',
+      'post_number': null,
+      'topic_id': null,
+      'slug': null,
+      'data': {
+        'badge_id': 15,
+        'badge_name': '首次引用',
+        'badge_slug': '-',
+        'badge_title': false,
+        'username': 'Lilin',
+      },
+    };
+    final badgeNotification = ForumNotification.fromNotificationJson(
+      badgeNotificationJson,
+    );
+
+    expect(
+      ForumNotification.isSupportedNotificationJson(badgeNotificationJson),
+      isFalse,
+    );
+    expect(badgeNotification.kind, '徽章');
+    expect(badgeNotification.canOpenTopic, isFalse);
+    expect(badgeNotification.isClientVisible, isFalse);
     expect(Sha1Hash.hex(Uint8List.fromList(utf8.encode('abc'))),
         'a9993e364706816aba3e25717850c26c9cd0d89d');
   });
