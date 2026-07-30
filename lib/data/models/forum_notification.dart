@@ -29,6 +29,15 @@ class ForumNotification {
 
   bool get canOpenTopic => topicId != null && topicId! > 0;
 
+  bool get isClientVisible {
+    return canOpenTopic && _clientVisibleKinds.contains(kind);
+  }
+
+  static bool isSupportedNotificationJson(JsonMap json) {
+    final type = intValue(json['notification_type']);
+    return _clientVisibleNotificationTypes.contains(type);
+  }
+
   factory ForumNotification.fromNotificationJson(JsonMap json) {
     final data = json['data'];
     final map = data is JsonMap ? data : const <String, dynamic>{};
@@ -100,6 +109,9 @@ class ForumNotification {
       _ => '通知',
     };
   }
+
+  static const _clientVisibleNotificationTypes = <int>{1, 2, 5, 6, 9};
+  static const _clientVisibleKinds = <String>{'提及', '回复', '赞', '引用'};
 
   static int? _nullableInt(Object? value) {
     if (value == null) {

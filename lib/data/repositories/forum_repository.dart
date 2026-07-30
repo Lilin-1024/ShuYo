@@ -1528,7 +1528,9 @@ class OnlineForumRepository implements ForumRepository {
     if (notificationsJson is List) {
       return notificationsJson
           .whereType<JsonMap>()
+          .where(ForumNotification.isSupportedNotificationJson)
           .map(ForumNotification.fromNotificationJson)
+          .where((notification) => notification.isClientVisible)
           .toList();
     }
     final actionsJson = json['user_actions'];
@@ -1539,6 +1541,7 @@ class OnlineForumRepository implements ForumRepository {
                 action,
                 _notificationKind(filter),
               ))
+          .where((notification) => notification.isClientVisible)
           .toList();
     }
     return const [];
