@@ -133,19 +133,37 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
   }
 
   Future<void> _showImageActions(String url) async {
+    const sheetBackground = Color(0xFF111111);
+    const actionForeground = Color(0xFFF2F2F2);
     final shouldSave = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: const Color(0xFF111111),
-      showDragHandle: true,
+      backgroundColor: sheetBackground,
+      showDragHandle: false,
       builder: (context) {
         return SafeArea(
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
-            child: ListTile(
-              leading: const Icon(Icons.download_outlined),
-              title: const Text('保存图片'),
-              onTap: () => Navigator.of(context).pop(true),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 6, bottom: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF7A7A7A),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                ListTile(
+                  iconColor: actionForeground,
+                  textColor: actionForeground,
+                  leading: const Icon(Icons.download_outlined),
+                  title: const Text('保存图片'),
+                  onTap: () => Navigator.of(context).pop(true),
+                ),
+              ],
             ),
           ),
         );
