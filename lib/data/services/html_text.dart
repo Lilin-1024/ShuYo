@@ -61,14 +61,36 @@ class CookedSegment {
 class TopicPreview {
   const TopicPreview({
     required this.text,
-    required this.imageUrls,
+    required this.images,
   });
 
   final String text;
-  final List<String> imageUrls;
+  final List<TopicPreviewImage> images;
 
   bool get hasText => text.isNotEmpty;
-  bool get hasImages => imageUrls.isNotEmpty;
+  bool get hasImages => images.isNotEmpty;
+
+  List<String> get imageUrls =>
+      images.map((image) => image.url).toList(growable: false);
+}
+
+class TopicPreviewImage {
+  const TopicPreviewImage({
+    required this.url,
+    required this.width,
+    required this.height,
+  });
+
+  final String url;
+  final int width;
+  final int height;
+
+  double? get aspectRatio {
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+    return width / height;
+  }
 }
 
 class HtmlText {
@@ -122,16 +144,26 @@ class HtmlText {
       text: text.length <= maxLength
           ? text
           : '${text.substring(0, maxLength)}...',
-      imageUrls: imageUrls(html),
+      images: images(html),
     );
   }
 
   static List<String> imageUrls(String html) {
+    return images(html).map((image) => image.url).toList(growable: false);
+  }
+
+  static List<TopicPreviewImage> images(String html) {
     return _imagePattern
         .allMatches(html)
         .map((match) => _HtmlImage.fromTag(match.group(0) ?? ''))
         .where((image) => image.shouldRenderAsImage)
-        .map((image) => _absoluteUrl(image.src))
+        .map(
+          (image) => TopicPreviewImage(
+            url: _absoluteUrl(image.src),
+            width: image.width,
+            height: image.height,
+          ),
+        )
         .toList(growable: false);
   }
 

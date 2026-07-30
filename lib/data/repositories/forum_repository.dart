@@ -302,7 +302,7 @@ class FixtureForumRepository implements ForumRepository {
     if (first == null) {
       return const TopicPreview(
         text: '暂无摘要，打开后可加载主题详情',
-        imageUrls: [],
+        images: [],
       );
     }
     return HtmlText.topicPreview(first.cooked);
@@ -786,7 +786,7 @@ class OnlineForumRepository implements ForumRepository {
     final detail = await fetchTopicDetail(id);
     final first = detail?.firstPost;
     if (first == null) {
-      return const TopicPreview(text: '暂无摘要', imageUrls: []);
+      return const TopicPreview(text: '暂无摘要', images: []);
     }
     return HtmlText.topicPreview(first.cooked);
   }
