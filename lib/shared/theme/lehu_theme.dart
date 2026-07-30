@@ -344,13 +344,14 @@ class LehuColors extends ThemeExtension<LehuColors> {
 class LehuThemes {
   const LehuThemes._();
 
-  static const defaultId = 'default_dark';
-  static const systemLightId = 'paper_light';
+  static const defaultId = 'paper_light';
+  static const systemDarkId = 'default_dark';
+  static const systemLightId = defaultId;
 
   static const all = <LehuThemeSpec>[
     LehuThemeSpec(
-      id: defaultId,
-      name: '默认',
+      id: systemDarkId,
+      name: '深色',
       colors: LehuColors(
         brightness: Brightness.dark,
         background: Color(0xFF0D0D0D),
@@ -400,7 +401,7 @@ class LehuThemes {
       ),
     ),
     LehuThemeSpec(
-      id: 'paper_light',
+      id: defaultId,
       name: '纸白',
       colors: LehuColors(
         brightness: Brightness.light,
@@ -611,17 +612,22 @@ class LehuThemes {
         return theme;
       }
     }
+    for (final theme in all) {
+      if (theme.id == defaultId) {
+        return theme;
+      }
+    }
     return all.first;
   }
 
   static String systemThemeIdFor(Brightness brightness) {
-    return brightness == Brightness.dark ? defaultId : systemLightId;
+    return brightness == Brightness.dark ? systemDarkId : systemLightId;
   }
 }
 
 extension LehuThemeContext on BuildContext {
   LehuColors get lehuColors {
     return Theme.of(this).extension<LehuColors>() ??
-        LehuThemes.all.first.colors;
+        LehuThemes.byId(LehuThemes.defaultId).colors;
   }
 }
