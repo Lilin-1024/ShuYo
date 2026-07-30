@@ -47,7 +47,10 @@ class _ForumNetworkImageState extends State<ForumNetworkImage> {
       future: _headersFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return SizedBox(width: widget.width, height: widget.height);
+          return _ImagePlaceholder(
+            width: widget.width,
+            height: widget.height,
+          );
         }
         return Image.network(
           widget.url,
@@ -59,6 +62,26 @@ class _ForumNetworkImageState extends State<ForumNetworkImage> {
           errorBuilder: widget.errorBuilder,
         );
       },
+    );
+  }
+}
+
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder({this.width, this.height});
+
+  final double? width;
+  final double? height;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        ),
+      ),
     );
   }
 }

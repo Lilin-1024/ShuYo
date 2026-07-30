@@ -73,6 +73,7 @@ class _TopicListPageState extends State<TopicListPage> {
     final colors = context.lehuColors;
     return ListView.separated(
       controller: _scrollController,
+      cacheExtent: 1200,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: widget.topics.length + (_hasFooter ? 1 : 0),
@@ -113,8 +114,7 @@ class _TopicListPageState extends State<TopicListPage> {
       return preview;
     } on Object {
       _previewFutures.remove(id);
-      return _previewCache[id] ??
-          const TopicPreview(text: '暂无摘要', imageUrls: []);
+      return _previewCache[id] ?? const TopicPreview(text: '暂无摘要', images: []);
     }
   }
 
@@ -302,7 +302,7 @@ class _TopicListRow extends StatelessWidget {
                 }
                 if (snapshot.hasError) {
                   return const _PreviewContent(
-                    preview: TopicPreview(text: '暂无摘要', imageUrls: []),
+                    preview: TopicPreview(text: '暂无摘要', images: []),
                   );
                 }
                 return const SizedBox.shrink();
@@ -371,73 +371,88 @@ class _PreviewContent extends StatelessWidget {
             ),
           ),
         if (preview.hasText && preview.hasImages) const SizedBox(height: 10),
-        if (preview.hasImages) _PreviewImages(urls: preview.imageUrls),
+        if (preview.hasImages) _PreviewImages(images: preview.images),
       ],
     );
   }
 }
 
 class _PreviewImages extends StatelessWidget {
-  const _PreviewImages({required this.urls});
+  const _PreviewImages({required this.images});
 
-  final List<String> urls;
+  final List<TopicPreviewImage> images;
 
   @override
   Widget build(BuildContext context) {
-    if (urls.length == 1) {
-      return _SinglePreviewImage(url: urls.first);
+    if (images.length == 1) {
+      return _SinglePreviewImage(image: images.first);
     }
-    return _ImageThumbnailRow(urls: urls);
+    return _ImageThumbnailRow(images: images);
   }
 }
 
 class _SinglePreviewImage extends StatelessWidget {
-  const _SinglePreviewImage({required this.url});
+  const _SinglePreviewImage({required this.image});
 
-  final String url;
+  final TopicPreviewImage image;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 260),
-        child: ForumNetworkImage(
-          url,
-          width: double.infinity,
-          fit: BoxFit.contain,
-          alignment: Alignment.centerLeft,
-          errorBuilder: (context, error, stackTrace) {
-            return const _ImageFallback(height: 150);
-          },
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fallbackWidth = MediaQuery.sizeOf(context).width - 32;
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : fallbackWidth;
+        final aspectRatio = image.aspectRatio ?? 1.45;
+        final naturalHeight = width / aspectRatio;
+        final height = naturalHeight.clamp(150.0, 260.0).toDouble();
+        final imageWidth = (height * aspectRatio).clamp(90.0, width).toDouble();
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            width: imageWidth,
+            height: height,
+            child: ForumNetworkImage(
+              image.url,
+              width: imageWidth,
+              height: height,
+              fit: BoxFit.cover,
+              alignment: Alignment.centerLeft,
+              errorBuilder: (context, error, stackTrace) {
+                return _ImageFallback(height: height);
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
 
 class _ImageThumbnailRow extends StatelessWidget {
-  const _ImageThumbnailRow({required this.urls});
+  const _ImageThumbnailRow({required this.images});
 
-  final List<String> urls;
+  final List<TopicPreviewImage> images;
 
   @override
   Widget build(BuildContext context) {
     const gap = 6.0;
-    final visibleUrls = urls.take(3).toList(growable: false);
+    final visibleImages = images.take(3).toList(growable: false);
     return LayoutBuilder(
       builder: (context, constraints) {
         final tileSize = (constraints.maxWidth - gap * 2) / 3;
         return Row(
           children: [
-            for (var index = 0; index < visibleUrls.length; index++) ...[
+            for (var index = 0; index < visibleImages.length; index++) ...[
               _SquareThumbnail(
-                url: visibleUrls[index],
+                url: visibleImages[index].url,
                 size: tileSize,
-                badgeText:
-                    index == 2 && urls.length > 3 ? '共${urls.length}张' : null,
+                badgeText: index == 2 && images.length > 3
+                    ? '共${images.length}张'
+                    : null,
               ),
-              if (index != visibleUrls.length - 1) const SizedBox(width: gap),
+              if (index != visibleImages.length - 1) const SizedBox(width: gap),
             ],
           ],
         );

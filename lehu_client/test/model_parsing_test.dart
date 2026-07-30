@@ -53,6 +53,9 @@ void main() {
     expect(topic.postStreamIds, contains(topic.firstPost!.id));
     expect(HtmlText.preview(topic.firstPost!.cooked), isNotEmpty);
     expect(preview.imageUrls, isNotEmpty);
+    expect(preview.images.first.width, greaterThan(0));
+    expect(preview.images.first.height, greaterThan(0));
+    expect(preview.images.first.aspectRatio, greaterThan(0));
     expect(preview.text, isEmpty);
     expect(preview.text, isNot(contains('1920')));
     expect(preview.text, isNot(contains('KB')));
