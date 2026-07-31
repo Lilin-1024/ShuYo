@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,6 +7,7 @@ import '../../data/models/composer.dart';
 import '../../data/models/forum_activity.dart';
 import '../../data/models/user_profile.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../data/services/forum_draft_store.dart';
 import '../../data/services/forum_title_rules.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../shared/lehu_text_styles.dart';
@@ -424,24 +427,41 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
   final _rawFocusNode = FocusNode();
   final _openedAt = DateTime.now();
   final _images = <UploadedImage>[];
+  Timer? _draftSaveTimer;
   bool _submitting = false;
   bool _uploading = false;
   bool _showEmojiPanel = false;
   bool _normalizingTitle = false;
   bool _titleEmojiRejected = false;
   bool _lastTextFocusWasTitle = false;
+  bool _draftReady = false;
+  bool _restoringDraft = false;
+
+  String get _draftKey {
+    return ForumDraftStore.newPrivateMessageKey(
+      widget.repository.profile.username,
+      widget.recipient,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _titleController.addListener(_handleTitleChanged);
+    _rawController.addListener(_handleDraftChanged);
     _titleFocusNode.addListener(_handleTitleFocusChanged);
     _rawFocusNode.addListener(_handleRawFocusChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_loadDraft());
+    });
   }
 
   @override
   void dispose() {
+    _draftSaveTimer?.cancel();
+    unawaited(_saveDraftNow());
     _titleController.removeListener(_handleTitleChanged);
+    _rawController.removeListener(_handleDraftChanged);
     _titleFocusNode.removeListener(_handleTitleFocusChanged);
     _rawFocusNode.removeListener(_handleRawFocusChanged);
     _titleController.dispose();
@@ -496,7 +516,10 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
               images: _images,
               onRemove: _submitting || _uploading
                   ? null
-                  : (image) => setState(() => _images.remove(image)),
+                  : (image) {
+                      setState(() => _images.remove(image));
+                      _scheduleDraftSave();
+                    },
             ),
             const SizedBox(height: 10),
           ],
@@ -570,6 +593,7 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
     if (mounted && _titleEmojiRejected != rejected) {
       setState(() => _titleEmojiRejected = rejected);
     }
+    _scheduleDraftSave();
   }
 
   void _handleTitleFocusChanged() {
@@ -631,6 +655,7 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
       _images.add(uploaded);
       if (mounted) {
         setState(() {});
+        _scheduleDraftSave();
       }
     } on Object catch (error) {
       if (mounted) {
@@ -681,6 +706,11 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
       if (!mounted) {
         return;
       }
+      await ForumDraftStore.remove(_draftKey);
+      if (!mounted) {
+        return;
+      }
+      _draftReady = false;
       final messenger = ScaffoldMessenger.of(context);
       Navigator.of(context).pop();
       messenger.showSnackBar(const SnackBar(content: Text('私信已发送')));
@@ -698,6 +728,87 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _loadDraft() async {
+    final draft = await ForumDraftStore.load(_draftKey);
+    if (!mounted) {
+      return;
+    }
+    if (draft == null) {
+      _draftReady = true;
+      return;
+    }
+    final shouldRestore = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('恢复草稿？'),
+          content: const Text('发现一份未发送的私信草稿，是否继续编辑？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('丢弃'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('恢复'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!mounted) {
+      return;
+    }
+    if (shouldRestore == true) {
+      _restoreDraft(draft);
+      _draftReady = true;
+      return;
+    }
+    await ForumDraftStore.remove(_draftKey);
+    _draftReady = true;
+  }
+
+  void _restoreDraft(ForumComposerDraft draft) {
+    _restoringDraft = true;
+    _titleController.text = draft.title;
+    _rawController.text = draft.raw;
+    setState(() {
+      _images
+        ..clear()
+        ..addAll(draft.images);
+    });
+    _restoringDraft = false;
+  }
+
+  void _handleDraftChanged() {
+    _scheduleDraftSave();
+  }
+
+  void _scheduleDraftSave() {
+    if (!_draftReady || _restoringDraft || _submitting) {
+      return;
+    }
+    _draftSaveTimer?.cancel();
+    _draftSaveTimer = Timer(
+      const Duration(milliseconds: 700),
+      () => unawaited(_saveDraftNow()),
+    );
+  }
+
+  Future<void> _saveDraftNow() async {
+    if (!_draftReady || _restoringDraft || _submitting) {
+      return;
+    }
+    await ForumDraftStore.save(
+      _draftKey,
+      ForumComposerDraft(
+        title: _titleController.text,
+        raw: _rawController.text,
+        images: List<UploadedImage>.of(_images),
+      ),
     );
   }
 }
