@@ -45,7 +45,7 @@ class ForumCookedContent extends StatelessWidget {
     }
     final imageUrls = [
       for (final segment in segments)
-        if (segment.isImage) segment.value,
+        if (segment.isImage) segment.resolvedImageFullUrl,
     ];
     final contentWidgets = <Widget>[];
     var imageIndex = 0;
