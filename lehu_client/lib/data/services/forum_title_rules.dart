@@ -11,7 +11,9 @@ class ForumTitleRules {
 
   static final _knownEmojiBaseRunes = <int>{
     for (final entry in EmojiText.entries)
-      if (entry.value.runes.isNotEmpty) entry.value.runes.first,
+      if (entry.value.runes.isNotEmpty &&
+          !_isAsciiKeycapBase(entry.value.runes.first))
+        entry.value.runes.first,
   };
 
   static String sanitize(String value) {
@@ -151,4 +153,8 @@ class ForumTitleRules {
   static const _zeroWidthJoiner = 0x200D;
   static const _variationSelector16 = 0xFE0F;
   static const _combiningEnclosingKeycap = 0x20E3;
+
+  static bool _isAsciiKeycapBase(int rune) {
+    return rune == 0x23 || rune == 0x2A || (rune >= 0x30 && rune <= 0x39);
+  }
 }
