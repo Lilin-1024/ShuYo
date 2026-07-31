@@ -37,7 +37,8 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return _AnnouncementErrorState(
@@ -142,7 +143,8 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return _AnnouncementErrorState(

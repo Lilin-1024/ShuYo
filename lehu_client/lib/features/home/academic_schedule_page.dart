@@ -64,7 +64,8 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         future: _loadFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return _ScheduleErrorState(
@@ -227,7 +228,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 3),
                         )
                       : const Icon(Icons.refresh),
                   title: const Text('刷新课表'),

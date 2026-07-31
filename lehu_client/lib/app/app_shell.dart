@@ -555,7 +555,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Widget _bodyForTab() {
     if (_isForumWebVpnRecoveryPending) {
-      return const _LoadingState(message: '正在恢复论坛登录...');
+      return const _LoadingState();
     }
     return IndexedStack(
       index: _tabIndex,
@@ -1014,7 +1014,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         final topics = snapshot.data ?? cachedTopics;
         if (topics == null &&
             snapshot.connectionState != ConnectionState.done) {
-          return const _LoadingState(message: '正在加载列表...');
+          return const _LoadingState();
         }
         if (topics == null && snapshot.hasError) {
           return _ErrorState(
@@ -1924,22 +1924,12 @@ class _TabBadgeIcon extends StatelessWidget {
 }
 
 class _LoadingState extends StatelessWidget {
-  const _LoadingState({required this.message});
-
-  final String message;
+  const _LoadingState();
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 14),
-          Text(message, style: TextStyle(color: colors.textSecondary)),
-        ],
-      ),
+    return const Center(
+      child: CircularProgressIndicator(strokeWidth: 3),
     );
   }
 }

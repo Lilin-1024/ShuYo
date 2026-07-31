@@ -49,7 +49,7 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 3),
                   )
                 : const Icon(Icons.refresh),
           ),
@@ -60,7 +60,8 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
         future: _loadFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return EmptyState(
@@ -120,7 +121,7 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
       future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(strokeWidth: 3));
         }
         if (snapshot.hasError) {
           return EmptyState(

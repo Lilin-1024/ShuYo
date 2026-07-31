@@ -105,7 +105,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 3),
                   )
                 : const Text('发布'),
           ),
@@ -252,7 +252,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 3),
                         )
                       : const Icon(Icons.image_outlined),
                 ),

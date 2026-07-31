@@ -101,7 +101,7 @@ class _MessagesPageState extends State<MessagesPage> {
       );
     }
     if (_loading && _topics == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(strokeWidth: 3));
     }
     final error = _error;
     if (error != null && _topics == null) {
@@ -685,7 +685,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
 
   Widget _messageBody() {
     if (_loadingInitial) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(strokeWidth: 3));
     }
     final error = _error;
     if (error != null && _detail == null) {
@@ -1079,7 +1079,7 @@ class _MessageDetailHeader extends StatelessWidget {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 3),
                   )
                 : const Icon(Icons.refresh),
           ),
@@ -1362,7 +1362,7 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 3),
                         )
                       : const Icon(Icons.image_outlined),
                 ),
@@ -1415,7 +1415,7 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 3),
                         )
                       : const Icon(Icons.send),
                 ),

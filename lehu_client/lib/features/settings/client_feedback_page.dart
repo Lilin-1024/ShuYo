@@ -61,7 +61,8 @@ class _ClientFeedbackPageState extends State<ClientFeedbackPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return EmptyState(
@@ -231,7 +232,7 @@ class _ClientFeedbackDetailPageState extends State<ClientFeedbackDetailPage> {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 3),
                   )
                 : const Icon(Icons.refresh),
           ),
@@ -241,7 +242,8 @@ class _ClientFeedbackDetailPageState extends State<ClientFeedbackDetailPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return EmptyState(
@@ -456,7 +458,7 @@ class _ComposerCard extends StatelessWidget {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 3),
                       )
                     : const Icon(Icons.send),
                 label: const Text('提交'),

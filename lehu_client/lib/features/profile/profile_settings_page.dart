@@ -63,7 +63,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 3),
                     )
                   : const Text('保存'),
             ),
@@ -73,7 +73,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           future: _loadFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(
+                  child: CircularProgressIndicator(strokeWidth: 3));
             }
             if (snapshot.hasError) {
               return EmptyState(
@@ -330,7 +331,7 @@ class _AvatarControls extends StatelessWidget {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(strokeWidth: 3),
                   )
                 : const Icon(Icons.image),
             label: const Text('自定义图片'),
@@ -368,7 +369,7 @@ class _BackgroundControls extends StatelessWidget {
             ? const SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(strokeWidth: 3),
               )
             : const Icon(Icons.landscape),
         label: const Text('选择背景图片'),

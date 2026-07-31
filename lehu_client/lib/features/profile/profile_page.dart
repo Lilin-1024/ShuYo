@@ -46,7 +46,7 @@ class ProfilePage extends StatelessWidget {
               ? const SizedBox(
                   width: 22,
                   height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(strokeWidth: 3),
                 )
               : const Icon(Icons.chevron_right),
         ),
