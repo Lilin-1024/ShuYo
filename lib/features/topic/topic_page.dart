@@ -361,7 +361,12 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
         }
         if (await _ensurePostVisible(postNumber)) {
           scrolled = true;
+          continue;
         }
+        await _preScrollTargetIntoBuildRange(postNumber, attempt);
+      }
+      if (!scrolled && await _ensurePostVisible(postNumber)) {
+        scrolled = true;
       }
       if (scrolled) {
         unawaited(_saveReadPositionNow());
@@ -384,6 +389,110 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
     );
     return true;
+  }
+
+  Future<bool> _preScrollTargetIntoBuildRange(
+    int postNumber,
+    int attempt,
+  ) async {
+    if (!_scrollController.hasClients) {
+      return false;
+    }
+    final rootNumber = _rootPostNumberFor(postNumber);
+    if (attempt == 0 && rootNumber != null && rootNumber != postNumber) {
+      final rootContext = _postKeys[rootNumber]?.currentContext;
+      if (rootContext != null && rootContext.mounted) {
+        await Scrollable.ensureVisible(
+          rootContext,
+          duration: Duration.zero,
+          alignment: 0.08,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+        );
+        return true;
+      }
+    }
+    final offset = _estimatedScrollOffsetForPost(postNumber, attempt);
+    if (offset == null) {
+      return false;
+    }
+    return _jumpToReadOffset(offset);
+  }
+
+  double? _estimatedScrollOffsetForPost(int postNumber, int attempt) {
+    if (!_scrollController.hasClients || widget.detail == null) {
+      return null;
+    }
+    final maxScrollExtent = _scrollController.position.maxScrollExtent;
+    if (maxScrollExtent <= 0) {
+      return null;
+    }
+    final displayNumbers = _estimatedDisplayPostNumbers();
+    if (displayNumbers.isEmpty) {
+      return null;
+    }
+    var index = displayNumbers.indexOf(postNumber);
+    if (index < 0) {
+      final rootNumber = _rootPostNumberFor(postNumber);
+      if (rootNumber != null) {
+        index = displayNumbers.indexOf(rootNumber);
+      }
+    }
+    if (index < 0) {
+      return null;
+    }
+    final baseFraction =
+        ((index + 0.5) / displayNumbers.length).clamp(0.0, 1.0).toDouble();
+    final viewportHeight =
+        (_scrollViewKey.currentContext?.findRenderObject() as RenderBox?)
+                ?.size
+                .height ??
+            0;
+    final fallbackNudge = attempt <= 1 ? 0.0 : viewportHeight * 0.35;
+    final target = (maxScrollExtent * baseFraction) - fallbackNudge;
+    return target.clamp(0.0, maxScrollExtent).toDouble();
+  }
+
+  List<int> _estimatedDisplayPostNumbers() {
+    final detail = widget.detail;
+    if (detail == null) {
+      return const [];
+    }
+    final threads = buildThreadedPosts(
+      detail.posts.where((post) => !post.isDeleted).toList(growable: false),
+    );
+    final numbers = <int>[];
+    for (final thread in threads) {
+      numbers.add(thread.post.postNumber);
+      final replies = _expandedReplyParents.contains(thread.post.postNumber)
+          ? thread.replies
+          : thread.replies.take(_collapsedReplyCount);
+      numbers.addAll(replies.map((reply) => reply.postNumber));
+    }
+    return numbers;
+  }
+
+  int? _rootPostNumberFor(int postNumber) {
+    final detail = widget.detail;
+    if (detail == null) {
+      return null;
+    }
+    final postsByNumber = {
+      for (final post in detail.posts) post.postNumber: post,
+    };
+    var post = postsByNumber[postNumber];
+    if (post == null) {
+      return null;
+    }
+    final visited = <int>{postNumber};
+    while (post?.replyToPostNumber != null) {
+      final parentNumber = post!.replyToPostNumber!;
+      final parent = postsByNumber[parentNumber];
+      if (parent == null || !visited.add(parent.postNumber)) {
+        break;
+      }
+      post = parent;
+    }
+    return post?.postNumber;
   }
 
   void _startTargetPostScroll(int postNumber) {
