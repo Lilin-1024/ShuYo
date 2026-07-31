@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/models/forum_activity.dart';
+import '../../data/models/forum_report.dart';
 import '../../data/models/forum_search.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
@@ -53,6 +54,10 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   Timer? _topicTimingTimer;
   final _likingPostIds = <int>{};
   final _deletingPostIds = <int>{};
+  final _reportingPostIds = <int>{};
+  final _reportedPostIds = <int>{};
+  final _reportingTopicIds = <int>{};
+  final _reportedTopicIds = <int>{};
   final _topicPageController = TopicPageController();
 
   @override
@@ -127,8 +132,11 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       isSubmittingReply: _submittingReply,
                       busyLikePostIds: _likingPostIds,
                       busyDeletePostIds: _deletingPostIds,
+                      busyReportPostIds: _reportingPostIds,
+                      reportedPostIds: _reportedPostIds,
                       onLikePost: _togglePostLike,
                       onDeletePost: _deletePost,
+                      onReportPost: _reportPost,
                       onUploadImage: widget.repository.uploadImage,
                       onCreateReply: _createReply,
                       onOpenUser: _openUserProfile,
@@ -350,6 +358,135 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     }
   }
 
+  Future<void> _reportPost(Post post) async {
+    if (!widget.repository.isOnline) {
+      await _requireLogin();
+      return;
+    }
+    if (_isPostReported(post)) {
+      _showSnack('已提交过举报，请等待管理员处理');
+      return;
+    }
+    if (_reportingPostIds.contains(post.id)) {
+      return;
+    }
+    final selection = await _showReportReasonSheet(
+      title: post.postNumber == 1 ? '举报首楼' : '举报回复',
+      reasons: ForumReportReason.optionsForPost(),
+    );
+    if (selection == null || !mounted) {
+      return;
+    }
+    setState(() => _reportingPostIds.add(post.id));
+    try {
+      await widget.repository.reportContent(
+        ForumReportDraft(
+          id: post.id,
+          reason: selection.reason,
+          message: selection.message,
+          flagTopic: false,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() => _reportedPostIds.add(post.id));
+      _showSnack('举报已提交');
+      await _refresh();
+    } on Object catch (error) {
+      await _handleOperationError(
+        error,
+        title: '举报失败',
+        fallbackMessage: '已提交过举报，请等待管理员处理。',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _reportingPostIds.remove(post.id));
+      }
+    }
+  }
+
+  Future<void> _reportTopic(TopicListItem topic) async {
+    if (!widget.repository.isOnline) {
+      await _requireLogin();
+      return;
+    }
+    if (_isTopicReported(topic)) {
+      _showSnack('已提交过举报，请等待管理员处理');
+      return;
+    }
+    if (_reportingTopicIds.contains(topic.id)) {
+      return;
+    }
+    final selection = await _showReportReasonSheet(
+      title: '举报主题',
+      reasons: ForumReportReason.optionsForTopic(),
+    );
+    if (selection == null || !mounted) {
+      return;
+    }
+    setState(() => _reportingTopicIds.add(topic.id));
+    try {
+      final post = await widget.repository.reportContent(
+        ForumReportDraft(
+          id: topic.id,
+          reason: selection.reason,
+          message: selection.message,
+          flagTopic: true,
+        ),
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _reportedTopicIds.add(topic.id);
+        if (post.id > 0) {
+          _reportedPostIds.add(post.id);
+        }
+      });
+      _showSnack('举报已提交');
+      await _refresh();
+    } on Object catch (error) {
+      await _handleOperationError(
+        error,
+        title: '举报失败',
+        fallbackMessage: '已提交过举报，请等待管理员处理。',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _reportingTopicIds.remove(topic.id));
+      }
+    }
+  }
+
+  bool _isPostReported(Post post) {
+    return post.reported || _reportedPostIds.contains(post.id);
+  }
+
+  bool _isTopicReported(TopicListItem topic) {
+    return _reportedTopicIds.contains(topic.id) ||
+        _reportedPostIds.contains(_detail?.firstPost?.id) ||
+        (_detail?.firstPost?.reported ?? false);
+  }
+
+  Future<_ReportSelection?> _showReportReasonSheet({
+    required String title,
+    required List<ForumReportReason> reasons,
+  }) {
+    return showModalBottomSheet<_ReportSelection>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.58),
+      builder: (context) {
+        return _ReportReasonSheet(
+          title: title,
+          reasons: reasons,
+        );
+      },
+    );
+  }
+
   Future<void> _shareTopic(TopicListItem topic) async {
     final url = 'https://bbs.shu.edu.cn/t/topic/${topic.id}';
     await Clipboard.setData(ClipboardData(text: url));
@@ -379,6 +516,9 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
           showDeleteTopic: isOwnTopic,
           canDeleteTopic: canDeleteTopic,
           deletingTopic: _deletingTopic,
+          reportLabel: _isTopicReported(topic) ? '已举报' : '举报',
+          canReport: !_isTopicReported(topic) &&
+              !_reportingTopicIds.contains(topic.id),
           onClose: () => Navigator.of(context).pop(),
           onShare: () {
             Navigator.of(context).pop();
@@ -386,7 +526,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
           },
           onReport: () {
             Navigator.of(context).pop();
-            _showSnack('管理层缺失，举报功能暂无效');
+            unawaited(_reportTopic(topic));
           },
           onBookmark: (bookmark) {
             Navigator.of(context).pop();
@@ -602,12 +742,183 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   }
 }
 
+class _ReportSelection {
+  const _ReportSelection({
+    required this.reason,
+    this.message,
+  });
+
+  final ForumReportReason reason;
+  final String? message;
+}
+
+class _ReportReasonSheet extends StatefulWidget {
+  const _ReportReasonSheet({
+    required this.title,
+    required this.reasons,
+  });
+
+  final String title;
+  final List<ForumReportReason> reasons;
+
+  @override
+  State<_ReportReasonSheet> createState() => _ReportReasonSheetState();
+}
+
+class _ReportReasonSheetState extends State<_ReportReasonSheet> {
+  late ForumReportReason _selected = widget.reasons.first;
+  final _messageController = TextEditingController();
+
+  bool get _needsMessage => _selected.requiresMessage;
+
+  bool get _canSubmit {
+    if (!_needsMessage) {
+      return true;
+    }
+    return _messageController.text.trim().length >= 3;
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SafeArea(
+        top: false,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 22),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(8),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '关闭',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              for (final reason in widget.reasons)
+                _ReportReasonTile(
+                  reason: reason,
+                  selected: reason == _selected,
+                  onTap: () => setState(() => _selected = reason),
+                ),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 160),
+                child: _needsMessage
+                    ? Padding(
+                        key: const ValueKey('report-message'),
+                        padding: const EdgeInsets.only(top: 4, bottom: 12),
+                        child: TextField(
+                          controller: _messageController,
+                          minLines: 2,
+                          maxLines: 4,
+                          maxLength: 160,
+                          onChanged: (_) => setState(() {}),
+                          decoration: const InputDecoration(
+                            hintText: '请补充说明，至少 3 个字符',
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(key: ValueKey('no-message')),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _canSubmit
+                      ? () {
+                          Navigator.of(context).pop(
+                            _ReportSelection(
+                              reason: _selected,
+                              message: _needsMessage
+                                  ? _messageController.text.trim()
+                                  : null,
+                            ),
+                          );
+                        }
+                      : null,
+                  child: const Text('提交举报'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportReasonTile extends StatelessWidget {
+  const _ReportReasonTile({
+    required this.reason,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final ForumReportReason reason;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final activeColor = Theme.of(context).colorScheme.primary;
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      onTap: onTap,
+      leading: Icon(
+        selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+        color: selected ? activeColor : colors.textMuted,
+      ),
+      title: Text(
+        reason.label,
+        style: TextStyle(color: colors.textPrimary),
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    );
+  }
+}
+
 class _TopicMoreSheet extends StatelessWidget {
   const _TopicMoreSheet({
     required this.bookmarkFuture,
     required this.showDeleteTopic,
     required this.canDeleteTopic,
     required this.deletingTopic,
+    required this.reportLabel,
+    required this.canReport,
     required this.onClose,
     required this.onShare,
     required this.onReport,
@@ -620,6 +931,8 @@ class _TopicMoreSheet extends StatelessWidget {
   final bool showDeleteTopic;
   final bool canDeleteTopic;
   final bool deletingTopic;
+  final String reportLabel;
+  final bool canReport;
   final VoidCallback onClose;
   final VoidCallback onShare;
   final VoidCallback onReport;
@@ -674,8 +987,8 @@ class _TopicMoreSheet extends StatelessWidget {
                 Expanded(
                   child: _TopicActionButton(
                     icon: Icons.flag_outlined,
-                    label: '举报',
-                    onTap: onReport,
+                    label: reportLabel,
+                    onTap: canReport ? onReport : null,
                   ),
                 ),
                 Expanded(

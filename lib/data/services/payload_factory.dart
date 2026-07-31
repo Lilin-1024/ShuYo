@@ -1,6 +1,7 @@
 import '../../core/forum_constants.dart';
 import '../../core/forum_url_resolver.dart';
 import '../models/composer.dart';
+import '../models/forum_report.dart';
 import '../models/post.dart';
 import '../models/topic.dart';
 import '../models/user_profile.dart';
@@ -151,6 +152,20 @@ class PayloadFactory {
       url: ForumUrlResolver.resolve('/post_actions/$postId'),
       body: _formEncode({
         'post_action_type_id': '2',
+      }),
+    );
+  }
+
+  static RequestPayload reportContent(ForumReportDraft draft) {
+    final message = draft.message?.trim();
+    return RequestPayload(
+      method: 'POST',
+      url: ForumUrlResolver.resolve(ForumConstants.postActionsPath),
+      body: _formEncode({
+        'id': '${draft.id}',
+        'post_action_type_id': '${draft.reason.id}',
+        if (message != null && message.isNotEmpty) 'message': message,
+        'flag_topic': draft.flagTopic ? 'true' : 'false',
       }),
     );
   }

@@ -28,6 +28,8 @@ class PostActionSummary {
 }
 
 class Post {
+  static const reportActionIds = {3, 4, 7, 8, 10};
+
   const Post({
     required this.id,
     required this.topicId,
@@ -97,6 +99,12 @@ class Post {
 
   bool get liked {
     return actions.any((action) => action.id == 2 && action.acted);
+  }
+
+  bool get reported {
+    return actions.any(
+      (action) => reportActionIds.contains(action.id) && action.acted,
+    );
   }
 
   bool get isDeleted => deletedAt != null;

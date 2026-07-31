@@ -40,6 +40,7 @@ class TopicPage extends StatefulWidget {
     required this.onUploadImage,
     required this.onLikePost,
     required this.onDeletePost,
+    required this.onReportPost,
     required this.onOpenUser,
     required this.onOpenInternalTopic,
     required this.onSearchUsers,
@@ -49,6 +50,8 @@ class TopicPage extends StatefulWidget {
     required this.isSubmittingReply,
     required this.busyLikePostIds,
     required this.busyDeletePostIds,
+    required this.busyReportPostIds,
+    required this.reportedPostIds,
   });
 
   final TopicPageController? controller;
@@ -60,10 +63,13 @@ class TopicPage extends StatefulWidget {
   final bool isSubmittingReply;
   final Set<int> busyLikePostIds;
   final Set<int> busyDeletePostIds;
+  final Set<int> busyReportPostIds;
+  final Set<int> reportedPostIds;
   final Future<bool> Function(ReplyDraft draft) onCreateReply;
   final Future<UploadedImage> Function(PickedImage image) onUploadImage;
   final ValueChanged<Post> onLikePost;
   final ValueChanged<Post> onDeletePost;
+  final ValueChanged<Post> onReportPost;
   final ValueChanged<String> onOpenUser;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
   final Future<List<SearchUserResult>> Function(String query) onSearchUsers;
@@ -247,6 +253,8 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
                           isSubmittingReply: widget.isSubmittingReply,
                           busyLikePostIds: widget.busyLikePostIds,
                           busyDeletePostIds: widget.busyDeletePostIds,
+                          busyReportPostIds: widget.busyReportPostIds,
+                          reportedPostIds: widget.reportedPostIds,
                           expanded: _expandedReplyParents.contains(
                             thread.post.postNumber,
                           ),
@@ -262,6 +270,7 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
                           onReply: _replyTo,
                           onLike: _like,
                           onDelete: _confirmDelete,
+                          onReport: widget.onReportPost,
                           onOpenUser: widget.onOpenUser,
                           onOpenImage: _openImagePreview,
                           onOpenInternalTopic: widget.onOpenInternalTopic,
@@ -1097,12 +1106,15 @@ class _ThreadedPostView extends StatelessWidget {
     required this.isSubmittingReply,
     required this.busyLikePostIds,
     required this.busyDeletePostIds,
+    required this.busyReportPostIds,
+    required this.reportedPostIds,
     required this.expanded,
     required this.collapsedReplyCount,
     required this.onToggleExpanded,
     required this.onReply,
     required this.onLike,
     required this.onDelete,
+    required this.onReport,
     required this.onOpenUser,
     required this.onOpenImage,
     required this.onOpenInternalTopic,
@@ -1114,12 +1126,15 @@ class _ThreadedPostView extends StatelessWidget {
   final bool isSubmittingReply;
   final Set<int> busyLikePostIds;
   final Set<int> busyDeletePostIds;
+  final Set<int> busyReportPostIds;
+  final Set<int> reportedPostIds;
   final bool expanded;
   final int collapsedReplyCount;
   final VoidCallback onToggleExpanded;
   final ValueChanged<Post> onReply;
   final ValueChanged<Post> onLike;
   final ValueChanged<Post> onDelete;
+  final ValueChanged<Post> onReport;
   final ValueChanged<String> onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
@@ -1142,11 +1157,14 @@ class _ThreadedPostView extends StatelessWidget {
           canLike: true,
           canReply: canReply && !isSubmittingReply,
           canDelete: post.postNumber != 1 && post.yours && post.canDelete,
+          reported: post.reported || reportedPostIds.contains(post.id),
           isLiking: busyLikePostIds.contains(post.id),
           isDeleting: busyDeletePostIds.contains(post.id),
+          isReporting: busyReportPostIds.contains(post.id),
           onReply: () => onReply(post),
           onLike: () => onLike(post),
           onDelete: () => onDelete(post),
+          onReport: () => onReport(post),
           onOpenUser: onOpenUser,
           onOpenImage: onOpenImage,
           onOpenInternalTopic: onOpenInternalTopic,
@@ -1161,10 +1179,13 @@ class _ThreadedPostView extends StatelessWidget {
             canReply: canReply && !isSubmittingReply,
             busyLikePostIds: busyLikePostIds,
             busyDeletePostIds: busyDeletePostIds,
+            busyReportPostIds: busyReportPostIds,
+            reportedPostIds: reportedPostIds,
             onToggleExpanded: onToggleExpanded,
             onReply: onReply,
             onLike: onLike,
             onDelete: onDelete,
+            onReport: onReport,
             onOpenUser: onOpenUser,
             onOpenImage: onOpenImage,
             onOpenInternalTopic: onOpenInternalTopic,
@@ -1185,10 +1206,13 @@ class _NestedReplies extends StatelessWidget {
     required this.canReply,
     required this.busyLikePostIds,
     required this.busyDeletePostIds,
+    required this.busyReportPostIds,
+    required this.reportedPostIds,
     required this.onToggleExpanded,
     required this.onReply,
     required this.onLike,
     required this.onDelete,
+    required this.onReport,
     required this.onOpenUser,
     required this.onOpenImage,
     required this.onOpenInternalTopic,
@@ -1203,10 +1227,13 @@ class _NestedReplies extends StatelessWidget {
   final bool canReply;
   final Set<int> busyLikePostIds;
   final Set<int> busyDeletePostIds;
+  final Set<int> busyReportPostIds;
+  final Set<int> reportedPostIds;
   final VoidCallback onToggleExpanded;
   final ValueChanged<Post> onReply;
   final ValueChanged<Post> onLike;
   final ValueChanged<Post> onDelete;
+  final ValueChanged<Post> onReport;
   final ValueChanged<String> onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
@@ -1236,11 +1263,14 @@ class _NestedReplies extends StatelessWidget {
               canReply: canReply,
               canDelete:
                   reply.postNumber != 1 && reply.yours && reply.canDelete,
+              reported: reply.reported || reportedPostIds.contains(reply.id),
               isLiking: busyLikePostIds.contains(reply.id),
               isDeleting: busyDeletePostIds.contains(reply.id),
+              isReporting: busyReportPostIds.contains(reply.id),
               onReply: () => onReply(reply),
               onLike: () => onLike(reply),
               onDelete: () => onDelete(reply),
+              onReport: () => onReport(reply),
               onOpenUser: onOpenUser,
               onOpenImage: onOpenImage,
               onOpenInternalTopic: onOpenInternalTopic,
@@ -1264,11 +1294,14 @@ class _PostView extends StatelessWidget {
     required this.canLike,
     required this.canReply,
     required this.canDelete,
+    required this.reported,
     required this.isLiking,
     required this.isDeleting,
+    required this.isReporting,
     required this.onReply,
     required this.onLike,
     required this.onDelete,
+    required this.onReport,
     required this.onOpenUser,
     required this.onOpenImage,
     required this.onOpenInternalTopic,
@@ -1280,11 +1313,14 @@ class _PostView extends StatelessWidget {
   final bool canLike;
   final bool canReply;
   final bool canDelete;
+  final bool reported;
   final bool isLiking;
   final bool isDeleting;
+  final bool isReporting;
   final VoidCallback onReply;
   final VoidCallback onLike;
   final VoidCallback onDelete;
+  final VoidCallback onReport;
   final ValueChanged<String> onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
@@ -1529,6 +1565,15 @@ class _PostView extends StatelessWidget {
         icon: Icons.copy_outlined,
         label: '复制',
         onTap: () => _copyText(context),
+      ),
+      _PostAction(
+        icon: Icons.flag_outlined,
+        label: reported
+            ? '已举报'
+            : isReporting
+                ? '举报中...'
+                : '举报',
+        onTap: reported || isReporting ? null : onReport,
       ),
       if (canDelete)
         _PostAction(
