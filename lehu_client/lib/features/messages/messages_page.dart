@@ -1712,7 +1712,7 @@ class _MessageTopicPreview {
         .map((segment) {
           final link = segment.link;
           if (link == null) {
-            return segment.value;
+            return segment.textValue;
           }
           final excerpt = link.excerpt;
           return excerpt == null || excerpt.isEmpty

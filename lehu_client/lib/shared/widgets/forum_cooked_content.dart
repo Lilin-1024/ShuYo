@@ -55,14 +55,12 @@ class ForumCookedContent extends StatelessWidget {
           contentWidgets.add(
             Padding(
               padding: EdgeInsets.only(bottom: textBottomSpacing),
-              child: Text(
-                segment.value,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: textSize,
-                  height: textHeight,
-                  fontWeight: textWeight,
-                ),
+              child: _CookedTextBlock(
+                segment: segment,
+                textColor: textColor,
+                textSize: textSize,
+                textHeight: textHeight,
+                textWeight: textWeight,
               ),
             ),
           );
@@ -164,6 +162,149 @@ class ForumCookedContent extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+}
+
+class _CookedTextBlock extends StatelessWidget {
+  const _CookedTextBlock({
+    required this.segment,
+    required this.textColor,
+    required this.textSize,
+    required this.textHeight,
+    required this.textWeight,
+  });
+
+  final CookedSegment segment;
+  final Color textColor;
+  final double textSize;
+  final double textHeight;
+  final FontWeight textWeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return switch (segment.textBlockKind) {
+      CookedTextBlockKind.heading => _richText(
+          context,
+          _baseStyle(context).copyWith(
+            fontSize: _headingSize,
+            height: 1.25,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      CookedTextBlockKind.blockquote => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(10, 7, 10, 7),
+          decoration: BoxDecoration(
+            color: colors.surfaceMuted.withValues(alpha: 0.58),
+            border: Border(
+              left: BorderSide(
+                color: colors.borderStrong,
+                width: 3,
+              ),
+            ),
+          ),
+          child: _richText(
+            context,
+            _baseStyle(context).copyWith(color: colors.textSecondary),
+          ),
+        ),
+      CookedTextBlockKind.listItem => Padding(
+          padding: EdgeInsets.only(left: (segment.listDepth * 14).toDouble()),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 28,
+                child: Text(
+                  segment.listIndex > 0 ? '${segment.listIndex}.' : '•',
+                  style: _baseStyle(context).copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+              Expanded(child: _richText(context, _baseStyle(context))),
+            ],
+          ),
+        ),
+      CookedTextBlockKind.codeBlock => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: colors.surfaceMuted.withValues(alpha: 0.7),
+            border: Border.all(color: colors.border),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: _richText(
+              context,
+              _baseStyle(context).copyWith(
+                fontFamily: 'monospace',
+                fontSize: textSize * 0.9,
+                height: 1.42,
+              ),
+              softWrap: false,
+            ),
+          ),
+        ),
+      CookedTextBlockKind.paragraph => _richText(context, _baseStyle(context)),
+    };
+  }
+
+  double get _headingSize {
+    return switch (segment.headingLevel) {
+      1 => textSize + 3.5,
+      2 => textSize + 2.4,
+      3 => textSize + 1.4,
+      _ => textSize + 0.8,
+    };
+  }
+
+  TextStyle _baseStyle(BuildContext context) {
+    return TextStyle(
+      color: textColor,
+      fontSize: textSize,
+      height: textHeight,
+      fontWeight: textWeight,
+    );
+  }
+
+  Widget _richText(
+    BuildContext context,
+    TextStyle baseStyle, {
+    bool softWrap = true,
+  }) {
+    return RichText(
+      text: TextSpan(
+        style: baseStyle,
+        children: _spans(context, baseStyle),
+      ),
+      softWrap: softWrap,
+    );
+  }
+
+  List<InlineSpan> _spans(BuildContext context, TextStyle baseStyle) {
+    final colors = context.lehuColors;
+    final runs =
+        segment.runs.isEmpty ? [CookedTextRun(segment.value)] : segment.runs;
+    return [
+      for (final run in runs)
+        TextSpan(
+          text: run.text,
+          style: baseStyle.copyWith(
+            fontWeight: run.bold ? FontWeight.w600 : baseStyle.fontWeight,
+            fontStyle: run.italic ? FontStyle.italic : baseStyle.fontStyle,
+            decoration: run.strikethrough
+                ? TextDecoration.lineThrough
+                : baseStyle.decoration,
+            fontFamily: run.code ? 'monospace' : baseStyle.fontFamily,
+            fontSize: run.code ? textSize * 0.92 : baseStyle.fontSize,
+            backgroundColor:
+                run.code ? colors.surfaceMuted.withValues(alpha: 0.82) : null,
+          ),
+        ),
+    ];
   }
 }
 
