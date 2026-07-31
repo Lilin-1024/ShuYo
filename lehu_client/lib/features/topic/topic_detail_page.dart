@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/models/forum_activity.dart';
+import '../../data/models/forum_search.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
@@ -136,6 +137,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       onCreateReply: _createReply,
                       onOpenUser: _openUserProfile,
                       onOpenInternalTopic: _openInternalTopic,
+                      onSearchUsers: _searchUsers,
                       onLoginRequired: () => unawaited(_requireLogin()),
                     ),
                   );
@@ -240,6 +242,22 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
         setState(() => _submittingReply = false);
       }
     }
+  }
+
+  Future<List<SearchUserResult>> _searchUsers(String query) async {
+    if (!widget.repository.isOnline) {
+      await _requireLogin();
+      return const [];
+    }
+    final normalized = query.trim();
+    if (normalized.isEmpty) {
+      return const [];
+    }
+    final result = await widget.repository.searchForum(
+      normalized,
+      mode: ForumSearchMode.users,
+    );
+    return result.users;
   }
 
   Future<void> _openInternalTopic(CookedLinkPreview preview) async {

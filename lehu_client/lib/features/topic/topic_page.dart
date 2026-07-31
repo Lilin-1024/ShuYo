@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../core/forum_url_resolver.dart';
 import '../../data/models/category.dart';
 import '../../data/models/composer.dart';
+import '../../data/models/forum_search.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
@@ -41,6 +42,7 @@ class TopicPage extends StatefulWidget {
     required this.onDeletePost,
     required this.onOpenUser,
     required this.onOpenInternalTopic,
+    required this.onSearchUsers,
     required this.onLoginRequired,
     this.targetPostNumber,
     required this.isOnline,
@@ -64,6 +66,7 @@ class TopicPage extends StatefulWidget {
   final ValueChanged<Post> onDeletePost;
   final ValueChanged<String> onOpenUser;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
+  final Future<List<SearchUserResult>> Function(String query) onSearchUsers;
   final VoidCallback onLoginRequired;
   final int? targetPostNumber;
 
@@ -280,6 +283,7 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
               currentUsername: widget.currentUsername,
               onLoginRequired: widget.onLoginRequired,
               onUploadImage: widget.onUploadImage,
+              onSearchUsers: widget.onSearchUsers,
               onSubmit: widget.onCreateReply,
             ),
           ],
@@ -1156,7 +1160,7 @@ class _ThreadedPostView extends StatelessWidget {
           onReply: () => onReply(post),
           onLike: () => onLike(post),
           onDelete: () => onDelete(post),
-          onOpenUser: () => onOpenUser(post.username),
+          onOpenUser: onOpenUser,
           onOpenImage: onOpenImage,
           onOpenInternalTopic: onOpenInternalTopic,
         ),
@@ -1250,7 +1254,7 @@ class _NestedReplies extends StatelessWidget {
               onReply: () => onReply(reply),
               onLike: () => onLike(reply),
               onDelete: () => onDelete(reply),
-              onOpenUser: () => onOpenUser(reply.username),
+              onOpenUser: onOpenUser,
               onOpenImage: onOpenImage,
               onOpenInternalTopic: onOpenInternalTopic,
             ),
@@ -1294,7 +1298,7 @@ class _PostView extends StatelessWidget {
   final VoidCallback onReply;
   final VoidCallback onLike;
   final VoidCallback onDelete;
-  final VoidCallback onOpenUser;
+  final ValueChanged<String> onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
   final String? replyContext;
@@ -1336,7 +1340,7 @@ class _PostView extends StatelessWidget {
                       alignment: Alignment.centerLeft,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(6),
-                        onTap: onOpenUser,
+                        onTap: () => onOpenUser(post.username),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 2,
@@ -1411,6 +1415,7 @@ class _PostView extends StatelessWidget {
                 imageFit: BoxFit.cover,
                 imageErrorHeight: 160,
                 compactCards: false,
+                onOpenUser: onOpenUser,
                 onOpenImage: onOpenImage,
                 onOpenInternalTopic: onOpenInternalTopic,
               ),
@@ -1450,7 +1455,7 @@ class _PostView extends StatelessWidget {
                   children: [
                     InkWell(
                       borderRadius: BorderRadius.circular(5),
-                      onTap: onOpenUser,
+                      onTap: () => onOpenUser(post.username),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 2,
@@ -1518,6 +1523,7 @@ class _PostView extends StatelessWidget {
                   imageFit: BoxFit.cover,
                   imageErrorHeight: 150,
                   compactCards: true,
+                  onOpenUser: onOpenUser,
                   onOpenImage: onOpenImage,
                   onOpenInternalTopic: onOpenInternalTopic,
                 ),
@@ -1728,6 +1734,7 @@ class _ReplyBar extends StatefulWidget {
     required this.currentUsername,
     required this.onLoginRequired,
     required this.onUploadImage,
+    required this.onSearchUsers,
     required this.onSubmit,
   });
 
@@ -1738,6 +1745,7 @@ class _ReplyBar extends StatefulWidget {
   final String currentUsername;
   final VoidCallback onLoginRequired;
   final Future<UploadedImage> Function(PickedImage image) onUploadImage;
+  final Future<List<SearchUserResult>> Function(String query) onSearchUsers;
   final Future<bool> Function(ReplyDraft draft) onSubmit;
 
   @override
@@ -1745,14 +1753,22 @@ class _ReplyBar extends StatefulWidget {
 }
 
 class _TopicReplyBarState extends State<_ReplyBar> {
+  static const _mentionSearchDelay = Duration(milliseconds: 300);
+  static const _mentionSuggestionLimit = 5;
+
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   final _images = <UploadedImage>[];
+  Timer? _mentionSearchTimer;
   Timer? _draftSaveTimer;
+  int _mentionSearchSerial = 0;
+  _MentionRange? _activeMention;
+  List<SearchUserResult> _mentionSuggestions = const [];
   bool _uploading = false;
   bool _submitting = false;
   bool _composerOpen = false;
   bool _showEmojiPanel = false;
+  bool _mentionSearching = false;
   bool _collapsedForBrowsing = false;
   bool _restoringDraft = false;
   int? _replyToPostNumber;
@@ -1785,6 +1801,8 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _images.isNotEmpty ||
       _replyToPostNumber != null;
 
+  String get _mentionQuery => _activeMention?.query ?? '';
+
   String get _currentDraftKey {
     return _draftKeyFor(_replyToPostNumber);
   }
@@ -1798,6 +1816,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
 
   @override
   void dispose() {
+    _mentionSearchTimer?.cancel();
     _draftSaveTimer?.cancel();
     unawaited(_saveDraftNow());
     _focusNode.removeListener(_handleFocusChanged);
@@ -1823,13 +1842,19 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     unawaited(_saveDraftNow());
     if (_hasDraft) {
       if (_showEmojiPanel) {
-        setState(() => _showEmojiPanel = false);
+        setState(() {
+          _showEmojiPanel = false;
+          _clearMentionAutocomplete(cancelSearch: true);
+        });
+      } else if (_activeMention != null) {
+        setState(() => _clearMentionAutocomplete(cancelSearch: true));
       }
       return;
     }
     setState(() {
       _composerOpen = false;
       _showEmojiPanel = false;
+      _clearMentionAutocomplete(cancelSearch: true);
     });
   }
 
@@ -1844,6 +1869,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _composerOpen = false;
       _showEmojiPanel = false;
       _collapsedForBrowsing = _hasDraft;
+      _clearMentionAutocomplete(cancelSearch: true);
     });
   }
 
@@ -1891,6 +1917,15 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                                 setState(() => _images.remove(image));
                                 _scheduleDraftSave();
                               },
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    if (_activeMention != null) ...[
+                      _MentionSuggestionsPanel(
+                        query: _mentionQuery,
+                        searching: _mentionSearching,
+                        suggestions: _mentionSuggestions,
+                        onSelect: _insertMentionUser,
                       ),
                       const SizedBox(height: 8),
                     ],
@@ -2060,9 +2095,142 @@ class _TopicReplyBarState extends State<_ReplyBar> {
 
   void _handleDraftChanged() {
     _scheduleDraftSave();
+    _updateMentionAutocomplete();
     if (mounted) {
       setState(() {});
     }
+  }
+
+  void _updateMentionAutocomplete() {
+    final mention = _detectActiveMention(_controller.value);
+    if (mention == null) {
+      _clearMentionAutocomplete(cancelSearch: true);
+      return;
+    }
+    final previous = _activeMention;
+    _activeMention = mention;
+    if (mention.query.isEmpty) {
+      _mentionSearchTimer?.cancel();
+      _mentionSearchSerial += 1;
+      _mentionSearching = false;
+      _mentionSuggestions = const [];
+      return;
+    }
+    if (previous?.query == mention.query && _mentionSuggestions.isNotEmpty) {
+      return;
+    }
+    _mentionSearchTimer?.cancel();
+    _mentionSearching = true;
+    _mentionSuggestions = const [];
+    final serial = ++_mentionSearchSerial;
+    final query = mention.query;
+    _mentionSearchTimer = Timer(_mentionSearchDelay, () {
+      unawaited(_searchMentionUsers(query, serial));
+    });
+  }
+
+  _MentionRange? _detectActiveMention(TextEditingValue value) {
+    final selection = value.selection;
+    if (!selection.isValid || !selection.isCollapsed) {
+      return null;
+    }
+    final cursor = selection.baseOffset;
+    if (cursor < 0 || cursor > value.text.length) {
+      return null;
+    }
+    final beforeCursor = value.text.substring(0, cursor);
+    final atIndex = beforeCursor.lastIndexOf('@');
+    if (atIndex < 0) {
+      return null;
+    }
+    if (atIndex > 0 &&
+        !_isMentionBoundary(beforeCursor.codeUnitAt(atIndex - 1))) {
+      return null;
+    }
+    final query = beforeCursor.substring(atIndex + 1);
+    if (query.length > 32 ||
+        query.contains('@') ||
+        query.contains(RegExp(r'\s'))) {
+      return null;
+    }
+    if (query.contains(RegExp(r'''[，。！？、,.!?:;；()\[\]{}<>《》"'`~]'''))) {
+      return null;
+    }
+    return _MentionRange(start: atIndex, end: cursor, query: query);
+  }
+
+  bool _isMentionBoundary(int codeUnit) {
+    return codeUnit <= 32 ||
+        codeUnit == 0x3000 ||
+        codeUnit == 0x0A ||
+        codeUnit == 0x0D;
+  }
+
+  Future<void> _searchMentionUsers(String query, int serial) async {
+    List<SearchUserResult> users;
+    try {
+      users = await widget.onSearchUsers(query);
+    } on Object {
+      users = const [];
+    }
+    if (!mounted ||
+        serial != _mentionSearchSerial ||
+        _activeMention?.query != query) {
+      return;
+    }
+    final seen = <String>{};
+    final deduped = <SearchUserResult>[];
+    for (final user in users) {
+      final username = user.username.trim();
+      if (username.isEmpty || !seen.add(username.toLowerCase())) {
+        continue;
+      }
+      deduped.add(user);
+      if (deduped.length >= _mentionSuggestionLimit) {
+        break;
+      }
+    }
+    setState(() {
+      _mentionSearching = false;
+      _mentionSuggestions = List.unmodifiable(deduped);
+    });
+  }
+
+  void _insertMentionUser(SearchUserResult user) {
+    final mention = _activeMention;
+    final username = user.username.trim();
+    if (mention == null || username.isEmpty) {
+      return;
+    }
+    final oldText = _controller.text;
+    if (mention.start < 0 ||
+        mention.end > oldText.length ||
+        mention.start > mention.end) {
+      return;
+    }
+    final replacement = '@$username ';
+    final nextText = oldText.replaceRange(
+      mention.start,
+      mention.end,
+      replacement,
+    );
+    final nextOffset = mention.start + replacement.length;
+    _clearMentionAutocomplete(cancelSearch: true);
+    _controller.value = TextEditingValue(
+      text: nextText,
+      selection: TextSelection.collapsed(offset: nextOffset),
+    );
+    _focusNode.requestFocus();
+  }
+
+  void _clearMentionAutocomplete({required bool cancelSearch}) {
+    if (cancelSearch) {
+      _mentionSearchTimer?.cancel();
+      _mentionSearchSerial += 1;
+    }
+    _activeMention = null;
+    _mentionSearching = false;
+    _mentionSuggestions = const [];
   }
 
   void _handleInputTap() {
@@ -2077,7 +2245,10 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     _collapsedForBrowsing = false;
     _scheduleDraftSave();
     if (_showEmojiPanel) {
-      setState(() => _showEmojiPanel = false);
+      setState(() {
+        _showEmojiPanel = false;
+        _clearMentionAutocomplete(cancelSearch: true);
+      });
     }
   }
 
@@ -2087,7 +2258,10 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       return;
     }
     if (_showEmojiPanel) {
-      setState(() => _showEmojiPanel = false);
+      setState(() {
+        _showEmojiPanel = false;
+        _clearMentionAutocomplete(cancelSearch: true);
+      });
       _focusNode.requestFocus();
       return;
     }
@@ -2097,6 +2271,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _composerOpen = true;
       _collapsedForBrowsing = false;
       _showEmojiPanel = true;
+      _clearMentionAutocomplete(cancelSearch: true);
     });
   }
 
@@ -2109,6 +2284,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _composerOpen = true;
       _collapsedForBrowsing = false;
       _showEmojiPanel = false;
+      _clearMentionAutocomplete(cancelSearch: true);
     });
     try {
       final picked = await LocalImagePicker.pickImage();
@@ -2175,6 +2351,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
         _replyToPostNumber = null;
         _showEmojiPanel = false;
         _submitting = false;
+        _clearMentionAutocomplete(cancelSearch: true);
       });
       return;
     }
@@ -2204,6 +2381,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _collapsedForBrowsing = false;
       _replyToPostNumber = replyToPostNumber;
       _showEmojiPanel = false;
+      _clearMentionAutocomplete(cancelSearch: true);
     });
     _restoringDraft = false;
     if (requestFocus) {
@@ -2245,6 +2423,156 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       username: widget.currentUsername,
       topicId: widget.detail.id,
       replyToPostNumber: replyToPostNumber,
+    );
+  }
+}
+
+class _MentionRange {
+  const _MentionRange({
+    required this.start,
+    required this.end,
+    required this.query,
+  });
+
+  final int start;
+  final int end;
+  final String query;
+}
+
+class _MentionSuggestionsPanel extends StatelessWidget {
+  const _MentionSuggestionsPanel({
+    required this.query,
+    required this.searching,
+    required this.suggestions,
+    required this.onSelect,
+  });
+
+  final String query;
+  final bool searching;
+  final List<SearchUserResult> suggestions;
+  final ValueChanged<SearchUserResult> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final child = query.isEmpty
+        ? _MentionHint(text: '输入用户名搜索')
+        : searching
+            ? const _MentionSearching()
+            : suggestions.isEmpty
+                ? _MentionHint(text: '没有匹配用户')
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (final user in suggestions)
+                        _MentionSuggestionTile(
+                          user: user,
+                          onTap: () => onSelect(user),
+                        ),
+                    ],
+                  );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _MentionSuggestionTile extends StatelessWidget {
+  const _MentionSuggestionTile({
+    required this.user,
+    required this.onTap,
+  });
+
+  final SearchUserResult user;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Row(
+          children: [
+            ForumAvatar(url: user.avatarUrl(size: 64), size: 30),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                user.username,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MentionSearching extends StatelessWidget {
+  const _MentionSearching();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      child: Row(
+        children: [
+          const SizedBox.square(
+            dimension: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '正在搜索用户',
+            style: TextStyle(color: colors.textSecondary, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MentionHint extends StatelessWidget {
+  const _MentionHint({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: TextStyle(color: colors.textSecondary, fontSize: 13),
+        ),
+      ),
     );
   }
 }

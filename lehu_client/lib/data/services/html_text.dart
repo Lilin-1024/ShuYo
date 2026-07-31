@@ -16,6 +16,7 @@ class CookedLinkPreview {
     this.siteIconUrl,
     this.topicId,
     this.postNumber,
+    this.userUsername,
   });
 
   final String url;
@@ -26,8 +27,10 @@ class CookedLinkPreview {
   final String? siteIconUrl;
   final int? topicId;
   final int? postNumber;
+  final String? userUsername;
 
   bool get isInternalTopic => topicId != null;
+  bool get isInternalUser => userUsername != null && userUsername!.isNotEmpty;
 }
 
 class CookedSegment {
@@ -391,6 +394,7 @@ class HtmlText {
       source: _hostForUrl(url),
       topicId: internalTopicIdFromUrl(url),
       postNumber: internalPostNumberFromUrl(url),
+      userUsername: internalUsernameFromUrl(url),
     );
   }
 
@@ -436,6 +440,23 @@ class HtmlText {
       return null;
     }
     return int.tryParse(segments[topicIdIndex + 1]);
+  }
+
+  static String? internalUsernameFromUrl(String value) {
+    final uri = _uriForLink(value);
+    if (uri == null || !ForumUrlResolver.isKnownForumHost(uri.host)) {
+      return null;
+    }
+    final segments = uri.pathSegments;
+    final userIndex = segments.indexOf('u');
+    if (userIndex < 0 || userIndex + 1 >= segments.length) {
+      return null;
+    }
+    var username = segments[userIndex + 1].trim();
+    if (username.endsWith('.json')) {
+      username = username.substring(0, username.length - 5);
+    }
+    return username.isEmpty ? null : Uri.decodeComponent(username);
   }
 
   static Uri? _uriForLink(String value) {

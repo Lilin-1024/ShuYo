@@ -151,6 +151,13 @@ void main() {
       HtmlText.internalTopicIdFromUrl('https://bbs.shu.edu.cn/t/topic/875/2'),
       875,
     );
+
+    const mentionCooked =
+        '<p><a class="mention" href="/u/Lilin">@Lilin</a> 你好</p>';
+    final mention = HtmlText.parseSegments(mentionCooked).first;
+    expect(mention.kind, CookedSegmentKind.link);
+    expect(mention.link?.isInternalUser, isTrue);
+    expect(mention.link?.userUsername, 'Lilin');
   });
 
   test('keeps discourse lightbox images as image segments', () {
