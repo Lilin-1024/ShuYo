@@ -373,6 +373,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     final selection = await _showReportReasonSheet(
       title: post.postNumber == 1 ? '举报首楼' : '举报回复',
       reasons: ForumReportReason.optionsForPost(),
+      flagTopic: false,
     );
     if (selection == null || !mounted) {
       return;
@@ -421,6 +422,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     final selection = await _showReportReasonSheet(
       title: '举报主题',
       reasons: ForumReportReason.optionsForTopic(),
+      flagTopic: true,
     );
     if (selection == null || !mounted) {
       return;
@@ -472,6 +474,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   Future<_ReportSelection?> _showReportReasonSheet({
     required String title,
     required List<ForumReportReason> reasons,
+    required bool flagTopic,
   }) {
     return showModalBottomSheet<_ReportSelection>(
       context: context,
@@ -482,6 +485,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
         return _ReportReasonSheet(
           title: title,
           reasons: reasons,
+          flagTopic: flagTopic,
         );
       },
     );
@@ -756,10 +760,12 @@ class _ReportReasonSheet extends StatefulWidget {
   const _ReportReasonSheet({
     required this.title,
     required this.reasons,
+    required this.flagTopic,
   });
 
   final String title;
   final List<ForumReportReason> reasons;
+  final bool flagTopic;
 
   @override
   State<_ReportReasonSheet> createState() => _ReportReasonSheetState();
@@ -830,6 +836,9 @@ class _ReportReasonSheetState extends State<_ReportReasonSheet> {
               for (final reason in widget.reasons)
                 _ReportReasonTile(
                   reason: reason,
+                  description: reason.description(
+                    flagTopic: widget.flagTopic,
+                  ),
                   selected: reason == _selected,
                   onTap: () => setState(() => _selected = reason),
                 ),
@@ -882,11 +891,13 @@ class _ReportReasonSheetState extends State<_ReportReasonSheet> {
 class _ReportReasonTile extends StatelessWidget {
   const _ReportReasonTile({
     required this.reason,
+    required this.description,
     required this.selected,
     required this.onTap,
   });
 
   final ForumReportReason reason;
+  final String description;
   final bool selected;
   final VoidCallback onTap;
 
@@ -906,6 +917,19 @@ class _ReportReasonTile extends StatelessWidget {
         reason.label,
         style: TextStyle(color: colors.textPrimary),
       ),
+      subtitle: selected
+          ? Padding(
+              padding: const EdgeInsets.only(top: 5),
+              child: Text(
+                description,
+                style: TextStyle(
+                  color: colors.textSecondary,
+                  fontSize: 13,
+                  height: 1.35,
+                ),
+              ),
+            )
+          : null,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
