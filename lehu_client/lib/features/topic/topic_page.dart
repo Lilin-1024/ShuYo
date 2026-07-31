@@ -2382,7 +2382,11 @@ class _TopicReplyBarState extends State<_ReplyBar> {
         ),
       ),
     );
-    if (!mounted || result == null) {
+    if (!mounted) {
+      return;
+    }
+    if (result == null) {
+      setState(() => _mode = _ReplyComposerMode.basic);
       return;
     }
     if (result.submitted) {
@@ -2411,7 +2415,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _composerOpen = true;
       _collapsedForBrowsing = false;
       _showEmojiPanel = false;
-      _mode = _ReplyComposerMode.advanced;
+      _mode = _ReplyComposerMode.basic;
       _clearMentionAutocomplete(cancelSearch: true);
     });
     _scheduleDraftSave();

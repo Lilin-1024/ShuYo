@@ -218,9 +218,7 @@ class _StatList extends StatelessWidget {
     final stats = [
       _StatItem('访问天数', '${summary.daysVisited}'),
       _StatItem('浏览主题', '${summary.topicsEntered}'),
-      _StatItem('已读帖子', '${summary.postsReadCount}'),
       _StatItem('阅读分钟', '${summary.timeReadMinutes}'),
-      _StatItem('发帖', '${summary.topicCount}'),
       _StatItem('回复', '${summary.postCount}'),
       _StatItem('收到赞', '${summary.likesReceived}'),
       _StatItem('给出赞', '${summary.likesGiven}'),
