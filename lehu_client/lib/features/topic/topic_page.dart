@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -7,6 +9,7 @@ import '../../data/models/composer.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
+import '../../data/services/forum_draft_store.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
@@ -30,6 +33,7 @@ class TopicPage extends StatefulWidget {
     required this.item,
     required this.detail,
     required this.category,
+    required this.currentUsername,
     required this.onCreateReply,
     required this.onUploadImage,
     required this.onLikePost,
@@ -47,11 +51,12 @@ class TopicPage extends StatefulWidget {
   final TopicListItem item;
   final TopicDetail? detail;
   final ForumCategory? category;
+  final String currentUsername;
   final bool isOnline;
   final bool isSubmittingReply;
   final Set<int> busyLikePostIds;
   final Set<int> busyDeletePostIds;
-  final ValueChanged<ReplyDraft> onCreateReply;
+  final Future<bool> Function(ReplyDraft draft) onCreateReply;
   final Future<UploadedImage> Function(PickedImage image) onUploadImage;
   final ValueChanged<Post> onLikePost;
   final ValueChanged<Post> onDeletePost;
@@ -177,6 +182,7 @@ class _TopicPageState extends State<TopicPage> {
           isOnline: widget.isOnline,
           isSubmitting: widget.isSubmittingReply,
           detail: detail,
+          currentUsername: widget.currentUsername,
           onLoginRequired: widget.onLoginRequired,
           onUploadImage: widget.onUploadImage,
           onSubmit: widget.onCreateReply,
@@ -913,6 +919,7 @@ class _ReplyBar extends StatefulWidget {
     required this.isOnline,
     required this.isSubmitting,
     required this.detail,
+    required this.currentUsername,
     required this.onLoginRequired,
     required this.onUploadImage,
     required this.onSubmit,
@@ -922,9 +929,10 @@ class _ReplyBar extends StatefulWidget {
   final bool isOnline;
   final bool isSubmitting;
   final TopicDetail detail;
+  final String currentUsername;
   final VoidCallback onLoginRequired;
   final Future<UploadedImage> Function(PickedImage image) onUploadImage;
-  final ValueChanged<ReplyDraft> onSubmit;
+  final Future<bool> Function(ReplyDraft draft) onSubmit;
 
   @override
   State<_ReplyBar> createState() => _TopicReplyBarState();
@@ -934,14 +942,21 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   final _images = <UploadedImage>[];
+  Timer? _draftSaveTimer;
   bool _uploading = false;
+  bool _submitting = false;
   bool _composerOpen = false;
   bool _showEmojiPanel = false;
   bool _collapsedForBrowsing = false;
+  bool _restoringDraft = false;
   int? _replyToPostNumber;
 
   bool get _canType =>
-      widget.enabled && widget.isOnline && !widget.isSubmitting && !_uploading;
+      widget.enabled &&
+      widget.isOnline &&
+      !widget.isSubmitting &&
+      !_uploading &&
+      !_submitting;
 
   bool get _expanded =>
       !_collapsedForBrowsing &&
@@ -955,6 +970,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   bool get _canSend =>
       widget.isOnline &&
       !widget.isSubmitting &&
+      !_submitting &&
       !_uploading &&
       (_controller.text.trim().isNotEmpty || _images.isNotEmpty);
 
@@ -962,6 +978,10 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _controller.text.trim().isNotEmpty ||
       _images.isNotEmpty ||
       _replyToPostNumber != null;
+
+  String get _currentDraftKey {
+    return _draftKeyFor(_replyToPostNumber);
+  }
 
   @override
   void initState() {
@@ -972,6 +992,8 @@ class _TopicReplyBarState extends State<_ReplyBar> {
 
   @override
   void dispose() {
+    _draftSaveTimer?.cancel();
+    unawaited(_saveDraftNow());
     _focusNode.removeListener(_handleFocusChanged);
     _controller.removeListener(_handleDraftChanged);
     _focusNode.dispose();
@@ -984,17 +1006,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _handleInputTap();
       return;
     }
-    setState(() {
-      _composerOpen = true;
-      _collapsedForBrowsing = false;
-      _replyToPostNumber = postNumber;
-      _showEmojiPanel = false;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
-      }
-    });
+    unawaited(_openComposerFor(postNumber, requestFocus: true));
   }
 
   void handleOutsideTap() {
@@ -1002,6 +1014,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       return;
     }
     FocusScope.of(context).unfocus();
+    unawaited(_saveDraftNow());
     if (_hasDraft) {
       if (_showEmojiPanel) {
         setState(() => _showEmojiPanel = false);
@@ -1017,6 +1030,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   void collapseForBrowsing() {
     FocusScope.of(context).unfocus();
     SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    unawaited(_saveDraftNow());
     if (!_expanded && !_showEmojiPanel) {
       return;
     }
@@ -1053,7 +1067,12 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                         postNumber: _replyToPostNumber!,
                         onClear: widget.isSubmitting
                             ? null
-                            : () => setState(() => _replyToPostNumber = null),
+                            : () => unawaited(
+                                  _openComposerFor(
+                                    null,
+                                    requestFocus: false,
+                                  ),
+                                ),
                       ),
                       const SizedBox(height: 8),
                     ],
@@ -1062,7 +1081,10 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                         images: _images,
                         onRemove: widget.isSubmitting || _uploading
                             ? null
-                            : (image) => setState(() => _images.remove(image)),
+                            : (image) {
+                                setState(() => _images.remove(image));
+                                _scheduleDraftSave();
+                              },
                       ),
                       const SizedBox(height: 8),
                     ],
@@ -1203,16 +1225,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     if (!widget.enabled || widget.isSubmitting) {
       return;
     }
-    setState(() {
-      _composerOpen = true;
-      _collapsedForBrowsing = false;
-      _showEmojiPanel = false;
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
-      }
-    });
+    unawaited(_openComposerFor(null, requestFocus: true));
   }
 
   String get _hintText {
@@ -1240,6 +1253,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   }
 
   void _handleDraftChanged() {
+    _scheduleDraftSave();
     if (mounted) {
       setState(() {});
     }
@@ -1255,6 +1269,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     }
     _composerOpen = true;
     _collapsedForBrowsing = false;
+    _scheduleDraftSave();
     if (_showEmojiPanel) {
       setState(() => _showEmojiPanel = false);
     }
@@ -1298,6 +1313,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _images.add(uploaded);
       if (mounted) {
         setState(() {});
+        _scheduleDraftSave();
       }
     } on Object catch (error) {
       if (mounted) {
@@ -1312,36 +1328,118 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final text = _controller.text.trim();
     if ((text.isEmpty && _images.isEmpty) ||
         widget.isSubmitting ||
+        _submitting ||
         _uploading) {
       return;
     }
+    final replyToPostNumber = _replyToPostNumber;
     final images = List<UploadedImage>.of(_images);
-    widget.onSubmit(
+    final draftKey = _draftKeyFor(replyToPostNumber);
+    setState(() => _submitting = true);
+    await _saveDraftNow();
+    final success = await widget.onSubmit(
       ReplyDraft(
         topicId: widget.detail.id,
         categoryId: widget.detail.categoryId,
         raw: _composeRaw(text, images),
-        replyToPostNumber: _replyToPostNumber,
+        replyToPostNumber: replyToPostNumber,
         archetype: widget.detail.archetype,
         images: images,
       ),
     );
-    setState(() {
+    if (!mounted) {
+      return;
+    }
+    if (success) {
+      await ForumDraftStore.remove(draftKey);
+      if (!mounted) {
+        return;
+      }
+      _restoringDraft = true;
       _controller.clear();
-      _images.clear();
-      _composerOpen = false;
-      _collapsedForBrowsing = false;
-      _replyToPostNumber = null;
-      _showEmojiPanel = false;
-    });
+      _restoringDraft = false;
+      setState(() {
+        _images.clear();
+        _composerOpen = false;
+        _collapsedForBrowsing = false;
+        _replyToPostNumber = null;
+        _showEmojiPanel = false;
+        _submitting = false;
+      });
+      return;
+    }
+    setState(() => _submitting = false);
   }
 
   String _composeRaw(String text, List<UploadedImage> images) {
     return composeRawWithImages(text, images);
+  }
+
+  Future<void> _openComposerFor(
+    int? replyToPostNumber, {
+    required bool requestFocus,
+  }) async {
+    await _saveDraftNow();
+    final draft = await ForumDraftStore.load(_draftKeyFor(replyToPostNumber));
+    if (!mounted) {
+      return;
+    }
+    _restoringDraft = true;
+    _controller.text = draft?.raw ?? '';
+    setState(() {
+      _images
+        ..clear()
+        ..addAll(draft?.images ?? const <UploadedImage>[]);
+      _composerOpen = true;
+      _collapsedForBrowsing = false;
+      _replyToPostNumber = replyToPostNumber;
+      _showEmojiPanel = false;
+    });
+    _restoringDraft = false;
+    if (requestFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
+  }
+
+  void _scheduleDraftSave() {
+    if (_restoringDraft || _submitting || widget.isSubmitting) {
+      return;
+    }
+    _draftSaveTimer?.cancel();
+    _draftSaveTimer = Timer(
+      const Duration(milliseconds: 500),
+      () => unawaited(_saveDraftNow()),
+    );
+  }
+
+  Future<void> _saveDraftNow() async {
+    if (_restoringDraft || _submitting || widget.isSubmitting) {
+      return;
+    }
+    await ForumDraftStore.save(
+      _currentDraftKey,
+      ForumComposerDraft(
+        raw: _controller.text,
+        replyToPostNumber: _replyToPostNumber,
+        images: List<UploadedImage>.of(_images),
+      ),
+    );
+  }
+
+  String _draftKeyFor(int? replyToPostNumber) {
+    return ForumDraftStore.topicReplyKey(
+      username: widget.currentUsername,
+      topicId: widget.detail.id,
+      replyToPostNumber: replyToPostNumber,
+    );
   }
 }
 

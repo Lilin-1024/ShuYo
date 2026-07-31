@@ -11,6 +11,7 @@ import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../data/services/discourse_api_client.dart';
+import '../../data/services/forum_draft_store.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
@@ -673,6 +674,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
             _MessageReplyBar(
               submitting: _submitting,
               repository: widget.repository,
+              topicId: widget.topic.id,
               onSubmit: _reply,
             ),
           ],
@@ -759,9 +761,9 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     }
   }
 
-  Future<void> _reply(String raw, List<UploadedImage> images) async {
+  Future<bool> _reply(String raw, List<UploadedImage> images) async {
     if (_submitting) {
-      return;
+      return false;
     }
     setState(() => _submitting = true);
     try {
@@ -775,15 +777,17 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
         ),
       );
       if (!mounted) {
-        return;
+        return false;
       }
       _applyLocalPost(post);
       await _refreshDetail();
       unawaited(_warmPrivateMessageList());
+      return true;
     } on Object catch (error) {
       if (mounted) {
         _showSnack('发送失败：${_friendlyForumError(error)}');
       }
+      return false;
     } finally {
       if (mounted) {
         setState(() => _submitting = false);
@@ -1235,12 +1239,14 @@ class _MessageReplyBar extends StatefulWidget {
   const _MessageReplyBar({
     required this.submitting,
     required this.repository,
+    required this.topicId,
     required this.onSubmit,
   });
 
   final bool submitting;
   final ForumRepository repository;
-  final void Function(String raw, List<UploadedImage> images) onSubmit;
+  final int topicId;
+  final Future<bool> Function(String raw, List<UploadedImage> images) onSubmit;
 
   @override
   State<_MessageReplyBar> createState() => _MessageReplyBarState();
@@ -1254,21 +1260,38 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
   final _focusNode = FocusNode();
   final _images = <UploadedImage>[];
   Timer? _keyboardHandoffTimer;
+  Timer? _draftSaveTimer;
   double _lastKeyboardHeight = _fallbackKeyboardHeight;
   bool _uploading = false;
+  bool _submitting = false;
   bool _showEmojiPanel = false;
   bool _switchingEmojiToKeyboard = false;
+  bool _restoringDraft = false;
+
+  String get _draftKey {
+    return ForumDraftStore.privateMessageReplyKey(
+      username: widget.repository.profile.username,
+      topicId: widget.topicId,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(_handleFocusChanged);
+    _controller.addListener(_handleDraftChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_loadDraft());
+    });
   }
 
   @override
   void dispose() {
     _keyboardHandoffTimer?.cancel();
+    _draftSaveTimer?.cancel();
+    unawaited(_saveDraftNow());
     _focusNode.removeListener(_handleFocusChanged);
+    _controller.removeListener(_handleDraftChanged);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -1301,7 +1324,10 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                 images: _images,
                 onRemove: widget.submitting || _uploading
                     ? null
-                    : (image) => setState(() => _images.remove(image)),
+                    : (image) {
+                        setState(() => _images.remove(image));
+                        _scheduleDraftSave();
+                      },
               ),
               const SizedBox(height: 8),
             ],
@@ -1310,8 +1336,9 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
               children: [
                 IconButton(
                   tooltip: '添加图片',
-                  onPressed:
-                      widget.submitting || _uploading ? null : _pickAndUpload,
+                  onPressed: widget.submitting || _uploading || _submitting
+                      ? null
+                      : _pickAndUpload,
                   icon: _uploading
                       ? const SizedBox(
                           width: 18,
@@ -1329,7 +1356,7 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                       minWidth: 40,
                       minHeight: 48,
                     ),
-                    onPressed: widget.submitting || _uploading
+                    onPressed: widget.submitting || _uploading || _submitting
                         ? null
                         : _toggleEmojiPanel,
                     icon: Icon(
@@ -1362,7 +1389,9 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
                 const SizedBox(width: 8),
                 IconButton.filled(
                   tooltip: '发送',
-                  onPressed: widget.submitting || _uploading ? null : _submit,
+                  onPressed: widget.submitting || _uploading || _submitting
+                      ? null
+                      : _submit,
                   icon: widget.submitting
                       ? const SizedBox(
                           width: 18,
@@ -1435,6 +1464,10 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
     setState(() {});
   }
 
+  void _handleDraftChanged() {
+    _scheduleDraftSave();
+  }
+
   void _handleInputTap() {
     if (_showEmojiPanel) {
       _switchEmojiToKeyboard();
@@ -1502,6 +1535,7 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
       _images.add(uploaded);
       if (mounted) {
         setState(() {});
+        _scheduleDraftSave();
       }
     } on Object catch (error) {
       if (mounted) {
@@ -1516,7 +1550,7 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_uploading) {
       return;
     }
@@ -1526,14 +1560,69 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
     }
     final images = List<UploadedImage>.of(_images);
     final raw = composeRawWithImages(text, images);
-    _controller.clear();
-    _images.clear();
-    _keyboardHandoffTimer?.cancel();
+    setState(() => _submitting = true);
+    await _saveDraftNow();
+    final success = await widget.onSubmit(raw, images);
+    if (!mounted) {
+      return;
+    }
+    if (success) {
+      await ForumDraftStore.remove(_draftKey);
+      if (!mounted) {
+        return;
+      }
+      _restoringDraft = true;
+      _controller.clear();
+      _restoringDraft = false;
+      _images.clear();
+      _keyboardHandoffTimer?.cancel();
+      setState(() {
+        _showEmojiPanel = false;
+        _switchingEmojiToKeyboard = false;
+        _submitting = false;
+      });
+      return;
+    }
+    setState(() => _submitting = false);
+  }
+
+  Future<void> _loadDraft() async {
+    final draft = await ForumDraftStore.load(_draftKey);
+    if (!mounted || draft == null) {
+      return;
+    }
+    _restoringDraft = true;
+    _controller.text = draft.raw;
     setState(() {
-      _showEmojiPanel = false;
-      _switchingEmojiToKeyboard = false;
+      _images
+        ..clear()
+        ..addAll(draft.images);
     });
-    widget.onSubmit(raw, images);
+    _restoringDraft = false;
+  }
+
+  void _scheduleDraftSave() {
+    if (_restoringDraft || _submitting || widget.submitting) {
+      return;
+    }
+    _draftSaveTimer?.cancel();
+    _draftSaveTimer = Timer(
+      const Duration(milliseconds: 500),
+      () => unawaited(_saveDraftNow()),
+    );
+  }
+
+  Future<void> _saveDraftNow() async {
+    if (_restoringDraft || _submitting || widget.submitting) {
+      return;
+    }
+    await ForumDraftStore.save(
+      _draftKey,
+      ForumComposerDraft(
+        raw: _controller.text,
+        images: List<UploadedImage>.of(_images),
+      ),
+    );
   }
 }
 

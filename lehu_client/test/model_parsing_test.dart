@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shuyo/data/models/academic_schedule.dart';
 import 'package:shuyo/data/models/category.dart';
 import 'package:shuyo/data/models/common.dart';
@@ -17,6 +18,7 @@ import 'package:shuyo/data/services/announcement_api_client.dart';
 import 'package:shuyo/data/services/classroom_api_client.dart';
 import 'package:shuyo/data/services/course_rating_api_client.dart';
 import 'package:shuyo/data/services/emoji_text.dart';
+import 'package:shuyo/data/services/forum_draft_store.dart';
 import 'package:shuyo/data/services/forum_title_rules.dart';
 import 'package:shuyo/data/services/html_text.dart';
 import 'package:shuyo/data/services/payload_factory.dart';
@@ -25,6 +27,8 @@ import 'package:shuyo/features/topic/threaded_posts.dart';
 import 'package:shuyo/shared/time_format.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('parses latest topics and categories', () {
     final latest = _fixture('assets/fixtures/api/latest/latest.json');
     final site = _fixture('assets/fixtures/api/site.json');
@@ -375,6 +379,82 @@ void main() {
     expect(badgeNotification.isClientVisible, isFalse);
     expect(Sha1Hash.hex(Uint8List.fromList(utf8.encode('abc'))),
         'a9993e364706816aba3e25717850c26c9cd0d89d');
+  });
+
+  test('saves and loads local forum composer drafts', () async {
+    SharedPreferences.setMockInitialValues({});
+    final key = ForumDraftStore.topicReplyKey(
+      username: 'Lilin',
+      topicId: 824,
+      replyToPostNumber: 6,
+    );
+    final draft = ForumComposerDraft(
+      raw: '继续回复',
+      replyToPostNumber: 6,
+      images: const [
+        UploadedImage(
+          url: 'https://bbs.shu.edu.cn/uploads/image.jpeg',
+          shortUrl: '/uploads/image.jpeg',
+          filename: 'image.jpeg',
+          width: 640,
+          height: 480,
+          thumbnailWidth: 320,
+          thumbnailHeight: 240,
+        ),
+      ],
+    );
+
+    await ForumDraftStore.save(key, draft);
+    final loaded = await ForumDraftStore.load(key);
+
+    expect(loaded, isNotNull);
+    expect(loaded!.raw, '继续回复');
+    expect(loaded.replyToPostNumber, 6);
+    expect(loaded.images.single.shortUrl, '/uploads/image.jpeg');
+
+    await ForumDraftStore.remove(key);
+    expect(await ForumDraftStore.load(key), isNull);
+  });
+
+  test('expires stale forum composer drafts and keeps only recent 50', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime(2026, 7, 30, 12, 0);
+    final staleKey = ForumDraftStore.newTopicKey('Lilin');
+    await prefs.setString(
+      staleKey,
+      jsonEncode(
+        ForumComposerDraft(
+          raw: '过期草稿',
+          updatedAt: now.subtract(const Duration(days: 16)),
+        ).toJson(),
+      ),
+    );
+    for (var index = 0; index < 55; index++) {
+      final key = ForumDraftStore.topicReplyKey(
+        username: 'Lilin',
+        topicId: 1000 + index,
+        replyToPostNumber: index + 1,
+      );
+      await prefs.setString(
+        key,
+        jsonEncode(
+          ForumComposerDraft(
+            raw: '草稿 $index',
+            updatedAt: now.subtract(Duration(minutes: index)),
+          ).toJson(),
+        ),
+      );
+    }
+
+    await ForumDraftStore.cleanup();
+
+    expect(await ForumDraftStore.load(staleKey), isNull);
+    final remainingKeys = prefs
+        .getKeys()
+        .where((key) => key.startsWith('forum.composerDraft.v1'))
+        .toList();
+    expect(remainingKeys.length, 50);
   });
 
   test('renders extended discourse emoji shortcodes', () {

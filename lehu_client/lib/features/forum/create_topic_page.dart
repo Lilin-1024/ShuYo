@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -5,6 +7,7 @@ import '../../data/models/category.dart';
 import '../../data/models/composer.dart';
 import '../../data/models/post.dart';
 import '../../data/repositories/forum_repository.dart';
+import '../../data/services/forum_draft_store.dart';
 import '../../data/services/forum_title_rules.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../shared/theme/lehu_theme.dart';
@@ -46,6 +49,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
   final _rawFocusNode = FocusNode();
   final _openedAt = DateTime.now();
   final _images = <UploadedImage>[];
+  Timer? _draftSaveTimer;
   int? _categoryId;
   bool _submitting = false;
   bool _uploading = false;
@@ -53,6 +57,12 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
   bool _normalizingTitle = false;
   bool _titleEmojiRejected = false;
   bool _lastTextFocusWasTitle = false;
+  bool _draftReady = false;
+  bool _restoringDraft = false;
+
+  String get _draftKey {
+    return ForumDraftStore.newTopicKey(widget.repository.profile.username);
+  }
 
   @override
   void initState() {
@@ -60,13 +70,20 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     _categoryId = widget.initialCategoryId ??
         (widget.categories.isEmpty ? null : widget.categories.first.id);
     _titleController.addListener(_handleTitleChanged);
+    _rawController.addListener(_handleDraftChanged);
     _titleFocusNode.addListener(_handleTitleFocusChanged);
     _rawFocusNode.addListener(_handleRawFocusChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_loadDraft());
+    });
   }
 
   @override
   void dispose() {
+    _draftSaveTimer?.cancel();
+    unawaited(_saveDraftNow());
     _titleController.removeListener(_handleTitleChanged);
+    _rawController.removeListener(_handleDraftChanged);
     _titleFocusNode.removeListener(_handleTitleFocusChanged);
     _rawFocusNode.removeListener(_handleRawFocusChanged);
     _titleController.dispose();
@@ -123,7 +140,10 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
                   child: Text(category.name),
                 ),
             ],
-            onChanged: (value) => setState(() => _categoryId = value),
+            onChanged: (value) {
+              setState(() => _categoryId = value);
+              _scheduleDraftSave();
+            },
           ),
           const SizedBox(height: 12),
           _rawComposer(context),
@@ -160,6 +180,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     if (mounted && _titleEmojiRejected != rejected) {
       setState(() => _titleEmojiRejected = rejected);
     }
+    _scheduleDraftSave();
   }
 
   void _handleTitleFocusChanged() {
@@ -212,7 +233,10 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
                 images: _images,
                 onRemove: _submitting || _uploading
                     ? null
-                    : (image) => setState(() => _images.remove(image)),
+                    : (image) {
+                        setState(() => _images.remove(image));
+                        _scheduleDraftSave();
+                      },
               ),
             ),
           ],
@@ -303,6 +327,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
       _images.add(uploaded);
       if (mounted) {
         setState(() {});
+        _scheduleDraftSave();
       }
     } on Object catch (error) {
       if (mounted) {
@@ -358,6 +383,11 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
       if (!mounted) {
         return;
       }
+      await ForumDraftStore.remove(_draftKey);
+      if (!mounted) {
+        return;
+      }
+      _draftReady = false;
       Navigator.of(context).pop(
         CreatedTopicResult(
           post: post,
@@ -379,6 +409,95 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
   void _showSnack(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _loadDraft() async {
+    final draft = await ForumDraftStore.load(_draftKey);
+    if (!mounted) {
+      return;
+    }
+    if (draft == null) {
+      _draftReady = true;
+      return;
+    }
+    final shouldRestore = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('恢复草稿？'),
+          content: const Text('发现一份未发布的帖子草稿，是否继续编辑？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('丢弃'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('恢复'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!mounted) {
+      return;
+    }
+    if (shouldRestore == true) {
+      _restoreDraft(draft);
+      _draftReady = true;
+      return;
+    }
+    await ForumDraftStore.remove(_draftKey);
+    _draftReady = true;
+  }
+
+  void _restoreDraft(ForumComposerDraft draft) {
+    _restoringDraft = true;
+    _titleController.text = draft.title;
+    _rawController.text = draft.raw;
+    final draftCategoryId = draft.categoryId;
+    final hasDraftCategory = widget.categories.any(
+      (category) => category.id == draftCategoryId,
+    );
+    setState(() {
+      if (hasDraftCategory) {
+        _categoryId = draftCategoryId;
+      }
+      _images
+        ..clear()
+        ..addAll(draft.images);
+    });
+    _restoringDraft = false;
+  }
+
+  void _handleDraftChanged() {
+    _scheduleDraftSave();
+  }
+
+  void _scheduleDraftSave() {
+    if (!_draftReady || _restoringDraft || _submitting) {
+      return;
+    }
+    _draftSaveTimer?.cancel();
+    _draftSaveTimer = Timer(
+      const Duration(milliseconds: 700),
+      () => unawaited(_saveDraftNow()),
+    );
+  }
+
+  Future<void> _saveDraftNow() async {
+    if (!_draftReady || _restoringDraft || _submitting) {
+      return;
+    }
+    await ForumDraftStore.save(
+      _draftKey,
+      ForumComposerDraft(
+        title: _titleController.text,
+        raw: _rawController.text,
+        categoryId: _categoryId,
+        images: List<UploadedImage>.of(_images),
+      ),
     );
   }
 }

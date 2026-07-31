@@ -114,6 +114,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       category: widget.repository.categoryById(
                         detail?.categoryId ?? widget.topic.categoryId,
                       ),
+                      currentUsername: widget.repository.profile.username,
                       isOnline: widget.repository.isOnline,
                       isSubmittingReply: _submittingReply,
                       busyLikePostIds: _likingPostIds,
@@ -188,24 +189,26 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     }
   }
 
-  Future<void> _createReply(ReplyDraft draft) async {
+  Future<bool> _createReply(ReplyDraft draft) async {
     if (!widget.repository.isOnline) {
       await _requireLogin();
-      return;
+      return false;
     }
     if (_submittingReply) {
-      return;
+      return false;
     }
     setState(() => _submittingReply = true);
     try {
       await widget.repository.createReply(draft);
       if (!mounted) {
-        return;
+        return false;
       }
       _showSnack('评论已发布');
       await _refresh();
+      return true;
     } on Object catch (error) {
       await _handleOperationError(error, title: '评论失败');
+      return false;
     } finally {
       if (mounted) {
         setState(() => _submittingReply = false);
