@@ -98,14 +98,25 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       Duration(milliseconds: 1200);
   static const _readPositionToastBottom = 76.0;
   static const _minimumSavedReadOffset = 80.0;
+  static const _readPositionBottomSnapDistance = 180.0;
+  static const _readPositionLateCorrectionDelay = Duration(milliseconds: 280);
+  static const _readPositionBottomCorrectionWindow = Duration(
+    milliseconds: 900,
+  );
+  static const _readPositionBottomCorrectionStep = Duration(milliseconds: 100);
+  static const _readPositionImmediateSaveThrottle = Duration(milliseconds: 260);
 
   final _expandedReplyParents = <int>{};
   final _replyBarKey = GlobalKey<_TopicReplyBarState>();
+  final _scrollViewKey = GlobalKey();
   final _scrollController = ScrollController();
+  final _postKeys = <int, GlobalKey>{};
   Timer? _readPositionSaveTimer;
   Timer? _readPositionToastTimer;
+  DateTime? _lastImmediateReadPositionSaveAt;
   String? _restoredReadPositionKey;
   bool _restoringReadPosition = false;
+  bool _cancelReadPositionCorrection = false;
   bool _showReadPositionToast = false;
 
   String get _readPositionKey {
@@ -113,6 +124,15 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       username: widget.currentUsername,
       topicId: widget.detail?.id ?? widget.item.id,
     );
+  }
+
+  GlobalKey _postKeyFor(int postNumber) {
+    return _postKeys.putIfAbsent(postNumber, () => GlobalKey());
+  }
+
+  void _pruneReadPositionKeys(List<Post> posts) {
+    final postNumbers = posts.map((post) => post.postNumber).toSet();
+    _postKeys.removeWhere((postNumber, _) => !postNumbers.contains(postNumber));
   }
 
   @override
@@ -136,6 +156,9 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
         oldWidget.currentUsername != widget.currentUsername) {
       _readPositionSaveTimer?.cancel();
       _restoredReadPositionKey = null;
+      _restoringReadPosition = false;
+      _cancelReadPositionCorrection = true;
+      _postKeys.clear();
     }
   }
 
@@ -165,6 +188,7 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
     final threads = buildThreadedPosts(
       detail.posts.where((post) => !post.isDeleted).toList(growable: false),
     );
+    _pruneReadPositionKeys(detail.posts);
     _scheduleReadPositionRestore();
 
     return Stack(
@@ -175,39 +199,44 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _handleContentTap,
-                child: ListView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-                  children: [
-                    _TopicHeader(detail: detail, category: widget.category),
-                    for (final thread in threads)
-                      _ThreadedPostView(
-                        thread: thread,
-                        canReply: detail.canCreatePost,
-                        isSubmittingReply: widget.isSubmittingReply,
-                        busyLikePostIds: widget.busyLikePostIds,
-                        busyDeletePostIds: widget.busyDeletePostIds,
-                        expanded: _expandedReplyParents.contains(
-                          thread.post.postNumber,
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _handleScrollNotification,
+                  child: ListView(
+                    key: _scrollViewKey,
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                    children: [
+                      _TopicHeader(detail: detail, category: widget.category),
+                      for (final thread in threads)
+                        _ThreadedPostView(
+                          thread: thread,
+                          canReply: detail.canCreatePost,
+                          isSubmittingReply: widget.isSubmittingReply,
+                          busyLikePostIds: widget.busyLikePostIds,
+                          busyDeletePostIds: widget.busyDeletePostIds,
+                          expanded: _expandedReplyParents.contains(
+                            thread.post.postNumber,
+                          ),
+                          collapsedReplyCount: _collapsedReplyCount,
+                          onToggleExpanded: () {
+                            setState(() {
+                              final parent = thread.post.postNumber;
+                              if (!_expandedReplyParents.add(parent)) {
+                                _expandedReplyParents.remove(parent);
+                              }
+                            });
+                          },
+                          onReply: _replyTo,
+                          onLike: _like,
+                          onDelete: _confirmDelete,
+                          onOpenUser: widget.onOpenUser,
+                          onOpenImage: _openImagePreview,
+                          onOpenInternalTopic: widget.onOpenInternalTopic,
+                          postKeyFor: _postKeyFor,
                         ),
-                        collapsedReplyCount: _collapsedReplyCount,
-                        onToggleExpanded: () {
-                          setState(() {
-                            final parent = thread.post.postNumber;
-                            if (!_expandedReplyParents.add(parent)) {
-                              _expandedReplyParents.remove(parent);
-                            }
-                          });
-                        },
-                        onReply: _replyTo,
-                        onLike: _like,
-                        onDelete: _confirmDelete,
-                        onOpenUser: widget.onOpenUser,
-                        onOpenImage: _openImagePreview,
-                        onOpenInternalTopic: widget.onOpenInternalTopic,
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -275,6 +304,41 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
     );
   }
 
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification.metrics.axis != Axis.vertical || widget.detail == null) {
+      return false;
+    }
+    if (_isUserScrollStart(notification) && _restoringReadPosition) {
+      _cancelReadPositionCorrection = true;
+      _restoringReadPosition = false;
+    }
+    if (_restoringReadPosition) {
+      return false;
+    }
+    if (notification is ScrollEndNotification ||
+        notification.metrics.extentAfter <= _readPositionBottomSnapDistance) {
+      _saveReadPositionImmediately();
+    }
+    return false;
+  }
+
+  bool _isUserScrollStart(ScrollNotification notification) {
+    return notification is ScrollStartNotification &&
+        notification.dragDetails != null;
+  }
+
+  void _saveReadPositionImmediately() {
+    final now = DateTime.now();
+    final lastSavedAt = _lastImmediateReadPositionSaveAt;
+    if (lastSavedAt != null &&
+        now.difference(lastSavedAt) < _readPositionImmediateSaveThrottle) {
+      return;
+    }
+    _lastImmediateReadPositionSaveAt = now;
+    _readPositionSaveTimer?.cancel();
+    unawaited(_saveReadPositionNow());
+  }
+
   void _scheduleReadPositionRestore() {
     final key = _readPositionKey;
     if (_restoredReadPositionKey == key) {
@@ -301,15 +365,153 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       return;
     }
     final maxScrollExtent = _scrollController.position.maxScrollExtent;
-    if (maxScrollExtent <= _minimumSavedReadOffset ||
-        position.offset < _minimumSavedReadOffset) {
+    if (!_hasRestorableReadPosition(position, maxScrollExtent)) {
       return;
     }
-    final target = position.offset.clamp(0.0, maxScrollExtent).toDouble();
+    _cancelReadPositionCorrection = false;
     _restoringReadPosition = true;
-    _scrollController.jumpTo(target);
-    _restoringReadPosition = false;
+    final restored = _applyRestoredReadPosition(
+      position,
+      allowOffsetFallback: true,
+    );
+    if (!restored) {
+      _restoringReadPosition = false;
+      return;
+    }
     _showRestoredReadPositionToast();
+    unawaited(_stabilizeReadPositionRestore(key, position));
+  }
+
+  bool _hasRestorableReadPosition(
+    ForumReadPosition position,
+    double maxScrollExtent,
+  ) {
+    if (maxScrollExtent <= _minimumSavedReadOffset) {
+      return false;
+    }
+    if (_isBottomReadPosition(position)) {
+      return true;
+    }
+    return position.offset >= _minimumSavedReadOffset;
+  }
+
+  Future<void> _stabilizeReadPositionRestore(
+    String key,
+    ForumReadPosition position,
+  ) async {
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted ||
+          key != _readPositionKey ||
+          _cancelReadPositionCorrection) {
+        return;
+      }
+      if (_isBottomReadPosition(position)) {
+        await _keepRestoredReadPositionAtBottom(key);
+        return;
+      }
+      _applyRestoredReadPosition(position, allowOffsetFallback: false);
+      await Future<void>.delayed(_readPositionLateCorrectionDelay);
+      if (!mounted ||
+          key != _readPositionKey ||
+          _cancelReadPositionCorrection) {
+        return;
+      }
+      _applyRestoredReadPosition(position, allowOffsetFallback: false);
+    } finally {
+      if (mounted && key == _readPositionKey) {
+        _restoringReadPosition = false;
+      }
+    }
+  }
+
+  Future<void> _keepRestoredReadPositionAtBottom(String key) async {
+    final startedAt = DateTime.now();
+    while (mounted &&
+        key == _readPositionKey &&
+        !_cancelReadPositionCorrection &&
+        DateTime.now().difference(startedAt) <
+            _readPositionBottomCorrectionWindow) {
+      if (!_scrollController.hasClients) {
+        return;
+      }
+      _jumpToReadOffset(_scrollController.position.maxScrollExtent);
+      await Future<void>.delayed(_readPositionBottomCorrectionStep);
+    }
+    if (mounted &&
+        key == _readPositionKey &&
+        !_cancelReadPositionCorrection &&
+        _scrollController.hasClients) {
+      _jumpToReadOffset(_scrollController.position.maxScrollExtent);
+    }
+  }
+
+  bool _applyRestoredReadPosition(
+    ForumReadPosition position, {
+    required bool allowOffsetFallback,
+  }) {
+    if (!mounted || !_scrollController.hasClients) {
+      return false;
+    }
+    if (_isBottomReadPosition(position)) {
+      return _jumpToReadOffset(_scrollController.position.maxScrollExtent);
+    }
+    final anchorPostNumber = position.anchorPostNumber;
+    if (anchorPostNumber != null) {
+      final anchorTarget = _targetOffsetForPostAnchor(
+        anchorPostNumber,
+        position.anchorDelta,
+      );
+      if (anchorTarget != null) {
+        return _jumpToReadOffset(anchorTarget);
+      }
+    }
+    if (allowOffsetFallback) {
+      return _jumpToReadOffset(position.offset);
+    }
+    return false;
+  }
+
+  bool _isBottomReadPosition(ForumReadPosition position) {
+    final bottomDistance = position.bottomDistance;
+    return bottomDistance != null &&
+        bottomDistance <= _readPositionBottomSnapDistance;
+  }
+
+  bool _jumpToReadOffset(double offset) {
+    if (!_scrollController.hasClients) {
+      return false;
+    }
+    final maxScrollExtent = _scrollController.position.maxScrollExtent;
+    if (maxScrollExtent <= 0) {
+      return false;
+    }
+    final target = offset.clamp(0.0, maxScrollExtent).toDouble();
+    _scrollController.jumpTo(target);
+    return true;
+  }
+
+  double? _targetOffsetForPostAnchor(int postNumber, double anchorDelta) {
+    if (!_scrollController.hasClients) {
+      return null;
+    }
+    final viewportBox =
+        _scrollViewKey.currentContext?.findRenderObject() as RenderBox?;
+    final postBox =
+        _postKeys[postNumber]?.currentContext?.findRenderObject() as RenderBox?;
+    if (viewportBox == null ||
+        postBox == null ||
+        !viewportBox.attached ||
+        !postBox.attached ||
+        !viewportBox.hasSize ||
+        !postBox.hasSize) {
+      return null;
+    }
+    final viewportTop = viewportBox.localToGlobal(Offset.zero).dy;
+    final postTop = postBox.localToGlobal(Offset.zero).dy;
+    final topInViewport = postTop - viewportTop;
+    final postTopOffset = _scrollController.offset + topInViewport;
+    return postTopOffset + anchorDelta;
   }
 
   void _showRestoredReadPositionToast() {
@@ -327,7 +529,10 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
 
   Future<void> _saveReadPositionNow() async {
     _readPositionSaveTimer?.cancel();
-    if (!mounted || !_scrollController.hasClients || widget.detail == null) {
+    if (_restoringReadPosition ||
+        !mounted ||
+        !_scrollController.hasClients ||
+        widget.detail == null) {
       return;
     }
     final offset = _scrollController.offset;
@@ -335,7 +540,65 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       await ForumReadPositionStore.remove(_readPositionKey);
       return;
     }
-    await ForumReadPositionStore.save(_readPositionKey, offset);
+    final bottomDistance = (_scrollController.position.maxScrollExtent - offset)
+        .clamp(0.0, double.infinity)
+        .toDouble();
+    final anchor = _findCurrentReadAnchor();
+    await ForumReadPositionStore.save(
+      _readPositionKey,
+      offset,
+      anchorPostNumber: anchor?.postNumber,
+      anchorDelta: anchor?.delta ?? 0,
+      bottomDistance: bottomDistance,
+    );
+  }
+
+  _ReadPositionAnchor? _findCurrentReadAnchor() {
+    if (!_scrollController.hasClients) {
+      return null;
+    }
+    final viewportBox =
+        _scrollViewKey.currentContext?.findRenderObject() as RenderBox?;
+    if (viewportBox == null || !viewportBox.attached || !viewportBox.hasSize) {
+      return null;
+    }
+    final viewportTop = viewportBox.localToGlobal(Offset.zero).dy;
+    final viewportBottom = viewportTop + viewportBox.size.height;
+    _ReadPositionAnchor? closestAbove;
+    _ReadPositionAnchor? closestBelow;
+
+    for (final entry in _postKeys.entries) {
+      final postBox =
+          entry.value.currentContext?.findRenderObject() as RenderBox?;
+      if (postBox == null ||
+          !postBox.attached ||
+          !postBox.hasSize ||
+          postBox.size.height <= 0) {
+        continue;
+      }
+      final postTop = postBox.localToGlobal(Offset.zero).dy;
+      final postBottom = postTop + postBox.size.height;
+      if (postBottom <= viewportTop + 1 || postTop >= viewportBottom - 1) {
+        continue;
+      }
+      final topInViewport = postTop - viewportTop;
+      final anchor = _ReadPositionAnchor(
+        postNumber: entry.key,
+        delta: -topInViewport,
+        topInViewport: topInViewport,
+      );
+      if (topInViewport <= 0) {
+        if (closestAbove == null ||
+            topInViewport > closestAbove.topInViewport) {
+          closestAbove = anchor;
+        }
+      } else if (closestBelow == null ||
+          topInViewport < closestBelow.topInViewport) {
+        closestBelow = anchor;
+      }
+    }
+
+    return closestAbove ?? closestBelow;
   }
 
   void _replyTo(Post post) {
@@ -396,6 +659,18 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       ),
     );
   }
+}
+
+class _ReadPositionAnchor {
+  const _ReadPositionAnchor({
+    required this.postNumber,
+    required this.delta,
+    required this.topInViewport,
+  });
+
+  final int postNumber;
+  final double delta;
+  final double topInViewport;
 }
 
 class _TopicHeader extends StatelessWidget {
@@ -498,6 +773,7 @@ class _ThreadedPostView extends StatelessWidget {
     required this.onOpenUser,
     required this.onOpenImage,
     required this.onOpenInternalTopic,
+    required this.postKeyFor,
   });
 
   final ThreadedPost thread;
@@ -514,6 +790,7 @@ class _ThreadedPostView extends StatelessWidget {
   final ValueChanged<String> onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
+  final GlobalKey Function(int postNumber) postKeyFor;
 
   @override
   Widget build(BuildContext context) {
@@ -527,6 +804,7 @@ class _ThreadedPostView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _PostView(
+          key: postKeyFor(post.postNumber),
           post: post,
           canLike: true,
           canReply: canReply && !isSubmittingReply,
@@ -556,6 +834,7 @@ class _ThreadedPostView extends StatelessWidget {
             onOpenUser: onOpenUser,
             onOpenImage: onOpenImage,
             onOpenInternalTopic: onOpenInternalTopic,
+            postKeyFor: postKeyFor,
           ),
       ],
     );
@@ -578,6 +857,7 @@ class _NestedReplies extends StatelessWidget {
     required this.onOpenUser,
     required this.onOpenImage,
     required this.onOpenInternalTopic,
+    required this.postKeyFor,
   });
 
   final Post parent;
@@ -594,6 +874,7 @@ class _NestedReplies extends StatelessWidget {
   final ValueChanged<String> onOpenUser;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
+  final GlobalKey Function(int postNumber) postKeyFor;
 
   @override
   Widget build(BuildContext context) {
@@ -609,6 +890,7 @@ class _NestedReplies extends StatelessWidget {
         children: [
           for (final reply in replies)
             _PostView(
+              key: postKeyFor(reply.postNumber),
               post: reply,
               compact: true,
               replyContext: reply.replyToPostNumber == parent.postNumber
@@ -641,6 +923,7 @@ class _NestedReplies extends StatelessWidget {
 
 class _PostView extends StatelessWidget {
   const _PostView({
+    super.key,
     required this.post,
     required this.canLike,
     required this.canReply,

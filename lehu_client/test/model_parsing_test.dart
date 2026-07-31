@@ -168,10 +168,10 @@ void main() {
 
     expect(segments.where((segment) => segment.isImage), hasLength(1));
     expect(segments.where((segment) => segment.isLink), isEmpty);
-    expect(
-      segments.singleWhere((segment) => segment.isImage).value,
-      contains('photo_2_500x500.jpeg'),
-    );
+    final image = segments.singleWhere((segment) => segment.isImage);
+    expect(image.value, contains('photo_2_500x500.jpeg'));
+    expect(image.imageWidth, 500);
+    expect(image.imageHeight, 500);
   });
 
   test('merges topic posts by id and keeps post-number order', () {
@@ -468,10 +468,45 @@ void main() {
       topicId: 824,
     );
 
-    await ForumReadPositionStore.save(key, 320.5);
+    await ForumReadPositionStore.save(
+      key,
+      320.5,
+      anchorPostNumber: 6,
+      anchorDelta: 28.5,
+      bottomDistance: 140,
+    );
     final loaded = await ForumReadPositionStore.load(key);
     expect(loaded, isNotNull);
     expect(loaded!.offset, 320.5);
+    expect(loaded.anchorPostNumber, 6);
+    expect(loaded.anchorDelta, 28.5);
+    expect(loaded.bottomDistance, 140);
+
+    const legacyV1Key = 'forum.readPosition.v1.topic.lilin.823';
+    const legacyV2Key = 'forum.readPosition.v2.topic.lilin.822';
+    const legacyV3Key = 'forum.readPosition.v3.topic.lilin.821';
+    for (final legacyKey in [legacyV1Key, legacyV2Key, legacyV3Key]) {
+      await prefs.setString(
+        legacyKey,
+        jsonEncode({
+          'offset': 260,
+          'updated_at': DateTime.now().toIso8601String(),
+        }),
+      );
+    }
+    await ForumReadPositionStore.cleanup();
+    expect(prefs.getString(legacyV1Key), isNull);
+    expect(prefs.getString(legacyV2Key), isNull);
+    expect(prefs.getString(legacyV3Key), isNull);
+
+    await prefs.setString(
+      key,
+      jsonEncode({
+        'offset': 280,
+        'updated_at': DateTime.now().toIso8601String(),
+      }),
+    );
+    expect((await ForumReadPositionStore.load(key))?.offset, 320.5);
 
     final staleKey = ForumReadPositionStore.topicKey(
       username: 'Lilin',
@@ -510,7 +545,7 @@ void main() {
 
     final remainingKeys = prefs
         .getKeys()
-        .where((key) => key.startsWith('forum.readPosition.v1'))
+        .where((key) => key.startsWith('forum.readPosition.v4'))
         .toList();
     expect(remainingKeys.length, 300);
   });

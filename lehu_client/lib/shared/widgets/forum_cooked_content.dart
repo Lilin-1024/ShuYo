@@ -71,24 +71,12 @@ class ForumCookedContent extends StatelessWidget {
               padding: EdgeInsets.only(bottom: imageBottomSpacing),
               child: GestureDetector(
                 onTap: () => onOpenImage(imageUrls, currentImageIndex),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: ForumNetworkImage(
-                    segment.value,
-                    fit: imageFit,
-                    errorBuilder: (context, error, stackTrace) {
-                      final colors = context.lehuColors;
-                      return Container(
-                        height: imageErrorHeight,
-                        alignment: Alignment.center,
-                        color: colors.surfaceMuted,
-                        child: Text(
-                          '图片加载失败',
-                          style: TextStyle(color: colors.textSecondary),
-                        ),
-                      );
-                    },
-                  ),
+                child: _CookedImage(
+                  url: segment.value,
+                  width: segment.imageWidth,
+                  height: segment.imageHeight,
+                  fit: imageFit,
+                  errorHeight: imageErrorHeight,
                 ),
               ),
             ),
@@ -168,6 +156,76 @@ class ForumCookedContent extends StatelessWidget {
   void _showSnack(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+}
+
+class _CookedImage extends StatelessWidget {
+  const _CookedImage({
+    required this.url,
+    required this.width,
+    required this.height,
+    required this.fit,
+    required this.errorHeight,
+  });
+
+  final String url;
+  final int width;
+  final int height;
+  final BoxFit fit;
+  final double errorHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final aspectRatio = width > 0 && height > 0 ? width / height : null;
+    final child = ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: aspectRatio == null
+          ? SizedBox(
+              width: double.infinity,
+              height: errorHeight,
+              child: _NetworkImage(url: url, fit: fit),
+            )
+          : AspectRatio(
+              aspectRatio: aspectRatio,
+              child: _NetworkImage(url: url, fit: fit),
+            ),
+    );
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: double.infinity),
+      child: child,
+    );
+  }
+}
+
+class _NetworkImage extends StatelessWidget {
+  const _NetworkImage({
+    required this.url,
+    required this.fit,
+  });
+
+  final String url;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return ColoredBox(
+      color: colors.surfaceMuted,
+      child: ForumNetworkImage(
+        url,
+        width: double.infinity,
+        height: double.infinity,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) {
+          return Center(
+            child: Text(
+              '图片加载失败',
+              style: TextStyle(color: colors.textSecondary),
+            ),
+          );
+        },
+      ),
     );
   }
 }
