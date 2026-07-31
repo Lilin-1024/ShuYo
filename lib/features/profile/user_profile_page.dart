@@ -51,7 +51,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return EmptyState(
@@ -269,7 +270,8 @@ class _UserCreatedTopicsPageState extends State<_UserCreatedTopicsPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return EmptyState(
@@ -532,7 +534,7 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 3),
                       )
                     : const Icon(Icons.image_outlined, size: 18),
                 label: const Text('添加图片'),
@@ -567,7 +569,7 @@ class _PrivateMessageSheetState extends State<_PrivateMessageSheet> {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(strokeWidth: 3),
                     )
                   : const Icon(Icons.send),
               label: Text(_submitting ? '发送中...' : '发送'),

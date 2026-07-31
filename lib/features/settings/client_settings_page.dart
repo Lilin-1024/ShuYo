@@ -414,7 +414,7 @@ class _ThemeSwatches extends StatelessWidget {
           if (saving)
             const SizedBox.square(
               dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(strokeWidth: 3),
             )
           else if (selected)
             Icon(Icons.check, size: 20, color: colors.accent)
@@ -478,7 +478,8 @@ class _NetworkSettingsPageState extends State<_NetworkSettingsPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return EmptyState(
@@ -582,7 +583,8 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return EmptyState(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../data/models/category.dart';
@@ -41,15 +43,22 @@ class TopicListPage extends StatefulWidget {
 }
 
 class _TopicListPageState extends State<TopicListPage> {
+  static const _initialPreviewWarmCount = 6;
+  static const _initialPreviewWarmTimeout = Duration(milliseconds: 1200);
+
   final _scrollController = ScrollController();
   final _previewFutures = <int, Future<TopicPreview>>{};
   final _previewCache = <int, TopicPreview>{};
+  int _previewWarmToken = 0;
+  String? _previewWarmSignature;
   bool _requestingMore = false;
+  bool _warmingInitialPreviews = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _scheduleInitialPreviewWarmup(notify: false);
   }
 
   @override
@@ -58,6 +67,7 @@ class _TopicListPageState extends State<TopicListPage> {
     final topicIds = widget.topics.map((topic) => topic.id).toSet();
     _previewFutures.removeWhere((id, _) => !topicIds.contains(id));
     _previewCache.removeWhere((id, _) => !topicIds.contains(id));
+    _scheduleInitialPreviewWarmup();
   }
 
   @override
@@ -65,12 +75,16 @@ class _TopicListPageState extends State<TopicListPage> {
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
+    _previewWarmToken++;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
+    if (_warmingInitialPreviews) {
+      return const _TopicListLoading();
+    }
     return ListView.separated(
       controller: _scrollController,
       cacheExtent: 1200,
@@ -122,6 +136,54 @@ class _TopicListPageState extends State<TopicListPage> {
       widget.canLoadMore ||
       widget.isLoadingMore ||
       widget.loadMoreError != null;
+
+  void _scheduleInitialPreviewWarmup({bool notify = true}) {
+    final ids = widget.topics
+        .take(_initialPreviewWarmCount)
+        .map((topic) => topic.id)
+        .toList(growable: false);
+    final signature = ids.join(',');
+    if (signature == _previewWarmSignature) {
+      return;
+    }
+    _previewWarmSignature = signature;
+    final token = ++_previewWarmToken;
+    final missingIds = ids
+        .where((id) => !_previewCache.containsKey(id))
+        .toList(growable: false);
+    if (missingIds.isEmpty) {
+      if (!_warmingInitialPreviews) {
+        return;
+      }
+      if (notify) {
+        setState(() => _warmingInitialPreviews = false);
+      } else {
+        _warmingInitialPreviews = false;
+      }
+      return;
+    }
+    if (notify) {
+      setState(() => _warmingInitialPreviews = true);
+    } else {
+      _warmingInitialPreviews = true;
+    }
+    unawaited(_warmInitialPreviews(missingIds, token));
+  }
+
+  Future<void> _warmInitialPreviews(List<int> ids, int token) async {
+    final futures = [
+      for (final id in ids)
+        _previewForTopic(id).then<void>((_) {}).catchError((Object _) {}),
+    ];
+    await Future.any<void>([
+      Future.wait<void>(futures).then<void>((_) {}),
+      Future<void>.delayed(_initialPreviewWarmTimeout),
+    ]);
+    if (!mounted || token != _previewWarmToken) {
+      return;
+    }
+    setState(() => _warmingInitialPreviews = false);
+  }
 
   void _onScroll() {
     if (!_scrollController.hasClients) {
@@ -178,7 +240,7 @@ class _LoadMoreFooter extends StatelessWidget {
             ? const SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(strokeWidth: 3),
               )
             : errorMessage != null
                 ? Column(
@@ -204,6 +266,21 @@ class _LoadMoreFooter extends StatelessWidget {
                     icon: const Icon(Icons.expand_more),
                     label: const Text('加载更多'),
                   ),
+      ),
+    );
+  }
+}
+
+class _TopicListLoading extends StatelessWidget {
+  const _TopicListLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: SizedBox(
+        width: 28,
+        height: 28,
+        child: CircularProgressIndicator(strokeWidth: 3),
       ),
     );
   }

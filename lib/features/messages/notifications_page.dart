@@ -130,7 +130,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
       builder: (context, snapshot) {
         final colors = context.lehuColors;
         if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(strokeWidth: 3));
         }
         if (snapshot.hasError) {
           return EmptyState(

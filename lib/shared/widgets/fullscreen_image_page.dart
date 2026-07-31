@@ -307,7 +307,7 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
         _viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
         if (!_headersLoaded) {
           return const Center(
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: CircularProgressIndicator(strokeWidth: 3),
           );
         }
         return InteractiveViewer(

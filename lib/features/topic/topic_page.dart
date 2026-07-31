@@ -1079,24 +1079,11 @@ class _TargetPostLoadingOverlay extends StatelessWidget {
     final colors = context.lehuColors;
     return ColoredBox(
       color: colors.background,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 30,
-              height: 30,
-              child: CircularProgressIndicator(strokeWidth: 2.4),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              '正在定位回复...',
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-          ],
+      child: const Center(
+        child: SizedBox(
+          width: 30,
+          height: 30,
+          child: CircularProgressIndicator(strokeWidth: 3),
         ),
       ),
     );
@@ -1700,7 +1687,7 @@ class _InlineLikeButton extends StatelessWidget {
             if (loading)
               const SizedBox.square(
                 dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(strokeWidth: 3),
               )
             else
               Icon(
@@ -1971,8 +1958,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                                           width: 18,
                                           height: 18,
                                           child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
+                                              strokeWidth: 3),
                                         )
                                       : const Icon(Icons.image_outlined),
                                 ),
@@ -2004,8 +1990,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                                             width: 18,
                                             height: 18,
                                             child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
+                                                strokeWidth: 3),
                                           )
                                         : const Text('发送'),
                                   ),
@@ -2543,7 +2528,7 @@ class _MentionSearching extends StatelessWidget {
         children: [
           const SizedBox.square(
             dimension: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: CircularProgressIndicator(strokeWidth: 3),
           ),
           const SizedBox(width: 10),
           Text(
@@ -2747,9 +2732,7 @@ class _TinyProgress extends StatelessWidget {
     return SizedBox(
       width: 18,
       height: 18,
-      child: CircularProgressIndicator(
-        strokeWidth: 2,
-      ),
+      child: CircularProgressIndicator(strokeWidth: 3),
     );
   }
 }
