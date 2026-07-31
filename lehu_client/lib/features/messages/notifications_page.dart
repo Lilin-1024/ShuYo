@@ -723,61 +723,64 @@ class _NotificationGroupSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.72;
-    return SafeArea(
-      top: false,
-      child: Container(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 8, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      group.isLike ? '点赞者' : group.detailTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: colors.textPrimary,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
+    return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 8, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    group.isLike
+                        ? '所有点赞'
+                        : group.isReply
+                            ? '所有回复'
+                            : group.detailTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  IconButton(
-                    tooltip: '关闭',
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
+                ),
+                IconButton(
+                  tooltip: '关闭',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
             ),
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: group.items.length,
-                separatorBuilder: (context, index) =>
-                    Divider(height: 1, color: colors.border),
-                itemBuilder: (context, index) {
-                  final item = group.items[index];
-                  return group.isLike
-                      ? _LikeDetailTile(item: item, onOpenUser: onOpenUser)
-                      : _NotificationDetailTile(
-                          item: item,
-                          onOpenItem: onOpenItem,
-                          onOpenUser: onOpenUser,
-                        );
-                },
-              ),
+          ),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: group.items.length,
+              separatorBuilder: (context, index) =>
+                  Divider(height: 1, color: colors.border),
+              itemBuilder: (context, index) {
+                final item = group.items[index];
+                return group.isLike
+                    ? _LikeDetailTile(item: item, onOpenUser: onOpenUser)
+                    : _NotificationDetailTile(
+                        item: item,
+                        onOpenItem: onOpenItem,
+                        onOpenUser: onOpenUser,
+                      );
+              },
             ),
-          ],
-        ),
+          ),
+          if (bottomPadding > 0) SizedBox(height: bottomPadding),
+        ],
       ),
     );
   }
