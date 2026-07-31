@@ -93,6 +93,8 @@ void main() {
         '1\u{FE0F}\u{20E3}ok';
     expect(ForumTitleRules.sanitize(title), '标题ok');
     expect(ForumTitleRules.containsDisallowedEmoji(title), isTrue);
+    expect(ForumTitleRules.sanitize('标题123ok'), '标题123ok');
+    expect(ForumTitleRules.containsDisallowedEmoji('标题123ok'), isFalse);
     expect(
       ForumTitleRules.sanitize('标题 :not_an_emoji: ok'),
       '标题 :not_an_emoji: ok',
