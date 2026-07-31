@@ -9,6 +9,7 @@ import 'package:shuyo/data/models/category.dart';
 import 'package:shuyo/data/models/common.dart';
 import 'package:shuyo/data/models/composer.dart';
 import 'package:shuyo/data/models/forum_notification.dart';
+import 'package:shuyo/data/models/forum_report.dart';
 import 'package:shuyo/data/models/post.dart';
 import 'package:shuyo/data/models/topic.dart';
 import 'package:shuyo/data/models/topic_detail.dart';
@@ -222,6 +223,32 @@ void main() {
     expect(reply.body, contains('reply_to_post_number=3'));
     expect(PayloadFactory.decodeForm(reply.body)['raw'], 'test test');
     expect(like.body, 'id=654&post_action_type_id=2&flag_topic=false');
+  });
+
+  test('builds forum report payloads', () {
+    final postReport = PayloadFactory.reportContent(
+      const ForumReportDraft(
+        id: 1222,
+        reason: ForumReportReason.other,
+        message: '该链接指向的目标无效',
+        flagTopic: false,
+      ),
+    );
+    final topicReport = PayloadFactory.reportContent(
+      const ForumReportDraft(
+        id: 824,
+        reason: ForumReportReason.spam,
+        flagTopic: true,
+      ),
+    );
+
+    final postFields = PayloadFactory.decodeForm(postReport.body);
+    expect(postReport.method, 'POST');
+    expect(postFields['id'], '1222');
+    expect(postFields['post_action_type_id'], '7');
+    expect(postFields['message'], '该链接指向的目标无效');
+    expect(postFields['flag_topic'], 'false');
+    expect(topicReport.body, 'id=824&post_action_type_id=8&flag_topic=true');
   });
 
   test('builds topic and private message payloads', () {

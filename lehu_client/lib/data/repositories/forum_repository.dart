@@ -12,6 +12,7 @@ import '../models/current_user.dart';
 import '../models/discourse_user.dart';
 import '../models/forum_activity.dart';
 import '../models/forum_notification.dart';
+import '../models/forum_report.dart';
 import '../models/forum_search.dart';
 import '../models/post.dart';
 import '../models/topic.dart';
@@ -132,6 +133,7 @@ abstract class ForumRepository {
   });
   Future<Post> likePost(int postId);
   Future<Post> unlikePost(int postId);
+  Future<Post> reportContent(ForumReportDraft draft);
   Future<ForumBookmark> bookmarkTopic(int topicId);
   Future<void> unbookmarkTopic(int bookmarkId);
   Future<void> deleteTopic(TopicListItem topic);
@@ -498,6 +500,11 @@ class FixtureForumRepository implements ForumRepository {
   @override
   Future<Post> unlikePost(int postId) {
     throw const ForumAuthException('请先登录后再取消点赞');
+  }
+
+  @override
+  Future<Post> reportContent(ForumReportDraft draft) {
+    throw const ForumAuthException('请先登录后再举报');
   }
 
   @override
@@ -1243,6 +1250,27 @@ class OnlineForumRepository implements ForumRepository {
     final post = Post.fromJson(json);
     _topicDetails.remove(post.topicId);
     _staleTopicDetailIds.remove(post.topicId);
+    return post;
+  }
+
+  @override
+  Future<Post> reportContent(ForumReportDraft draft) async {
+    final payload = PayloadFactory.reportContent(draft);
+    final json = await _apiClient.postForm(
+      ForumConstants.postActionsPath,
+      payload.body,
+    );
+    final post = Post.fromJson(json);
+    final topicId = post.topicId > 0
+        ? post.topicId
+        : draft.flagTopic
+            ? draft.id
+            : 0;
+    if (topicId > 0) {
+      _topicDetails.remove(topicId);
+      _staleTopicDetailIds.remove(topicId);
+      _pendingTopicDetails.remove(topicId);
+    }
     return post;
   }
 
