@@ -33,23 +33,36 @@ class CookedLinkPreview {
 class CookedSegment {
   const CookedSegment.text(this.value)
       : kind = CookedSegmentKind.text,
-        link = null;
-  const CookedSegment.image(this.value)
-      : kind = CookedSegmentKind.image,
+        link = null,
+        imageWidth = 0,
+        imageHeight = 0;
+  const CookedSegment.image(
+    this.value, {
+    this.imageWidth = 0,
+    this.imageHeight = 0,
+  })  : kind = CookedSegmentKind.image,
         link = null;
   const CookedSegment.link(this.link)
       : kind = CookedSegmentKind.link,
-        value = '';
+        value = '',
+        imageWidth = 0,
+        imageHeight = 0;
   const CookedSegment.onebox(this.link)
       : kind = CookedSegmentKind.onebox,
-        value = '';
+        value = '',
+        imageWidth = 0,
+        imageHeight = 0;
   const CookedSegment.quote(this.link)
       : kind = CookedSegmentKind.quote,
-        value = '';
+        value = '',
+        imageWidth = 0,
+        imageHeight = 0;
 
   final String value;
   final CookedSegmentKind kind;
   final CookedLinkPreview? link;
+  final int imageWidth;
+  final int imageHeight;
 
   bool get isImage => kind == CookedSegmentKind.image;
   bool get isText => kind == CookedSegmentKind.text;
@@ -219,7 +232,13 @@ class HtmlText {
       if (tag == 'img') {
         final image = _HtmlImage.fromElement(node);
         if (image.shouldRenderAsImage) {
-          segments.add(CookedSegment.image(_absoluteUrl(image.src)));
+          segments.add(
+            CookedSegment.image(
+              _absoluteUrl(image.src),
+              imageWidth: image.width,
+              imageHeight: image.height,
+            ),
+          );
         } else if (image.inlineText.isNotEmpty) {
           addText(image.inlineText);
         }
