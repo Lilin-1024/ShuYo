@@ -1,3 +1,4 @@
+import '../../core/forum_url_resolver.dart';
 import 'common.dart';
 import '../services/emoji_text.dart';
 import '../services/html_text.dart';
@@ -11,6 +12,9 @@ class ForumNotification {
     required this.message,
     required this.kind,
     required this.read,
+    this.topicTitle = '',
+    this.actorUsername = '',
+    this.actorAvatarTemplate = '',
     this.categoryId = 0,
     this.topicId,
     this.postNumber,
@@ -22,12 +26,23 @@ class ForumNotification {
   final String message;
   final String kind;
   final bool read;
+  final String topicTitle;
+  final String actorUsername;
+  final String actorAvatarTemplate;
   final int categoryId;
   final int? topicId;
   final int? postNumber;
   final DateTime? createdAt;
 
   bool get canOpenTopic => topicId != null && topicId! > 0;
+
+  String actorAvatarUrl({int size = 96}) {
+    if (actorAvatarTemplate.isEmpty) {
+      return '';
+    }
+    final resolved = actorAvatarTemplate.replaceAll('{size}', '$size');
+    return ForumUrlResolver.resolve(resolved);
+  }
 
   bool get isClientVisible {
     return canOpenTopic && _clientVisibleKinds.contains(kind);
@@ -55,6 +70,14 @@ class ForumNotification {
       message: EmojiText.render(_messageForNotification(type, actor, map)),
       kind: _kindForNotification(type),
       read: boolValue(json['read']),
+      topicTitle: EmojiText.render(title),
+      actorUsername: actor,
+      actorAvatarTemplate: stringValue(
+        json['acting_avatar_template'] ??
+            json['avatar_template'] ??
+            map['acting_avatar_template'] ??
+            map['avatar_template'],
+      ),
       categoryId: intValue(json['category_id'] ?? map['category_id']),
       topicId: _nullableInt(json['topic_id']),
       postNumber: _nullableInt(json['post_number']),
@@ -66,6 +89,9 @@ class ForumNotification {
     final excerpt = HtmlText.toPlainText(stringValue(json['excerpt']));
     final topicTitle = stringValue(json['title'], '通知');
     final actor = stringValue(json['acting_username']);
+    final actorAvatarTemplate = stringValue(
+      json['acting_avatar_template'] ?? json['avatar_template'],
+    );
     final isLike = kind == '赞';
     final title = isLike && actor.isNotEmpty ? actor : topicTitle;
     final message = isLike
@@ -77,6 +103,9 @@ class ForumNotification {
       message: message,
       kind: kind,
       read: true,
+      topicTitle: EmojiText.render(topicTitle),
+      actorUsername: actor,
+      actorAvatarTemplate: actorAvatarTemplate,
       categoryId: intValue(json['category_id']),
       topicId: _nullableInt(json['topic_id']),
       postNumber: _nullableInt(json['post_number']),

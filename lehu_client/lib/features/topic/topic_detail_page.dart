@@ -23,6 +23,7 @@ class TopicDetailPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.topic,
+    this.targetPostNumber,
     this.onLoginRequired,
     this.onSessionExpired,
     this.onBookmarkChanged,
@@ -30,6 +31,7 @@ class TopicDetailPage extends StatefulWidget {
 
   final ForumRepository repository;
   final TopicListItem topic;
+  final int? targetPostNumber;
   final Future<void> Function()? onLoginRequired;
   final Future<void> Function()? onSessionExpired;
   final VoidCallback? onBookmarkChanged;
@@ -55,7 +57,8 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   @override
   void initState() {
     super.initState();
-    _detail = widget.repository.cachedTopicDetail(widget.topic.id);
+    final cached = widget.repository.cachedTopicDetail(widget.topic.id);
+    _detail = _canUseInitialDetail(cached) ? cached : null;
     _future = widget.repository.fetchTopicDetail(
       widget.topic.id,
       forceRefresh: true,
@@ -94,9 +97,16 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                   }
                   final detail = _detail;
                   _scheduleTopicTiming(detail);
-                  if (detail == null &&
+                  final waitingForTarget = detail != null &&
+                      !_detailContainsTargetPost(detail) &&
+                      snapshot.connectionState != ConnectionState.done;
+                  if ((detail == null || waitingForTarget) &&
                       snapshot.connectionState != ConnectionState.done) {
-                    return const _LoadingState(message: '正在加载帖子...');
+                    return _LoadingState(
+                      message: widget.targetPostNumber == null
+                          ? '正在加载帖子...'
+                          : '正在定位回复...',
+                    );
                   }
                   if (detail == null && snapshot.hasError) {
                     return _ErrorState(
@@ -111,6 +121,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       controller: _topicPageController,
                       item: widget.topic,
                       detail: detail,
+                      targetPostNumber: widget.targetPostNumber,
                       category: widget.repository.categoryById(
                         detail?.categoryId ?? widget.topic.categoryId,
                       ),
@@ -135,6 +146,21 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
         ),
       ),
     );
+  }
+
+  bool _canUseInitialDetail(TopicDetail? detail) {
+    if (detail == null) {
+      return false;
+    }
+    return _detailContainsTargetPost(detail);
+  }
+
+  bool _detailContainsTargetPost(TopicDetail detail) {
+    final targetPostNumber = widget.targetPostNumber;
+    if (targetPostNumber == null || targetPostNumber <= 0) {
+      return true;
+    }
+    return detail.posts.any((post) => post.postNumber == targetPostNumber);
   }
 
   Future<void> _requireLogin() async {
@@ -236,6 +262,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
             categoryId: 0,
             posters: const [],
           ),
+          targetPostNumber: preview.postNumber,
           onLoginRequired: widget.onLoginRequired,
           onSessionExpired: widget.onSessionExpired,
           onBookmarkChanged: widget.onBookmarkChanged,

@@ -380,6 +380,26 @@ void main() {
     expect(badgeNotification.kind, '徽章');
     expect(badgeNotification.canOpenTopic, isFalse);
     expect(badgeNotification.isClientVisible, isFalse);
+
+    final likeNotification = ForumNotification.fromUserActionJson(
+      {
+        'post_id': 1064,
+        'acting_username': 'Yuyuko',
+        'acting_avatar_template':
+            '/letter_avatar_proxy/v4/letter/y/5f9b8f/{size}.png',
+        'excerpt': '被点赞的内容',
+        'title': '测试帖',
+        'topic_id': 832,
+        'post_number': 1,
+        'category_id': 9,
+        'created_at': '2026-07-20T06:43:26.400Z',
+      },
+      '赞',
+    );
+    expect(likeNotification.title, 'Yuyuko');
+    expect(likeNotification.topicTitle, '测试帖');
+    expect(likeNotification.actorUsername, 'Yuyuko');
+    expect(likeNotification.actorAvatarUrl(size: 64), contains('/64'));
     expect(Sha1Hash.hex(Uint8List.fromList(utf8.encode('abc'))),
         'a9993e364706816aba3e25717850c26c9cd0d89d');
   });
@@ -419,7 +439,8 @@ void main() {
     expect(await ForumDraftStore.load(key), isNull);
   });
 
-  test('expires stale forum composer drafts and keeps only recent 50', () async {
+  test('expires stale forum composer drafts and keeps only recent 50',
+      () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime(2026, 7, 30, 12, 0);

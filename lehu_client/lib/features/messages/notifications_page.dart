@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../data/models/forum_notification.dart';
@@ -6,7 +8,9 @@ import '../../data/repositories/forum_repository.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
+import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../profile/user_profile_page.dart';
 import '../topic/topic_detail_page.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -142,42 +146,87 @@ class _NotificationListHostState extends State<_NotificationListHost> {
             message: '这里还没有新的内容',
           );
         }
+        final groups = _groupNotifications(items);
         return RefreshIndicator(
           onRefresh: () async => _refresh(force: true),
           child: ListView.separated(
-            itemCount: items.length,
+            itemCount: groups.length,
             separatorBuilder: (context, index) =>
                 Divider(height: 1, color: colors.border),
             itemBuilder: (context, index) {
-              final item = items[index];
-              return ListTile(
-                leading: Icon(_iconFor(item.kind)),
-                title: Text(
-                  item.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: colors.textPrimary,
-                    fontWeight: item.read ? FontWeight.w500 : FontWeight.w800,
-                  ),
-                ),
-                subtitle: Text(
-                  item.message,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: colors.textSecondary),
-                ),
-                trailing: Text(
-                  TimeFormat.compact(item.createdAt),
-                  style: TextStyle(
-                    color: colors.textMuted,
-                    fontSize: 12,
-                  ),
-                ),
-                onTap: item.canOpenTopic ? () => _openTopic(item) : null,
+              final group = groups[index];
+              return _NotificationGroupTile(
+                group: group,
+                onOpenLatest: () => _openTopic(group.latest),
+                onOpenUser: _openUserProfile,
+                onShowDetails: group.items.length > 1
+                    ? () => _showGroupDetails(group)
+                    : null,
               );
             },
           ),
+        );
+      },
+    );
+  }
+
+  List<_NotificationGroup> _groupNotifications(
+    List<ForumNotification> items,
+  ) {
+    final buckets = <String, List<ForumNotification>>{};
+    for (final item in items) {
+      (buckets[_groupKey(item)] ??= <ForumNotification>[]).add(item);
+    }
+    final groups = buckets.values.map((items) {
+      items.sort(_compareNotificationTime);
+      return _NotificationGroup(List.unmodifiable(items));
+    }).toList();
+    groups.sort((a, b) => _compareNotificationTime(a.latest, b.latest));
+    return groups;
+  }
+
+  String _groupKey(ForumNotification item) {
+    final topicId = item.topicId ?? 0;
+    if (item.kind == '赞') {
+      return 'like:$topicId:${item.postNumber ?? item.id}';
+    }
+    return '${item.kind}:$topicId';
+  }
+
+  int _compareNotificationTime(
+    ForumNotification a,
+    ForumNotification b,
+  ) {
+    final aTime = a.createdAt;
+    final bTime = b.createdAt;
+    if (aTime == null && bTime == null) {
+      return b.id.compareTo(a.id);
+    }
+    if (aTime == null) {
+      return 1;
+    }
+    if (bTime == null) {
+      return -1;
+    }
+    return bTime.compareTo(aTime);
+  }
+
+  Future<void> _showGroupDetails(_NotificationGroup group) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.58),
+      builder: (sheetContext) {
+        return _NotificationGroupSheet(
+          group: group,
+          onOpenItem: (item) {
+            Navigator.of(sheetContext).pop();
+            unawaited(_openTopic(item));
+          },
+          onOpenUser: (username) {
+            Navigator.of(sheetContext).pop();
+            unawaited(_openUserProfile(username));
+          },
         );
       },
     );
@@ -195,13 +244,17 @@ class _NotificationListHostState extends State<_NotificationListHost> {
   }
 
   Future<void> _openTopic(ForumNotification item) async {
+    if (!item.canOpenTopic) {
+      return;
+    }
+    final title = item.topicTitle.isNotEmpty ? item.topicTitle : item.title;
     await Navigator.of(context).push<void>(
       lehuRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
           topic: TopicListItem(
             id: item.topicId!,
-            title: item.title,
+            title: title,
             postsCount: 0,
             replyCount: 0,
             highestPostNumber: item.postNumber ?? 0,
@@ -212,6 +265,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
             lastPostedAt: item.createdAt,
             createdAt: item.createdAt,
           ),
+          targetPostNumber: item.postNumber,
           onLoginRequired: widget.onLoginRequired,
           onSessionExpired: widget.onSessionExpired,
           onBookmarkChanged: widget.onBookmarkChanged,
@@ -220,13 +274,412 @@ class _NotificationListHostState extends State<_NotificationListHost> {
     );
   }
 
-  IconData _iconFor(String kind) {
-    return switch (kind) {
-      '回复' => Icons.reply,
-      '赞' => Icons.favorite_border,
-      '提及' => Icons.alternate_email,
-      '徽章' => Icons.workspace_premium_outlined,
-      _ => Icons.notifications_none,
-    };
+  Future<void> _openUserProfile(String username) async {
+    final trimmed = username.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    if (!widget.repository.isOnline) {
+      await widget.onLoginRequired?.call();
+      return;
+    }
+    await Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => UserProfilePage(
+          repository: widget.repository,
+          username: trimmed,
+        ),
+      ),
+    );
   }
+}
+
+class _NotificationGroup {
+  const _NotificationGroup(this.items);
+
+  final List<ForumNotification> items;
+
+  ForumNotification get latest => items.first;
+  int get count => items.length;
+  bool get isLike => latest.kind == '赞';
+
+  String get title {
+    if (isLike) {
+      final names = _actorNames();
+      if (count <= 1) {
+        final name = names.isEmpty ? '有人' : names.first;
+        return '$name 赞了你的内容';
+      }
+      if (names.length >= 2) {
+        return '${names[0]}、${names[1]} 等 $count 人赞了你的内容';
+      }
+      final name = names.isEmpty ? '多人' : names.first;
+      return '$name 等 $count 人赞了你的内容';
+    }
+    final topicTitle =
+        latest.topicTitle.isNotEmpty ? latest.topicTitle : latest.title;
+    return topicTitle;
+  }
+
+  String get subtitle {
+    final text = latest.message.isEmpty ? latest.kind : latest.message;
+    if (isLike || count <= 1) {
+      return text;
+    }
+    final actor = _actorName(latest);
+    return actor.isEmpty ? text : '$actor：$text';
+  }
+
+  List<String> _actorNames() {
+    final seen = <String>{};
+    final names = <String>[];
+    for (final item in items) {
+      final name = _actorName(item);
+      if (name.isNotEmpty && seen.add(name)) {
+        names.add(name);
+      }
+    }
+    return names;
+  }
+
+  static String _actorName(ForumNotification item) {
+    if (item.actorUsername.isNotEmpty) {
+      return item.actorUsername;
+    }
+    if (item.kind == '赞' && item.title.isNotEmpty) {
+      return item.title;
+    }
+    return '';
+  }
+}
+
+class _NotificationGroupTile extends StatelessWidget {
+  const _NotificationGroupTile({
+    required this.group,
+    required this.onOpenLatest,
+    required this.onOpenUser,
+    required this.onShowDetails,
+  });
+
+  final _NotificationGroup group;
+  final VoidCallback onOpenLatest;
+  final ValueChanged<String> onOpenUser;
+  final VoidCallback? onShowDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final latest = group.latest;
+    return ListTile(
+      leading: _NotificationLeading(
+        group: group,
+        onOpenUser: group.count == 1 ? onOpenUser : null,
+      ),
+      title: Text(
+        group.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: colors.textPrimary,
+          fontWeight: latest.read ? FontWeight.w500 : FontWeight.w800,
+        ),
+      ),
+      subtitle: Text(
+        group.subtitle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: colors.textSecondary),
+      ),
+      trailing: _NotificationTrailing(group: group),
+      onTap: latest.canOpenTopic ? onOpenLatest : null,
+      onLongPress: onShowDetails,
+    );
+  }
+}
+
+class _NotificationLeading extends StatelessWidget {
+  const _NotificationLeading({
+    required this.group,
+    required this.onOpenUser,
+  });
+
+  final _NotificationGroup group;
+  final ValueChanged<String>? onOpenUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatars = group.items
+        .where((item) => item.actorAvatarTemplate.isNotEmpty)
+        .toList(growable: false);
+    final content = group.count > 1 && avatars.length > 1
+        ? _AvatarStack(items: avatars.take(3).toList(growable: false))
+        : _NotificationAvatar(item: group.latest, size: 42);
+    final username = _NotificationGroup._actorName(group.latest);
+    if (onOpenUser == null || username.isEmpty) {
+      return content;
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onOpenUser!(username),
+      child: content,
+    );
+  }
+}
+
+class _AvatarStack extends StatelessWidget {
+  const _AvatarStack({required this.items});
+
+  final List<ForumNotification> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return SizedBox(
+      width: 48,
+      height: 42,
+      child: Stack(
+        children: [
+          for (var index = 0; index < items.length; index++)
+            Positioned(
+              left: index * 12,
+              top: index.isEven ? 0 : 10,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.background, width: 2),
+                ),
+                child: _NotificationAvatar(item: items[index], size: 30),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationAvatar extends StatelessWidget {
+  const _NotificationAvatar({
+    required this.item,
+    required this.size,
+  });
+
+  final ForumNotification item;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarUrl = item.actorAvatarUrl(size: (size * 2).round());
+    if (avatarUrl.isNotEmpty) {
+      return ForumAvatar(url: avatarUrl, size: size);
+    }
+    return SizedBox.square(
+      dimension: size,
+      child: Icon(_iconForNotification(item.kind)),
+    );
+  }
+}
+
+class _NotificationTrailing extends StatelessWidget {
+  const _NotificationTrailing({required this.group});
+
+  final _NotificationGroup group;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final time = TimeFormat.compact(group.latest.createdAt);
+    if (group.count <= 1) {
+      return Text(
+        time,
+        style: TextStyle(color: colors.textMuted, fontSize: 12),
+      );
+    }
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          time,
+          style: TextStyle(color: colors.textMuted, fontSize: 12),
+        ),
+        const SizedBox(height: 5),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surfaceMuted,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            child: Text(
+              '${group.count} 条',
+              style: TextStyle(color: colors.textSecondary, fontSize: 11.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NotificationGroupSheet extends StatelessWidget {
+  const _NotificationGroupSheet({
+    required this.group,
+    required this.onOpenItem,
+    required this.onOpenUser,
+  });
+
+  final _NotificationGroup group;
+  final ValueChanged<ForumNotification> onOpenItem;
+  final ValueChanged<String> onOpenUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.72;
+    return SafeArea(
+      top: false,
+      child: Container(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      group.isLike ? '点赞者' : group.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: '关闭',
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: group.items.length,
+                separatorBuilder: (context, index) =>
+                    Divider(height: 1, color: colors.border),
+                itemBuilder: (context, index) {
+                  final item = group.items[index];
+                  return group.isLike
+                      ? _LikeDetailTile(item: item, onOpenUser: onOpenUser)
+                      : _NotificationDetailTile(
+                          item: item,
+                          onOpenItem: onOpenItem,
+                          onOpenUser: onOpenUser,
+                        );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LikeDetailTile extends StatelessWidget {
+  const _LikeDetailTile({
+    required this.item,
+    required this.onOpenUser,
+  });
+
+  final ForumNotification item;
+  final ValueChanged<String> onOpenUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final username = _NotificationGroup._actorName(item);
+    return ListTile(
+      leading: _NotificationAvatar(item: item, size: 38),
+      title: Text(
+        username.isEmpty ? '未知用户' : username,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: colors.textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: Text(
+        TimeFormat.compact(item.createdAt),
+        style: TextStyle(color: colors.textMuted, fontSize: 12),
+      ),
+      onTap: username.isEmpty ? null : () => onOpenUser(username),
+    );
+  }
+}
+
+class _NotificationDetailTile extends StatelessWidget {
+  const _NotificationDetailTile({
+    required this.item,
+    required this.onOpenItem,
+    required this.onOpenUser,
+  });
+
+  final ForumNotification item;
+  final ValueChanged<ForumNotification> onOpenItem;
+  final ValueChanged<String> onOpenUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final username = _NotificationGroup._actorName(item);
+    return ListTile(
+      leading: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: username.isEmpty ? null : () => onOpenUser(username),
+        child: _NotificationAvatar(item: item, size: 38),
+      ),
+      title: Text(
+        username.isEmpty ? item.kind : '$username · ${item.kind}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: colors.textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        item.message,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: colors.textSecondary),
+      ),
+      trailing: Text(
+        TimeFormat.compact(item.createdAt),
+        style: TextStyle(color: colors.textMuted, fontSize: 12),
+      ),
+      onTap: item.canOpenTopic ? () => onOpenItem(item) : null,
+    );
+  }
+}
+
+IconData _iconForNotification(String kind) {
+  return switch (kind) {
+    '回复' => Icons.reply,
+    '赞' => Icons.favorite_border,
+    '提及' => Icons.alternate_email,
+    '引用' => Icons.format_quote,
+    _ => Icons.notifications_none,
+  };
 }
