@@ -11,6 +11,7 @@ class ForumCookedContent extends StatelessWidget {
     required this.cooked,
     required this.textColor,
     required this.onOpenImage,
+    this.onOpenUser,
     this.onOpenInternalTopic,
     this.textSize = 16,
     this.textHeight = 1.46,
@@ -25,6 +26,7 @@ class ForumCookedContent extends StatelessWidget {
   final String cooked;
   final Color textColor;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
+  final ValueChanged<String>? onOpenUser;
   final ValueChanged<CookedLinkPreview>? onOpenInternalTopic;
   final double textSize;
   final double textHeight;
@@ -116,6 +118,11 @@ class ForumCookedContent extends StatelessWidget {
     BuildContext context,
     CookedLinkPreview preview,
   ) async {
+    final username = preview.userUsername;
+    if (preview.isInternalUser && username != null && onOpenUser != null) {
+      onOpenUser!(username);
+      return;
+    }
     if (preview.isInternalTopic && onOpenInternalTopic != null) {
       onOpenInternalTopic!(preview);
       return;
@@ -242,6 +249,25 @@ class _InlineLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
+    if (preview.isInternalUser) {
+      return InkWell(
+        borderRadius: BorderRadius.circular(5),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(
+            preview.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: colors.accent,
+              fontSize: 14.5,
+              height: 1.32,
+            ),
+          ),
+        ),
+      );
+    }
     return InkWell(
       borderRadius: BorderRadius.circular(6),
       onTap: onTap,

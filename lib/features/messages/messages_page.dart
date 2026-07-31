@@ -721,6 +721,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
           child: _MessageBubble(
             post: post,
             onOpenImage: _openImagePreview,
+            onOpenUser: _openUserProfile,
             onOpenInternalTopic: _openInternalTopic,
           ),
         );
@@ -971,6 +972,21 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     );
   }
 
+  void _openUserProfile(String username) {
+    final trimmed = username.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => UserProfilePage(
+          repository: widget.repository,
+          username: trimmed,
+        ),
+      ),
+    );
+  }
+
   void _openCounterpartProfile() {
     final username = widget.counterpartUsername;
     if (username == null || username.isEmpty) {
@@ -1145,11 +1161,13 @@ class _MessageBubble extends StatelessWidget {
   const _MessageBubble({
     required this.post,
     required this.onOpenImage,
+    required this.onOpenUser,
     required this.onOpenInternalTopic,
   });
 
   final Post post;
   final void Function(List<String> urls, int initialIndex) onOpenImage;
+  final ValueChanged<String> onOpenUser;
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
 
   @override
@@ -1200,6 +1218,7 @@ class _MessageBubble extends StatelessWidget {
                   imageErrorHeight: 130,
                   imageFit: BoxFit.contain,
                   compactCards: true,
+                  onOpenUser: onOpenUser,
                   onOpenImage: onOpenImage,
                   onOpenInternalTopic: onOpenInternalTopic,
                 ),
