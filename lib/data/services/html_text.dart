@@ -37,10 +37,12 @@ class CookedSegment {
   const CookedSegment.text(this.value)
       : kind = CookedSegmentKind.text,
         link = null,
+        imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
   const CookedSegment.image(
     this.value, {
+    this.imageFullUrl,
     this.imageWidth = 0,
     this.imageHeight = 0,
   })  : kind = CookedSegmentKind.image,
@@ -48,24 +50,30 @@ class CookedSegment {
   const CookedSegment.link(this.link)
       : kind = CookedSegmentKind.link,
         value = '',
+        imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
   const CookedSegment.onebox(this.link)
       : kind = CookedSegmentKind.onebox,
         value = '',
+        imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
   const CookedSegment.quote(this.link)
       : kind = CookedSegmentKind.quote,
         value = '',
+        imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
 
   final String value;
   final CookedSegmentKind kind;
   final CookedLinkPreview? link;
+  final String? imageFullUrl;
   final int imageWidth;
   final int imageHeight;
+
+  String get resolvedImageFullUrl => imageFullUrl ?? value;
 
   bool get isImage => kind == CookedSegmentKind.image;
   bool get isText => kind == CookedSegmentKind.text;
@@ -202,6 +210,30 @@ class HtmlText {
       addText('\n');
     }
 
+    void addImage(_HtmlImage image, {String? fullUrl}) {
+      if (image.shouldRenderAsImage) {
+        segments.add(
+          CookedSegment.image(
+            _absoluteUrl(image.src),
+            imageFullUrl: _absoluteUrl(fullUrl ?? image.src),
+            imageWidth: image.width,
+            imageHeight: image.height,
+          ),
+        );
+      } else if (image.inlineText.isNotEmpty) {
+        addText(image.inlineText);
+      }
+    }
+
+    void appendImageAnchor(dom.Element anchor, String fullUrl) {
+      for (final imageElement in anchor.querySelectorAll('img')) {
+        addImage(
+          _HtmlImage.fromElement(imageElement),
+          fullUrl: fullUrl,
+        );
+      }
+    }
+
     void appendNode(dom.Node node) {
       if (node is dom.Text) {
         addText(node.text);
@@ -233,24 +265,18 @@ class HtmlText {
         return;
       }
       if (tag == 'img') {
-        final image = _HtmlImage.fromElement(node);
-        if (image.shouldRenderAsImage) {
-          segments.add(
-            CookedSegment.image(
-              _absoluteUrl(image.src),
-              imageWidth: image.width,
-              imageHeight: image.height,
-            ),
-          );
-        } else if (image.inlineText.isNotEmpty) {
-          addText(image.inlineText);
-        }
+        addImage(_HtmlImage.fromElement(node));
         return;
       }
       if (tag == 'a') {
         if (_containsRenderableImage(node)) {
-          for (final child in node.nodes) {
-            appendNode(child);
+          final fullUrl = _fullImageSource(node);
+          if (fullUrl != null) {
+            appendImageAnchor(node, fullUrl);
+          } else {
+            for (final child in node.nodes) {
+              appendNode(child);
+            }
           }
           return;
         }
@@ -403,6 +429,29 @@ class HtmlText {
         .querySelectorAll('img')
         .map(_HtmlImage.fromElement)
         .any((image) => image.shouldRenderAsImage);
+  }
+
+  static String? _fullImageSource(dom.Element anchor) {
+    if (!_hasClass(anchor, 'lightbox')) {
+      return null;
+    }
+    final href = anchor.attributes['href']?.trim() ?? '';
+    if (_isForumUploadImageUrl(href)) {
+      return href;
+    }
+    final downloadHref = anchor.attributes['data-download-href']?.trim() ?? '';
+    if (_isForumUploadImageUrl(downloadHref)) {
+      return downloadHref;
+    }
+    return null;
+  }
+
+  static bool _isForumUploadImageUrl(String value) {
+    final uri = _uriForLink(value);
+    if (uri == null || !ForumUrlResolver.isKnownForumHost(uri.host)) {
+      return false;
+    }
+    return uri.pathSegments.contains('uploads');
   }
 
   static int? internalTopicIdFromUrl(String value) {

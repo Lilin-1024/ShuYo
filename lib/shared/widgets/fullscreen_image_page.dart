@@ -54,7 +54,7 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
                 : GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () => Navigator.of(context).pop(),
-                    onLongPress: () => _showImageActions(urls[_index]),
+                    onLongPress: _showImageActions,
                     child: PageView.builder(
                       controller: _pageController,
                       physics: _currentPageZoomed
@@ -132,10 +132,14 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
     );
   }
 
-  Future<void> _showImageActions(String url) async {
+  Future<void> _showImageActions() async {
+    final urls = widget.urls;
+    if (urls.isEmpty) {
+      return;
+    }
     const sheetBackground = Color(0xFF111111);
     const actionForeground = Color(0xFFF2F2F2);
-    final shouldSave = await showModalBottomSheet<bool>(
+    final action = await showModalBottomSheet<_ImageAction>(
       context: context,
       backgroundColor: sheetBackground,
       showDragHandle: false,
@@ -160,17 +164,31 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
                   iconColor: actionForeground,
                   textColor: actionForeground,
                   leading: const Icon(Icons.download_outlined),
-                  title: const Text('保存图片'),
-                  onTap: () => Navigator.of(context).pop(true),
+                  title: Text(urls.length > 1 ? '保存当前图片' : '保存图片'),
+                  onTap: () {
+                    Navigator.of(context).pop(_ImageAction.saveCurrent);
+                  },
                 ),
+                if (urls.length > 1)
+                  ListTile(
+                    iconColor: actionForeground,
+                    textColor: actionForeground,
+                    leading: const Icon(Icons.collections_outlined),
+                    title: Text('保存全部图片 (${urls.length})'),
+                    onTap: () {
+                      Navigator.of(context).pop(_ImageAction.saveAll);
+                    },
+                  ),
               ],
             ),
           ),
         );
       },
     );
-    if (shouldSave == true) {
-      await _saveImage(url);
+    if (action == _ImageAction.saveCurrent) {
+      await _saveImage(urls[_index]);
+    } else if (action == _ImageAction.saveAll) {
+      await _saveAllImages(urls);
     }
   }
 
@@ -195,6 +213,31 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text('保存失败：$error')));
     }
+  }
+
+  Future<void> _saveAllImages(List<String> urls) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text('正在保存 ${urls.length} 张图片...')));
+    var saved = 0;
+    for (final url in urls) {
+      try {
+        await ImageSaver.saveNetworkImage(url);
+        saved++;
+      } on Object {
+        // 保存多图时不中断后续图片，最终给出汇总结果。
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    final failed = urls.length - saved;
+    final message =
+        failed == 0 ? '已保存 $saved 张图片' : '已保存 $saved 张图片，$failed 张保存失败';
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _previousPage() => _animateToPage(_index - 1);
@@ -222,6 +265,76 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
   }
 }
 
+enum _ImageAction { saveCurrent, saveAll }
+
+class _ImageLoadingProgress extends StatelessWidget {
+  const _ImageLoadingProgress({required this.progress});
+
+  final ImageChunkEvent progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final expected = progress.expectedTotalBytes;
+    final value = expected == null || expected <= 0
+        ? null
+        : progress.cumulativeBytesLoaded / expected;
+    return Center(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.38),
+          shape: BoxShape.circle,
+        ),
+        child: SizedBox.square(
+          dimension: 46,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: CircularProgressIndicator(
+              value: value?.clamp(0, 1).toDouble(),
+              strokeWidth: 3,
+              color: Colors.white,
+              backgroundColor: Colors.white24,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImageLoadError extends StatelessWidget {
+  const _ImageLoadError({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.broken_image_outlined,
+            color: Color(0xFFBDBDBD),
+            size: 36,
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            '图片加载失败',
+            style: TextStyle(color: Color(0xFFBDBDBD)),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('重试'),
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ZoomableNetworkImage extends StatefulWidget {
   const _ZoomableNetworkImage({
     super.key,
@@ -243,6 +356,7 @@ class _ZoomableNetworkImage extends StatefulWidget {
 class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
   static const _pageSwipeThreshold = 72.0;
   static const _edgeTolerance = 2.0;
+  static const _longImageViewportMultiplier = 1.22;
 
   final _controller = TransformationController();
   late final ImageStreamListener _imageListener;
@@ -250,7 +364,9 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
   Map<String, String>? _headers;
   Size? _imageSize;
   Size? _viewportSize;
+  int _reloadToken = 0;
   bool _headersLoaded = false;
+  bool _imageLoadFailed = false;
   bool _zoomed = false;
   bool _clamping = false;
   bool _pageSwipeTriggered = false;
@@ -264,7 +380,16 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
         info.image.width.toDouble(),
         info.image.height.toDouble(),
       );
+      _imageLoadFailed = false;
+      _setZoomed(_shouldPanAtRest);
       _clampTransform();
+    }, onError: (error, stackTrace) {
+      _imageSize = null;
+      _imageLoadFailed = true;
+      _setZoomed(false);
+      if (mounted) {
+        setState(() {});
+      }
     });
     _controller.addListener(_handleTransformChanged);
     _loadHeaders();
@@ -285,6 +410,7 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
       _imageSize = null;
       _headers = null;
       _headersLoaded = false;
+      _imageLoadFailed = false;
       _controller.value = Matrix4.identity();
       _setZoomed(false);
       _loadHeaders();
@@ -310,11 +436,17 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
             child: CircularProgressIndicator(strokeWidth: 3),
           );
         }
+        if (_imageLoadFailed) {
+          return _ImageLoadError(onRetry: _retry);
+        }
+        final longImageSize = _longImageDisplaySize;
+        final isLongImage = longImageSize != null;
         return InteractiveViewer(
           transformationController: _controller,
+          constrained: !isLongImage,
           minScale: 1,
           maxScale: 5,
-          panEnabled: _zoomed,
+          panEnabled: _zoomed || isLongImage,
           scaleEnabled: true,
           boundaryMargin: EdgeInsets.zero,
           onInteractionStart: (_) {
@@ -327,22 +459,56 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
             _pageSwipeTriggered = false;
             _resetIfNeeded();
           },
-          child: SizedBox.expand(
-            child: Center(
-              child: Image.network(
-                widget.url,
-                fit: BoxFit.contain,
-                headers: _headers,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Text(
-                    '图片加载失败',
-                    style: TextStyle(color: Color(0xFFBDBDBD)),
-                  );
-                },
-              ),
-            ),
-          ),
+          child: isLongImage
+              ? SizedBox(
+                  width: longImageSize.width,
+                  height: longImageSize.height,
+                  child: _networkImage(
+                    width: longImageSize.width,
+                    height: longImageSize.height,
+                    fit: BoxFit.contain,
+                  ),
+                )
+              : SizedBox.expand(
+                  child: Center(
+                    child: _networkImage(
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
         );
+      },
+    );
+  }
+
+  Widget _networkImage({
+    required double width,
+    required double height,
+    required BoxFit fit,
+  }) {
+    return Image.network(
+      widget.url,
+      key: ValueKey('${widget.url}:$_reloadToken'),
+      width: width,
+      height: height,
+      fit: fit,
+      headers: _headers,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) {
+          return child;
+        }
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            child,
+            _ImageLoadingProgress(progress: loadingProgress),
+          ],
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return _ImageLoadError(onRetry: _retry);
       },
     );
   }
@@ -363,7 +529,12 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
   }
 
   Future<void> _loadHeaders() async {
-    final headers = await ForumImageHeaders.forUrl(widget.url);
+    Map<String, String>? headers;
+    try {
+      headers = await ForumImageHeaders.forUrl(widget.url);
+    } on Object {
+      headers = null;
+    }
     if (!mounted) {
       return;
     }
@@ -372,6 +543,26 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
       _headersLoaded = true;
     });
     _resolveImage();
+  }
+
+  Future<void> _retry() async {
+    final provider = NetworkImage(widget.url, headers: _headers);
+    await provider.evict();
+    if (!mounted) {
+      return;
+    }
+    _imageStream?.removeListener(_imageListener);
+    _imageStream = null;
+    _imageSize = null;
+    _headers = null;
+    _headersLoaded = false;
+    _imageLoadFailed = false;
+    _zoomed = false;
+    _reloadToken++;
+    _controller.value = Matrix4.identity();
+    widget.onZoomChanged(false);
+    setState(() {});
+    await _loadHeaders();
   }
 
   void _handleInteractionUpdate(ScaleUpdateDetails details) {
@@ -398,7 +589,10 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     }
     final scale = _controller.value.getMaxScaleOnAxis();
     if (scale <= 1.01) {
-      _setZoomed(false);
+      _setZoomed(_shouldPanAtRest);
+      if (_shouldPanAtRest) {
+        _clampTransform();
+      }
       return;
     }
     _setZoomed(true);
@@ -407,6 +601,11 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
 
   void _resetIfNeeded() {
     if (_controller.value.getMaxScaleOnAxis() <= 1.01) {
+      if (_shouldPanAtRest) {
+        _clampTransform();
+        _setZoomed(true);
+        return;
+      }
       _controller.value = Matrix4.identity();
       _setZoomed(false);
       return;
@@ -456,10 +655,11 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     if (viewport == null || image == null) {
       return null;
     }
-    final fitted = _fittedImageSize(viewport, image);
+    final fitted = _baseDisplaySize(viewport, image);
     final viewportExtent = horizontal ? viewport.width : viewport.height;
     final fittedExtent = horizontal ? fitted.width : fitted.height;
-    final baseOffset = (viewportExtent - fittedExtent) / 2;
+    final baseOffset =
+        fittedExtent > viewportExtent ? 0 : (viewportExtent - fittedExtent) / 2;
     final scale = _controller.value.getMaxScaleOnAxis();
     final scaledExtent = fittedExtent * scale;
     if (scaledExtent <= viewportExtent) {
@@ -469,6 +669,33 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     final min = viewportExtent - (baseOffset + fittedExtent) * scale;
     final max = -baseOffset * scale;
     return _TranslationBounds(min, max);
+  }
+
+  bool get _shouldPanAtRest => _longImageDisplaySize != null;
+
+  Size? get _longImageDisplaySize {
+    final viewport = _viewportSize;
+    final image = _imageSize;
+    if (viewport == null ||
+        image == null ||
+        viewport.width <= 0 ||
+        image.width <= 0 ||
+        image.height <= 0) {
+      return null;
+    }
+    final height = viewport.width * image.height / image.width;
+    if (height <= viewport.height * _longImageViewportMultiplier) {
+      return null;
+    }
+    return Size(viewport.width, height);
+  }
+
+  Size _baseDisplaySize(Size viewport, Size image) {
+    final longImageSize = _longImageDisplaySize;
+    if (longImageSize != null) {
+      return longImageSize;
+    }
+    return _fittedImageSize(viewport, image);
   }
 
   Size _fittedImageSize(Size viewport, Size image) {

@@ -177,6 +177,7 @@ void main() {
     expect(segments.where((segment) => segment.isLink), isEmpty);
     final image = segments.singleWhere((segment) => segment.isImage);
     expect(image.value, contains('photo_2_500x500.jpeg'));
+    expect(image.resolvedImageFullUrl, contains('original.jpeg'));
     expect(image.imageWidth, 500);
     expect(image.imageHeight, 500);
   });
