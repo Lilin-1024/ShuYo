@@ -11,6 +11,8 @@ import '../../data/services/forum_draft_store.dart';
 import '../../data/services/forum_title_rules.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../shared/theme/lehu_theme.dart';
+import '../../shared/navigation/lehu_route.dart';
+import '../../shared/widgets/advanced_markdown_editor.dart';
 import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
 
@@ -59,6 +61,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
   bool _lastTextFocusWasTitle = false;
   bool _draftReady = false;
   bool _restoringDraft = false;
+  _TopicComposerMode _mode = _TopicComposerMode.basic;
 
   String get _draftKey {
     return ForumDraftStore.newTopicKey(widget.repository.profile.username);
@@ -97,8 +100,16 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('发帖'),
+        title: _ComposerModeMenu(
+          mode: _mode,
+          onChanged: _setMode,
+        ),
         actions: [
+          if (_mode == _TopicComposerMode.advanced)
+            TextButton(
+              onPressed: _submitting ? null : _showPreview,
+              child: const Text('预览'),
+            ),
           TextButton(
             onPressed: _submitting || _uploading ? null : _submit,
             child: _submitting
@@ -111,57 +122,114 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: [
-          TextField(
-            controller: _titleController,
-            focusNode: _titleFocusNode,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText: '标题',
-              border: const OutlineInputBorder(),
-              errorText: _titleEmojiRejected
-                  ? ForumTitleRules.disallowedEmojiMessage
-                  : null,
-            ),
+      body: _mode == _TopicComposerMode.basic
+          ? _basicBody(context)
+          : _advancedBody(context),
+    );
+  }
+
+  Widget _basicBody(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        TextField(
+          controller: _titleController,
+          focusNode: _titleFocusNode,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: '标题',
+            border: const OutlineInputBorder(),
+            errorText: _titleEmojiRejected
+                ? ForumTitleRules.disallowedEmojiMessage
+                : null,
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<int>(
-            initialValue: _categoryId,
-            decoration: const InputDecoration(
-              labelText: '分区',
-              border: OutlineInputBorder(),
-            ),
-            items: [
-              for (final category in widget.categories)
-                DropdownMenuItem(
-                  value: category.id,
-                  child: Text(category.name),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<int>(
+          initialValue: _categoryId,
+          decoration: const InputDecoration(
+            labelText: '分区',
+            border: OutlineInputBorder(),
+          ),
+          items: [
+            for (final category in widget.categories)
+              DropdownMenuItem(
+                value: category.id,
+                child: Text(category.name),
+              ),
+          ],
+          onChanged: (value) {
+            setState(() => _categoryId = value);
+            _scheduleDraftSave();
+          },
+        ),
+        const SizedBox(height: 12),
+        _rawComposer(context),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: _showEmojiPanel
+              ? InlineEmojiPanel(
+                  key: const ValueKey('emoji-panel'),
+                  controller: _rawController,
+                )
+              : const SizedBox.shrink(
+                  key: ValueKey('emoji-empty'),
                 ),
-            ],
-            onChanged: (value) {
-              setState(() => _categoryId = value);
-              _scheduleDraftSave();
-            },
+        ),
+      ],
+    );
+  }
+
+  Widget _advancedBody(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        TextField(
+          controller: _titleController,
+          focusNode: _titleFocusNode,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: '标题',
+            border: const OutlineInputBorder(),
+            errorText: _titleEmojiRejected
+                ? ForumTitleRules.disallowedEmojiMessage
+                : null,
           ),
-          const SizedBox(height: 12),
-          _rawComposer(context),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: _showEmojiPanel
-                ? InlineEmojiPanel(
-                    key: const ValueKey('emoji-panel'),
-                    controller: _rawController,
-                  )
-                : const SizedBox.shrink(
-                    key: ValueKey('emoji-empty'),
-                  ),
+        ),
+        const SizedBox(height: 12),
+        AdvancedMarkdownEditor(
+          controller: _rawController,
+          focusNode: _rawFocusNode,
+          enabled: !_submitting,
+          uploading: _uploading,
+          onUploadImage: _pickAndUpload,
+          onPreview: _showPreview,
+          showPreviewInToolbar: false,
+          minLines: 13,
+          maxLines: 28,
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<int>(
+          initialValue: _categoryId,
+          decoration: const InputDecoration(
+            labelText: '分区',
+            border: OutlineInputBorder(),
           ),
-        ],
-      ),
+          items: [
+            for (final category in widget.categories)
+              DropdownMenuItem(
+                value: category.id,
+                child: Text(category.name),
+              ),
+          ],
+          onChanged: (value) {
+            setState(() => _categoryId = value);
+            _scheduleDraftSave();
+          },
+        ),
+      ],
     );
   }
 
@@ -294,6 +362,26 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     }
   }
 
+  void _setMode(_TopicComposerMode mode) {
+    if (mode == _mode) {
+      return;
+    }
+    setState(() {
+      if (_mode == _TopicComposerMode.basic &&
+          mode == _TopicComposerMode.advanced) {
+        _discardDetachedImages();
+      }
+      _mode = mode;
+      _showEmojiPanel = false;
+    });
+    _scheduleDraftSave();
+  }
+
+  void _discardDetachedImages() {
+    final raw = _rawController.text;
+    _images.removeWhere((image) => !isComposerImageReferenced(raw, image));
+  }
+
   void _toggleEmojiPanel() {
     if (_showEmojiPanel) {
       setState(() => _showEmojiPanel = false);
@@ -325,6 +413,9 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
       }
       final uploaded = await widget.repository.uploadImage(picked);
       _images.add(uploaded);
+      if (_mode == _TopicComposerMode.advanced) {
+        MarkdownEditing.insertImageMarkdown(_rawController, uploaded);
+      }
       if (mounted) {
         setState(() {});
         _scheduleDraftSave();
@@ -345,7 +436,8 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
       return;
     }
     final title = _titleController.text.trim();
-    final raw = composeRawWithImages(_rawController.text, _images);
+    final raw = _composeRawForMode();
+    final images = _imagesForMode();
     final categoryId = _categoryId;
     if (ForumTitleRules.containsDisallowedEmoji(title)) {
       _titleController.value = ForumTitleRules.sanitizeEditingValue(
@@ -366,6 +458,10 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
       _showSnack('请选择分区');
       return;
     }
+    final confirmed = await _confirmSubmit();
+    if (confirmed != true || !mounted) {
+      return;
+    }
 
     setState(() => _submitting = true);
     try {
@@ -375,7 +471,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
           raw: raw,
           categoryId: categoryId,
           draftKey: 'new_topic_${DateTime.now().millisecondsSinceEpoch}',
-          images: _images,
+          images: images,
           composerOpenDurationMs:
               DateTime.now().difference(_openedAt).inMilliseconds,
         ),
@@ -404,6 +500,68 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
         setState(() => _submitting = false);
       }
     }
+  }
+
+  Future<bool?> _confirmSubmit() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('确认发布帖子'),
+          content: const Text('是否确认发布？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('发布'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showPreview() async {
+    final categoryName = _selectedCategoryName();
+    await Navigator.of(context).push<void>(
+      lehuRoute(
+        builder: (context) => MarkdownPreviewPage(
+          appBarTitle: '预览主题',
+          heading: _titleController.text.trim().isEmpty
+              ? '未填写标题'
+              : _titleController.text.trim(),
+          meta: categoryName == null ? '新主题' : '新主题 / $categoryName',
+          raw: _composeRawForMode(),
+          images: _imagesForMode(),
+        ),
+      ),
+    );
+  }
+
+  String _composeRawForMode() {
+    if (_mode == _TopicComposerMode.advanced) {
+      return _rawController.text.trim();
+    }
+    return composeRawWithImages(_rawController.text, _images);
+  }
+
+  List<UploadedImage> _imagesForMode() {
+    if (_mode == _TopicComposerMode.advanced) {
+      return referencedComposerImages(_rawController.text, _images);
+    }
+    return List<UploadedImage>.of(_images);
+  }
+
+  String? _selectedCategoryName() {
+    for (final category in widget.categories) {
+      if (category.id == _categoryId) {
+        return category.name;
+      }
+    }
+    return null;
   }
 
   void _showSnack(String message) {
@@ -497,6 +655,55 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
         raw: _rawController.text,
         categoryId: _categoryId,
         images: List<UploadedImage>.of(_images),
+      ),
+    );
+  }
+}
+
+enum _TopicComposerMode {
+  basic('基础'),
+  advanced('进阶');
+
+  const _TopicComposerMode(this.label);
+
+  final String label;
+}
+
+class _ComposerModeMenu extends StatelessWidget {
+  const _ComposerModeMenu({
+    required this.mode,
+    required this.onChanged,
+  });
+
+  final _TopicComposerMode mode;
+  final ValueChanged<_TopicComposerMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_TopicComposerMode>(
+      tooltip: '选择编辑模式',
+      onSelected: onChanged,
+      itemBuilder: (context) {
+        return [
+          for (final item in _TopicComposerMode.values)
+            PopupMenuItem(
+              value: item,
+              child: Row(
+                children: [
+                  Expanded(child: Text(item.label)),
+                  if (item == mode) const Icon(Icons.check, size: 18),
+                ],
+              ),
+            ),
+        ];
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(mode.label),
+          const SizedBox(width: 2),
+          const Icon(Icons.arrow_drop_down),
+        ],
       ),
     );
   }

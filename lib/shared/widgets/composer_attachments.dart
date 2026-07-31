@@ -7,14 +7,40 @@ import 'forum_network_image.dart';
 
 String composeRawWithImages(String text, List<UploadedImage> images) {
   final trimmed = text.trim();
-  if (images.isEmpty) {
+  final missingImages = images.where((image) {
+    return !isComposerImageReferenced(trimmed, image);
+  }).toList(growable: false);
+  if (missingImages.isEmpty) {
     return trimmed;
   }
-  final imageMarkdown = images.map((image) => image.markdown).join('\n');
+  final imageMarkdown = missingImages.map((image) => image.markdown).join('\n');
   if (trimmed.isEmpty) {
     return imageMarkdown;
   }
   return '$trimmed\n\n$imageMarkdown';
+}
+
+bool isComposerImageReferenced(String text, UploadedImage image) {
+  for (final marker in [
+    image.markdown,
+    image.shortUrl,
+    image.url,
+    ForumUrlResolver.resolve(image.url),
+  ]) {
+    if (marker.isNotEmpty && text.contains(marker)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+List<UploadedImage> referencedComposerImages(
+  String text,
+  List<UploadedImage> images,
+) {
+  return images
+      .where((image) => isComposerImageReferenced(text, image))
+      .toList(growable: false);
 }
 
 class ComposerAttachmentPreviewRow extends StatelessWidget {

@@ -27,6 +27,8 @@ import 'package:shuyo/data/services/payload_factory.dart';
 import 'package:shuyo/data/services/sha1_hash.dart';
 import 'package:shuyo/features/topic/threaded_posts.dart';
 import 'package:shuyo/shared/time_format.dart';
+import 'package:shuyo/shared/widgets/advanced_markdown_editor.dart';
+import 'package:shuyo/shared/widgets/composer_attachments.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -341,6 +343,53 @@ void main() {
     expect(messageFields['archetype'], 'private_message');
     expect(messageFields['target_recipients'], 'Lilin');
     expect(messageFields['category'], '');
+  });
+
+  test('composes advanced markdown without duplicating inserted images', () {
+    const image = UploadedImage(
+      url: 'https://bbs.shu.edu.cn/uploads/default/original/1X/a.jpeg',
+      shortUrl: 'upload://a.jpeg',
+      filename: 'a.jpeg',
+      width: 1460,
+      height: 1002,
+      thumbnailWidth: 690,
+      thumbnailHeight: 473,
+    );
+    final raw = '正文\n${image.markdown}';
+
+    expect(composeRawWithImages(raw, const [image]), raw);
+    expect(composeRawWithImages('正文', const [image]), contains(image.markdown));
+  });
+
+  test('builds local advanced markdown preview cooked html', () {
+    const image = UploadedImage(
+      url: 'https://bbs.shu.edu.cn/uploads/default/original/1X/a.jpeg',
+      shortUrl: 'upload://a.jpeg',
+      filename: 'a.jpeg',
+      width: 1460,
+      height: 1002,
+      thumbnailWidth: 690,
+      thumbnailHeight: 473,
+    );
+    final cooked = MarkdownEditing.previewCooked(
+      '# 标题\n**粗体**\n- A\n${image.markdown}',
+      const [image],
+    );
+    final segments = HtmlText.parseSegments(cooked);
+
+    expect(segments.first.textBlockKind, CookedTextBlockKind.heading);
+    expect(segments.any((segment) => segment.isImage), isTrue);
+    expect(
+      segments.any(
+        (segment) => segment.runs.any((run) => run.text == '粗体' && run.bold),
+      ),
+      isTrue,
+    );
+    expect(
+      segments.any(
+          (segment) => segment.textBlockKind == CookedTextBlockKind.listItem),
+      isTrue,
+    );
   });
 
   test('builds delete payload from post id and post number context', () {
