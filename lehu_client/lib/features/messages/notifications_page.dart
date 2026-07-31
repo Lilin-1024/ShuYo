@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/forum_notification.dart';
 import '../../data/models/topic.dart';
+import '../../data/models/topic_detail.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../shared/navigation/lehu_route.dart';
 import '../../shared/theme/lehu_theme.dart';
@@ -109,7 +110,12 @@ class _NotificationListHost extends StatefulWidget {
 }
 
 class _NotificationListHostState extends State<_NotificationListHost> {
+  static const _targetKindWarmupLimit = 12;
+
   late Future<List<ForumNotification>> _future;
+  final _targetKinds = <String, _NotificationTargetKind>{};
+  final _pendingTargetKindTopicIds = <int>{};
+  final _completedTargetKindTopicIds = <int>{};
 
   @override
   void initState() {
@@ -146,6 +152,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
             message: '这里还没有新的内容',
           );
         }
+        _warmTargetKindCache(items);
         final groups = _groupNotifications(items);
         return RefreshIndicator(
           onRefresh: () async => _refresh(force: true),
@@ -179,7 +186,10 @@ class _NotificationListHostState extends State<_NotificationListHost> {
     }
     final groups = buckets.values.map((items) {
       items.sort(_compareNotificationTime);
-      return _NotificationGroup(List.unmodifiable(items));
+      return _NotificationGroup(
+        List.unmodifiable(items),
+        targetKinds: _targetKinds,
+      );
     }).toList();
     groups.sort((a, b) => _compareNotificationTime(a.latest, b.latest));
     return groups;
@@ -233,6 +243,9 @@ class _NotificationListHostState extends State<_NotificationListHost> {
   }
 
   Future<void> _refresh({bool force = false}) async {
+    if (force) {
+      _completedTargetKindTopicIds.clear();
+    }
     final future = widget.repository.fetchNotifications(
       widget.filter,
       forceRefresh: force,
@@ -241,6 +254,97 @@ class _NotificationListHostState extends State<_NotificationListHost> {
       _future = future;
     });
     await future;
+  }
+
+  void _warmTargetKindCache(List<ForumNotification> items) {
+    var changed = false;
+    final missingTopicIds = <int>{};
+    for (final item in items) {
+      if (!_needsDetailForTargetKind(item)) {
+        continue;
+      }
+      final topicId = item.topicId;
+      if (topicId == null || topicId <= 0) {
+        continue;
+      }
+      final detail = widget.repository.cachedTopicDetail(topicId);
+      if (detail != null) {
+        final cached = _cacheTargetKindFromDetail(item, detail);
+        changed = cached || changed;
+        if (cached) {
+          continue;
+        }
+      }
+      if (!_completedTargetKindTopicIds.contains(topicId) &&
+          !_pendingTargetKindTopicIds.contains(topicId)) {
+        missingTopicIds.add(topicId);
+      }
+    }
+    if (changed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+    }
+    if (missingTopicIds.isEmpty) {
+      return;
+    }
+    final limitedTopicIds =
+        missingTopicIds.take(_targetKindWarmupLimit).toList(growable: false);
+    _pendingTargetKindTopicIds.addAll(limitedTopicIds);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        unawaited(_loadTargetKindsForTopics(items, limitedTopicIds));
+      }
+    });
+  }
+
+  Future<void> _loadTargetKindsForTopics(
+    List<ForumNotification> sourceItems,
+    List<int> topicIds,
+  ) async {
+    var changed = false;
+    for (final topicId in topicIds) {
+      try {
+        final detail = await widget.repository.fetchTopicDetail(
+          topicId,
+          forceRefresh: true,
+        );
+        if (detail == null) {
+          continue;
+        }
+        _completedTargetKindTopicIds.add(topicId);
+        for (final item in sourceItems) {
+          if (item.topicId == topicId) {
+            changed = _cacheTargetKindFromDetail(item, detail) || changed;
+          }
+        }
+      } on Object {
+        // 保持保守文案，下一次刷新时再尝试补全。
+      } finally {
+        _pendingTargetKindTopicIds.remove(topicId);
+      }
+    }
+    if (changed && mounted) {
+      setState(() {});
+    }
+  }
+
+  bool _cacheTargetKindFromDetail(
+    ForumNotification item,
+    TopicDetail detail,
+  ) {
+    final kind = _detailTargetKindFor(item, detail);
+    if (kind == _NotificationTargetKind.unknown) {
+      return false;
+    }
+    final key = _targetKindCacheKey(item);
+    if (_targetKinds[key] == kind) {
+      return false;
+    }
+    _targetKinds[key] = kind;
+    return true;
   }
 
   Future<void> _openTopic(ForumNotification item) async {
@@ -294,36 +398,119 @@ class _NotificationListHostState extends State<_NotificationListHost> {
   }
 }
 
+enum _NotificationTargetKind { topic, comment, unknown }
+
+bool _needsDetailForTargetKind(ForumNotification item) {
+  return item.kind == '回复' &&
+      item.topicId != null &&
+      item.topicId! > 0 &&
+      item.postNumber != null &&
+      item.postNumber! > 0;
+}
+
+String _targetKindCacheKey(ForumNotification item) {
+  return [
+    item.kind,
+    item.topicId ?? 0,
+    item.postNumber ?? item.id,
+  ].join(':');
+}
+
+_NotificationTargetKind _targetKindFor(
+  ForumNotification item,
+  Map<String, _NotificationTargetKind> cache,
+) {
+  if (item.kind == '赞') {
+    final postNumber = item.postNumber;
+    if (postNumber == null || postNumber <= 0) {
+      return _NotificationTargetKind.unknown;
+    }
+    return postNumber == 1
+        ? _NotificationTargetKind.topic
+        : _NotificationTargetKind.comment;
+  }
+  if (item.kind == '回复') {
+    return cache[_targetKindCacheKey(item)] ?? _NotificationTargetKind.unknown;
+  }
+  return _NotificationTargetKind.unknown;
+}
+
+_NotificationTargetKind _detailTargetKindFor(
+  ForumNotification item,
+  TopicDetail detail,
+) {
+  if (item.kind != '回复') {
+    return _NotificationTargetKind.unknown;
+  }
+  final postNumber = item.postNumber;
+  if (postNumber == null || postNumber <= 0) {
+    return _NotificationTargetKind.unknown;
+  }
+  for (final post in detail.posts) {
+    if (post.postNumber != postNumber) {
+      continue;
+    }
+    final repliedPostNumber = post.replyToPostNumber;
+    return repliedPostNumber == null || repliedPostNumber <= 1
+        ? _NotificationTargetKind.topic
+        : _NotificationTargetKind.comment;
+  }
+  return _NotificationTargetKind.unknown;
+}
+
+String _targetText(_NotificationTargetKind kind) {
+  return switch (kind) {
+    _NotificationTargetKind.topic => '帖子',
+    _NotificationTargetKind.comment => '评论',
+    _NotificationTargetKind.unknown => '内容',
+  };
+}
+
 class _NotificationGroup {
-  const _NotificationGroup(this.items);
+  const _NotificationGroup(
+    this.items, {
+    required this.targetKinds,
+  });
 
   final List<ForumNotification> items;
+  final Map<String, _NotificationTargetKind> targetKinds;
 
   ForumNotification get latest => items.first;
   int get count => items.length;
   bool get isLike => latest.kind == '赞';
+  bool get isReply => latest.kind == '回复';
+
+  String get detailTitle {
+    return latest.topicTitle.isNotEmpty ? latest.topicTitle : latest.title;
+  }
 
   String get title {
     if (isLike) {
+      final targetText = _targetText(_targetKindFor(latest, targetKinds));
       final names = _actorNames();
-      if (count <= 1) {
-        final name = names.isEmpty ? '有人' : names.first;
-        return '$name 赞了你的内容';
+      final name = names.isEmpty ? '有人' : names.first;
+      if (count > 1) {
+        return '$name 等人 赞了你的$targetText';
       }
-      if (names.length >= 2) {
-        return '${names[0]}、${names[1]} 等 $count 人赞了你的内容';
-      }
-      final name = names.isEmpty ? '多人' : names.first;
-      return '$name 等 $count 人赞了你的内容';
+      return '$name 赞了你的$targetText';
     }
-    final topicTitle =
-        latest.topicTitle.isNotEmpty ? latest.topicTitle : latest.title;
-    return topicTitle;
+    if (isReply) {
+      final targetText = _targetText(_targetKindFor(latest, targetKinds));
+      return '回复了我的$targetText';
+    }
+    return detailTitle;
   }
 
   String get subtitle {
     final text = latest.message.isEmpty ? latest.kind : latest.message;
-    if (isLike || count <= 1) {
+    if (isLike) {
+      final targetKind = _targetKindFor(latest, targetKinds);
+      if (targetKind == _NotificationTargetKind.topic) {
+        return detailTitle;
+      }
+      return text;
+    }
+    if (isReply || count <= 1) {
       return text;
     }
     final actor = _actorName(latest);
@@ -553,7 +740,7 @@ class _NotificationGroupSheet extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      group.isLike ? '点赞者' : group.title,
+                      group.isLike ? '点赞者' : group.detailTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
