@@ -19,6 +19,7 @@ import 'package:shuyo/data/services/classroom_api_client.dart';
 import 'package:shuyo/data/services/course_rating_api_client.dart';
 import 'package:shuyo/data/services/emoji_text.dart';
 import 'package:shuyo/data/services/forum_draft_store.dart';
+import 'package:shuyo/data/services/forum_read_position_store.dart';
 import 'package:shuyo/data/services/forum_title_rules.dart';
 import 'package:shuyo/data/services/html_text.dart';
 import 'package:shuyo/data/services/payload_factory.dart';
@@ -457,6 +458,61 @@ void main() {
         .where((key) => key.startsWith('forum.composerDraft.v1'))
         .toList();
     expect(remainingKeys.length, 50);
+  });
+
+  test('saves and cleans forum read positions', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final key = ForumReadPositionStore.topicKey(
+      username: 'Lilin',
+      topicId: 824,
+    );
+
+    await ForumReadPositionStore.save(key, 320.5);
+    final loaded = await ForumReadPositionStore.load(key);
+    expect(loaded, isNotNull);
+    expect(loaded!.offset, 320.5);
+
+    final staleKey = ForumReadPositionStore.topicKey(
+      username: 'Lilin',
+      topicId: 825,
+    );
+    await prefs.setString(
+      staleKey,
+      jsonEncode(
+        ForumReadPosition(
+          offset: 120,
+          updatedAt: DateTime(2000),
+        ).toJson(),
+      ),
+    );
+    await ForumReadPositionStore.cleanup();
+    expect(await ForumReadPositionStore.load(staleKey), isNull);
+
+    final now = DateTime.now();
+    for (var index = 0; index < 305; index++) {
+      final key = ForumReadPositionStore.topicKey(
+        username: 'Lilin',
+        topicId: 1000 + index,
+      );
+      await prefs.setString(
+        key,
+        jsonEncode(
+          ForumReadPosition(
+            offset: index.toDouble(),
+            updatedAt: now.subtract(Duration(minutes: index)),
+          ).toJson(),
+        ),
+      );
+    }
+
+    await ForumReadPositionStore.cleanup();
+
+    final remainingKeys = prefs
+        .getKeys()
+        .where((key) => key.startsWith('forum.readPosition.v1'))
+        .toList();
+    expect(remainingKeys.length, 300);
   });
 
   test('renders extended discourse emoji shortcodes', () {

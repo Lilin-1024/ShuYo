@@ -10,6 +10,7 @@ import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
 import '../../data/services/forum_draft_store.dart';
+import '../../data/services/forum_read_position_store.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
@@ -90,16 +91,35 @@ class TopicPageController {
   }
 }
 
-class _TopicPageState extends State<TopicPage> {
+class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
   static const _collapsedReplyCount = 2;
+  static const _readPositionSaveDelay = Duration(milliseconds: 700);
+  static const _readPositionRestoredMessageDuration =
+      Duration(milliseconds: 1200);
+  static const _readPositionToastBottom = 76.0;
+  static const _minimumSavedReadOffset = 80.0;
 
   final _expandedReplyParents = <int>{};
   final _replyBarKey = GlobalKey<_TopicReplyBarState>();
   final _scrollController = ScrollController();
+  Timer? _readPositionSaveTimer;
+  Timer? _readPositionToastTimer;
+  String? _restoredReadPositionKey;
+  bool _restoringReadPosition = false;
+  bool _showReadPositionToast = false;
+
+  String get _readPositionKey {
+    return ForumReadPositionStore.topicKey(
+      username: widget.currentUsername,
+      topicId: widget.detail?.id ?? widget.item.id,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scrollController.addListener(_handleScrollChanged);
     widget.controller?._attach(this);
   }
 
@@ -110,10 +130,22 @@ class _TopicPageState extends State<TopicPage> {
       oldWidget.controller?._detach(this);
       widget.controller?._attach(this);
     }
+    final oldTopicId = oldWidget.detail?.id ?? oldWidget.item.id;
+    final nextTopicId = widget.detail?.id ?? widget.item.id;
+    if (oldTopicId != nextTopicId ||
+        oldWidget.currentUsername != widget.currentUsername) {
+      _readPositionSaveTimer?.cancel();
+      _restoredReadPositionKey = null;
+    }
   }
 
   @override
   void dispose() {
+    _readPositionSaveTimer?.cancel();
+    _readPositionToastTimer?.cancel();
+    unawaited(_saveReadPositionNow());
+    WidgetsBinding.instance.removeObserver(this);
+    _scrollController.removeListener(_handleScrollChanged);
     widget.controller?._detach(this);
     _scrollController.dispose();
     super.dispose();
@@ -133,59 +165,72 @@ class _TopicPageState extends State<TopicPage> {
     final threads = buildThreadedPosts(
       detail.posts.where((post) => !post.isDeleted).toList(growable: false),
     );
+    _scheduleReadPositionRestore();
 
-    return Column(
+    return Stack(
       children: [
-        Expanded(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _handleContentTap,
-            child: ListView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
-              children: [
-                _TopicHeader(detail: detail, category: widget.category),
-                for (final thread in threads)
-                  _ThreadedPostView(
-                    thread: thread,
-                    canReply: detail.canCreatePost,
-                    isSubmittingReply: widget.isSubmittingReply,
-                    busyLikePostIds: widget.busyLikePostIds,
-                    busyDeletePostIds: widget.busyDeletePostIds,
-                    expanded: _expandedReplyParents.contains(
-                      thread.post.postNumber,
-                    ),
-                    collapsedReplyCount: _collapsedReplyCount,
-                    onToggleExpanded: () {
-                      setState(() {
-                        final parent = thread.post.postNumber;
-                        if (!_expandedReplyParents.add(parent)) {
-                          _expandedReplyParents.remove(parent);
-                        }
-                      });
-                    },
-                    onReply: _replyTo,
-                    onLike: _like,
-                    onDelete: _confirmDelete,
-                    onOpenUser: widget.onOpenUser,
-                    onOpenImage: _openImagePreview,
-                    onOpenInternalTopic: widget.onOpenInternalTopic,
-                  ),
-              ],
+        Column(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _handleContentTap,
+                child: ListView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                  children: [
+                    _TopicHeader(detail: detail, category: widget.category),
+                    for (final thread in threads)
+                      _ThreadedPostView(
+                        thread: thread,
+                        canReply: detail.canCreatePost,
+                        isSubmittingReply: widget.isSubmittingReply,
+                        busyLikePostIds: widget.busyLikePostIds,
+                        busyDeletePostIds: widget.busyDeletePostIds,
+                        expanded: _expandedReplyParents.contains(
+                          thread.post.postNumber,
+                        ),
+                        collapsedReplyCount: _collapsedReplyCount,
+                        onToggleExpanded: () {
+                          setState(() {
+                            final parent = thread.post.postNumber;
+                            if (!_expandedReplyParents.add(parent)) {
+                              _expandedReplyParents.remove(parent);
+                            }
+                          });
+                        },
+                        onReply: _replyTo,
+                        onLike: _like,
+                        onDelete: _confirmDelete,
+                        onOpenUser: widget.onOpenUser,
+                        onOpenImage: _openImagePreview,
+                        onOpenInternalTopic: widget.onOpenInternalTopic,
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
+            _ReplyBar(
+              key: _replyBarKey,
+              enabled: detail.canCreatePost && !widget.isSubmittingReply,
+              isOnline: widget.isOnline,
+              isSubmitting: widget.isSubmittingReply,
+              detail: detail,
+              currentUsername: widget.currentUsername,
+              onLoginRequired: widget.onLoginRequired,
+              onUploadImage: widget.onUploadImage,
+              onSubmit: widget.onCreateReply,
+            ),
+          ],
         ),
-        _ReplyBar(
-          key: _replyBarKey,
-          enabled: detail.canCreatePost && !widget.isSubmittingReply,
-          isOnline: widget.isOnline,
-          isSubmitting: widget.isSubmittingReply,
-          detail: detail,
-          currentUsername: widget.currentUsername,
-          onLoginRequired: widget.onLoginRequired,
-          onUploadImage: widget.onUploadImage,
-          onSubmit: widget.onCreateReply,
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: _readPositionToastBottom,
+          child: IgnorePointer(
+            child: _ReadPositionToast(visible: _showReadPositionToast),
+          ),
         ),
       ],
     );
@@ -208,6 +253,89 @@ class _TopicPageState extends State<TopicPage> {
       duration: const Duration(milliseconds: 320),
       curve: Curves.easeOutCubic,
     );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_saveReadPositionNow());
+    }
+  }
+
+  void _handleScrollChanged() {
+    if (_restoringReadPosition) {
+      return;
+    }
+    _readPositionSaveTimer?.cancel();
+    _readPositionSaveTimer = Timer(
+      _readPositionSaveDelay,
+      () => unawaited(_saveReadPositionNow()),
+    );
+  }
+
+  void _scheduleReadPositionRestore() {
+    final key = _readPositionKey;
+    if (_restoredReadPositionKey == key) {
+      return;
+    }
+    _restoredReadPositionKey = key;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_restoreReadPosition(key));
+    });
+  }
+
+  Future<void> _restoreReadPosition(String key) async {
+    if (!mounted || !_scrollController.hasClients) {
+      if (_restoredReadPositionKey == key) {
+        _restoredReadPositionKey = null;
+      }
+      return;
+    }
+    final position = await ForumReadPositionStore.load(key);
+    if (!mounted ||
+        position == null ||
+        key != _readPositionKey ||
+        !_scrollController.hasClients) {
+      return;
+    }
+    final maxScrollExtent = _scrollController.position.maxScrollExtent;
+    if (maxScrollExtent <= _minimumSavedReadOffset ||
+        position.offset < _minimumSavedReadOffset) {
+      return;
+    }
+    final target = position.offset.clamp(0.0, maxScrollExtent).toDouble();
+    _restoringReadPosition = true;
+    _scrollController.jumpTo(target);
+    _restoringReadPosition = false;
+    _showRestoredReadPositionToast();
+  }
+
+  void _showRestoredReadPositionToast() {
+    if (!mounted) {
+      return;
+    }
+    _readPositionToastTimer?.cancel();
+    setState(() => _showReadPositionToast = true);
+    _readPositionToastTimer = Timer(_readPositionRestoredMessageDuration, () {
+      if (mounted) {
+        setState(() => _showReadPositionToast = false);
+      }
+    });
+  }
+
+  Future<void> _saveReadPositionNow() async {
+    _readPositionSaveTimer?.cancel();
+    if (!mounted || !_scrollController.hasClients || widget.detail == null) {
+      return;
+    }
+    final offset = _scrollController.offset;
+    if (offset < _minimumSavedReadOffset) {
+      await ForumReadPositionStore.remove(_readPositionKey);
+      return;
+    }
+    await ForumReadPositionStore.save(_readPositionKey, offset);
   }
 
   void _replyTo(Post post) {
@@ -299,6 +427,56 @@ class _TopicHeader extends StatelessWidget {
             style: TextStyle(color: colors.textSecondary),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ReadPositionToast extends StatelessWidget {
+  const _ReadPositionToast({required this.visible});
+
+  final bool visible;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final background = dark
+        ? colors.surfaceAlt.withValues(alpha: 0.82)
+        : colors.inverseSurface.withValues(alpha: 0.68);
+    final foreground = dark ? colors.textSecondary : colors.inverseOnSurface;
+    final borderColor =
+        dark ? colors.borderStrong.withValues(alpha: 0.42) : Colors.transparent;
+    return AnimatedOpacity(
+      opacity: visible ? 1 : 0,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      child: Center(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: dark ? 0.16 : 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+            child: Text(
+              '已定位到上次阅读位置',
+              style: TextStyle(
+                color: foreground,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
