@@ -161,6 +161,58 @@ void main() {
     expect(mention.link?.userUsername, 'Lilin');
   });
 
+  test('parses discourse formatted cooked text segments', () {
+    const cooked = '''
+<h1>一级标题</h1>
+<p><strong>粗体</strong> <em>斜体</em> <strong><em>粗斜体</em></strong> <del>删除线</del> <code>print()</code></p>
+<blockquote><p>引用内容</p></blockquote>
+<ul><li>无序一</li><li><strong>无序二</strong></li></ul>
+<ol><li>有序一</li><li>有序二</li></ol>
+<pre><code>final x = 1;
+  print(x);
+</code></pre>
+''';
+
+    final segments = HtmlText.parseSegments(cooked);
+    final heading = segments[0];
+    final paragraph = segments[1];
+    final quote = segments[2];
+    final unordered = segments[3];
+    final ordered = segments[5];
+    final codeBlock = segments.last;
+
+    expect(heading.textBlockKind, CookedTextBlockKind.heading);
+    expect(heading.headingLevel, 1);
+    expect(heading.textValue, '一级标题');
+    expect(paragraph.textValue, contains('粗体 斜体 粗斜体 删除线 print()'));
+    expect(paragraph.runs.any((run) => run.text == '粗体' && run.bold), isTrue);
+    expect(
+      paragraph.runs.any((run) => run.text == '斜体' && run.italic),
+      isTrue,
+    );
+    expect(
+      paragraph.runs.any((run) => run.text == '粗斜体' && run.bold && run.italic),
+      isTrue,
+    );
+    expect(
+      paragraph.runs.any((run) => run.text == '删除线' && run.strikethrough),
+      isTrue,
+    );
+    expect(
+      paragraph.runs.any((run) => run.text == 'print()' && run.code),
+      isTrue,
+    );
+    expect(quote.textBlockKind, CookedTextBlockKind.blockquote);
+    expect(quote.textValue, '引用内容');
+    expect(unordered.textBlockKind, CookedTextBlockKind.listItem);
+    expect(unordered.listIndex, 0);
+    expect(ordered.textBlockKind, CookedTextBlockKind.listItem);
+    expect(ordered.listIndex, 1);
+    expect(codeBlock.textBlockKind, CookedTextBlockKind.codeBlock);
+    expect(codeBlock.textValue, contains('final x = 1'));
+    expect(codeBlock.textValue, contains('  print(x);'));
+  });
+
   test('keeps discourse lightbox images as image segments', () {
     const cooked = '''
 <p>小木曾雪菜镇楼喵</p>

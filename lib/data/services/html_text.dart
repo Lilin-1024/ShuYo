@@ -6,6 +6,41 @@ import 'emoji_text.dart';
 
 enum CookedSegmentKind { text, image, link, onebox, quote }
 
+enum CookedTextBlockKind { paragraph, heading, blockquote, listItem, codeBlock }
+
+class CookedTextRun {
+  const CookedTextRun(
+    this.text, {
+    this.bold = false,
+    this.italic = false,
+    this.strikethrough = false,
+    this.code = false,
+  });
+
+  final String text;
+  final bool bold;
+  final bool italic;
+  final bool strikethrough;
+  final bool code;
+
+  bool hasSameStyle(CookedTextRun other) {
+    return bold == other.bold &&
+        italic == other.italic &&
+        strikethrough == other.strikethrough &&
+        code == other.code;
+  }
+
+  CookedTextRun copyWith({String? text}) {
+    return CookedTextRun(
+      text ?? this.text,
+      bold: bold,
+      italic: italic,
+      strikethrough: strikethrough,
+      code: code,
+    );
+  }
+}
+
 class CookedLinkPreview {
   const CookedLinkPreview({
     required this.url,
@@ -36,6 +71,23 @@ class CookedLinkPreview {
 class CookedSegment {
   const CookedSegment.text(this.value)
       : kind = CookedSegmentKind.text,
+        runs = const [],
+        textBlockKind = CookedTextBlockKind.paragraph,
+        headingLevel = 0,
+        listIndex = 0,
+        listDepth = 0,
+        link = null,
+        imageFullUrl = null,
+        imageWidth = 0,
+        imageHeight = 0;
+  const CookedSegment.richText(
+    this.runs, {
+    this.textBlockKind = CookedTextBlockKind.paragraph,
+    this.headingLevel = 0,
+    this.listIndex = 0,
+    this.listDepth = 0,
+  })  : kind = CookedSegmentKind.text,
+        value = '',
         link = null,
         imageFullUrl = null,
         imageWidth = 0,
@@ -46,32 +98,64 @@ class CookedSegment {
     this.imageWidth = 0,
     this.imageHeight = 0,
   })  : kind = CookedSegmentKind.image,
+        runs = const [],
+        textBlockKind = CookedTextBlockKind.paragraph,
+        headingLevel = 0,
+        listIndex = 0,
+        listDepth = 0,
         link = null;
   const CookedSegment.link(this.link)
       : kind = CookedSegmentKind.link,
         value = '',
+        runs = const [],
+        textBlockKind = CookedTextBlockKind.paragraph,
+        headingLevel = 0,
+        listIndex = 0,
+        listDepth = 0,
         imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
   const CookedSegment.onebox(this.link)
       : kind = CookedSegmentKind.onebox,
         value = '',
+        runs = const [],
+        textBlockKind = CookedTextBlockKind.paragraph,
+        headingLevel = 0,
+        listIndex = 0,
+        listDepth = 0,
         imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
   const CookedSegment.quote(this.link)
       : kind = CookedSegmentKind.quote,
         value = '',
+        runs = const [],
+        textBlockKind = CookedTextBlockKind.paragraph,
+        headingLevel = 0,
+        listIndex = 0,
+        listDepth = 0,
         imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
 
   final String value;
   final CookedSegmentKind kind;
+  final List<CookedTextRun> runs;
+  final CookedTextBlockKind textBlockKind;
+  final int headingLevel;
+  final int listIndex;
+  final int listDepth;
   final CookedLinkPreview? link;
   final String? imageFullUrl;
   final int imageWidth;
   final int imageHeight;
+
+  String get textValue {
+    if (runs.isEmpty) {
+      return value;
+    }
+    return runs.map((run) => run.text).join();
+  }
 
   String get resolvedImageFullUrl => imageFullUrl ?? value;
 
@@ -193,25 +277,58 @@ class HtmlText {
 
   static List<CookedSegment> parseSegments(String html) {
     final segments = <CookedSegment>[];
-    void addText(String value) {
+    var inlineRuns = <CookedTextRun>[];
+    var blockState = const _CookedTextBlockState();
+
+    void flushText() {
+      final normalized = _normalizeRuns(inlineRuns);
+      inlineRuns = [];
+      if (normalized.isEmpty) {
+        return;
+      }
+      segments.add(
+        CookedSegment.richText(
+          normalized,
+          textBlockKind: blockState.kind,
+          headingLevel: blockState.headingLevel,
+          listIndex: blockState.listIndex,
+          listDepth: blockState.listDepth,
+        ),
+      );
+    }
+
+    void addRun(String value, _InlineTextStyle style) {
       if (value.isEmpty) {
         return;
       }
-      if (segments.isNotEmpty && segments.last.isText) {
-        segments[segments.length - 1] = CookedSegment.text(
-          '${segments.last.value}$value',
+      final run = CookedTextRun(
+        value,
+        bold: style.bold,
+        italic: style.italic,
+        strikethrough: style.strikethrough,
+        code: style.code,
+      );
+      if (inlineRuns.isNotEmpty && inlineRuns.last.hasSameStyle(run)) {
+        inlineRuns[inlineRuns.length - 1] = inlineRuns.last.copyWith(
+          text: '${inlineRuns.last.text}${run.text}',
         );
-        return;
+      } else {
+        inlineRuns.add(run);
       }
-      segments.add(CookedSegment.text(value));
     }
 
-    void addBlockBreak() {
-      addText('\n');
+    void withBlock(_CookedTextBlockState state, void Function() callback) {
+      flushText();
+      final previous = blockState;
+      blockState = state;
+      callback();
+      flushText();
+      blockState = previous;
     }
 
     void addImage(_HtmlImage image, {String? fullUrl}) {
       if (image.shouldRenderAsImage) {
+        flushText();
         segments.add(
           CookedSegment.image(
             _absoluteUrl(image.src),
@@ -221,7 +338,7 @@ class HtmlText {
           ),
         );
       } else if (image.inlineText.isNotEmpty) {
-        addText(image.inlineText);
+        addRun(image.inlineText, const _InlineTextStyle());
       }
     }
 
@@ -234,15 +351,52 @@ class HtmlText {
       }
     }
 
-    void appendNode(dom.Node node) {
+    late void Function(dom.Node node, _InlineTextStyle style) appendNode;
+
+    void appendChildren(dom.Node node, _InlineTextStyle style) {
+      for (final child in node.nodes) {
+        appendNode(child, style);
+      }
+    }
+
+    void appendList(dom.Element list, _InlineTextStyle style, int depth) {
+      flushText();
+      final ordered = list.localName?.toLowerCase() == 'ol';
+      var index = 1;
+      for (final item in list.children.where(_isListItemElement)) {
+        withBlock(
+          _CookedTextBlockState(
+            kind: CookedTextBlockKind.listItem,
+            listIndex: ordered ? index : 0,
+            listDepth: depth,
+          ),
+          () {
+            for (final child in item.nodes) {
+              if (child is dom.Element && _isListElement(child)) {
+                continue;
+              }
+              if (child is dom.Element && _isParagraphLikeElement(child)) {
+                appendChildren(child, style);
+              } else {
+                appendNode(child, style);
+              }
+            }
+          },
+        );
+        for (final child in item.children.where(_isListElement)) {
+          appendList(child, style, depth + 1);
+        }
+        index += 1;
+      }
+    }
+
+    appendNode = (dom.Node node, _InlineTextStyle style) {
       if (node is dom.Text) {
-        addText(node.text);
+        addRun(node.text, style);
         return;
       }
       if (node is! dom.Element) {
-        for (final child in node.nodes) {
-          appendNode(child);
-        }
+        appendChildren(node, style);
         return;
       }
 
@@ -253,6 +407,7 @@ class HtmlText {
       if (tag == 'aside' && _hasClass(node, 'onebox')) {
         final preview = _oneboxPreview(node);
         if (preview != null) {
+          flushText();
           segments.add(CookedSegment.onebox(preview));
         }
         return;
@@ -260,8 +415,43 @@ class HtmlText {
       if (tag == 'aside' && _hasClass(node, 'quote')) {
         final preview = _quotePreview(node);
         if (preview != null) {
+          flushText();
           segments.add(CookedSegment.quote(preview));
         }
+        return;
+      }
+      if (tag == 'pre') {
+        flushText();
+        final text = _normalizeCodeBlockText(node.text);
+        if (text.isNotEmpty) {
+          segments.add(
+            CookedSegment.richText(
+              [CookedTextRun(text, code: true)],
+              textBlockKind: CookedTextBlockKind.codeBlock,
+            ),
+          );
+        }
+        return;
+      }
+      if (_isHeadingTag(tag)) {
+        withBlock(
+          _CookedTextBlockState(
+            kind: CookedTextBlockKind.heading,
+            headingLevel: int.tryParse(tag.substring(1)) ?? 3,
+          ),
+          () => appendChildren(node, style),
+        );
+        return;
+      }
+      if (tag == 'blockquote') {
+        withBlock(
+          const _CookedTextBlockState(kind: CookedTextBlockKind.blockquote),
+          () => appendChildren(node, style),
+        );
+        return;
+      }
+      if (_isListElement(node)) {
+        appendList(node, style, blockState.listDepth);
         return;
       }
       if (tag == 'img') {
@@ -274,14 +464,13 @@ class HtmlText {
           if (fullUrl != null) {
             appendImageAnchor(node, fullUrl);
           } else {
-            for (final child in node.nodes) {
-              appendNode(child);
-            }
+            appendChildren(node, style);
           }
           return;
         }
         final preview = _linkPreview(node);
         if (preview != null) {
+          flushText();
           segments.add(
             _hasClass(node, 'onebox')
                 ? CookedSegment.onebox(preview)
@@ -291,25 +480,41 @@ class HtmlText {
         }
       }
       if (tag == 'br') {
-        addBlockBreak();
+        addRun('\n', style);
+        return;
+      }
+      if (tag == 'strong' || tag == 'b') {
+        appendChildren(node, style.copyWith(bold: true));
+        return;
+      }
+      if (tag == 'em' || tag == 'i') {
+        appendChildren(node, style.copyWith(italic: true));
+        return;
+      }
+      if (tag == 's' || tag == 'del' || tag == 'strike') {
+        appendChildren(node, style.copyWith(strikethrough: true));
+        return;
+      }
+      if (tag == 'code') {
+        appendChildren(node, style.copyWith(code: true));
+        return;
+      }
+      if (_isParagraphLikeElement(node)) {
+        withBlock(blockState, () => appendChildren(node, style));
         return;
       }
 
-      for (final child in node.nodes) {
-        appendNode(child);
-      }
-      if (_isBlockElement(tag)) {
-        addBlockBreak();
-      }
-    }
+      appendChildren(node, style);
+    };
 
     final document = html_parser.parse(
       '<!doctype html><html><body>${_withoutAttachmentMetadata(html)}</body></html>',
     );
     final nodes = document.body?.nodes ?? document.nodes;
     for (final node in nodes) {
-      appendNode(node);
+      appendNode(node, const _InlineTextStyle());
     }
+    flushText();
     final normalized = _normalizeSegments(segments);
     segments
       ..clear()
@@ -335,16 +540,75 @@ class HtmlText {
         normalized.add(segment);
         continue;
       }
-      final text = _normalizeDomText(segment.value);
+      final runs = segment.textBlockKind == CookedTextBlockKind.codeBlock
+          ? _normalizeCodeRuns(segment.runs)
+          : segment.runs.isEmpty
+              ? _normalizeRuns([CookedTextRun(segment.value)])
+              : _normalizeRuns(segment.runs);
+      if (runs.isEmpty) {
+        continue;
+      }
+      normalized.add(
+        CookedSegment.richText(
+          runs,
+          textBlockKind: segment.textBlockKind,
+          headingLevel: segment.headingLevel,
+          listIndex: segment.listIndex,
+          listDepth: segment.listDepth,
+        ),
+      );
+    }
+    return normalized;
+  }
+
+  static List<CookedTextRun> _normalizeRuns(List<CookedTextRun> runs) {
+    final normalized = <CookedTextRun>[];
+    for (final run in runs) {
+      final text = EmojiText.render(
+        run.text
+            .replaceAll('\u00a0', ' ')
+            .replaceAll(RegExp(r'[ \t\f\v]+'), ' ')
+            .replaceAll(RegExp(r' *\n *'), '\n')
+            .replaceAll(RegExp(r'\n{3,}'), '\n\n'),
+      );
       if (text.isEmpty) {
         continue;
       }
-      if (normalized.isNotEmpty && normalized.last.isText) {
-        normalized[normalized.length - 1] = CookedSegment.text(
-          '${normalized.last.value}\n$text',
+      final next = run.copyWith(text: text);
+      if (normalized.isNotEmpty && normalized.last.hasSameStyle(next)) {
+        normalized[normalized.length - 1] = normalized.last.copyWith(
+          text: '${normalized.last.text}${next.text}',
         );
       } else {
-        normalized.add(CookedSegment.text(text));
+        normalized.add(next);
+      }
+    }
+    if (normalized.isEmpty) {
+      return const [];
+    }
+    normalized[0] = normalized.first.copyWith(
+      text: normalized.first.text.trimLeft(),
+    );
+    normalized[normalized.length - 1] = normalized.last.copyWith(
+      text: normalized.last.text.trimRight(),
+    );
+    return normalized.where((run) => run.text.isNotEmpty).toList();
+  }
+
+  static List<CookedTextRun> _normalizeCodeRuns(List<CookedTextRun> runs) {
+    final normalized = <CookedTextRun>[];
+    for (final run in runs) {
+      final text = EmojiText.render(run.text);
+      if (text.isEmpty) {
+        continue;
+      }
+      final next = run.copyWith(text: text);
+      if (normalized.isNotEmpty && normalized.last.hasSameStyle(next)) {
+        normalized[normalized.length - 1] = normalized.last.copyWith(
+          text: '${normalized.last.text}${next.text}',
+        );
+      } else {
+        normalized.add(next);
       }
     }
     return normalized;
@@ -551,27 +815,22 @@ class HtmlText {
         .contains(className);
   }
 
-  static bool _isBlockElement(String tag) {
-    return const {
-      'address',
-      'article',
-      'blockquote',
-      'div',
-      'footer',
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'h5',
-      'h6',
-      'header',
-      'li',
-      'ol',
-      'p',
-      'pre',
-      'section',
-      'ul',
-    }.contains(tag);
+  static bool _isHeadingTag(String tag) {
+    return RegExp(r'^h[1-6]$').hasMatch(tag);
+  }
+
+  static bool _isListElement(dom.Element element) {
+    final tag = element.localName?.toLowerCase();
+    return tag == 'ul' || tag == 'ol';
+  }
+
+  static bool _isListItemElement(dom.Element element) {
+    return element.localName?.toLowerCase() == 'li';
+  }
+
+  static bool _isParagraphLikeElement(dom.Element element) {
+    final tag = element.localName?.toLowerCase();
+    return tag == 'p' || tag == 'div' || tag == 'section' || tag == 'article';
   }
 
   static String _hostForUrl(String value) {
@@ -588,14 +847,12 @@ class HtmlText {
     );
   }
 
-  static String _normalizeDomText(String value) {
+  static String _normalizeCodeBlockText(String value) {
     return EmojiText.render(
       value
-          .replaceAll('\u00a0', ' ')
-          .replaceAll(RegExp(r'[ \t\f\v]+'), ' ')
-          .replaceAll(RegExp(r' *\n *'), '\n')
-          .replaceAll(RegExp(r'\n{3,}'), '\n\n')
-          .trim(),
+          .replaceAll('\r\n', '\n')
+          .replaceAll('\r', '\n')
+          .replaceAll(RegExp(r'\n+$'), ''),
     );
   }
 
@@ -608,6 +865,48 @@ class HtmlText {
         .replaceAll('&quot;', '"')
         .replaceAll('&#39;', "'");
   }
+}
+
+class _InlineTextStyle {
+  const _InlineTextStyle({
+    this.bold = false,
+    this.italic = false,
+    this.strikethrough = false,
+    this.code = false,
+  });
+
+  final bool bold;
+  final bool italic;
+  final bool strikethrough;
+  final bool code;
+
+  _InlineTextStyle copyWith({
+    bool? bold,
+    bool? italic,
+    bool? strikethrough,
+    bool? code,
+  }) {
+    return _InlineTextStyle(
+      bold: bold ?? this.bold,
+      italic: italic ?? this.italic,
+      strikethrough: strikethrough ?? this.strikethrough,
+      code: code ?? this.code,
+    );
+  }
+}
+
+class _CookedTextBlockState {
+  const _CookedTextBlockState({
+    this.kind = CookedTextBlockKind.paragraph,
+    this.headingLevel = 0,
+    this.listIndex = 0,
+    this.listDepth = 0,
+  });
+
+  final CookedTextBlockKind kind;
+  final int headingLevel;
+  final int listIndex;
+  final int listDepth;
 }
 
 class _HtmlImage {
