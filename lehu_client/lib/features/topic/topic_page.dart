@@ -26,6 +26,7 @@ import '../../shared/theme/lehu_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
+import 'advanced_reply_composer_page.dart';
 import 'threaded_posts.dart';
 
 class TopicPage extends StatefulWidget {
@@ -951,8 +952,8 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('删除这条回复？'),
-          content: const Text('删除后论坛网页端也会同步删除。'),
+          title: const Text('确认删除回复'),
+          content: const Text('删除后将无法恢复，是否确认删除？'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -1803,6 +1804,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   bool _mentionSearching = false;
   bool _collapsedForBrowsing = false;
   bool _restoringDraft = false;
+  _ReplyComposerMode _mode = _ReplyComposerMode.basic;
   int? _replyToPostNumber;
 
   bool get _canType =>
@@ -2017,6 +2019,12 @@ class _TopicReplyBarState extends State<_ReplyBar> {
                                   ),
                                 ),
                                 const Spacer(),
+                                _ReplyComposerModeMenu(
+                                  mode: _mode,
+                                  enabled: canType,
+                                  onChanged: _setMode,
+                                ),
+                                const SizedBox(width: 4),
                                 Padding(
                                   padding: const EdgeInsets.only(right: 8),
                                   child: FilledButton(
@@ -2340,6 +2348,96 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     }
   }
 
+  Future<void> _openAdvancedComposer() async {
+    if (!_canType) {
+      _handleInputTap();
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    SystemChannels.textInput.invokeMethod<void>('TextInput.hide');
+    setState(() {
+      _mode = _ReplyComposerMode.advanced;
+      _discardDetachedImages();
+      _showEmojiPanel = false;
+      _clearMentionAutocomplete(cancelSearch: true);
+    });
+    await _saveDraftNow();
+    if (!mounted) {
+      return;
+    }
+    final replyToPostNumber = _replyToPostNumber;
+    final draftKey = _draftKeyFor(replyToPostNumber);
+    final result =
+        await Navigator.of(context).push<AdvancedReplyComposerResult>(
+      lehuRoute(
+        fullscreenDialog: true,
+        builder: (context) => AdvancedReplyComposerPage(
+          detail: widget.detail,
+          initialRaw: _controller.text,
+          initialImages: _imagesForMode(),
+          replyToPostNumber: replyToPostNumber,
+          draftKey: draftKey,
+          onUploadImage: widget.onUploadImage,
+          onSubmit: widget.onSubmit,
+        ),
+      ),
+    );
+    if (!mounted || result == null) {
+      return;
+    }
+    if (result.submitted) {
+      _restoringDraft = true;
+      _controller.clear();
+      _restoringDraft = false;
+      setState(() {
+        _images.clear();
+        _composerOpen = false;
+        _collapsedForBrowsing = false;
+        _replyToPostNumber = null;
+        _showEmojiPanel = false;
+        _submitting = false;
+        _mode = _ReplyComposerMode.basic;
+        _clearMentionAutocomplete(cancelSearch: true);
+      });
+      return;
+    }
+    _restoringDraft = true;
+    _controller.text = result.raw;
+    _restoringDraft = false;
+    setState(() {
+      _images
+        ..clear()
+        ..addAll(result.images);
+      _composerOpen = true;
+      _collapsedForBrowsing = false;
+      _showEmojiPanel = false;
+      _mode = _ReplyComposerMode.advanced;
+      _clearMentionAutocomplete(cancelSearch: true);
+    });
+    _scheduleDraftSave();
+  }
+
+  void _setMode(_ReplyComposerMode mode) {
+    if (mode == _ReplyComposerMode.advanced) {
+      unawaited(_openAdvancedComposer());
+      return;
+    }
+    if (mode == _mode) {
+      return;
+    }
+    setState(() {
+      _mode = mode;
+      _showEmojiPanel = false;
+      _clearMentionAutocomplete(cancelSearch: true);
+    });
+    _scheduleDraftSave();
+  }
+
+  void _discardDetachedImages() {
+    final raw = _controller.text;
+    _images.removeWhere((image) => !isComposerImageReferenced(raw, image));
+  }
+
   Future<void> _submit() async {
     final text = _controller.text.trim();
     if ((text.isEmpty && _images.isEmpty) ||
@@ -2349,7 +2447,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       return;
     }
     final replyToPostNumber = _replyToPostNumber;
-    final images = List<UploadedImage>.of(_images);
+    final images = _imagesForMode();
     final draftKey = _draftKeyFor(replyToPostNumber);
     setState(() => _submitting = true);
     await _saveDraftNow();
@@ -2389,7 +2487,17 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   }
 
   String _composeRaw(String text, List<UploadedImage> images) {
+    if (_mode == _ReplyComposerMode.advanced) {
+      return text.trim();
+    }
     return composeRawWithImages(text, images);
+  }
+
+  List<UploadedImage> _imagesForMode() {
+    if (_mode == _ReplyComposerMode.advanced) {
+      return referencedComposerImages(_controller.text, _images);
+    }
+    return List<UploadedImage>.of(_images);
   }
 
   Future<void> _openComposerFor(
@@ -2411,6 +2519,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       _collapsedForBrowsing = false;
       _replyToPostNumber = replyToPostNumber;
       _showEmojiPanel = false;
+      _mode = _ReplyComposerMode.basic;
       _clearMentionAutocomplete(cancelSearch: true);
     });
     _restoringDraft = false;
@@ -2630,6 +2739,69 @@ class _ComposerFrame extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: child,
+    );
+  }
+}
+
+enum _ReplyComposerMode {
+  basic('基础'),
+  advanced('进阶');
+
+  const _ReplyComposerMode(this.label);
+
+  final String label;
+}
+
+class _ReplyComposerModeMenu extends StatelessWidget {
+  const _ReplyComposerModeMenu({
+    required this.mode,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final _ReplyComposerMode mode;
+  final bool enabled;
+  final ValueChanged<_ReplyComposerMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        IconTheme.of(context).color ?? context.lehuColors.textSecondary;
+    return PopupMenuButton<_ReplyComposerMode>(
+      tooltip: '选择编辑模式',
+      enabled: enabled,
+      onSelected: onChanged,
+      itemBuilder: (context) {
+        return [
+          for (final item in _ReplyComposerMode.values)
+            PopupMenuItem(
+              value: item,
+              child: Row(
+                children: [
+                  Expanded(child: Text(item.label)),
+                  if (item == mode) const Icon(Icons.check, size: 18),
+                ],
+              ),
+            ),
+        ];
+      },
+      child: Opacity(
+        opacity: enabled ? 1 : 0.38,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                mode.label,
+                style: TextStyle(color: color, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(width: 2),
+              Icon(Icons.arrow_drop_down, color: color),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
