@@ -87,7 +87,7 @@ class ClientSettingsPage extends StatelessWidget {
             ),
           ),
           _SettingsRow(
-            title: '关于客户端',
+            title: '关于ShuYo',
             onTap: () => Navigator.of(context).push<void>(
               lehuRoute(
                 builder: (context) => const _AboutClientPage(),
@@ -192,7 +192,7 @@ class _AboutClientPage extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
         children: [
           Text(
-            'ShuYo客户端',
+            '关于ShuYo',
             style: LehuTextStyles.pageTitle(color: colors.textPrimary),
           ),
           const SizedBox(height: 6),
@@ -204,7 +204,7 @@ class _AboutClientPage extends StatelessWidget {
           _AboutSection(
             title: '简介',
             body:
-                '这里应该写一些介绍，但是我还没有想好写些什么。\n\n总之，如果使用当中出现问题，或是你希望有些新的功能，可以通过“问题与反馈”提交给我。',
+                '本应用是由学生开发的非官方开源工具，与上海大学、上海大学信息办无关，不属于官方校园软件。\n\n本应用仅作信息聚合展示。论坛相关功能遵守校内论坛的管理规则，用户在客户端产生的论坛内容，受论坛原有审核与管理制度约束。\n\n如果在客户端使用过程中出现问题，或是你希望有些新的功能，请通过“问题与反馈”联系开发者。～(∠・ω< )⌒☆',
           ),
         ],
       ),
