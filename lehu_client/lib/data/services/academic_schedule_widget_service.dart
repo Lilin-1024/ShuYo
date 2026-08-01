@@ -136,6 +136,7 @@ class AcademicScheduleWidgetService {
       'name': session.courseName,
       'teacher': session.teacherName,
       'location': session.placeText,
+      'room': session.location,
       'meta': _courseMeta(session),
       'weekday': session.weekday,
       'startSection': session.startSection,

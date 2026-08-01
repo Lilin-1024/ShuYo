@@ -1223,6 +1223,7 @@ void main() {
     expect(session['weekday'], 2);
     expect(session['startText'], '13:00');
     expect(session['endText'], '14:40');
+    expect(session['room'], 'EJ106');
     expect(session['weeks'], [3, 7, 11, 15]);
   });
 

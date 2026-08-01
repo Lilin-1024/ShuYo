@@ -25,8 +25,7 @@ class ScheduleWidgetProvider : ScheduleWidgetBaseProvider(
     layoutId = R.layout.schedule_widget,
     rowBindings = listOf(
         CourseRowBinding(R.id.course_row_1, R.id.course_time_1, R.id.course_name_1, R.id.course_meta_1),
-        CourseRowBinding(R.id.course_row_2, R.id.course_time_2, R.id.course_name_2, R.id.course_meta_2),
-        CourseRowBinding(R.id.course_row_3, R.id.course_time_3, R.id.course_name_3, R.id.course_meta_3)
+        CourseRowBinding(R.id.course_row_2, R.id.course_time_2, R.id.course_name_2, R.id.course_meta_2)
     ),
     compact = false
 )
@@ -36,9 +35,7 @@ class ScheduleWidgetLargeProvider : ScheduleWidgetBaseProvider(
     rowBindings = listOf(
         CourseRowBinding(R.id.course_row_1, R.id.course_time_1, R.id.course_name_1, R.id.course_meta_1),
         CourseRowBinding(R.id.course_row_2, R.id.course_time_2, R.id.course_name_2, R.id.course_meta_2),
-        CourseRowBinding(R.id.course_row_3, R.id.course_time_3, R.id.course_name_3, R.id.course_meta_3),
-        CourseRowBinding(R.id.course_row_4, R.id.course_time_4, R.id.course_name_4, R.id.course_meta_4),
-        CourseRowBinding(R.id.course_row_5, R.id.course_time_5, R.id.course_name_5, R.id.course_meta_5)
+        CourseRowBinding(R.id.course_row_3, R.id.course_time_3, R.id.course_name_3, R.id.course_meta_3)
     ),
     compact = false
 )
@@ -145,10 +142,11 @@ abstract class ScheduleWidgetBaseProvider(
             return
         }
         val prefix = if (upcoming.isActive(nowMinute)) "正在上课" else "下一节 ${upcoming.startText}"
+        val place = upcoming.room.ifBlank { upcoming.sectionText }
         views.setTextViewText(R.id.widget_status, upcoming.name)
         views.setTextViewText(
             R.id.compact_course_meta,
-            "$prefix · ${upcoming.meta.ifBlank { upcoming.sectionText }}"
+            "$prefix · $place"
         )
     }
 
@@ -159,7 +157,10 @@ abstract class ScheduleWidgetBaseProvider(
         nowMinute: Int
     ) {
         if (course == null) {
-            views.setViewVisibility(binding.rowId, View.GONE)
+            views.setTextViewText(binding.timeId, "")
+            views.setTextViewText(binding.nameId, "")
+            views.setTextViewText(binding.metaId, "")
+            views.setViewVisibility(binding.rowId, View.INVISIBLE)
             return
         }
         views.setViewVisibility(binding.rowId, View.VISIBLE)
@@ -290,6 +291,7 @@ private data class WidgetSchedule(
 
 private data class WidgetCourse(
     val name: String,
+    val room: String,
     val meta: String,
     val weekday: Int,
     val weeks: Set<Int>,
@@ -330,6 +332,7 @@ private data class WidgetCourse(
 
             return WidgetCourse(
                 name = name,
+                room = json.optString("room", "").trim(),
                 meta = json.optString("meta", "").trim(),
                 weekday = weekday,
                 weeks = weeks,
