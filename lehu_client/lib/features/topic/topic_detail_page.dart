@@ -349,7 +349,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       await _handleOperationError(
         error,
         title: '无法删除回复',
-        fallbackMessage: '该回复已超过论坛允许删除的时限，需联系版主处理。',
+        fallbackMessage: '该回复已超过论坛允许删除的时限。/n/n如果您确实希望将其删除，请提交举报并说明原因，以便引起版主注意。',
       );
     } finally {
       if (mounted) {
@@ -552,7 +552,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   Future<void> _showTopicDeleteUnavailable() async {
     await _showErrorDialog(
       title: '无法删除主题',
-      message: '该主题已有回复或超过论坛允许删除的时限，需联系版主处理。',
+      message: '该主题已有回复或超过论坛允许删除的时限。/n/n如果您确实希望将其删除，请提交举报并说明原因，以便引起版主注意。',
     );
   }
 
@@ -613,7 +613,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       await _handleOperationError(
         error,
         title: '无法删除主题',
-        fallbackMessage: '该主题已有回复或超过论坛允许删除的时限，需联系版主处理。',
+        fallbackMessage: '该主题已有回复或超过论坛允许删除的时限。/n/n如果您确实希望将其删除，请提交举报并说明原因，以便引起版主注意。',
       );
     } finally {
       if (mounted) {

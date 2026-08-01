@@ -15,6 +15,7 @@ class CookedTextRun {
     this.italic = false,
     this.strikethrough = false,
     this.code = false,
+    this.link,
   });
 
   final String text;
@@ -22,12 +23,14 @@ class CookedTextRun {
   final bool italic;
   final bool strikethrough;
   final bool code;
+  final CookedLinkPreview? link;
 
   bool hasSameStyle(CookedTextRun other) {
     return bold == other.bold &&
         italic == other.italic &&
         strikethrough == other.strikethrough &&
-        code == other.code;
+        code == other.code &&
+        _hasSameLink(other.link);
   }
 
   CookedTextRun copyWith({String? text}) {
@@ -37,7 +40,22 @@ class CookedTextRun {
       italic: italic,
       strikethrough: strikethrough,
       code: code,
+      link: link,
     );
+  }
+
+  bool get isLink => link != null;
+
+  bool _hasSameLink(CookedLinkPreview? other) {
+    final current = link;
+    if (current == null || other == null) {
+      return current == other;
+    }
+    return current.url == other.url &&
+        current.title == other.title &&
+        current.topicId == other.topicId &&
+        current.postNumber == other.postNumber &&
+        current.userUsername == other.userUsername;
   }
 }
 
@@ -307,6 +325,7 @@ class HtmlText {
         italic: style.italic,
         strikethrough: style.strikethrough,
         code: style.code,
+        link: style.link,
       );
       if (inlineRuns.isNotEmpty && inlineRuns.last.hasSameStyle(run)) {
         inlineRuns[inlineRuns.length - 1] = inlineRuns.last.copyWith(
@@ -326,7 +345,11 @@ class HtmlText {
       blockState = previous;
     }
 
-    void addImage(_HtmlImage image, {String? fullUrl}) {
+    void addImage(
+      _HtmlImage image, {
+      String? fullUrl,
+      _InlineTextStyle style = const _InlineTextStyle(),
+    }) {
       if (image.shouldRenderAsImage) {
         flushText();
         segments.add(
@@ -338,7 +361,7 @@ class HtmlText {
           ),
         );
       } else if (image.inlineText.isNotEmpty) {
-        addRun(image.inlineText, const _InlineTextStyle());
+        addRun(image.inlineText, style);
       }
     }
 
@@ -455,7 +478,7 @@ class HtmlText {
         return;
       }
       if (tag == 'img') {
-        addImage(_HtmlImage.fromElement(node));
+        addImage(_HtmlImage.fromElement(node), style: style);
         return;
       }
       if (tag == 'a') {
@@ -470,12 +493,16 @@ class HtmlText {
         }
         final preview = _linkPreview(node);
         if (preview != null) {
-          flushText();
-          segments.add(
-            _hasClass(node, 'onebox')
-                ? CookedSegment.onebox(preview)
-                : CookedSegment.link(preview),
-          );
+          if (_hasClass(node, 'onebox')) {
+            flushText();
+            segments.add(CookedSegment.onebox(preview));
+            return;
+          }
+          final previousRunCount = inlineRuns.length;
+          appendChildren(node, style.copyWith(link: preview));
+          if (inlineRuns.length == previousRunCount) {
+            addRun(preview.title, style.copyWith(link: preview));
+          }
           return;
         }
       }
@@ -873,24 +900,28 @@ class _InlineTextStyle {
     this.italic = false,
     this.strikethrough = false,
     this.code = false,
+    this.link,
   });
 
   final bool bold;
   final bool italic;
   final bool strikethrough;
   final bool code;
+  final CookedLinkPreview? link;
 
   _InlineTextStyle copyWith({
     bool? bold,
     bool? italic,
     bool? strikethrough,
     bool? code,
+    CookedLinkPreview? link,
   }) {
     return _InlineTextStyle(
       bold: bold ?? this.bold,
       italic: italic ?? this.italic,
       strikethrough: strikethrough ?? this.strikethrough,
       code: code ?? this.code,
+      link: link ?? this.link,
     );
   }
 }
