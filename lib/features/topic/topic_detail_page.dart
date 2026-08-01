@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/models/forum_activity.dart';
+import '../../data/models/forum_poll.dart';
 import '../../data/models/forum_report.dart';
 import '../../data/models/forum_search.dart';
 import '../../data/models/post.dart';
@@ -53,6 +54,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   bool _topicTimingScheduled = false;
   Timer? _topicTimingTimer;
   final _likingPostIds = <int>{};
+  final _busyPollKeys = <String>{};
   final _deletingPostIds = <int>{};
   final _reportingPostIds = <int>{};
   final _reportedPostIds = <int>{};
@@ -131,10 +133,13 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       isOnline: widget.repository.isOnline,
                       isSubmittingReply: _submittingReply,
                       busyLikePostIds: _likingPostIds,
+                      busyPollKeys: _busyPollKeys,
                       busyDeletePostIds: _deletingPostIds,
                       busyReportPostIds: _reportingPostIds,
                       reportedPostIds: _reportedPostIds,
                       onLikePost: _togglePostLike,
+                      onVotePoll: _votePoll,
+                      onTogglePollStatus: _togglePollStatus,
                       onDeletePost: _deletePost,
                       onReportPost: _reportPost,
                       onUploadImage: widget.repository.uploadImage,
@@ -325,6 +330,76 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     } finally {
       if (mounted) {
         setState(() => _likingPostIds.remove(post.id));
+      }
+    }
+  }
+
+  Future<void> _votePoll(
+    Post post,
+    ForumPoll poll,
+    List<String> optionIds,
+  ) async {
+    if (!widget.repository.isOnline) {
+      await _requireLogin();
+      return;
+    }
+    final key = _pollKey(post, poll);
+    if (_busyPollKeys.contains(key)) {
+      return;
+    }
+    setState(() => _busyPollKeys.add(key));
+    try {
+      await widget.repository.votePoll(
+        topicId: post.topicId,
+        postId: post.id,
+        pollName: poll.name,
+        optionIds: optionIds,
+      );
+      if (!mounted) {
+        return;
+      }
+      _showSnack(poll.hasVoted ? '已修改投票' : '已投票');
+      await _refresh();
+    } on Object catch (error) {
+      await _handleOperationError(error, title: '投票失败');
+    } finally {
+      if (mounted) {
+        setState(() => _busyPollKeys.remove(key));
+      }
+    }
+  }
+
+  Future<void> _togglePollStatus(
+    Post post,
+    ForumPoll poll,
+    String status,
+  ) async {
+    if (!widget.repository.isOnline) {
+      await _requireLogin();
+      return;
+    }
+    final key = _pollKey(post, poll);
+    if (_busyPollKeys.contains(key)) {
+      return;
+    }
+    setState(() => _busyPollKeys.add(key));
+    try {
+      await widget.repository.togglePollStatus(
+        topicId: post.topicId,
+        postId: post.id,
+        pollName: poll.name,
+        status: status,
+      );
+      if (!mounted) {
+        return;
+      }
+      _showSnack(status == 'closed' ? '投票已关闭' : '投票已开启');
+      await _refresh();
+    } on Object catch (error) {
+      await _handleOperationError(error, title: '投票设置失败');
+    } finally {
+      if (mounted) {
+        setState(() => _busyPollKeys.remove(key));
       }
     }
   }
@@ -613,7 +688,8 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       await _handleOperationError(
         error,
         title: '无法删除主题',
-        fallbackMessage: '该主题已有回复或超过论坛允许删除的时限。\n\n如果您确实希望将其删除，请提交举报并说明原因，以便引起版主注意。',
+        fallbackMessage:
+            '该主题已有回复或超过论坛允许删除的时限。\n\n如果您确实希望将其删除，请提交举报并说明原因，以便引起版主注意。',
       );
     } finally {
       if (mounted) {
@@ -754,6 +830,10 @@ class _ReportSelection {
 
   final ForumReportReason reason;
   final String? message;
+}
+
+String _pollKey(Post post, ForumPoll poll) {
+  return '${post.id}:${poll.name}';
 }
 
 class _ReportReasonSheet extends StatefulWidget {

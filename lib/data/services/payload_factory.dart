@@ -156,6 +156,38 @@ class PayloadFactory {
     );
   }
 
+  static RequestPayload votePoll({
+    required int postId,
+    required String pollName,
+    required List<String> optionIds,
+  }) {
+    return RequestPayload(
+      method: 'PUT',
+      url: ForumUrlResolver.resolve('/polls/vote'),
+      body: _formEncodeEntries([
+        MapEntry('post_id', '$postId'),
+        MapEntry('poll_name', pollName),
+        for (final optionId in optionIds) MapEntry('options[]', optionId),
+      ]),
+    );
+  }
+
+  static RequestPayload togglePollStatus({
+    required int postId,
+    required String pollName,
+    required String status,
+  }) {
+    return RequestPayload(
+      method: 'PUT',
+      url: ForumUrlResolver.resolve('/polls/toggle_status'),
+      body: _formEncode({
+        'post_id': '$postId',
+        'poll_name': pollName,
+        'status': status,
+      }),
+    );
+  }
+
   static RequestPayload reportContent(ForumReportDraft draft) {
     final message = draft.message?.trim();
     return RequestPayload(
@@ -252,7 +284,11 @@ class PayloadFactory {
   }
 
   static String _formEncode(Map<String, String> fields) {
-    return fields.entries
+    return _formEncodeEntries(fields.entries);
+  }
+
+  static String _formEncodeEntries(Iterable<MapEntry<String, String>> fields) {
+    return fields
         .map((entry) =>
             '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}')
         .join('&');

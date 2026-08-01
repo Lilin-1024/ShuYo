@@ -177,6 +177,57 @@ void main() {
     );
   });
 
+  test('parses discourse polls from cooked html and post json', () {
+    const cooked = '''
+<div class="poll" data-poll-charttype="bar" data-poll-max="2" data-poll-min="1" data-poll-name="poll2" data-poll-public="false" data-poll-results="always" data-poll-status="open" data-poll-type="multiple">
+<div class="poll-container">
+<ul>
+<li data-poll-option-id="a">A</li>
+<li data-poll-option-id="b">B</li>
+</ul>
+</div>
+</div>
+''';
+    final segment = HtmlText.parseSegments(cooked).single;
+    expect(segment.kind, CookedSegmentKind.poll);
+    expect(segment.poll?.name, 'poll2');
+    expect(segment.poll?.isMultiple, isTrue);
+    expect(segment.poll?.effectiveMax, 2);
+    expect(segment.poll?.options.map((option) => option.id), ['a', 'b']);
+
+    final post = Post.fromJson({
+      'id': 10,
+      'topic_id': 20,
+      'username': 'Lilin',
+      'cooked': cooked,
+      'post_number': 1,
+      'post_url': '/t/topic/20/1',
+      'polls': [
+        {
+          'id': 4,
+          'name': 'poll2',
+          'type': 'multiple',
+          'status': 'open',
+          'results': 'always',
+          'min': 1,
+          'max': 2,
+          'options': [
+            {'id': 'a', 'html': 'A', 'votes': 1},
+            {'id': 'b', 'html': 'B', 'votes': 0},
+          ],
+          'voters': 1,
+          'chart_type': 'bar',
+        }
+      ],
+      'polls_votes': {
+        'poll2': ['a'],
+      },
+    });
+    expect(post.polls.single.name, 'poll2');
+    expect(post.polls.single.ownVotes, ['a']);
+    expect(post.polls.single.options.first.votes, 1);
+  });
+
   test('parses discourse formatted cooked text segments', () {
     const cooked = '''
 <h1>一级标题</h1>
@@ -291,6 +342,37 @@ void main() {
     expect(reply.body, contains('reply_to_post_number=3'));
     expect(PayloadFactory.decodeForm(reply.body)['raw'], 'test test');
     expect(like.body, 'id=654&post_action_type_id=2&flag_topic=false');
+  });
+
+  test('builds poll vote and status payloads', () {
+    final vote = PayloadFactory.votePoll(
+      postId: 1263,
+      pollName: 'poll',
+      optionIds: const ['a', 'b'],
+    );
+    final toggle = PayloadFactory.togglePollStatus(
+      postId: 1263,
+      pollName: 'poll',
+      status: 'closed',
+    );
+
+    expect(vote.method, 'PUT');
+    expect(vote.url, endsWith('/polls/vote'));
+    expect(PayloadFactory.decodeForm(vote.body)['post_id'], '1263');
+    expect(PayloadFactory.decodeForm(vote.body)['poll_name'], 'poll');
+    expect(
+      RegExp('options%5B%5D=').allMatches(vote.body),
+      hasLength(2),
+    );
+    expect(vote.body, contains('options%5B%5D=a'));
+    expect(vote.body, contains('options%5B%5D=b'));
+
+    expect(toggle.method, 'PUT');
+    expect(toggle.url, endsWith('/polls/toggle_status'));
+    expect(
+      PayloadFactory.decodeForm(toggle.body),
+      containsPair('status', 'closed'),
+    );
   });
 
   test('builds forum report payloads', () {
