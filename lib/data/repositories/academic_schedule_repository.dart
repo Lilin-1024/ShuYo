@@ -50,9 +50,13 @@ class AcademicScheduleRepository {
 
   Future<AcademicSchedule> refreshSchedule() async {
     final schedule = await _apiClient.fetchCurrentSchedule();
+    await saveCachedSchedule(schedule);
+    return schedule;
+  }
+
+  Future<void> saveCachedSchedule(AcademicSchedule schedule) async {
     final prefs = await _preferencesLoader();
     await prefs.setString(_scheduleKey, jsonEncode(schedule.toJson()));
-    return schedule;
   }
 
   Future<ScheduleWeekState> loadWeekState({DateTime? now}) async {
