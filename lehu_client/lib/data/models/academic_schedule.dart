@@ -97,6 +97,9 @@ class CourseSession {
   final String credit;
   final String note;
 
+  bool get isManual =>
+      id.startsWith(manualIdPrefix) || courseCode == manualCode;
+
   bool occursInWeek(int week) => weeks.isEmpty || weeks.contains(week);
 
   String get sectionText {
@@ -156,6 +159,9 @@ class CourseSession {
       note: stringValue(json['note']),
     );
   }
+
+  static const manualIdPrefix = 'manual:';
+  static const manualCode = '_manual';
 }
 
 class UntimedCourse {
@@ -220,6 +226,20 @@ class AcademicSchedule {
   final List<CourseSession> sessions;
   final List<UntimedCourse> untimedCourses;
   final DateTime fetchedAt;
+
+  AcademicSchedule copyWith({
+    AcademicTerm? term,
+    List<CourseSession>? sessions,
+    List<UntimedCourse>? untimedCourses,
+    DateTime? fetchedAt,
+  }) {
+    return AcademicSchedule(
+      term: term ?? this.term,
+      sessions: sessions ?? this.sessions,
+      untimedCourses: untimedCourses ?? this.untimedCourses,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+    );
+  }
 
   int get maxWeek {
     final values = <int>[];

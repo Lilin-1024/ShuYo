@@ -1225,6 +1225,28 @@ void main() {
     expect(session['endText'], '14:40');
     expect(session['weeks'], [3, 7, 11, 15]);
   });
+
+  test('marks manual academic schedule sessions', () {
+    const session = CourseSession(
+      id: 'manual:2:5-6:1',
+      courseName: '临时课程',
+      courseCode: CourseSession.manualCode,
+      teacherName: '',
+      campus: '',
+      location: 'EJ106',
+      weekday: 2,
+      startSection: 5,
+      endSection: 6,
+      sections: [5, 6],
+      weeks: [3],
+      weekText: '3周',
+      credit: '',
+      note: '',
+    );
+
+    expect(session.isManual, isTrue);
+    expect(CourseSession.fromJson(session.toJson()).isManual, isTrue);
+  });
 }
 
 JsonMap _fixture(String path) {
