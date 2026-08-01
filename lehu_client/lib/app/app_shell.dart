@@ -1068,8 +1068,32 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         forceRefresh: forceRefresh,
       ),
     );
+    if (!forceRefresh) {
+      unawaited(_refreshFeedQuietlyAfterCache(query));
+    }
     _loadingMoreFeed = false;
     _loadMoreFeedError = null;
+  }
+
+  Future<void> _refreshFeedQuietlyAfterCache(TopicFeedQuery query) async {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    if (!mounted || _feedSnapshots[query.key] == null) {
+      return;
+    }
+    try {
+      final topics = await _repo.fetchTopicFeed(query, forceRefresh: true);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _feedSnapshots[query.key] = topics;
+        if (_feedQuery.key == query.key) {
+          _feedFuture = Future.value(topics);
+        }
+      });
+    } on Object {
+      // 初始静默刷新失败时保留缓存，不打扰用户。
+    }
   }
 
   Future<List<TopicListItem>> _cacheFeedFuture(
