@@ -20,6 +20,7 @@ import 'package:shuyo/data/services/classroom_api_client.dart';
 import 'package:shuyo/data/services/course_rating_api_client.dart';
 import 'package:shuyo/data/services/emoji_text.dart';
 import 'package:shuyo/data/services/forum_draft_store.dart';
+import 'package:shuyo/data/services/forum_persistent_cache.dart';
 import 'package:shuyo/data/services/forum_read_position_store.dart';
 import 'package:shuyo/data/services/forum_title_rules.dart';
 import 'package:shuyo/data/services/html_text.dart';
@@ -711,6 +712,66 @@ void main() {
         .where((key) => key.startsWith('forum.composerDraft.v1'))
         .toList();
     expect(remainingKeys.length, 50);
+  });
+
+  test('persists forum cache with topic limits and private deletions',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final cache = await ForumPersistentCache.open(username: 'Lilin');
+
+    await cache.saveTopicFeed('all:latest', {
+      'topic_list': {'topics': []},
+      'users': [],
+    });
+    expect((await cache.loadTopicFeeds()).keys, contains('all:latest'));
+
+    for (var id = 1; id <= 55; id += 1) {
+      await cache.saveTopicDetail(
+        id,
+        {
+          'id': id,
+          'title': 'topic $id',
+          'category_id': 1,
+          'posts_count': 1,
+          'highest_post_number': 1,
+          'details': {'can_create_post': true, 'can_delete': false},
+          'post_stream': {
+            'posts': [
+              {
+                'id': id * 10,
+                'topic_id': id,
+                'username': 'user',
+                'avatar_template': '/avatar/{size}.png',
+                'cooked': '<p>cached</p>',
+                'post_number': 1,
+                'post_url': '/t/topic/$id/1',
+              }
+            ],
+            'stream': [id * 10],
+          },
+        },
+        privateMessage: false,
+      );
+    }
+    final details = await cache.loadTopicDetails();
+    expect(details, hasLength(50));
+    expect(details.containsKey(1), isFalse);
+    expect(details.containsKey(55), isTrue);
+
+    await cache.savePrivateMessages({
+      'topic_list': {
+        'topics': [
+          {'id': 101, 'title': 'keep'},
+          {'id': 102, 'title': 'delete'},
+        ],
+      },
+      'users': [],
+    });
+    await cache.removePrivateMessageTopic(102);
+    final privateMessages = cache.loadPrivateMessages();
+    final topicList = privateMessages?['topic_list'] as JsonMap;
+    final topics = topicList['topics'] as List;
+    expect(topics.whereType<JsonMap>().map((topic) => topic['id']), [101]);
   });
 
   test('saves and cleans forum read positions', () async {

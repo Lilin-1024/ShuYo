@@ -203,6 +203,7 @@ class _MessagesPageState extends State<MessagesPage> {
         _error = null;
         _loading = false;
       });
+      unawaited(_refreshList(silent: true));
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -214,7 +215,7 @@ class _MessagesPageState extends State<MessagesPage> {
     }
   }
 
-  Future<void> _refreshList() async {
+  Future<void> _refreshList({bool silent = false}) async {
     if (_refreshing) {
       return;
     }
@@ -246,7 +247,7 @@ class _MessagesPageState extends State<MessagesPage> {
       }
       if (_topics == null) {
         setState(() => _error = error);
-      } else {
+      } else if (!silent) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -281,6 +282,7 @@ class _MessagesPageState extends State<MessagesPage> {
   Future<void> _hidePrivateMessageTopic(int topicId) async {
     final next = {..._hiddenTopicIds, topicId};
     await _saveHiddenTopicIds(next);
+    await widget.repository.forgetPrivateMessage(topicId);
     if (!mounted) {
       return;
     }

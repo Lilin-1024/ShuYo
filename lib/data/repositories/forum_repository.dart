@@ -24,6 +24,7 @@ import '../services/client_settings_service.dart';
 import '../services/forum_auth_service.dart';
 import '../services/html_text.dart';
 import '../services/payload_factory.dart';
+import '../services/forum_persistent_cache.dart';
 import '../services/sha1_hash.dart';
 
 class TopicFeedQuery {
@@ -151,6 +152,7 @@ abstract class ForumRepository {
   Future<void> unbookmarkTopic(int bookmarkId);
   Future<void> deleteTopic(TopicListItem topic);
   Future<void> deletePost(Post post);
+  Future<void> forgetPrivateMessage(int topicId);
   Future<void> clearLoginCookies();
 }
 
@@ -561,6 +563,9 @@ class FixtureForumRepository implements ForumRepository {
   }
 
   @override
+  Future<void> forgetPrivateMessage(int topicId) async {}
+
+  @override
   Future<void> clearLoginCookies() async {}
 
   static Future<JsonMap> _loadJson(AssetBundle bundle, String path) async {
@@ -610,6 +615,7 @@ class OnlineForumRepository implements ForumRepository {
     required CurrentUserSession session,
     required UserSummary userSummary,
     required Map<int, ForumCategory> categories,
+    required ForumPersistentCache persistentCache,
   })  : _apiClient = apiClient,
         _authService = authService,
         _fallback = fallback,
@@ -617,6 +623,7 @@ class OnlineForumRepository implements ForumRepository {
         _profile = session.profile,
         _userSummary = userSummary,
         _categories = categories,
+        _persistentCache = persistentCache,
         users = Map<int, DiscourseUser>.of(fallback.users) {
     users[session.user.id] = session.user;
   }
@@ -638,6 +645,9 @@ class OnlineForumRepository implements ForumRepository {
       await auth.clearCachedCookies();
       rethrow;
     }
+    final persistentCache = await ForumPersistentCache.open(
+      username: session.profile.username,
+    );
     final repository = OnlineForumRepository._(
       apiClient: apiClient,
       authService: auth,
@@ -645,7 +655,9 @@ class OnlineForumRepository implements ForumRepository {
       session: session,
       userSummary: _emptyUserSummary,
       categories: Map<int, ForumCategory>.of(fallback._categories),
+      persistentCache: persistentCache,
     );
+    await repository._restorePersistentCache();
     unawaited(repository._warmOptionalStartupData());
     return repository;
   }
@@ -653,6 +665,7 @@ class OnlineForumRepository implements ForumRepository {
   final DiscourseApiClient _apiClient;
   final ForumAuthService _authService;
   final FixtureForumRepository _fallback;
+  final ForumPersistentCache _persistentCache;
   CurrentUserSession _session;
   UserProfile _profile;
   UserSummary _userSummary;
@@ -728,6 +741,34 @@ class OnlineForumRepository implements ForumRepository {
     }
   }
 
+  Future<void> _restorePersistentCache() async {
+    final feeds = await _persistentCache.loadTopicFeeds();
+    for (final entry in feeds.entries) {
+      final json = entry.value;
+      _mergeUsers(json);
+      _feedTopics[entry.key] = FixtureForumRepository._parseTopics(json);
+      _feedMorePaths[entry.key] = _parseMoreTopicsPath(json);
+    }
+
+    final privateJson = _persistentCache.loadPrivateMessages();
+    if (privateJson != null) {
+      _mergeUsers(privateJson);
+      _privateMessages = _parsePrivateMessages(privateJson);
+    }
+
+    final details = await _persistentCache.loadTopicDetails();
+    for (final entry in details.entries) {
+      try {
+        final detail = TopicDetail.fromJson(entry.value);
+        if (detail.id > 0) {
+          _topicDetails[entry.key] = detail;
+        }
+      } on Object {
+        // 单条缓存损坏不影响其它缓存恢复。
+      }
+    }
+  }
+
   @override
   ForumCategory? categoryById(int id) {
     return _categories[id] ?? _fallback.categoryById(id);
@@ -754,7 +795,10 @@ class OnlineForumRepository implements ForumRepository {
     final json = await _apiClient.getJson(_feedPath(query));
     _mergeUsers(json);
     _feedMorePaths[query.key] = _parseMoreTopicsPath(json);
-    return _feedTopics[query.key] = FixtureForumRepository._parseTopics(json);
+    final topics = FixtureForumRepository._parseTopics(json);
+    _feedTopics[query.key] = topics;
+    await _persistentCache.saveTopicFeed(query.key, json);
+    return topics;
   }
 
   @override
@@ -1016,6 +1060,7 @@ class OnlineForumRepository implements ForumRepository {
     final post = Post.fromJson(postJson);
     _topicDetails.remove(post.topicId);
     _staleTopicDetailIds.remove(post.topicId);
+    await _persistentCache.removeTopicDetail(post.topicId);
     _feedTopics.clear();
     _feedMorePaths.clear();
     _activityItems.remove(ForumActivityKind.topics);
@@ -1133,6 +1178,9 @@ class OnlineForumRepository implements ForumRepository {
       _topicDetails[draft.topicId] = cached.mergedWithPosts([post]);
       _staleTopicDetailIds.remove(draft.topicId);
     }
+    if (cached?.isPrivateMessage != true) {
+      await _persistentCache.removeTopicDetail(draft.topicId);
+    }
     _privateMessages = null;
     return post;
   }
@@ -1144,23 +1192,23 @@ class OnlineForumRepository implements ForumRepository {
     if (!forceRefresh && _privateMessages != null) {
       return _privateMessages!;
     }
+    final cachedJson = _persistentCache.loadPrivateMessages();
+    if (!forceRefresh && cachedJson != null) {
+      _mergeUsers(cachedJson);
+      return _privateMessages = _parsePrivateMessages(cachedJson);
+    }
     final username = profile.username.toLowerCase();
     final responses = await Future.wait([
       _apiClient.getJson('/topics/private-messages/$username.json'),
       _apiClient.getJson('/topics/private-messages-sent/$username.json'),
     ]);
-    final messagesById = <int, TopicListItem>{};
-    for (final json in responses) {
-      _mergeUsers(json);
-      for (final message in FixtureForumRepository._parseTopics(json)) {
-        final existing = messagesById[message.id];
-        messagesById[message.id] = existing == null
-            ? message
-            : _newerPrivateMessageTopic(existing, message);
-      }
-    }
-    final messages = messagesById.values.toList()
-      ..sort((a, b) => _topicActivityTime(b).compareTo(_topicActivityTime(a)));
+    final combinedJson = _mergePrivateMessageJsons([
+      if (cachedJson != null) cachedJson,
+      ...responses,
+    ]);
+    _mergeUsers(combinedJson);
+    final messages = _parsePrivateMessages(combinedJson);
+    await _persistentCache.savePrivateMessages(combinedJson);
     if (forceRefresh) {
       for (final message in messages) {
         _pendingTopicDetails.remove(message.id);
@@ -1172,16 +1220,60 @@ class OnlineForumRepository implements ForumRepository {
     return _privateMessages = messages;
   }
 
-  TopicListItem _newerPrivateMessageTopic(
-    TopicListItem current,
-    TopicListItem next,
-  ) {
-    final currentTime = _topicActivityTime(current);
-    final nextTime = _topicActivityTime(next);
-    if (nextTime.isAfter(currentTime)) {
-      return next;
+  List<TopicListItem> _parsePrivateMessages(JsonMap json) {
+    final messages = FixtureForumRepository._parseTopics(json).toList()
+      ..sort((a, b) => _topicActivityTime(b).compareTo(_topicActivityTime(a)));
+    return messages;
+  }
+
+  JsonMap _mergePrivateMessageJsons(Iterable<JsonMap> jsons) {
+    final topicsById = <int, JsonMap>{};
+    final usersById = <int, JsonMap>{};
+    for (final json in jsons) {
+      final usersJson = json['users'];
+      if (usersJson is List) {
+        for (final user in usersJson.whereType<JsonMap>()) {
+          final id = intValue(user['id']);
+          if (id > 0) {
+            usersById[id] = user;
+          }
+        }
+      }
+      final topicList = json['topic_list'];
+      final topicsJson = topicList is JsonMap ? topicList['topics'] : null;
+      if (topicsJson is! List) {
+        continue;
+      }
+      for (final topic in topicsJson.whereType<JsonMap>()) {
+        final id = intValue(topic['id']);
+        if (id <= 0) {
+          continue;
+        }
+        final existing = topicsById[id];
+        if (existing == null ||
+            _topicJsonActivityTime(topic).isAfter(
+              _topicJsonActivityTime(existing),
+            )) {
+          topicsById[id] = topic;
+        }
+      }
     }
-    return current;
+    final topics = topicsById.values.toList()
+      ..sort(
+        (a, b) => _topicJsonActivityTime(b).compareTo(
+          _topicJsonActivityTime(a),
+        ),
+      );
+    return {
+      'topic_list': {'topics': topics},
+      'users': usersById.values.toList(),
+    };
+  }
+
+  DateTime _topicJsonActivityTime(JsonMap topic) {
+    return dateValue(topic['last_posted_at']) ??
+        dateValue(topic['created_at']) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   DateTime _topicActivityTime(TopicListItem topic) {
@@ -1270,6 +1362,7 @@ class OnlineForumRepository implements ForumRepository {
     final post = Post.fromJson(json);
     _topicDetails.remove(post.topicId);
     _staleTopicDetailIds.remove(post.topicId);
+    await _persistentCache.removeTopicDetail(post.topicId);
     return post;
   }
 
@@ -1283,6 +1376,7 @@ class OnlineForumRepository implements ForumRepository {
     final post = Post.fromJson(json);
     _topicDetails.remove(post.topicId);
     _staleTopicDetailIds.remove(post.topicId);
+    await _persistentCache.removeTopicDetail(post.topicId);
     return post;
   }
 
@@ -1302,6 +1396,7 @@ class OnlineForumRepository implements ForumRepository {
     _topicDetails.remove(topicId);
     _staleTopicDetailIds.remove(topicId);
     _pendingTopicDetails.remove(topicId);
+    await _persistentCache.removeTopicDetail(topicId);
     return ForumPollVoteResult.fromJson(json);
   }
 
@@ -1324,6 +1419,7 @@ class OnlineForumRepository implements ForumRepository {
     _topicDetails.remove(topicId);
     _staleTopicDetailIds.remove(topicId);
     _pendingTopicDetails.remove(topicId);
+    await _persistentCache.removeTopicDetail(topicId);
     final pollJson = json['poll'];
     return pollJson is JsonMap
         ? ForumPoll.fromJson(pollJson)
@@ -1347,6 +1443,7 @@ class OnlineForumRepository implements ForumRepository {
       _topicDetails.remove(topicId);
       _staleTopicDetailIds.remove(topicId);
       _pendingTopicDetails.remove(topicId);
+      await _persistentCache.removeTopicDetail(topicId);
     }
     return post;
   }
@@ -1385,6 +1482,7 @@ class OnlineForumRepository implements ForumRepository {
     _topicDetails.remove(topic.id);
     _staleTopicDetailIds.remove(topic.id);
     _pendingTopicDetails.remove(topic.id);
+    await _persistentCache.removeTopicDetail(topic.id);
     for (final key in _feedTopics.keys.toList()) {
       _feedTopics[key] =
           _feedTopics[key]!.where((item) => item.id != topic.id).toList();
@@ -1403,6 +1501,17 @@ class OnlineForumRepository implements ForumRepository {
     );
     _topicDetails.remove(post.topicId);
     _staleTopicDetailIds.remove(post.topicId);
+    await _persistentCache.removeTopicDetail(post.topicId);
+  }
+
+  @override
+  Future<void> forgetPrivateMessage(int topicId) async {
+    _topicDetails.remove(topicId);
+    _pendingTopicDetails.remove(topicId);
+    _staleTopicDetailIds.remove(topicId);
+    _privateMessages =
+        _privateMessages?.where((message) => message.id != topicId).toList();
+    await _persistentCache.removePrivateMessageTopic(topicId);
   }
 
   Future<TopicDetail?> _fetchTopicDetail(
@@ -1426,9 +1535,15 @@ class OnlineForumRepository implements ForumRepository {
       }
       rethrow;
     }
-    final detail = await _hydrateMissingPosts(TopicDetail.fromJson(json));
+    final snapshot = await _hydrateTopicSnapshot(json);
+    final detail = snapshot.detail;
     _topicDetails[id] = detail;
     _staleTopicDetailIds.remove(id);
+    await _persistentCache.saveTopicDetail(
+      id,
+      snapshot.json,
+      privateMessage: detail.isPrivateMessage,
+    );
     return detail;
   }
 
@@ -1451,27 +1566,36 @@ class OnlineForumRepository implements ForumRepository {
     return '/t/$id/1.json?track_visit=true&forceLoad=true';
   }
 
-  Future<TopicDetail> _hydrateMissingPosts(TopicDetail detail) async {
+  Future<_HydratedTopicSnapshot> _hydrateTopicSnapshot(JsonMap json) async {
+    final detail = TopicDetail.fromJson(json);
     final loadedPostIds = detail.posts.map((post) => post.id).toSet();
     final missingIds = detail.postStreamIds
         .where((id) => !loadedPostIds.contains(id))
         .toList(growable: false);
     if (missingIds.isEmpty) {
-      return detail;
+      return _HydratedTopicSnapshot(detail: detail, json: json);
     }
     try {
-      final posts = await _fetchPostsByIds(detail, missingIds);
-      return posts.isEmpty ? detail : detail.mergedWithPosts(posts);
+      final postJsons = await _fetchPostJsonsByIds(detail, missingIds);
+      if (postJsons.isEmpty) {
+        return _HydratedTopicSnapshot(detail: detail, json: json);
+      }
+      final posts = postJsons.map(Post.fromJson);
+      final hydrated = detail.mergedWithPosts(posts);
+      return _HydratedTopicSnapshot(
+        detail: hydrated,
+        json: _mergePostJsonsIntoTopicJson(json, postJsons),
+      );
     } on ForumApiException {
-      return detail;
+      return _HydratedTopicSnapshot(detail: detail, json: json);
     }
   }
 
-  Future<List<Post>> _fetchPostsByIds(
+  Future<List<JsonMap>> _fetchPostJsonsByIds(
     TopicDetail detail,
     List<int> postIds,
   ) async {
-    final posts = <Post>[];
+    final posts = <JsonMap>[];
     for (var start = 0; start < postIds.length; start += 20) {
       final end = start + 20 > postIds.length ? postIds.length : start + 20;
       final batch = postIds.sublist(start, end);
@@ -1479,10 +1603,58 @@ class OnlineForumRepository implements ForumRepository {
       final stream = json['post_stream'];
       final postsJson = stream is JsonMap ? stream['posts'] : json['posts'];
       if (postsJson is List) {
-        posts.addAll(postsJson.whereType<JsonMap>().map(Post.fromJson));
+        posts.addAll(postsJson.whereType<JsonMap>());
       }
     }
     return posts;
+  }
+
+  JsonMap _mergePostJsonsIntoTopicJson(
+    JsonMap json,
+    Iterable<JsonMap> incomingPosts,
+  ) {
+    final stream = json['post_stream'];
+    if (stream is! JsonMap) {
+      return json;
+    }
+    final byId = <int, JsonMap>{};
+    final postsJson = stream['posts'];
+    if (postsJson is List) {
+      for (final post in postsJson.whereType<JsonMap>()) {
+        final id = intValue(post['id']);
+        if (id > 0) {
+          byId[id] = post;
+        }
+      }
+    }
+    for (final post in incomingPosts) {
+      final id = intValue(post['id']);
+      if (id > 0) {
+        byId[id] = post;
+      }
+    }
+    final posts = byId.values.toList()
+      ..sort((a, b) => intValue(a['post_number']).compareTo(
+            intValue(b['post_number']),
+          ));
+    final streamIdsJson = stream['stream'];
+    final streamIds = streamIdsJson is List
+        ? streamIdsJson.map(intValue).where((id) => id > 0).toList()
+        : <int>[];
+    for (final post in posts) {
+      final id = intValue(post['id']);
+      if (id > 0 && !streamIds.contains(id)) {
+        streamIds.add(id);
+      }
+    }
+    return {
+      ...json,
+      'post_stream': {
+        ...stream,
+        'posts': posts,
+        'stream': streamIds,
+      },
+    };
   }
 
   Future<JsonMap> _getPostBatch(TopicDetail detail, List<int> postIds) async {
@@ -1730,6 +1902,16 @@ class OnlineForumRepository implements ForumRepository {
     }
     return fallback._categories;
   }
+}
+
+class _HydratedTopicSnapshot {
+  const _HydratedTopicSnapshot({
+    required this.detail,
+    required this.json,
+  });
+
+  final TopicDetail detail;
+  final JsonMap json;
 }
 
 List<ForumCategory> _sortedCategories(Map<int, ForumCategory> categories) {
