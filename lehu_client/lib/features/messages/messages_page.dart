@@ -1211,17 +1211,11 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                ForumCookedContent(
-                  cooked: post.cooked,
+                _MessageCookedContent(
+                  post: post,
                   textColor: primaryText,
-                  textSize: 15,
-                  textBottomSpacing: 6,
-                  imageBottomSpacing: 8,
-                  imageErrorHeight: 130,
-                  imageFit: BoxFit.contain,
-                  compactCards: true,
-                  onOpenUser: onOpenUser,
                   onOpenImage: onOpenImage,
+                  onOpenUser: onOpenUser,
                   onOpenInternalTopic: onOpenInternalTopic,
                 ),
                 const SizedBox(height: 4),
@@ -1252,6 +1246,52 @@ class _MessageBubble extends StatelessWidget {
     await Clipboard.setData(ClipboardData(text: text));
     messenger.showSnackBar(
       const SnackBar(content: Text('已复制')),
+    );
+  }
+}
+
+class _MessageCookedContent extends StatelessWidget {
+  const _MessageCookedContent({
+    required this.post,
+    required this.textColor,
+    required this.onOpenImage,
+    required this.onOpenUser,
+    required this.onOpenInternalTopic,
+  });
+
+  final Post post;
+  final Color textColor;
+  final void Function(List<String> urls, int initialIndex) onOpenImage;
+  final ValueChanged<String> onOpenUser;
+  final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
+
+  @override
+  Widget build(BuildContext context) {
+    if (HtmlText.prefersPlainPrivateMessageText(post.cooked)) {
+      final text = HtmlText.toPlainText(post.cooked).trim();
+      if (text.isNotEmpty) {
+        return Text(
+          text,
+          style: TextStyle(
+            color: textColor,
+            fontSize: 15,
+            height: 1.46,
+          ),
+        );
+      }
+    }
+    return ForumCookedContent(
+      cooked: post.cooked,
+      textColor: textColor,
+      textSize: 15,
+      textBottomSpacing: 6,
+      imageBottomSpacing: 8,
+      imageErrorHeight: 130,
+      imageFit: BoxFit.contain,
+      compactCards: true,
+      onOpenUser: onOpenUser,
+      onOpenImage: onOpenImage,
+      onOpenInternalTopic: onOpenInternalTopic,
     );
   }
 }

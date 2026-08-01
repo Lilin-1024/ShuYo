@@ -285,6 +285,21 @@ class HtmlText {
     return '${plain.substring(0, maxLength)}...';
   }
 
+  static bool prefersPlainPrivateMessageText(String html) {
+    final segments = parseSegments(html);
+    if (segments.isEmpty || segments.any((segment) => !segment.isText)) {
+      return false;
+    }
+    return segments.any((segment) {
+      if (segment.textBlockKind != CookedTextBlockKind.paragraph) {
+        return true;
+      }
+      return segment.runs.any((run) {
+        return run.code || (run.link?.isInternalUser ?? false);
+      });
+    });
+  }
+
   static TopicPreview topicPreview(String html, {int maxLength = 72}) {
     final text = toPlainText(html).replaceAll(RegExp(r'\s+'), ' ').trim();
     return TopicPreview(
@@ -859,7 +874,14 @@ class HtmlText {
     if (username.endsWith('.json')) {
       username = username.substring(0, username.length - 5);
     }
-    return username.isEmpty ? null : Uri.decodeComponent(username);
+    if (username.isEmpty) {
+      return null;
+    }
+    try {
+      return Uri.decodeComponent(username);
+    } on Object {
+      return username;
+    }
   }
 
   static Uri? _uriForLink(String value) {

@@ -158,15 +158,45 @@ void main() {
 
     const mentionCooked =
         '<p><a class="mention" href="/u/Lilin">@Lilin</a> 你好</p>';
+    expect(HtmlText.prefersPlainPrivateMessageText(mentionCooked), isTrue);
+    expect(
+      HtmlText.prefersPlainPrivateMessageText('<p>mail@example.com</p>'),
+      isFalse,
+    );
+    expect(
+      HtmlText.prefersPlainPrivateMessageText(
+        '<p><a class="mention" href="/u/%E4%B8%8A%E5%A4%A7%E8%AE%BA%E5%9D%9B">@上大论坛</a> 你好</p>',
+      ),
+      isTrue,
+    );
+    expect(
+      HtmlText.prefersPlainPrivateMessageText(
+        '<p>嗨！请说 <code>@上大论坛 显示帮助</code>。</p>',
+      ),
+      isTrue,
+    );
+    expect(
+      HtmlText.prefersPlainPrivateMessageText(
+        '<p>说明</p><blockquote><p>很长的帮助内容</p></blockquote>',
+      ),
+      isTrue,
+    );
     final mention = HtmlText.parseSegments(mentionCooked).first;
     expect(mention.kind, CookedSegmentKind.text);
     expect(mention.textValue, '@Lilin 你好');
     final mentionLink = mention.runs.first.link;
     expect(mentionLink?.isInternalUser, isTrue);
     expect(mentionLink?.userUsername, 'Lilin');
+    expect(
+      HtmlText.internalUsernameFromUrl(
+        'https://bbs.shu.edu.cn/u/%E4%B8%8A%E5%A4%A7%E8%AE%BA%E5%9D%9B',
+      ),
+      '上大论坛',
+    );
 
     const inlineLinkCooked =
         '<p>请看 <a href="https://example.com/a">这个链接</a> 好吗</p>';
+    expect(HtmlText.prefersPlainPrivateMessageText(inlineLinkCooked), isFalse);
     final inlineLink = HtmlText.parseSegments(inlineLinkCooked).single;
     expect(inlineLink.kind, CookedSegmentKind.text);
     expect(inlineLink.textValue, '请看 这个链接 好吗');
