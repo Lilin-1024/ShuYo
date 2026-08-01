@@ -111,7 +111,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
                     }),
             selectedManualSlot: _selectedManualSlot,
             onEmptySlotTap: _handleEmptySlotTap,
-            onCourseLongPress: _handleCourseLongPress,
+            onCourseTap: _handleCourseTap,
           );
         },
       ),
@@ -258,6 +258,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
           maxWeek: schedule.maxWeek,
           weekday: slot.weekday,
           initialStartSection: slot.section,
+          submitLabel: '添加',
         );
       },
     );
@@ -268,7 +269,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       _showSnack('所选时间已有课程');
       return;
     }
-    final session = _manualSessionFromDraft(
+    final session = _courseSessionFromDraft(
       draft,
       weekday: slot.weekday,
     );
@@ -292,22 +293,20 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     unawaited(widget.notificationService.syncScheduleReminders());
   }
 
-  Future<void> _handleCourseLongPress(CourseSession session) async {
-    if (!session.isManual) {
-      return;
-    }
+  Future<void> _handleCourseTap(CourseSession session) async {
     final action = await showModalBottomSheet<_ManualCourseAction>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
         final colors = context.lehuColors;
+        final color = _courseColor(context, session.courseName);
         final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
         return SafeArea(
           top: false,
           bottom: false,
           child: Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(12, 8, 12, 12 + bottomPadding),
+            padding: EdgeInsets.fromLTRB(20, 18, 20, 18 + bottomPadding),
             decoration: BoxDecoration(
               color: colors.surface,
               borderRadius: const BorderRadius.vertical(
@@ -316,21 +315,66 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ListTile(
-                  title: Text(session.courseName),
-                  subtitle: Text(
-                      '${_weekdayName(session.weekday)} ${session.sectionText}'),
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        session.courseName,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: 17.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                ListTile(
-                  leading: Icon(Icons.delete_outline, color: colors.danger),
-                  title: Text(
-                    '删除课程',
-                    style: TextStyle(color: colors.danger),
-                  ),
-                  subtitle: const Text('同一天同节次的手动课程会一起删除'),
-                  onTap: () =>
-                      Navigator.of(context).pop(_ManualCourseAction.delete),
+                const SizedBox(height: 16),
+                _DetailLine(
+                  Icons.schedule,
+                  '${_weekdayName(session.weekday)} ${session.sectionText} ${session.weekText}',
+                ),
+                if (session.placeText.isNotEmpty)
+                  _DetailLine(Icons.place_outlined, session.placeText),
+                if (session.teacherName.isNotEmpty)
+                  _DetailLine(Icons.person_outline, session.teacherName),
+                if (session.credit.isNotEmpty)
+                  _DetailLine(Icons.school_outlined, '${session.credit} 学分'),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () =>
+                            Navigator.of(context).pop(_ManualCourseAction.edit),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('编辑'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.of(context)
+                            .pop(_ManualCourseAction.delete),
+                        icon: Icon(Icons.delete_outline, color: colors.danger),
+                        label: Text(
+                          '删除',
+                          style: TextStyle(color: colors.danger),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -338,19 +382,86 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         );
       },
     );
-    if (!mounted || action != _ManualCourseAction.delete) {
+    if (!mounted || action == null) {
       return;
     }
-    await _deleteManualCourseGroup(session);
+    switch (action) {
+      case _ManualCourseAction.edit:
+        await _openCourseEditSheet(session);
+      case _ManualCourseAction.delete:
+        final confirmed = await _confirmDeleteCourseGroup(session);
+        if (confirmed) {
+          await _deleteCourseGroup(session);
+        }
+    }
   }
 
-  Future<void> _deleteManualCourseGroup(CourseSession target) async {
+  Future<void> _openCourseEditSheet(CourseSession session) async {
+    final schedule = _schedule;
+    if (schedule == null) {
+      return;
+    }
+    final draft = await showModalBottomSheet<_ManualCourseDraft>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _ManualCourseSheet(
+          initialWeek: _displayedWeek,
+          maxWeek: schedule.maxWeek,
+          weekday: session.weekday,
+          initialStartSection: session.startSection,
+          initialCourse: session,
+          submitLabel: '保存',
+        );
+      },
+    );
+    if (!mounted || draft == null) {
+      return;
+    }
+    if (_hasScheduleConflict(
+      schedule,
+      draft,
+      session.weekday,
+      excluding: session,
+    )) {
+      _showSnack('所选时间已有课程');
+      return;
+    }
+    final updated = _courseSessionFromDraft(
+      draft,
+      weekday: session.weekday,
+      base: session,
+    );
+    final nextSessions = [
+      for (final item in schedule.sessions)
+        if (_sameCourseIdentity(item, session)) updated else item,
+    ];
+    final next = schedule.copyWith(sessions: nextSessions);
+    await widget.repository.saveCachedSchedule(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _schedule = next;
+      _selectedManualSlot = null;
+    });
+    unawaited(
+      widget.widgetService.syncSchedule(
+        schedule: next,
+        weekState: _weekState,
+      ),
+    );
+    unawaited(widget.notificationService.syncScheduleReminders());
+  }
+
+  Future<void> _deleteCourseGroup(CourseSession target) async {
     final schedule = _schedule;
     if (schedule == null) {
       return;
     }
     final nextSessions = schedule.sessions
-        .where((session) => !_sameManualCourseGroup(session, target))
+        .where((session) => !_sameCourseSlotGroup(session, target))
         .toList();
     if (nextSessions.length == schedule.sessions.length) {
       return;
@@ -373,13 +484,47 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     unawaited(widget.notificationService.syncScheduleReminders());
   }
 
+  Future<bool> _confirmDeleteCourseGroup(CourseSession session) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final colors = context.lehuColors;
+        return AlertDialog(
+          title: const Text('确认删除'),
+          content: Text(
+            '将删除 ${session.courseName}，同节次的课程将会一起删除。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.danger,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('删除'),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
+  }
+
   bool _hasScheduleConflict(
     AcademicSchedule schedule,
     _ManualCourseDraft draft,
-    int weekday,
-  ) {
+    int weekday, {
+    CourseSession? excluding,
+  }) {
     final draftWeeks = draft.weeks.toSet();
     return schedule.sessions.any((session) {
+      if (excluding != null && _sameCourseIdentity(session, excluding)) {
+        return false;
+      }
       if (session.weekday != weekday) {
         return false;
       }
@@ -535,6 +680,7 @@ enum _ScheduleMenuAction {
 }
 
 enum _ManualCourseAction {
+  edit,
   delete,
 }
 
@@ -574,9 +720,10 @@ class _ManualCourseDraft {
   final List<int> weeks;
 }
 
-CourseSession _manualSessionFromDraft(
+CourseSession _courseSessionFromDraft(
   _ManualCourseDraft draft, {
   required int weekday,
+  CourseSession? base,
 }) {
   final sections = [
     for (var section = draft.startSection;
@@ -586,13 +733,14 @@ CourseSession _manualSessionFromDraft(
   ];
   final weeks = [...draft.weeks]..sort();
   return CourseSession(
-    id: '${CourseSession.manualIdPrefix}$weekday:'
-        '${draft.startSection}-${draft.endSection}:'
-        '${DateTime.now().microsecondsSinceEpoch}',
+    id: base?.id ??
+        '${CourseSession.manualIdPrefix}$weekday:'
+            '${draft.startSection}-${draft.endSection}:'
+            '${DateTime.now().microsecondsSinceEpoch}',
     courseName: draft.courseName,
-    courseCode: CourseSession.manualCode,
-    teacherName: '',
-    campus: '',
+    courseCode: base?.courseCode ?? CourseSession.manualCode,
+    teacherName: base?.teacherName ?? '',
+    campus: base?.campus ?? '',
     location: draft.location,
     weekday: weekday,
     startSection: draft.startSection,
@@ -600,15 +748,20 @@ CourseSession _manualSessionFromDraft(
     sections: sections,
     weeks: weeks,
     weekText: _formatWeekText(weeks),
-    credit: '',
-    note: '',
+    credit: base?.credit ?? '',
+    note: base?.note ?? '',
   );
 }
 
-bool _sameManualCourseGroup(CourseSession session, CourseSession target) {
-  return session.isManual &&
-      target.isManual &&
+bool _sameCourseIdentity(CourseSession session, CourseSession target) {
+  return session.id == target.id &&
       session.weekday == target.weekday &&
+      session.startSection == target.startSection &&
+      session.endSection == target.endSection;
+}
+
+bool _sameCourseSlotGroup(CourseSession session, CourseSession target) {
+  return session.weekday == target.weekday &&
       session.startSection == target.startSection &&
       session.endSection == target.endSection;
 }
@@ -769,12 +922,16 @@ class _ManualCourseSheet extends StatefulWidget {
     required this.maxWeek,
     required this.weekday,
     required this.initialStartSection,
+    required this.submitLabel,
+    this.initialCourse,
   });
 
   final int initialWeek;
   final int maxWeek;
   final int weekday;
   final int initialStartSection;
+  final String submitLabel;
+  final CourseSession? initialCourse;
 
   @override
   State<_ManualCourseSheet> createState() => _ManualCourseSheetState();
@@ -791,6 +948,22 @@ class _ManualCourseSheetState extends State<_ManualCourseSheet> {
   @override
   void initState() {
     super.initState();
+    final initialCourse = widget.initialCourse;
+    if (initialCourse != null) {
+      _courseNameController.text = initialCourse.courseName;
+      _locationController.text = initialCourse.location;
+      _startSection = initialCourse.startSection.clamp(1, 12);
+      _endSection = initialCourse.endSection.clamp(_startSection, 12);
+      _weeks = initialCourse.weeks.isEmpty
+          ? {for (var week = 1; week <= widget.maxWeek; week++) week}
+          : initialCourse.weeks
+              .where((week) => week >= 1 && week <= widget.maxWeek)
+              .toSet();
+      if (_weeks.isEmpty) {
+        _weeks = {widget.initialWeek.clamp(1, widget.maxWeek)};
+      }
+      return;
+    }
     _startSection = widget.initialStartSection.clamp(1, 12);
     _endSection = _startSection;
     _weeks = {widget.initialWeek.clamp(1, widget.maxWeek)};
@@ -834,7 +1007,9 @@ class _ManualCourseSheetState extends State<_ManualCourseSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        '${_weekdayName(widget.weekday)} 添加课程',
+                        widget.initialCourse == null
+                            ? '${_weekdayName(widget.weekday)} 添加课程'
+                            : '${_weekdayName(widget.weekday)} 编辑课程',
                         style: TextStyle(
                           color: colors.textPrimary,
                           fontSize: 16.5,
@@ -964,7 +1139,7 @@ class _ManualCourseSheetState extends State<_ManualCourseSheet> {
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: _submit,
-                    child: const Text('添加'),
+                    child: Text(widget.submitLabel),
                   ),
                 ),
               ],
@@ -1000,7 +1175,7 @@ class _ScheduleBody extends StatelessWidget {
     required this.onNextWeek,
     required this.selectedManualSlot,
     required this.onEmptySlotTap,
-    required this.onCourseLongPress,
+    required this.onCourseTap,
   });
 
   final AcademicSchedule schedule;
@@ -1010,7 +1185,7 @@ class _ScheduleBody extends StatelessWidget {
   final VoidCallback? onNextWeek;
   final _ScheduleSlot? selectedManualSlot;
   final ValueChanged<_ScheduleSlot> onEmptySlotTap;
-  final ValueChanged<CourseSession> onCourseLongPress;
+  final ValueChanged<CourseSession> onCourseTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1047,7 +1222,7 @@ class _ScheduleBody extends StatelessWidget {
                         displayedWeek: displayedWeek,
                         selectedManualSlot: selectedManualSlot,
                         onEmptySlotTap: onEmptySlotTap,
-                        onCourseLongPress: onCourseLongPress,
+                        onCourseTap: onCourseTap,
                       ),
                     ),
                     if (untimed.isNotEmpty)
@@ -1127,7 +1302,7 @@ class _ScheduleGrid extends StatelessWidget {
     required this.displayedWeek,
     required this.selectedManualSlot,
     required this.onEmptySlotTap,
-    required this.onCourseLongPress,
+    required this.onCourseTap,
   });
 
   static const leftWidth = 68.0;
@@ -1141,7 +1316,7 @@ class _ScheduleGrid extends StatelessWidget {
   final int displayedWeek;
   final _ScheduleSlot? selectedManualSlot;
   final ValueChanged<_ScheduleSlot> onEmptySlotTap;
-  final ValueChanged<CourseSession> onCourseLongPress;
+  final ValueChanged<CourseSession> onCourseTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1181,7 +1356,7 @@ class _ScheduleGrid extends StatelessWidget {
                         _scheduleCourseInset * 2,
                     child: _CourseBlock(
                       session: session,
-                      onLongPress: () => onCourseLongPress(session),
+                      onTap: () => onCourseTap(session),
                     ),
                   ),
             ],
@@ -1398,23 +1573,21 @@ class _SectionLabel extends StatelessWidget {
 class _CourseBlock extends StatelessWidget {
   const _CourseBlock({
     required this.session,
-    required this.onLongPress,
+    required this.onTap,
   });
 
   final CourseSession session;
-  final VoidCallback onLongPress;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
-    final color = _courseColor(context, session.courseName);
     return Material(
       color: colors.scheduleCourseFill,
       borderRadius: BorderRadius.circular(_scheduleCourseRadius),
       child: InkWell(
         borderRadius: BorderRadius.circular(_scheduleCourseRadius),
-        onTap: () => _showCourseSheet(context, session, color),
-        onLongPress: onLongPress,
+        onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
@@ -1449,72 +1622,6 @@ class _CourseBlock extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  void _showCourseSheet(
-    BuildContext context,
-    CourseSession session,
-    Color color,
-  ) {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final colors = context.lehuColors;
-        return SafeArea(
-          top: false,
-          bottom: false,
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(8),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: color,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        session.courseName,
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 17.5,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _DetailLine(Icons.schedule,
-                    '${session.sectionText} ${session.weekText}'),
-                if (session.placeText.isNotEmpty)
-                  _DetailLine(Icons.place_outlined, session.placeText),
-                if (session.teacherName.isNotEmpty)
-                  _DetailLine(Icons.person_outline, session.teacherName),
-                if (session.credit.isNotEmpty)
-                  _DetailLine(Icons.school_outlined, '${session.credit} 学分'),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
