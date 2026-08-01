@@ -421,11 +421,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       _showSnack('回复已删除');
       await _refresh();
     } on Object catch (error) {
-      await _handleOperationError(
-        error,
-        title: '无法删除回复',
-        fallbackMessage: '该回复已超过论坛允许删除的时限。\n\n如果您确实希望将其删除，请提交举报并说明原因，以便引起版主注意。',
-      );
+      await _handleDeletePostError(error, post);
     } finally {
       if (mounted) {
         setState(() => _deletingPostIds.remove(post.id));
@@ -742,6 +738,36 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     );
   }
 
+  Future<void> _handleDeletePostError(Object error, Post post) async {
+    if (error is ForumAuthException) {
+      await widget.onSessionExpired?.call();
+      await _showErrorDialog(
+        title: '登录已失效',
+        message: '请试着重新登录后再操作。',
+      );
+      return;
+    }
+    await _showErrorDialog(
+      title: '无法删除回复',
+      message: _deletePostErrorMessage(error, post),
+    );
+  }
+
+  String _deletePostErrorMessage(Object error, Post post) {
+    const moderatorMessage =
+        '该回复可能已超过论坛允许删除的时限，或当前状态不允许客户端删除。\n\n如果您确实希望将其删除，请提交举报并说明原因，以便引起版主注意。';
+    if (error is ForumApiException) {
+      if (!_isGenericForumError(error.message)) {
+        return error.message;
+      }
+      if (!post.canDelete || _isPermissionForumError(error)) {
+        return moderatorMessage;
+      }
+      return '删除请求失败，请稍后再试。\n\n如果网页端仍可删除，说明客户端请求与网页端存在差异，请保留该回复的抓包信息以便修复。';
+    }
+    return post.canDelete ? '删除失败，请稍后再试。' : moderatorMessage;
+  }
+
   Future<void> _handleOperationError(
     Object error, {
     required String title,
@@ -809,6 +835,15 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       return '加载失败，请稍后再试，或检查登录状态。';
     }
     return _friendlyError(error);
+  }
+
+  bool _isPermissionForumError(ForumApiException error) {
+    final code = error.statusCode;
+    final message = error.message;
+    return code == 403 ||
+        message.contains('无权') ||
+        message.contains('没有权限') ||
+        message.toLowerCase().contains('forbidden');
   }
 
   bool _isGenericForumError(String message) {
