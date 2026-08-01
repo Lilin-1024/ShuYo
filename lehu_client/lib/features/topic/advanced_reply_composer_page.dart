@@ -122,6 +122,7 @@ class _AdvancedReplyComposerPageState extends State<AdvancedReplyComposerPage> {
             uploading: _uploading,
             onUploadImage: _pickAndUpload,
             onPreview: _showPreview,
+            onInsertPoll: _insertPoll,
             showPreviewInToolbar: false,
             hintText: widget.replyToPostNumber == null
                 ? '写评论'
@@ -162,6 +163,16 @@ class _AdvancedReplyComposerPageState extends State<AdvancedReplyComposerPage> {
         setState(() => _uploading = false);
       }
     }
+  }
+
+  Future<void> _insertPoll() async {
+    final markdown = await showPollMarkdownDialog(context);
+    if (markdown == null || !mounted) {
+      return;
+    }
+    MarkdownEditing.insertBlock(_controller, markdown);
+    _focusNode.requestFocus();
+    _scheduleDraftSave();
   }
 
   Future<void> _submit() async {

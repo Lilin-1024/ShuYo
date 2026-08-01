@@ -2,9 +2,10 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 
 import '../../core/forum_url_resolver.dart';
+import '../models/forum_poll.dart';
 import 'emoji_text.dart';
 
-enum CookedSegmentKind { text, image, link, onebox, quote }
+enum CookedSegmentKind { text, image, link, onebox, quote, poll }
 
 enum CookedTextBlockKind { paragraph, heading, blockquote, listItem, codeBlock }
 
@@ -95,6 +96,7 @@ class CookedSegment {
         listIndex = 0,
         listDepth = 0,
         link = null,
+        poll = null,
         imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
@@ -107,6 +109,7 @@ class CookedSegment {
   })  : kind = CookedSegmentKind.text,
         value = '',
         link = null,
+        poll = null,
         imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
@@ -121,7 +124,8 @@ class CookedSegment {
         headingLevel = 0,
         listIndex = 0,
         listDepth = 0,
-        link = null;
+        link = null,
+        poll = null;
   const CookedSegment.link(this.link)
       : kind = CookedSegmentKind.link,
         value = '',
@@ -130,6 +134,7 @@ class CookedSegment {
         headingLevel = 0,
         listIndex = 0,
         listDepth = 0,
+        poll = null,
         imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
@@ -141,6 +146,7 @@ class CookedSegment {
         headingLevel = 0,
         listIndex = 0,
         listDepth = 0,
+        poll = null,
         imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
@@ -152,6 +158,19 @@ class CookedSegment {
         headingLevel = 0,
         listIndex = 0,
         listDepth = 0,
+        poll = null,
+        imageFullUrl = null,
+        imageWidth = 0,
+        imageHeight = 0;
+  const CookedSegment.poll(this.poll)
+      : kind = CookedSegmentKind.poll,
+        value = '',
+        runs = const [],
+        textBlockKind = CookedTextBlockKind.paragraph,
+        headingLevel = 0,
+        listIndex = 0,
+        listDepth = 0,
+        link = null,
         imageFullUrl = null,
         imageWidth = 0,
         imageHeight = 0;
@@ -164,6 +183,7 @@ class CookedSegment {
   final int listIndex;
   final int listDepth;
   final CookedLinkPreview? link;
+  final ForumPoll? poll;
   final String? imageFullUrl;
   final int imageWidth;
   final int imageHeight;
@@ -182,6 +202,7 @@ class CookedSegment {
   bool get isLink => kind == CookedSegmentKind.link;
   bool get isOnebox => kind == CookedSegmentKind.onebox;
   bool get isQuote => kind == CookedSegmentKind.quote;
+  bool get isPoll => kind == CookedSegmentKind.poll;
 }
 
 class TopicPreview {
@@ -443,6 +464,14 @@ class HtmlText {
         }
         return;
       }
+      if (tag == 'div' && _hasOwnClass(node, 'poll')) {
+        final poll = _pollPreview(node);
+        if (poll != null) {
+          flushText();
+          segments.add(CookedSegment.poll(poll));
+        }
+        return;
+      }
       if (tag == 'pre') {
         flushText();
         final text = _normalizeCodeBlockText(node.text);
@@ -698,6 +727,40 @@ class HtmlText {
     );
   }
 
+  static ForumPoll? _pollPreview(dom.Element element) {
+    final name = element.attributes['data-poll-name']?.trim() ?? '';
+    if (name.isEmpty) {
+      return null;
+    }
+    final title = _cleanInlineText(element.attributes['data-poll-title']);
+    final options = <ForumPollOption>[];
+    for (final option in element.querySelectorAll('li')) {
+      final id = option.attributes['data-poll-option-id']?.trim() ?? '';
+      if (id.isEmpty) {
+        continue;
+      }
+      options.add(
+        ForumPollOption(
+          id: id,
+          html: _cleanInlineText(option.text),
+        ),
+      );
+    }
+    return ForumPoll(
+      id: 0,
+      name: name,
+      type: element.attributes['data-poll-type']?.trim() ?? 'regular',
+      status: element.attributes['data-poll-status']?.trim() ?? 'open',
+      public: _boolAttribute(element.attributes['data-poll-public']),
+      results: element.attributes['data-poll-results']?.trim() ?? 'always',
+      chartType: element.attributes['data-poll-charttype']?.trim() ?? 'bar',
+      min: int.tryParse(element.attributes['data-poll-min'] ?? '') ?? 1,
+      max: int.tryParse(element.attributes['data-poll-max'] ?? '') ?? 0,
+      title: title.isEmpty ? null : title,
+      options: options,
+    );
+  }
+
   static CookedLinkPreview? _linkPreview(dom.Element anchor) {
     final rawUrl = anchor.attributes['href'] ?? '';
     if (rawUrl.trim().isEmpty) {
@@ -872,6 +935,10 @@ class HtmlText {
           .replaceAll(RegExp(r'\s+'), ' ')
           .trim(),
     );
+  }
+
+  static bool _boolAttribute(String? value) {
+    return value == 'true' || value == '1';
   }
 
   static String _normalizeCodeBlockText(String value) {

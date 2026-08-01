@@ -206,6 +206,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
           uploading: _uploading,
           onUploadImage: _pickAndUpload,
           onPreview: _showPreview,
+          onInsertPoll: _insertPoll,
           showPreviewInToolbar: false,
           minLines: 13,
           maxLines: 28,
@@ -429,6 +430,16 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
         setState(() => _uploading = false);
       }
     }
+  }
+
+  Future<void> _insertPoll() async {
+    final markdown = await showPollMarkdownDialog(context);
+    if (markdown == null || !mounted) {
+      return;
+    }
+    MarkdownEditing.insertBlock(_rawController, markdown);
+    _rawFocusNode.requestFocus();
+    _scheduleDraftSave();
   }
 
   Future<void> _submit() async {

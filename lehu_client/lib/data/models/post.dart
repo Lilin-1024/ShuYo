@@ -1,5 +1,6 @@
 import '../../core/forum_url_resolver.dart';
 import 'common.dart';
+import 'forum_poll.dart';
 
 class PostActionSummary {
   const PostActionSummary({
@@ -44,6 +45,7 @@ class Post {
     this.canDelete = false,
     this.yours = false,
     this.deletedAt,
+    this.polls = const [],
   });
 
   final int id;
@@ -59,9 +61,12 @@ class Post {
   final bool yours;
   final DateTime? deletedAt;
   final List<PostActionSummary> actions;
+  final List<ForumPoll> polls;
 
   factory Post.fromJson(JsonMap json) {
     final actionsJson = json['actions_summary'];
+    final pollsVotes = _pollsVotes(json['polls_votes']);
+    final pollsJson = json['polls'];
     return Post(
       id: intValue(json['id']),
       topicId: intValue(json['topic_id']),
@@ -83,7 +88,30 @@ class Post {
               .map(PostActionSummary.fromJson)
               .toList()
           : const [],
+      polls: pollsJson is List
+          ? pollsJson
+              .whereType<JsonMap>()
+              .map((poll) => ForumPoll.fromJson(
+                    poll,
+                    ownVotes: pollsVotes[stringValue(poll['name'])] ?? const [],
+                  ))
+              .toList()
+          : const [],
     );
+  }
+
+  static Map<String, List<String>> _pollsVotes(Object? value) {
+    if (value is! JsonMap) {
+      return const {};
+    }
+    return {
+      for (final entry in value.entries)
+        entry.key: entry.value is List
+            ? (entry.value as List)
+                .map((item) => item.toString())
+                .toList(growable: false)
+            : const <String>[],
+    };
   }
 
   String avatarUrl({int size = 96}) {

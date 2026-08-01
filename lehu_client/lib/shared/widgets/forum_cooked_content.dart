@@ -1,10 +1,24 @@
+import 'dart:math' as math;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../data/models/forum_poll.dart';
 import '../../data/services/html_text.dart';
 import '../theme/lehu_theme.dart';
+import 'avatar.dart';
 import 'forum_network_image.dart';
+
+typedef ForumPollVoteCallback = Future<void> Function(
+  ForumPoll poll,
+  List<String> optionIds,
+);
+
+typedef ForumPollStatusCallback = Future<void> Function(
+  ForumPoll poll,
+  String status,
+);
 
 class ForumCookedContent extends StatelessWidget {
   const ForumCookedContent({
@@ -14,6 +28,11 @@ class ForumCookedContent extends StatelessWidget {
     required this.onOpenImage,
     this.onOpenUser,
     this.onOpenInternalTopic,
+    this.polls = const [],
+    this.canManagePolls = false,
+    this.isPollBusy,
+    this.onVotePoll,
+    this.onTogglePollStatus,
     this.textSize = 16,
     this.textHeight = 1.46,
     this.textWeight = FontWeight.w400,
@@ -29,6 +48,11 @@ class ForumCookedContent extends StatelessWidget {
   final void Function(List<String> urls, int initialIndex) onOpenImage;
   final ValueChanged<String>? onOpenUser;
   final ValueChanged<CookedLinkPreview>? onOpenInternalTopic;
+  final List<ForumPoll> polls;
+  final bool canManagePolls;
+  final bool Function(ForumPoll poll)? isPollBusy;
+  final ForumPollVoteCallback? onVotePoll;
+  final ForumPollStatusCallback? onTogglePollStatus;
   final double textSize;
   final double textHeight;
   final FontWeight textWeight;
@@ -44,6 +68,9 @@ class ForumCookedContent extends StatelessWidget {
     if (segments.isEmpty) {
       return Text(' ', style: TextStyle(color: textColor));
     }
+    final pollByName = {
+      for (final poll in polls) poll.name: poll,
+    };
     final imageUrls = [
       for (final segment in segments)
         if (segment.isImage) segment.resolvedImageFullUrl,
@@ -106,6 +133,25 @@ class ForumCookedContent extends StatelessWidget {
               ),
             ),
           );
+        case CookedSegmentKind.poll:
+          final parsedPoll = segment.poll;
+          final poll = parsedPoll == null ? null : pollByName[parsedPoll.name];
+          final displayPoll = poll ?? parsedPoll;
+          if (displayPoll != null) {
+            contentWidgets.add(
+              Padding(
+                padding: EdgeInsets.only(bottom: textBottomSpacing + 4),
+                child: _ForumPollCard(
+                  poll: displayPoll,
+                  compact: compactCards,
+                  canManage: canManagePolls,
+                  busy: isPollBusy?.call(displayPoll) ?? false,
+                  onVote: onVotePoll,
+                  onToggleStatus: onTogglePollStatus,
+                ),
+              ),
+            );
+          }
       }
     }
     return Column(
@@ -165,6 +211,60 @@ class ForumCookedContent extends StatelessWidget {
       SnackBar(content: Text(message)),
     );
   }
+}
+
+String _optionText(ForumPollOption option) {
+  final plain = HtmlText.toPlainText(option.html).trim();
+  return plain.isEmpty ? option.html : plain;
+}
+
+String _hiddenResultText(ForumPoll poll) {
+  if (poll.results == 'on_vote') {
+    return '投票后显示结果';
+  }
+  if (poll.results == 'on_close') {
+    return '投票关闭后显示结果';
+  }
+  return '结果暂不可见';
+}
+
+String _pollMetaText(ForumPoll poll) {
+  final parts = [
+    poll.isMultiple ? '多选' : '单选',
+    poll.isClosed ? '已关闭' : null,
+    poll.voters <= 0 ? '暂无投票人' : '${poll.voters} 位投票人',
+  ].whereType<String>();
+  return parts.join(' · ');
+}
+
+bool _hasPreloadedVoters(ForumPoll poll) {
+  return poll.preloadedVoters.values.any((list) => list.isNotEmpty);
+}
+
+enum _PollResultDisplay { count, percent }
+
+String _pollOptionMetricText(
+  ForumPoll poll,
+  ForumPollOption option,
+  _PollResultDisplay display,
+) {
+  if (display == _PollResultDisplay.percent) {
+    final denominator = poll.resultDenominator;
+    final percent = denominator <= 0 ? 0.0 : option.votes / denominator;
+    return '${(percent * 100).round()}%';
+  }
+  return '${option.votes}人';
+}
+
+List<Color> _pollPalette(LehuColors colors) {
+  return [
+    colors.accent,
+    colors.accentAlt,
+    colors.success,
+    colors.warning,
+    colors.danger,
+    colors.textTertiary,
+  ];
 }
 
 class _CookedTextBlock extends StatelessWidget {
@@ -381,6 +481,746 @@ class _NetworkImage extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _ForumPollCard extends StatefulWidget {
+  const _ForumPollCard({
+    required this.poll,
+    required this.compact,
+    required this.canManage,
+    required this.busy,
+    required this.onVote,
+    required this.onToggleStatus,
+  });
+
+  final ForumPoll poll;
+  final bool compact;
+  final bool canManage;
+  final bool busy;
+  final ForumPollVoteCallback? onVote;
+  final ForumPollStatusCallback? onToggleStatus;
+
+  @override
+  State<_ForumPollCard> createState() => _ForumPollCardState();
+}
+
+class _ForumPollCardState extends State<_ForumPollCard> {
+  late Set<String> _selected = widget.poll.ownVotes.toSet();
+  var _resultDisplay = _PollResultDisplay.count;
+
+  @override
+  void didUpdateWidget(covariant _ForumPollCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.poll.name != widget.poll.name ||
+        oldWidget.poll.ownVotes.join('\u0001') !=
+            widget.poll.ownVotes.join('\u0001')) {
+      _selected = widget.poll.ownVotes.toSet();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final poll = widget.poll;
+    final title = poll.title?.trim();
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: _showDetails,
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.fromLTRB(12, widget.compact ? 10 : 12, 12, 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: colors.borderStrong),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title == null || title.isEmpty ? '投票' : title,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: widget.compact ? 14.5 : 15.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  _PollResultToggle(
+                    value: _resultDisplay,
+                    onChanged: (value) {
+                      setState(() => _resultDisplay = value);
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 7),
+              Text(
+                _pollMetaText(poll),
+                style: TextStyle(color: colors.textMuted, fontSize: 12.5),
+              ),
+              const SizedBox(height: 10),
+              for (final option in poll.options) ...[
+                _PollOptionRow(
+                  poll: poll,
+                  option: option,
+                  selected: _selected.contains(option.id),
+                  enabled: true,
+                  showResults: poll.canShowResults,
+                  resultDisplay: _resultDisplay,
+                  dense: true,
+                  showSelectedMark: false,
+                  onTap: _showDetails,
+                ),
+                const SizedBox(height: 6),
+              ],
+              if (!poll.canShowResults)
+                Text(
+                  _hiddenResultText(poll),
+                  style: TextStyle(color: colors.textMuted, fontSize: 12.5),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDetails() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.58),
+      builder: (context) {
+        return _PollDetailSheet(
+          poll: widget.poll,
+          compact: widget.compact,
+          canManage: widget.canManage,
+          busy: widget.busy,
+          onVote: widget.onVote,
+          onToggleStatus: widget.onToggleStatus,
+        );
+      },
+    );
+  }
+}
+
+class _PollDetailSheet extends StatefulWidget {
+  const _PollDetailSheet({
+    required this.poll,
+    required this.compact,
+    required this.canManage,
+    required this.busy,
+    required this.onVote,
+    required this.onToggleStatus,
+  });
+
+  final ForumPoll poll;
+  final bool compact;
+  final bool canManage;
+  final bool busy;
+  final ForumPollVoteCallback? onVote;
+  final ForumPollStatusCallback? onToggleStatus;
+
+  @override
+  State<_PollDetailSheet> createState() => _PollDetailSheetState();
+}
+
+class _PollDetailSheetState extends State<_PollDetailSheet> {
+  late final Set<String> _selected = widget.poll.ownVotes.toSet();
+  bool _busy = false;
+
+  bool get _isBusy => widget.busy || _busy;
+  bool get _selectionChanged {
+    final original = widget.poll.ownVotes.toSet();
+    if (_selected.length != original.length) {
+      return true;
+    }
+    return _selected.any((optionId) => !original.contains(optionId));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final poll = widget.poll;
+    final title = poll.title?.trim();
+    final canVote = poll.isOpen && widget.onVote != null && !_isBusy;
+    final canSubmitVote = canVote &&
+        (!poll.hasVoted || _selectionChanged) &&
+        _selected.isNotEmpty;
+    return SafeArea(
+      top: false,
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.how_to_vote_outlined,
+                    size: 19, color: colors.accent),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title == null || title.isEmpty ? '投票' : title,
+                    style: TextStyle(
+                      color: colors.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                _PollStatusChip(poll: poll),
+                IconButton(
+                  tooltip: '关闭',
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _pollMetaText(poll),
+              style: TextStyle(color: colors.textMuted, fontSize: 12.5),
+            ),
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  if (poll.canShowResults && poll.chartType == 'pie') ...[
+                    _PollPieResult(poll: poll),
+                    const SizedBox(height: 12),
+                  ],
+                  for (final option in poll.options) ...[
+                    _PollOptionRow(
+                      poll: poll,
+                      option: option,
+                      selected: _selected.contains(option.id),
+                      enabled: canVote,
+                      showResults: poll.canShowResults,
+                      resultDisplay: _PollResultDisplay.count,
+                      onTap: () => _toggleOption(option),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (!poll.canShowResults) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      _hiddenResultText(poll),
+                      style: TextStyle(
+                        color: colors.textMuted,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                  if (poll.isOpen) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            poll.isMultiple
+                                ? '请选择 ${poll.effectiveMin}-${poll.effectiveMax} 项'
+                                : '请选择 1 项',
+                            style: TextStyle(
+                              color: colors.textMuted,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                        ),
+                        FilledButton(
+                          onPressed: canSubmitVote ? _submitVote : null,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(76, 34),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          child: _isBusy
+                              ? const SizedBox.square(
+                                  dimension: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.4,
+                                  ),
+                                )
+                              : Text(poll.hasVoted ? '改票' : '投票'),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (poll.public && _hasPreloadedVoters(poll)) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      '投票人',
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    for (final option in poll.options)
+                      if (poll.votersForOption(option.id).isNotEmpty)
+                        _PollVoterGroup(
+                          option: option,
+                          voters: poll.votersForOption(option.id),
+                        ),
+                  ],
+                  if (widget.canManage && widget.onToggleStatus != null) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _isBusy ? null : _toggleStatus,
+                        child: Text(poll.isOpen ? '关闭投票' : '开启投票'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _toggleOption(ForumPollOption option) {
+    final poll = widget.poll;
+    if (!poll.isOpen || _isBusy || widget.onVote == null) {
+      return;
+    }
+    if (poll.isRegular) {
+      setState(() {
+        _selected
+          ..clear()
+          ..add(option.id);
+      });
+      return;
+    }
+    setState(() {
+      if (_selected.contains(option.id)) {
+        _selected.remove(option.id);
+        return;
+      }
+      if (_selected.length >= poll.effectiveMax) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('最多选择 ${poll.effectiveMax} 项')),
+        );
+        return;
+      }
+      _selected.add(option.id);
+    });
+  }
+
+  Future<void> _submitVote() async {
+    final poll = widget.poll;
+    if (_selected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请先选择投票选项')),
+      );
+      return;
+    }
+    if (_selected.length < poll.effectiveMin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('至少选择 ${poll.effectiveMin} 项')),
+      );
+      return;
+    }
+    if (_selected.length > poll.effectiveMax) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('最多选择 ${poll.effectiveMax} 项')),
+      );
+      return;
+    }
+    setState(() => _busy = true);
+    await widget.onVote?.call(poll, _selected.toList(growable: false));
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _toggleStatus() async {
+    final poll = widget.poll;
+    final nextStatus = poll.isOpen ? 'closed' : 'open';
+    final confirmed = await _confirm(
+      context,
+      title: poll.isOpen ? '关闭投票？' : '重新开启投票？',
+      message: poll.isOpen ? '关闭后用户将无法继续投票。' : '开启后用户可以继续投票。',
+      actionText: poll.isOpen ? '关闭' : '开启',
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    setState(() => _busy = true);
+    await widget.onToggleStatus?.call(poll, nextStatus);
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  static Future<bool?> _confirm(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String actionText,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(actionText),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PollOptionRow extends StatelessWidget {
+  const _PollOptionRow({
+    required this.poll,
+    required this.option,
+    required this.selected,
+    required this.enabled,
+    required this.showResults,
+    required this.resultDisplay,
+    required this.onTap,
+    this.dense = false,
+    this.showSelectedMark = true,
+  });
+
+  final ForumPoll poll;
+  final ForumPollOption option;
+  final bool selected;
+  final bool enabled;
+  final bool showResults;
+  final _PollResultDisplay resultDisplay;
+  final VoidCallback onTap;
+  final bool dense;
+  final bool showSelectedMark;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final denominator = poll.resultDenominator;
+    final percent = denominator <= 0 ? 0.0 : option.votes / denominator;
+    final optionText = _optionText(option);
+    final metricText = _pollOptionMetricText(poll, option, resultDisplay);
+    final background = selected ? colors.accentSoft : colors.surfaceMuted;
+    final fillColor = selected
+        ? colors.accent.withValues(alpha: 0.18)
+        : colors.accentSoft.withValues(alpha: 0.64);
+    final radius = BorderRadius.circular(6);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: enabled ? onTap : null,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ColoredBox(color: background),
+              ),
+              if (showResults && poll.chartType != 'pie')
+                Positioned.fill(
+                  child: FractionallySizedBox(
+                    widthFactor: percent.clamp(0, 1).toDouble(),
+                    alignment: Alignment.centerLeft,
+                    child: ColoredBox(color: fillColor),
+                  ),
+                ),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: dense ? 10 : 12,
+                  vertical: dense ? 7 : 10,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        optionText,
+                        style: TextStyle(
+                          color: colors.textPrimary,
+                          fontSize: dense ? 13.5 : 14.5,
+                          height: 1.25,
+                          fontWeight:
+                              selected ? FontWeight.w600 : FontWeight.w400,
+                        ),
+                      ),
+                    ),
+                    if (showResults) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        metricText,
+                        style: TextStyle(
+                          color: selected ? colors.accent : colors.textMuted,
+                          fontSize: dense ? 11.5 : 12.5,
+                          fontWeight: selected ? FontWeight.w600 : null,
+                        ),
+                      ),
+                    ],
+                    if (showSelectedMark && selected) ...[
+                      const SizedBox(width: 8),
+                      Icon(Icons.check, size: 18, color: colors.accent),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PollPieResult extends StatelessWidget {
+  const _PollPieResult({required this.poll});
+
+  final ForumPoll poll;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox.square(
+          dimension: 88,
+          child: CustomPaint(
+            painter: _PollPiePainter(
+              poll: poll,
+              colors: _pollPalette(colors),
+              emptyColor: colors.surfaceMuted,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var index = 0; index < poll.options.length; index += 1)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 9,
+                        height: 9,
+                        decoration: BoxDecoration(
+                          color: _pollPalette(
+                              colors)[index % _pollPalette(colors).length],
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _optionText(poll.options[index]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: colors.textSecondary,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PollPiePainter extends CustomPainter {
+  const _PollPiePainter({
+    required this.poll,
+    required this.colors,
+    required this.emptyColor,
+  });
+
+  final ForumPoll poll;
+  final List<Color> colors;
+  final Color emptyColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final total = poll.totalOptionVotes;
+    final paint = Paint()..style = PaintingStyle.fill;
+    if (total <= 0) {
+      paint.color = emptyColor;
+      canvas.drawArc(rect, 0, math.pi * 2, true, paint);
+      return;
+    }
+    var start = -math.pi / 2;
+    for (var index = 0; index < poll.options.length; index += 1) {
+      final option = poll.options[index];
+      if (option.votes <= 0) {
+        continue;
+      }
+      final sweep = math.pi * 2 * option.votes / total;
+      paint.color = colors[index % colors.length];
+      canvas.drawArc(rect, start, sweep, true, paint);
+      start += sweep;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PollPiePainter oldDelegate) {
+    return oldDelegate.poll != poll ||
+        oldDelegate.colors != colors ||
+        oldDelegate.emptyColor != emptyColor;
+  }
+}
+
+class _PollStatusChip extends StatelessWidget {
+  const _PollStatusChip({required this.poll});
+
+  final ForumPoll poll;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: poll.isOpen ? colors.accentSoft : colors.surfaceMuted,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        poll.isOpen ? (poll.isMultiple ? '多选' : '单选') : '已关闭',
+        style: TextStyle(
+          color: poll.isOpen ? colors.onAccentSoft : colors.textSecondary,
+          fontSize: 11.5,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _PollResultToggle extends StatelessWidget {
+  const _PollResultToggle({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final _PollResultDisplay value;
+  final ValueChanged<_PollResultDisplay> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final showingCount = value == _PollResultDisplay.count;
+    return Tooltip(
+      message: showingCount ? '显示人数' : '显示百分比',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(5),
+        onTap: () {
+          onChanged(
+            showingCount
+                ? _PollResultDisplay.percent
+                : _PollResultDisplay.count,
+          );
+        },
+        child: SizedBox(
+          width: 35,
+          height: 33,
+          child: Icon(
+            showingCount ? Icons.person_outline : Icons.percent,
+            size: 17,
+            color: colors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PollVoterGroup extends StatelessWidget {
+  const _PollVoterGroup({
+    required this.option,
+    required this.voters,
+  });
+
+  final ForumPollOption option;
+  final List<ForumPollVoter> voters;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _optionText(option),
+            style: TextStyle(
+              color: colors.textSecondary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (final voter in voters)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                children: [
+                  ForumAvatar(url: voter.avatarUrl(), size: 28),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      voter.username,
+                      style: TextStyle(
+                        color: colors.textPrimary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../core/forum_url_resolver.dart';
 import '../../data/models/category.dart';
 import '../../data/models/composer.dart';
+import '../../data/models/forum_poll.dart';
 import '../../data/models/forum_search.dart';
 import '../../data/models/post.dart';
 import '../../data/models/topic.dart';
@@ -40,6 +41,8 @@ class TopicPage extends StatefulWidget {
     required this.onCreateReply,
     required this.onUploadImage,
     required this.onLikePost,
+    required this.onVotePoll,
+    required this.onTogglePollStatus,
     required this.onDeletePost,
     required this.onReportPost,
     required this.onOpenUser,
@@ -50,6 +53,7 @@ class TopicPage extends StatefulWidget {
     required this.isOnline,
     required this.isSubmittingReply,
     required this.busyLikePostIds,
+    required this.busyPollKeys,
     required this.busyDeletePostIds,
     required this.busyReportPostIds,
     required this.reportedPostIds,
@@ -63,12 +67,17 @@ class TopicPage extends StatefulWidget {
   final bool isOnline;
   final bool isSubmittingReply;
   final Set<int> busyLikePostIds;
+  final Set<String> busyPollKeys;
   final Set<int> busyDeletePostIds;
   final Set<int> busyReportPostIds;
   final Set<int> reportedPostIds;
   final Future<bool> Function(ReplyDraft draft) onCreateReply;
   final Future<UploadedImage> Function(PickedImage image) onUploadImage;
   final ValueChanged<Post> onLikePost;
+  final Future<void> Function(Post post, ForumPoll poll, List<String> optionIds)
+      onVotePoll;
+  final Future<void> Function(Post post, ForumPoll poll, String status)
+      onTogglePollStatus;
   final ValueChanged<Post> onDeletePost;
   final ValueChanged<Post> onReportPost;
   final ValueChanged<String> onOpenUser;
@@ -253,6 +262,7 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
                           canReply: detail.canCreatePost,
                           isSubmittingReply: widget.isSubmittingReply,
                           busyLikePostIds: widget.busyLikePostIds,
+                          busyPollKeys: widget.busyPollKeys,
                           busyDeletePostIds: widget.busyDeletePostIds,
                           busyReportPostIds: widget.busyReportPostIds,
                           reportedPostIds: widget.reportedPostIds,
@@ -270,6 +280,8 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
                           },
                           onReply: _replyTo,
                           onLike: _like,
+                          onVotePoll: widget.onVotePoll,
+                          onTogglePollStatus: widget.onTogglePollStatus,
                           onDelete: _confirmDelete,
                           onReport: widget.onReportPost,
                           onOpenUser: widget.onOpenUser,
@@ -1106,6 +1118,7 @@ class _ThreadedPostView extends StatelessWidget {
     required this.canReply,
     required this.isSubmittingReply,
     required this.busyLikePostIds,
+    required this.busyPollKeys,
     required this.busyDeletePostIds,
     required this.busyReportPostIds,
     required this.reportedPostIds,
@@ -1114,6 +1127,8 @@ class _ThreadedPostView extends StatelessWidget {
     required this.onToggleExpanded,
     required this.onReply,
     required this.onLike,
+    required this.onVotePoll,
+    required this.onTogglePollStatus,
     required this.onDelete,
     required this.onReport,
     required this.onOpenUser,
@@ -1126,6 +1141,7 @@ class _ThreadedPostView extends StatelessWidget {
   final bool canReply;
   final bool isSubmittingReply;
   final Set<int> busyLikePostIds;
+  final Set<String> busyPollKeys;
   final Set<int> busyDeletePostIds;
   final Set<int> busyReportPostIds;
   final Set<int> reportedPostIds;
@@ -1134,6 +1150,10 @@ class _ThreadedPostView extends StatelessWidget {
   final VoidCallback onToggleExpanded;
   final ValueChanged<Post> onReply;
   final ValueChanged<Post> onLike;
+  final Future<void> Function(Post post, ForumPoll poll, List<String> optionIds)
+      onVotePoll;
+  final Future<void> Function(Post post, ForumPoll poll, String status)
+      onTogglePollStatus;
   final ValueChanged<Post> onDelete;
   final ValueChanged<Post> onReport;
   final ValueChanged<String> onOpenUser;
@@ -1160,10 +1180,13 @@ class _ThreadedPostView extends StatelessWidget {
           canDelete: post.postNumber != 1 && post.yours && post.canDelete,
           reported: post.reported || reportedPostIds.contains(post.id),
           isLiking: busyLikePostIds.contains(post.id),
+          busyPollKeys: busyPollKeys,
           isDeleting: busyDeletePostIds.contains(post.id),
           isReporting: busyReportPostIds.contains(post.id),
           onReply: () => onReply(post),
           onLike: () => onLike(post),
+          onVotePoll: onVotePoll,
+          onTogglePollStatus: onTogglePollStatus,
           onDelete: () => onDelete(post),
           onReport: () => onReport(post),
           onOpenUser: onOpenUser,
@@ -1179,12 +1202,15 @@ class _ThreadedPostView extends StatelessWidget {
             expanded: expanded,
             canReply: canReply && !isSubmittingReply,
             busyLikePostIds: busyLikePostIds,
+            busyPollKeys: busyPollKeys,
             busyDeletePostIds: busyDeletePostIds,
             busyReportPostIds: busyReportPostIds,
             reportedPostIds: reportedPostIds,
             onToggleExpanded: onToggleExpanded,
             onReply: onReply,
             onLike: onLike,
+            onVotePoll: onVotePoll,
+            onTogglePollStatus: onTogglePollStatus,
             onDelete: onDelete,
             onReport: onReport,
             onOpenUser: onOpenUser,
@@ -1206,12 +1232,15 @@ class _NestedReplies extends StatelessWidget {
     required this.expanded,
     required this.canReply,
     required this.busyLikePostIds,
+    required this.busyPollKeys,
     required this.busyDeletePostIds,
     required this.busyReportPostIds,
     required this.reportedPostIds,
     required this.onToggleExpanded,
     required this.onReply,
     required this.onLike,
+    required this.onVotePoll,
+    required this.onTogglePollStatus,
     required this.onDelete,
     required this.onReport,
     required this.onOpenUser,
@@ -1227,12 +1256,17 @@ class _NestedReplies extends StatelessWidget {
   final bool expanded;
   final bool canReply;
   final Set<int> busyLikePostIds;
+  final Set<String> busyPollKeys;
   final Set<int> busyDeletePostIds;
   final Set<int> busyReportPostIds;
   final Set<int> reportedPostIds;
   final VoidCallback onToggleExpanded;
   final ValueChanged<Post> onReply;
   final ValueChanged<Post> onLike;
+  final Future<void> Function(Post post, ForumPoll poll, List<String> optionIds)
+      onVotePoll;
+  final Future<void> Function(Post post, ForumPoll poll, String status)
+      onTogglePollStatus;
   final ValueChanged<Post> onDelete;
   final ValueChanged<Post> onReport;
   final ValueChanged<String> onOpenUser;
@@ -1266,10 +1300,13 @@ class _NestedReplies extends StatelessWidget {
                   reply.postNumber != 1 && reply.yours && reply.canDelete,
               reported: reply.reported || reportedPostIds.contains(reply.id),
               isLiking: busyLikePostIds.contains(reply.id),
+              busyPollKeys: busyPollKeys,
               isDeleting: busyDeletePostIds.contains(reply.id),
               isReporting: busyReportPostIds.contains(reply.id),
               onReply: () => onReply(reply),
               onLike: () => onLike(reply),
+              onVotePoll: onVotePoll,
+              onTogglePollStatus: onTogglePollStatus,
               onDelete: () => onDelete(reply),
               onReport: () => onReport(reply),
               onOpenUser: onOpenUser,
@@ -1297,10 +1334,13 @@ class _PostView extends StatelessWidget {
     required this.canDelete,
     required this.reported,
     required this.isLiking,
+    required this.busyPollKeys,
     required this.isDeleting,
     required this.isReporting,
     required this.onReply,
     required this.onLike,
+    required this.onVotePoll,
+    required this.onTogglePollStatus,
     required this.onDelete,
     required this.onReport,
     required this.onOpenUser,
@@ -1316,10 +1356,15 @@ class _PostView extends StatelessWidget {
   final bool canDelete;
   final bool reported;
   final bool isLiking;
+  final Set<String> busyPollKeys;
   final bool isDeleting;
   final bool isReporting;
   final VoidCallback onReply;
   final VoidCallback onLike;
+  final Future<void> Function(Post post, ForumPoll poll, List<String> optionIds)
+      onVotePoll;
+  final Future<void> Function(Post post, ForumPoll poll, String status)
+      onTogglePollStatus;
   final VoidCallback onDelete;
   final VoidCallback onReport;
   final ValueChanged<String> onOpenUser;
@@ -1439,6 +1484,21 @@ class _PostView extends StatelessWidget {
                 imageFit: BoxFit.cover,
                 imageErrorHeight: 160,
                 compactCards: false,
+                polls: post.polls,
+                canManagePolls: post.yours,
+                isPollBusy: (poll) => busyPollKeys.contains(
+                  _pollKey(post, poll),
+                ),
+                onVotePoll: (poll, optionIds) => onVotePoll(
+                  post,
+                  poll,
+                  optionIds,
+                ),
+                onTogglePollStatus: (poll, status) => onTogglePollStatus(
+                  post,
+                  poll,
+                  status,
+                ),
                 onOpenUser: onOpenUser,
                 onOpenImage: onOpenImage,
                 onOpenInternalTopic: onOpenInternalTopic,
@@ -1547,6 +1607,21 @@ class _PostView extends StatelessWidget {
                   imageFit: BoxFit.cover,
                   imageErrorHeight: 150,
                   compactCards: true,
+                  polls: post.polls,
+                  canManagePolls: post.yours,
+                  isPollBusy: (poll) => busyPollKeys.contains(
+                    _pollKey(post, poll),
+                  ),
+                  onVotePoll: (poll, optionIds) => onVotePoll(
+                    post,
+                    poll,
+                    optionIds,
+                  ),
+                  onTogglePollStatus: (poll, status) => onTogglePollStatus(
+                    post,
+                    poll,
+                    status,
+                  ),
                   onOpenUser: onOpenUser,
                   onOpenImage: onOpenImage,
                   onOpenInternalTopic: onOpenInternalTopic,
@@ -2568,6 +2643,10 @@ class _TopicReplyBarState extends State<_ReplyBar> {
       replyToPostNumber: replyToPostNumber,
     );
   }
+}
+
+String _pollKey(Post post, ForumPoll poll) {
+  return '${post.id}:${poll.name}';
 }
 
 class _MentionRange {

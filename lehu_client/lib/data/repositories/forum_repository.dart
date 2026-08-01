@@ -12,6 +12,7 @@ import '../models/current_user.dart';
 import '../models/discourse_user.dart';
 import '../models/forum_activity.dart';
 import '../models/forum_notification.dart';
+import '../models/forum_poll.dart';
 import '../models/forum_report.dart';
 import '../models/forum_search.dart';
 import '../models/post.dart';
@@ -133,6 +134,18 @@ abstract class ForumRepository {
   });
   Future<Post> likePost(int postId);
   Future<Post> unlikePost(int postId);
+  Future<ForumPollVoteResult> votePoll({
+    required int topicId,
+    required int postId,
+    required String pollName,
+    required List<String> optionIds,
+  });
+  Future<ForumPoll> togglePollStatus({
+    required int topicId,
+    required int postId,
+    required String pollName,
+    required String status,
+  });
   Future<Post> reportContent(ForumReportDraft draft);
   Future<ForumBookmark> bookmarkTopic(int topicId);
   Future<void> unbookmarkTopic(int bookmarkId);
@@ -500,6 +513,26 @@ class FixtureForumRepository implements ForumRepository {
   @override
   Future<Post> unlikePost(int postId) {
     throw const ForumAuthException('请先登录后再取消点赞');
+  }
+
+  @override
+  Future<ForumPollVoteResult> votePoll({
+    required int topicId,
+    required int postId,
+    required String pollName,
+    required List<String> optionIds,
+  }) {
+    throw const ForumAuthException('请先登录后再投票');
+  }
+
+  @override
+  Future<ForumPoll> togglePollStatus({
+    required int topicId,
+    required int postId,
+    required String pollName,
+    required String status,
+  }) {
+    throw const ForumAuthException('请先登录后再管理投票');
   }
 
   @override
@@ -1251,6 +1284,50 @@ class OnlineForumRepository implements ForumRepository {
     _topicDetails.remove(post.topicId);
     _staleTopicDetailIds.remove(post.topicId);
     return post;
+  }
+
+  @override
+  Future<ForumPollVoteResult> votePoll({
+    required int topicId,
+    required int postId,
+    required String pollName,
+    required List<String> optionIds,
+  }) async {
+    final payload = PayloadFactory.votePoll(
+      postId: postId,
+      pollName: pollName,
+      optionIds: optionIds,
+    );
+    final json = await _apiClient.putForm('/polls/vote', payload.body);
+    _topicDetails.remove(topicId);
+    _staleTopicDetailIds.remove(topicId);
+    _pendingTopicDetails.remove(topicId);
+    return ForumPollVoteResult.fromJson(json);
+  }
+
+  @override
+  Future<ForumPoll> togglePollStatus({
+    required int topicId,
+    required int postId,
+    required String pollName,
+    required String status,
+  }) async {
+    final payload = PayloadFactory.togglePollStatus(
+      postId: postId,
+      pollName: pollName,
+      status: status,
+    );
+    final json = await _apiClient.putForm(
+      '/polls/toggle_status',
+      payload.body,
+    );
+    _topicDetails.remove(topicId);
+    _staleTopicDetailIds.remove(topicId);
+    _pendingTopicDetails.remove(topicId);
+    final pollJson = json['poll'];
+    return pollJson is JsonMap
+        ? ForumPoll.fromJson(pollJson)
+        : ForumPoll.fromJson(const <String, dynamic>{});
   }
 
   @override
