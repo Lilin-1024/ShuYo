@@ -158,9 +158,23 @@ void main() {
     const mentionCooked =
         '<p><a class="mention" href="/u/Lilin">@Lilin</a> 你好</p>';
     final mention = HtmlText.parseSegments(mentionCooked).first;
-    expect(mention.kind, CookedSegmentKind.link);
-    expect(mention.link?.isInternalUser, isTrue);
-    expect(mention.link?.userUsername, 'Lilin');
+    expect(mention.kind, CookedSegmentKind.text);
+    expect(mention.textValue, '@Lilin 你好');
+    final mentionLink = mention.runs.first.link;
+    expect(mentionLink?.isInternalUser, isTrue);
+    expect(mentionLink?.userUsername, 'Lilin');
+
+    const inlineLinkCooked =
+        '<p>请看 <a href="https://example.com/a">这个链接</a> 好吗</p>';
+    final inlineLink = HtmlText.parseSegments(inlineLinkCooked).single;
+    expect(inlineLink.kind, CookedSegmentKind.text);
+    expect(inlineLink.textValue, '请看 这个链接 好吗');
+    expect(
+      inlineLink.runs.any(
+        (run) => run.text == '这个链接' && run.link?.url == 'https://example.com/a',
+      ),
+      isTrue,
+    );
   });
 
   test('parses discourse formatted cooked text segments', () {

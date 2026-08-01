@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -61,6 +62,7 @@ class ForumCookedContent extends StatelessWidget {
                 textSize: textSize,
                 textHeight: textHeight,
                 textWeight: textWeight,
+                onOpenLink: (preview) => _openPreview(context, preview),
               ),
             ),
           );
@@ -172,6 +174,7 @@ class _CookedTextBlock extends StatelessWidget {
     required this.textSize,
     required this.textHeight,
     required this.textWeight,
+    required this.onOpenLink,
   });
 
   final CookedSegment segment;
@@ -179,6 +182,7 @@ class _CookedTextBlock extends StatelessWidget {
   final double textSize;
   final double textHeight;
   final FontWeight textWeight;
+  final ValueChanged<CookedLinkPreview> onOpenLink;
 
   @override
   Widget build(BuildContext context) {
@@ -293,6 +297,7 @@ class _CookedTextBlock extends StatelessWidget {
         TextSpan(
           text: run.text,
           style: baseStyle.copyWith(
+            color: run.isLink ? colors.accent : baseStyle.color,
             fontWeight: run.bold ? FontWeight.w600 : baseStyle.fontWeight,
             fontStyle: run.italic ? FontStyle.italic : baseStyle.fontStyle,
             decoration: run.strikethrough
@@ -303,6 +308,9 @@ class _CookedTextBlock extends StatelessWidget {
             backgroundColor:
                 run.code ? colors.surfaceMuted.withValues(alpha: 0.82) : null,
           ),
+          recognizer: run.link == null
+              ? null
+              : (TapGestureRecognizer()..onTap = () => onOpenLink(run.link!)),
         ),
     ];
   }

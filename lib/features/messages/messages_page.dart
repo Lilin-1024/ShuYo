@@ -571,9 +571,9 @@ Future<bool> _confirmLocalConversationDeletion(
     context: context,
     builder: (context) {
       return AlertDialog(
-        title: const Text('删除此会话？'),
+        title: const Text('确认删除会话'),
         content: const Text(
-          '将从本机永久删除此私信会话记录！！',
+          '将从本机永久删除此私信会话记录。',
         ),
         actions: [
           TextButton(
