@@ -164,7 +164,8 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="7dp"
-        android:paddingEnd="7dp">
+        android:paddingEnd="7dp"
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/course_time_3"
