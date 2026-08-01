@@ -18,6 +18,7 @@ import '../data/repositories/classroom_repository.dart';
 import '../data/repositories/course_rating_repository.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/academic_schedule_notification_service.dart';
+import '../data/services/academic_schedule_widget_service.dart';
 import '../data/services/academic_schedule_api_client.dart';
 import '../data/services/client_settings_service.dart';
 import '../data/services/discourse_api_client.dart';
@@ -93,6 +94,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   late ForumRepository _repo;
   late final AcademicScheduleRepository _scheduleRepository;
   late final AcademicScheduleNotificationService _scheduleNotificationService;
+  late final AcademicScheduleWidgetService _scheduleWidgetService;
   late final ClientSettingsService _clientSettingsService;
   late final ClientBackendRepository _clientBackendRepository;
   late final ForumReachabilityService _forumReachabilityService;
@@ -138,6 +140,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _autoUseWebVpnProxy = widget.initialAutoUseWebVpnProxy;
     _scheduleRepository = AcademicScheduleRepository();
     _scheduleNotificationService = AcademicScheduleNotificationService(
+      repository: _scheduleRepository,
+    );
+    _scheduleWidgetService = AcademicScheduleWidgetService(
       repository: _scheduleRepository,
     );
     _clientSettingsService = ClientSettingsService();
@@ -318,6 +323,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshAfterAppResumed() async {
+    unawaited(_refreshScheduleSummaryQuietly());
     await _refreshForumBadgesQuietly();
     if (!mounted || _tabIndex != 2 || !_repo.isOnline) {
       return;
@@ -714,6 +720,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _loadingScheduleSummary = true;
     try {
       final summary = await _scheduleRepository.homeSummary();
+      unawaited(_scheduleWidgetService.syncFromCache());
       if (!mounted || summary.text == _scheduleSummaryText) {
         return;
       }
@@ -752,6 +759,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       debugPrint('[LEHU_WEBVPN] schedule-sync refreshSchedule');
       await _scheduleRepository.refreshSchedule();
       final summary = await _scheduleRepository.homeSummary();
+      unawaited(_scheduleWidgetService.syncFromCache());
       if (!mounted) {
         return;
       }
@@ -1531,6 +1539,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         builder: (context) => AcademicSchedulePage(
           repository: _scheduleRepository,
           notificationService: _scheduleNotificationService,
+          widgetService: _scheduleWidgetService,
           onLoginRequired: _openAcademicLogin,
         ),
       ),

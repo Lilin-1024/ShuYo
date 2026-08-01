@@ -14,11 +14,13 @@ import 'package:shuyo/data/models/post.dart';
 import 'package:shuyo/data/models/topic.dart';
 import 'package:shuyo/data/models/topic_detail.dart';
 import 'package:shuyo/data/models/user_profile.dart';
+import 'package:shuyo/data/repositories/academic_schedule_repository.dart';
 import 'package:shuyo/data/repositories/classroom_repository.dart';
 import 'package:shuyo/data/services/announcement_api_client.dart';
 import 'package:shuyo/data/services/classroom_api_client.dart';
 import 'package:shuyo/data/services/course_rating_api_client.dart';
 import 'package:shuyo/data/services/emoji_text.dart';
+import 'package:shuyo/data/services/academic_schedule_widget_service.dart';
 import 'package:shuyo/data/services/forum_draft_store.dart';
 import 'package:shuyo/data/services/forum_persistent_cache.dart';
 import 'package:shuyo/data/services/forum_read_position_store.dart';
@@ -1176,6 +1178,52 @@ void main() {
     expect(schedule.sessions.single.sections, [5, 6]);
     expect(schedule.sessions.single.weeks, [3, 7, 11, 15]);
     expect(schedule.untimedCourses.single.weeks, [1, 2, 3, 4]);
+  });
+
+  test('builds academic schedule widget snapshot', () {
+    final schedule = AcademicScheduleParser.parse(
+      {
+        'xsxx': {
+          'XNM': '2025',
+          'XQM': '16',
+          'XNMC': '2025-2026',
+          'XQMMC': '春',
+        },
+        'kbList': [
+          {
+            'jxb_id': 'course-1',
+            'kcmc': '形势与政策',
+            'xm': '老师',
+            'xqj': '2',
+            'jcs': '5-6',
+            'oldjc': '48',
+            'zcd': '3周,7周,11周,15周',
+            'oldzc': '17476',
+            'cdmc': 'EJ106',
+          },
+        ],
+      },
+      fetchedAt: DateTime(2026, 7, 14, 12),
+    );
+
+    final snapshot = AcademicScheduleWidgetService.buildSnapshot(
+      schedule: schedule,
+      weekState: ScheduleWeekState(
+        currentWeek: 3,
+        anchorMonday: DateTime(2026, 7, 13),
+      ),
+      now: DateTime(2026, 7, 14, 12),
+    );
+    final sessions = snapshot['sessions'] as List;
+    final session = sessions.single as Map<String, dynamic>;
+
+    expect(snapshot['hasSchedule'], isTrue);
+    expect(snapshot['activeWeek'], 3);
+    expect(session['name'], '形势与政策');
+    expect(session['weekday'], 2);
+    expect(session['startText'], '13:00');
+    expect(session['endText'], '14:40');
+    expect(session['weeks'], [3, 7, 11, 15]);
   });
 }
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_schedule_small">课表 2x1</string>
+    <string name="widget_schedule_medium">课表 4x2</string>
+    <string name="widget_schedule_large">课表 4x3</string>
+</resources>

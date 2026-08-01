@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_local_notifications: ^22.0.1
+  home_widget: ^0.9.3
   html: ^0.15.6
   http: ^1.6.0
   package_info_plus: ^10.2.1

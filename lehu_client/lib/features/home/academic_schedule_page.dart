@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../data/models/academic_schedule.dart';
 import '../../data/repositories/academic_schedule_repository.dart';
 import '../../data/services/academic_schedule_api_client.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
+import '../../data/services/academic_schedule_widget_service.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/theme/lehu_theme.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -18,11 +21,13 @@ class AcademicSchedulePage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.notificationService,
+    required this.widgetService,
     required this.onLoginRequired,
   });
 
   final AcademicScheduleRepository repository;
   final AcademicScheduleNotificationService notificationService;
+  final AcademicScheduleWidgetService widgetService;
   final Future<void> Function() onLoginRequired;
 
   @override
@@ -116,6 +121,12 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
           ? 1
           : widget.repository.activeWeekFromState(schedule, weekState);
     });
+    unawaited(
+      widget.widgetService.syncSchedule(
+        schedule: schedule,
+        weekState: weekState,
+      ),
+    );
   }
 
   Future<void> _refreshSchedule() async {
@@ -135,6 +146,12 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         _displayedWeek =
             widget.repository.activeWeekFromState(schedule, weekState);
       });
+      unawaited(
+        widget.widgetService.syncSchedule(
+          schedule: schedule,
+          weekState: weekState,
+        ),
+      );
       final reminderCount =
           await widget.notificationService.syncScheduleReminders(
         requestPermission: true,
@@ -194,6 +211,12 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       return;
     }
     setState(() => _weekState = weekState);
+    unawaited(
+      widget.widgetService.syncSchedule(
+        schedule: _schedule,
+        weekState: weekState,
+      ),
+    );
     final reminderCount =
         await widget.notificationService.syncScheduleReminders(
       requestPermission: true,
