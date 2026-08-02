@@ -43,16 +43,20 @@ class TopicDetailPage extends StatefulWidget {
   State<TopicDetailPage> createState() => _TopicDetailPageState();
 }
 
-class _TopicDetailPageState extends State<TopicDetailPage> {
-  static const _topicTimingDelay = Duration(milliseconds: 1100);
-  static const _topicTimingMs = 1000;
+class _TopicDetailPageState extends State<TopicDetailPage>
+    with WidgetsBindingObserver {
+  static const _topicTimingFlushInterval = Duration(seconds: 30);
+  static const _topicTimingMinFlushMs = 1000;
+  static const _topicTimingMinSampleMs = 250;
 
   Future<TopicDetail?>? _future;
   TopicDetail? _detail;
   bool _submittingReply = false;
   bool _deletingTopic = false;
-  bool _topicTimingScheduled = false;
-  Timer? _topicTimingTimer;
+  bool _flushingTopicTimings = false;
+  Timer? _topicTimingFlushTimer;
+  int _pendingTopicTimingMs = 0;
+  final _pendingPostTimingMs = <int, int>{};
   final _likingPostIds = <int>{};
   final _busyPollKeys = <String>{};
   final _deletingPostIds = <int>{};
@@ -65,6 +69,7 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final cached = widget.repository.cachedTopicDetail(widget.topic.id);
     _detail = _canUseInitialDetail(cached) ? cached : null;
     _future = widget.repository.fetchTopicDetail(
@@ -76,8 +81,19 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
 
   @override
   void dispose() {
-    _topicTimingTimer?.cancel();
+    _topicTimingFlushTimer?.cancel();
+    unawaited(_flushTopicTimings(force: true));
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_flushTopicTimings(force: true));
+    }
   }
 
   @override
@@ -104,7 +120,6 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                     _detail = snapshot.data;
                   }
                   final detail = _detail;
-                  _scheduleTopicTiming(detail);
                   final waitingForTarget = detail != null &&
                       !_detailContainsTargetPost(detail) &&
                       snapshot.connectionState != ConnectionState.done;
@@ -148,6 +163,10 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
                       onOpenInternalTopic: _openInternalTopic,
                       onSearchUsers: _searchUsers,
                       onLoginRequired: () => unawaited(_requireLogin()),
+                      onReadingTimingSample: _recordReadingTimingSample,
+                      onReadingTimingFlush: () => unawaited(
+                        _flushTopicTimings(force: true),
+                      ),
                     ),
                   );
                 },
@@ -178,32 +197,92 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
     await widget.onLoginRequired?.call();
   }
 
-  void _scheduleTopicTiming(TopicDetail? detail) {
-    if (_topicTimingScheduled ||
-        detail == null ||
+  void _recordReadingTimingSample(Set<int> postNumbers, Duration elapsed) {
+    if (!mounted ||
+        postNumbers.isEmpty ||
+        elapsed.inMilliseconds < _topicTimingMinSampleMs) {
+      return;
+    }
+    final detail = _detail;
+    if (detail == null ||
         detail.isPrivateMessage ||
         !widget.repository.isOnline) {
       return;
     }
-    final postNumber = detail.firstPost?.postNumber;
-    if (postNumber == null || postNumber <= 0) {
+    final validPostNumbers = detail.posts
+        .where((post) => !post.isDeleted && post.postNumber > 0)
+        .map((post) => post.postNumber)
+        .toSet();
+    final visiblePostNumbers = postNumbers
+        .where(validPostNumbers.contains)
+        .toList(growable: false)
+      ..sort();
+    if (visiblePostNumbers.isEmpty) {
       return;
     }
-    _topicTimingScheduled = true;
-    _topicTimingTimer = Timer(_topicTimingDelay, () {
-      if (!mounted) {
-        return;
-      }
-      unawaited(
-        widget.repository
-            .recordTopicTiming(
-              detail.id,
-              postNumber: postNumber,
-              topicTimeMs: _topicTimingMs,
-            )
-            .catchError((Object error) {}),
+    final elapsedMs = elapsed.inMilliseconds;
+    _pendingTopicTimingMs += elapsedMs;
+    for (final postNumber in visiblePostNumbers) {
+      _pendingPostTimingMs[postNumber] =
+          (_pendingPostTimingMs[postNumber] ?? 0) + elapsedMs;
+    }
+    if (_pendingTopicTimingMs >= _topicTimingFlushInterval.inMilliseconds) {
+      unawaited(_flushTopicTimings());
+      return;
+    }
+    _scheduleTopicTimingFlush();
+  }
+
+  void _scheduleTopicTimingFlush() {
+    if (_topicTimingFlushTimer?.isActive == true) {
+      return;
+    }
+    _topicTimingFlushTimer = Timer(
+      _topicTimingFlushInterval,
+      () {
+        _topicTimingFlushTimer = null;
+        unawaited(_flushTopicTimings());
+      },
+    );
+  }
+
+  Future<void> _flushTopicTimings({bool force = false}) async {
+    _topicTimingFlushTimer?.cancel();
+    _topicTimingFlushTimer = null;
+    if (_flushingTopicTimings) {
+      return;
+    }
+    final detail = _detail;
+    if (detail == null ||
+        detail.isPrivateMessage ||
+        !widget.repository.isOnline ||
+        _pendingTopicTimingMs < _topicTimingMinFlushMs ||
+        _pendingPostTimingMs.isEmpty) {
+      return;
+    }
+    final topicTimeMs = _pendingTopicTimingMs;
+    final postTimingsMs = Map<int, int>.from(_pendingPostTimingMs);
+    _pendingTopicTimingMs = 0;
+    _pendingPostTimingMs.clear();
+    _flushingTopicTimings = true;
+    try {
+      await widget.repository.recordTopicTimings(
+        detail.id,
+        postTimingsMs: postTimingsMs,
+        topicTimeMs: topicTimeMs,
       );
-    });
+    } on Object {
+      _pendingTopicTimingMs += topicTimeMs;
+      for (final entry in postTimingsMs.entries) {
+        _pendingPostTimingMs[entry.key] =
+            (_pendingPostTimingMs[entry.key] ?? 0) + entry.value;
+      }
+      if (!force) {
+        _scheduleTopicTimingFlush();
+      }
+    } finally {
+      _flushingTopicTimings = false;
+    }
   }
 
   Future<void> _refresh() async {

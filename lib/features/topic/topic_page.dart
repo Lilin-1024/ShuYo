@@ -49,6 +49,8 @@ class TopicPage extends StatefulWidget {
     required this.onOpenInternalTopic,
     required this.onSearchUsers,
     required this.onLoginRequired,
+    this.onReadingTimingSample,
+    this.onReadingTimingFlush,
     this.targetPostNumber,
     required this.isOnline,
     required this.isSubmittingReply,
@@ -84,6 +86,9 @@ class TopicPage extends StatefulWidget {
   final ValueChanged<CookedLinkPreview> onOpenInternalTopic;
   final Future<List<SearchUserResult>> Function(String query) onSearchUsers;
   final VoidCallback onLoginRequired;
+  final void Function(Set<int> postNumbers, Duration elapsed)?
+      onReadingTimingSample;
+  final VoidCallback? onReadingTimingFlush;
   final int? targetPostNumber;
 
   @override
@@ -133,6 +138,9 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
   static const _targetPostViewportBias = 0.42;
   static const _targetPostScrollAttempts = 8;
   static const _targetPostScrollStep = Duration(milliseconds: 70);
+  static const _readingTimingSampleInterval = Duration(seconds: 1);
+  static const _readingTimingMaxSample = Duration(seconds: 2);
+  static const _readingTimingMinVisiblePixels = 36.0;
 
   final _expandedReplyParents = <int>{};
   final _replyBarKey = GlobalKey<_TopicReplyBarState>();
@@ -141,7 +149,9 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
   final _postKeys = <int, GlobalKey>{};
   Timer? _readPositionSaveTimer;
   Timer? _readPositionToastTimer;
+  Timer? _readingTimingTimer;
   DateTime? _lastImmediateReadPositionSaveAt;
+  DateTime? _lastReadingTimingSampleAt;
   String? _restoredReadPositionKey;
   String? _targetPostScrollKey;
   bool _restoringReadPosition = false;
@@ -151,6 +161,7 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
   int? _activeTargetPostNumber;
   bool _showTargetPostLoading = false;
   bool _showReadPositionToast = false;
+  bool _readingTimingActive = true;
 
   String get _readPositionKey {
     return ForumReadPositionStore.topicKey(
@@ -175,6 +186,7 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_handleScrollChanged);
     widget.controller?._attach(this);
+    _startReadingTimingTimer();
   }
 
   @override
@@ -197,6 +209,7 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       _cancelTargetPostScrollCorrection = true;
       _activeTargetPostNumber = null;
       _showTargetPostLoading = _hasTargetPost;
+      _lastReadingTimingSampleAt = DateTime.now();
       _postKeys.clear();
     } else if (oldWidget.targetPostNumber != widget.targetPostNumber) {
       _targetPostScrollKey = null;
@@ -212,8 +225,11 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _recordReadingTimingSample();
+    widget.onReadingTimingFlush?.call();
     _readPositionSaveTimer?.cancel();
     _readPositionToastTimer?.cancel();
+    _readingTimingTimer?.cancel();
     unawaited(_saveReadPositionNow());
     WidgetsBinding.instance.removeObserver(this);
     _scrollController.removeListener(_handleScrollChanged);
@@ -599,8 +615,86 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
+      _recordReadingTimingSample();
+      _readingTimingActive = false;
+      _lastReadingTimingSampleAt = null;
+      widget.onReadingTimingFlush?.call();
       unawaited(_saveReadPositionNow());
+    } else if (state == AppLifecycleState.resumed) {
+      _readingTimingActive = true;
+      _lastReadingTimingSampleAt = DateTime.now();
     }
+  }
+
+  void _startReadingTimingTimer() {
+    _lastReadingTimingSampleAt = DateTime.now();
+    _readingTimingTimer = Timer.periodic(
+      _readingTimingSampleInterval,
+      (_) => _recordReadingTimingSample(),
+    );
+  }
+
+  void _recordReadingTimingSample() {
+    final callback = widget.onReadingTimingSample;
+    if (callback == null || !_readingTimingActive) {
+      return;
+    }
+    final now = DateTime.now();
+    final lastSampleAt = _lastReadingTimingSampleAt;
+    _lastReadingTimingSampleAt = now;
+    if (!mounted ||
+        lastSampleAt == null ||
+        widget.detail == null ||
+        _showTargetPostLoading) {
+      return;
+    }
+    var elapsed = now.difference(lastSampleAt);
+    if (elapsed <= Duration.zero) {
+      return;
+    }
+    if (elapsed > _readingTimingMaxSample) {
+      elapsed = _readingTimingMaxSample;
+    }
+    final visiblePostNumbers = _visibleReadingPostNumbers();
+    if (visiblePostNumbers.isEmpty) {
+      return;
+    }
+    callback(visiblePostNumbers, elapsed);
+  }
+
+  Set<int> _visibleReadingPostNumbers() {
+    final viewportBox =
+        _scrollViewKey.currentContext?.findRenderObject() as RenderBox?;
+    if (viewportBox == null || !viewportBox.attached || !viewportBox.hasSize) {
+      return const {};
+    }
+    final viewportTop = viewportBox.localToGlobal(Offset.zero).dy;
+    final viewportBottom = viewportTop + viewportBox.size.height;
+    final visible = <int>{};
+
+    for (final entry in _postKeys.entries) {
+      final postBox =
+          entry.value.currentContext?.findRenderObject() as RenderBox?;
+      if (postBox == null ||
+          !postBox.attached ||
+          !postBox.hasSize ||
+          postBox.size.height <= 0) {
+        continue;
+      }
+      final postTop = postBox.localToGlobal(Offset.zero).dy;
+      final postBottom = postTop + postBox.size.height;
+      final overlapTop = postTop > viewportTop ? postTop : viewportTop;
+      final overlapBottom =
+          postBottom < viewportBottom ? postBottom : viewportBottom;
+      final visiblePixels = overlapBottom - overlapTop;
+      final requiredPixels = postBox.size.height < _readingTimingMinVisiblePixels
+          ? postBox.size.height
+          : _readingTimingMinVisiblePixels;
+      if (visiblePixels >= requiredPixels) {
+        visible.add(entry.key);
+      }
+    }
+    return visible;
   }
 
   void _handleScrollChanged() {
