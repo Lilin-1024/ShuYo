@@ -261,6 +261,36 @@ void main() {
     expect(post.polls.single.options.first.votes, 1);
   });
 
+  test('builds structured topic previews for polls and cards', () {
+    const pollCooked = '''
+<p>帮忙投一下</p>
+<div class="poll" data-poll-charttype="bar" data-poll-max="1" data-poll-min="1" data-poll-name="poll" data-poll-public="true" data-poll-results="always" data-poll-status="open" data-poll-title="你喜欢下雨天吗？" data-poll-type="regular">
+<div class="poll-container">
+<ul>
+<li data-poll-option-id="a">喜欢</li>
+<li data-poll-option-id="b">不喜欢</li>
+</ul>
+</div>
+<p>0 投票人</p>
+</div>
+''';
+    final pollPreview = HtmlText.topicPreview(pollCooked);
+
+    expect(pollPreview.text, '帮忙投一下 [投票] 你喜欢下雨天吗？');
+    expect(pollPreview.text, isNot(contains('喜欢 不喜欢')));
+    expect(pollPreview.text, isNot(contains('投票人')));
+
+    const oneboxCooked = '''
+<aside class="onebox allowlistedgeneric" data-onebox-src="https://example.com/a">
+<article class="onebox-body">
+<h3><a href="https://example.com/a">链接标题</a></h3>
+<p>预览正文</p>
+</article>
+</aside>
+''';
+    expect(HtmlText.topicPreview(oneboxCooked).text, '[链接] 链接标题');
+  });
+
   test('parses discourse formatted cooked text segments', () {
     const cooked = '''
 <h1>一级标题</h1>
