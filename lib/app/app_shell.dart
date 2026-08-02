@@ -130,7 +130,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _academicWebVpnPreloadToken = 0;
   int _forumRepositoryReloadToken = 0;
   bool _recoveringForumWebVpnSession = false;
-  bool _forumWebVpnRecoveryAttempted = false;
 
   @override
   void initState() {
@@ -560,33 +559,38 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Widget _bodyForTab() {
-    if (_isForumWebVpnRecoveryPending) {
-      return const _LoadingState();
+    final Widget forumContent;
+    final Widget messagesContent;
+    if (_repo.isOnline) {
+      forumContent = _forumBody();
+      messagesContent = MessagesPage(
+        repository: _repo,
+        onLoginRequired: _openProfileLoginTab,
+        refreshSignal: _messageRefreshSignal,
+      );
+    } else if (_isForumWebVpnRecoveryPending) {
+      forumContent = const _LoadingState();
+      messagesContent = const _LoadingState();
+    } else {
+      forumContent = _LoginRequiredTab(
+        icon: Icons.forum,
+        title: '登录以查看论坛',
+        message: '论坛需要登录后访问哦',
+        onTap: _openProfileLoginTab,
+      );
+      messagesContent = _LoginRequiredTab(
+        icon: Icons.chat_bubble,
+        title: '登录后查看消息',
+        message: '立即登录！查看论坛私信',
+        onTap: _openProfileLoginTab,
+      );
     }
     return IndexedStack(
       index: _tabIndex,
       children: [
         _homeBody(),
-        _repo.isOnline
-            ? _forumBody()
-            : _LoginRequiredTab(
-                icon: Icons.forum,
-                title: '登录以查看论坛',
-                message: '论坛需要登录后访问哦',
-                onTap: _openProfileLoginTab,
-              ),
-        _repo.isOnline
-            ? MessagesPage(
-                repository: _repo,
-                onLoginRequired: _openProfileLoginTab,
-                refreshSignal: _messageRefreshSignal,
-              )
-            : _LoginRequiredTab(
-                icon: Icons.chat_bubble,
-                title: '登录后查看消息',
-                message: '立即登录！查看论坛私信',
-                onTap: _openProfileLoginTab,
-              ),
+        forumContent,
+        messagesContent,
         ProfilePage(
           profile: _repo.profile,
           summary: _repo.userSummary,
@@ -646,9 +650,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
       setState(() {
         _autoUseWebVpnProxy = settings.autoUseWebVpnProxy;
-        if (settings.autoUseWebVpnProxy && !_repo.isOnline) {
-          _forumWebVpnRecoveryAttempted = false;
-        }
       });
       if (settings.autoUseWebVpnProxy && !_repo.isOnline) {
         unawaited(_recoverForumWebVpnSessionQuietly());
@@ -703,9 +704,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (mounted) {
       setState(() {
         _autoUseWebVpnProxy = value;
-        if (value && accessModeChanged && !_repo.isOnline) {
-          _forumWebVpnRecoveryAttempted = false;
-        }
         if (accessModeChanged && _reloadingSession) {
           _reloadingSession = false;
         }
@@ -882,7 +880,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     _recoveringForumWebVpnSession = true;
-    _forumWebVpnRecoveryAttempted = true;
     if (mounted) {
       setState(() {});
     }
@@ -933,10 +930,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     return !_repo.isOnline &&
         _autoUseWebVpnProxy &&
         ForumUrlResolver.mode == ForumAccessMode.webVpn &&
-        (!_forumWebVpnRecoveryAttempted ||
-            _recoveringForumWebVpnSession ||
-            _forumWebVpnPreloadCompleter != null ||
-            _reloadingSession);
+        (_recoveringForumWebVpnSession ||
+            _forumWebVpnPreloadCompleter != null);
   }
 
   Future<void> _loadAnnouncementSummaryFromCache() async {
@@ -1607,6 +1602,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     setState(() {
       _tabIndex = 0;
     });
+    unawaited(_recoverForumWebVpnSessionQuietly());
     unawaited(_refreshForumReachabilityQuietly(force: true));
     unawaited(_checkClientBackendPrompts());
     await _syncScheduleAfterWebVpnLogin();
@@ -1717,7 +1713,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           accessMode == ForumAccessMode.webVpn) {
         setState(() {
           _reloadingSession = false;
-          _forumWebVpnRecoveryAttempted = false;
         });
         unawaited(_recoverForumWebVpnSessionQuietly());
         return;
@@ -1734,7 +1729,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _showSnack('已切换论坛访问方式');
       }
       if (!nextRepository.isOnline && accessMode == ForumAccessMode.webVpn) {
-        _forumWebVpnRecoveryAttempted = false;
         unawaited(_recoverForumWebVpnSessionQuietly());
       }
       unawaited(_checkClientBackendPrompts());
