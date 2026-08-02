@@ -94,7 +94,7 @@ class ClientBackendApiClient {
     final json = _decode(response);
     final data = json['data'];
     if (data is! JsonMap) {
-      throw const ClientBackendApiException('反馈返回了无法识别的数据');
+      throw const ClientBackendApiException('加载失败，请稍后再试');
     }
     return ClientFeedbackTicket.fromServerJson(data, lookupToken: token);
   }
@@ -121,13 +121,13 @@ class ClientBackendApiClient {
       decoded = jsonDecode(body);
     } on FormatException {
       throw ClientBackendApiException(
-        '后端返回了无法识别的数据',
+        '加载失败，请稍后再试',
         statusCode: response.statusCode,
       );
     }
     if (decoded is! JsonMap) {
       throw ClientBackendApiException(
-        '后端返回了无法识别的数据',
+        '加载失败，请稍后再试',
         statusCode: response.statusCode,
       );
     }

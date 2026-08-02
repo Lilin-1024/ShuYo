@@ -760,10 +760,13 @@ class _TopicDetailPageState extends State<TopicDetailPage> {
       if (!_isGenericForumError(error.message)) {
         return error.message;
       }
+      if (error.message == forumRefreshTooFastMessage) {
+        return '删除请求过于频繁，请稍后再试。';
+      }
       if (!post.canDelete || _isPermissionForumError(error)) {
         return moderatorMessage;
       }
-      return '删除请求失败，请稍后再试。\n\n如果网页端仍可删除，说明客户端请求与网页端存在差异，请保留该回复的抓包信息以便修复。';
+      return '删除请求失败，请稍后再试。';
     }
     return post.canDelete ? '删除失败，请稍后再试。' : moderatorMessage;
   }

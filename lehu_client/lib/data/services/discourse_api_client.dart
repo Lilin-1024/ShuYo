@@ -281,7 +281,13 @@ class DiscourseApiClient {
     }
     if (decoded is! JsonMap) {
       throw ForumApiException(
-        '论坛返回了无法解析的数据',
+        '加载失败，请稍后再试',
+        statusCode: response.statusCode,
+      );
+    }
+    if (response.statusCode == 429) {
+      throw ForumApiException(
+        _rateLimitMessage(decoded) ?? forumRefreshTooFastMessage,
         statusCode: response.statusCode,
       );
     }
@@ -319,6 +325,39 @@ class DiscourseApiClient {
       return error.toString();
     }
     return '论坛请求失败';
+  }
+
+  String? _rateLimitMessage(JsonMap json) {
+    final errors = json['errors'];
+    if (errors is List) {
+      final messages = errors
+          .map((error) => error.toString().trim())
+          .where((error) => error.isNotEmpty)
+          .toList(growable: false);
+      if (messages.isNotEmpty) {
+        return messages.join('\n');
+      }
+    }
+    final error = json['error'];
+    if (error != null) {
+      final text = error.toString().trim();
+      if (text.isNotEmpty) {
+        return text;
+      }
+    }
+    final extras = json['extras'];
+    if (extras is JsonMap) {
+      final timeLeft = stringValue(extras['time_left']).trim();
+      if (timeLeft.isNotEmpty) {
+        return '您执行此操作的次数过多。请等待 $timeLeft 后再试。';
+      }
+      final waitSeconds = intValue(extras['wait_seconds']);
+      if (waitSeconds > 0) {
+        final minutes = (waitSeconds / 60).ceil();
+        return '您执行此操作的次数过多。请等待 $minutes 分钟后再试。';
+      }
+    }
+    return null;
   }
 
   Object? _decodeJsonBody(String body) {
