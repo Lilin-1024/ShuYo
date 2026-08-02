@@ -121,7 +121,7 @@ class CourseRatingApiClient {
     }
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
     if (decoded is! JsonMap) {
-      throw const CourseRatingApiException('课程评价返回了无法识别的数据');
+      throw const CourseRatingApiException('加载失败，请稍后再试');
     }
     if (boolValue(decoded['__rate_limited'])) {
       throw CourseRatingRateLimitedException(

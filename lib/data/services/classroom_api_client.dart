@@ -151,14 +151,10 @@ class ClassroomApiClient {
     try {
       decoded = jsonDecode(body);
     } on FormatException {
-      throw ClassroomApiException(
-        ClassroomUrlResolver.usesWebVpn
-            ? '空教室系统返回了无法识别的数据，请确认WebVPN已登录'
-            : '空教室查询返回了无法识别的数据',
-      );
+      throw const ClassroomApiException('加载失败，请稍后再试');
     }
     if (decoded is! JsonMap) {
-      throw const ClassroomApiException('空教室查询返回了无法识别的数据');
+      throw const ClassroomApiException('加载失败，请稍后再试');
     }
     return decoded;
   }
