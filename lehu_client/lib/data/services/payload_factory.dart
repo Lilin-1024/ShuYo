@@ -206,15 +206,21 @@ class PayloadFactory {
     required int topicId,
     required int postNumber,
     required int topicTimeMs,
+    Map<int, int>? postTimingsMs,
   }) {
+    final timings = postTimingsMs == null || postTimingsMs.isEmpty
+        ? <int, int>{postNumber: topicTimeMs}
+        : postTimingsMs;
     return RequestPayload(
       method: 'POST',
       url: ForumUrlResolver.resolve('/topics/timings'),
-      body: _formEncode({
-        'timings[$postNumber]': '$topicTimeMs',
-        'topic_time': '$topicTimeMs',
-        'topic_id': '$topicId',
-      }),
+      body: _formEncodeEntries([
+        for (final entry in timings.entries)
+          if (entry.key > 0 && entry.value > 0)
+            MapEntry('timings[${entry.key}]', '${entry.value}'),
+        MapEntry('topic_time', '$topicTimeMs'),
+        MapEntry('topic_id', '$topicId'),
+      ]),
     );
   }
 

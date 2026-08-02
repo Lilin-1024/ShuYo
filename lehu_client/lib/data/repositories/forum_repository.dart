@@ -116,6 +116,11 @@ abstract class ForumRepository {
     required int postNumber,
     required int topicTimeMs,
   });
+  Future<void> recordTopicTimings(
+    int topicId, {
+    required Map<int, int> postTimingsMs,
+    required int topicTimeMs,
+  });
   Future<TopicPreview> fetchTopicPreview(int id);
   Future<Post> createTopic(CreateTopicDraft draft);
   Future<UploadedImage> uploadImage(PickedImage image);
@@ -310,6 +315,13 @@ class FixtureForumRepository implements ForumRepository {
   Future<void> recordTopicTiming(
     int topicId, {
     required int postNumber,
+    required int topicTimeMs,
+  }) async {}
+
+  @override
+  Future<void> recordTopicTimings(
+    int topicId, {
+    required Map<int, int> postTimingsMs,
     required int topicTimeMs,
   }) async {}
 
@@ -674,7 +686,6 @@ class OnlineForumRepository implements ForumRepository {
   final Map<int, Future<TopicDetail?>> _pendingTopicDetails = {};
   final Set<int> _staleTopicDetailIds = {};
   final Set<int> _trackedTopicVisits = {};
-  final Set<int> _trackedTopicTimings = {};
   final Map<String, UserProfile> _userProfiles = {};
   final Map<String, UserSummary> _userSummaries = {};
   final Map<String, List<TopicListItem>> _feedTopics = {};
@@ -881,21 +892,26 @@ class OnlineForumRepository implements ForumRepository {
     required int postNumber,
     required int topicTimeMs,
   }) async {
-    if (_trackedTopicTimings.contains(topicId)) {
-      return;
-    }
-    _trackedTopicTimings.add(topicId);
-    final payload = PayloadFactory.topicTiming(
-      topicId: topicId,
-      postNumber: postNumber,
+    await recordTopicTimings(
+      topicId,
+      postTimingsMs: {postNumber: topicTimeMs},
       topicTimeMs: topicTimeMs,
     );
-    try {
-      await _apiClient.postForm('/topics/timings', payload.body);
-    } on Object {
-      _trackedTopicTimings.remove(topicId);
-      rethrow;
-    }
+  }
+
+  @override
+  Future<void> recordTopicTimings(
+    int topicId, {
+    required Map<int, int> postTimingsMs,
+    required int topicTimeMs,
+  }) async {
+    final payload = PayloadFactory.topicTiming(
+      topicId: topicId,
+      postNumber: postTimingsMs.keys.isEmpty ? 1 : postTimingsMs.keys.first,
+      topicTimeMs: topicTimeMs,
+      postTimingsMs: postTimingsMs,
+    );
+    await _apiClient.postForm('/topics/timings', payload.body);
   }
 
   @override

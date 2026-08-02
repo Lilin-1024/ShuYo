@@ -405,6 +405,20 @@ void main() {
     expect(reply.body, contains('reply_to_post_number=3'));
     expect(PayloadFactory.decodeForm(reply.body)['raw'], 'test test');
     expect(like.body, 'id=654&post_action_type_id=2&flag_topic=false');
+
+    final timing = PayloadFactory.topicTiming(
+      topicId: 875,
+      postNumber: 1,
+      topicTimeMs: 35921,
+      postTimingsMs: const {1: 2914, 2: 1001, 17: 32001},
+    );
+    final timingFields = PayloadFactory.decodeForm(timing.body);
+    expect(timing.url, endsWith('/topics/timings'));
+    expect(timingFields['topic_id'], '875');
+    expect(timingFields['topic_time'], '35921');
+    expect(timingFields['timings[1]'], '2914');
+    expect(timingFields['timings[2]'], '1001');
+    expect(timingFields['timings[17]'], '32001');
   });
 
   test('builds poll vote and status payloads', () {
