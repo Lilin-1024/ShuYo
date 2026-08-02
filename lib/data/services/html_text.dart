@@ -301,17 +301,53 @@ class HtmlText {
   }
 
   static TopicPreview topicPreview(String html, {int maxLength = 72}) {
-    final text = toPlainText(html).replaceAll(RegExp(r'\s+'), ' ').trim();
+    final text = _topicPreviewText(html, maxLength: maxLength);
     return TopicPreview(
-      text: text.length <= maxLength
-          ? text
-          : '${text.substring(0, maxLength)}...',
+      text: text,
       images: images(html),
     );
   }
 
   static List<String> imageUrls(String html) {
     return images(html).map((image) => image.url).toList(growable: false);
+  }
+
+  static String _topicPreviewText(String html, {required int maxLength}) {
+    final parts = <String>[];
+    for (final segment in parseSegments(html)) {
+      final part = _topicPreviewPart(segment);
+      if (part.isNotEmpty) {
+        parts.add(part);
+      }
+    }
+    final text = parts.join(' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (text.isEmpty || text.length <= maxLength) {
+      return text;
+    }
+    return '${text.substring(0, maxLength)}...';
+  }
+
+  static String _topicPreviewPart(CookedSegment segment) {
+    if (segment.isText) {
+      return segment.textValue;
+    }
+    if (segment.isPoll) {
+      final title = segment.poll?.title?.trim() ?? '';
+      return title.isEmpty ? '[投票]' : '[投票] $title';
+    }
+    if (segment.isOnebox) {
+      final title = segment.link?.title.trim() ?? '';
+      return title.isEmpty ? '[链接]' : '[链接] $title';
+    }
+    if (segment.isQuote) {
+      final title = segment.link?.title.trim() ?? '';
+      return title.isEmpty ? '[引用]' : '[引用] $title';
+    }
+    if (segment.isLink) {
+      final title = segment.link?.title.trim() ?? '';
+      return title.isEmpty ? '[链接]' : title;
+    }
+    return '';
   }
 
   static List<TopicPreviewImage> images(String html) {
