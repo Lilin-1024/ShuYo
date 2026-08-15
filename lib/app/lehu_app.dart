@@ -202,7 +202,7 @@ class _StartupForumWebVpnRecoveryState
   void initState() {
     super.initState();
     _preloadTimeout = Timer(
-      const Duration(seconds: 30),
+      const Duration(seconds: 8),
       () => _finish(null),
     );
   }
