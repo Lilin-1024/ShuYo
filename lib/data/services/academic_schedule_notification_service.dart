@@ -183,17 +183,26 @@ class AcademicScheduleNotificationService {
       return false;
     }
 
-    if (request) {
-      final ios = _notifications.resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>();
-      final iosGranted = await ios?.requestPermissions(
-        alert: true,
-        sound: true,
-      );
-      if (iosGranted == false) {
-        return false;
+    final ios = _notifications.resolvePlatformSpecificImplementation<
+        IOSFlutterLocalNotificationsPlugin>();
+    if (ios != null) {
+      if (!request) {
+        final permissions = await ios.checkPermissions();
+        if (permissions?.isEnabled == false) {
+          return false;
+        }
+      } else {
+        final iosGranted = await ios.requestPermissions(
+          alert: true,
+          sound: true,
+        );
+        if (iosGranted == false) {
+          return false;
+        }
       }
+    }
 
+    if (request) {
       final macOS = _notifications.resolvePlatformSpecificImplementation<
           MacOSFlutterLocalNotificationsPlugin>();
       final macOSGranted = await macOS?.requestPermissions(

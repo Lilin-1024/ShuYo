@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import '../../core/client_backend_constants.dart';
+import '../../core/client_user_agent.dart';
 import '../models/client_backend.dart';
 import '../models/common.dart';
 import 'http_timeout.dart';
@@ -42,11 +43,9 @@ class ClientBackendApiClient {
     final response = await HttpTimeout.request(
       _httpClient.get(
         _uri('/api/v1/bootstrap'),
-        headers: const {
+        headers: {
           'accept': 'application/json',
-          'user-agent':
-              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+          'user-agent': ClientUserAgent.mobileBrowser,
         },
       ),
       message: '客户端服务请求超时，请稍后再试',
@@ -60,12 +59,10 @@ class ClientBackendApiClient {
     final response = await HttpTimeout.request(
       _httpClient.post(
         _uri('/api/v1/feedback'),
-        headers: const {
+        headers: {
           'accept': 'application/json',
           'content-type': 'application/json; charset=utf-8',
-          'user-agent':
-              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+          'user-agent': ClientUserAgent.mobileBrowser,
         },
         body: jsonEncode(draft.toJson()),
       ),
@@ -84,9 +81,7 @@ class ClientBackendApiClient {
         headers: {
           'accept': 'application/json',
           'x-feedback-token': token,
-          'user-agent':
-              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+          'user-agent': ClientUserAgent.mobileBrowser,
         },
       ),
       message: '反馈查看超时，请稍后再试',

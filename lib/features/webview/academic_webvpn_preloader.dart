@@ -6,6 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../core/academic_url_resolver.dart';
+import '../../core/client_user_agent.dart';
 
 class AcademicWebVpnPreloader extends StatefulWidget {
   const AcademicWebVpnPreloader({
@@ -21,10 +22,6 @@ class AcademicWebVpnPreloader extends StatefulWidget {
 }
 
 class _AcademicWebVpnPreloaderState extends State<AcademicWebVpnPreloader> {
-  static const _mobileChromeUserAgent =
-      'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-      '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
-
   late final WebViewController _controller;
   bool _completed = false;
 
@@ -34,7 +31,7 @@ class _AcademicWebVpnPreloaderState extends State<AcademicWebVpnPreloader> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
-      ..setUserAgent(_mobileChromeUserAgent)
+      ..setUserAgent(ClientUserAgent.mobileBrowser)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) => _debug('page-started', url),

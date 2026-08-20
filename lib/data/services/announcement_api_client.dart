@@ -6,6 +6,7 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
+import '../../core/client_user_agent.dart';
 import '../models/announcement.dart';
 import 'http_timeout.dart';
 
@@ -37,11 +38,9 @@ class AnnouncementApiClient {
     final response = await HttpTimeout.request(
       _httpClient.get(
         Uri.parse(listUrl),
-        headers: const {
+        headers: {
           'accept': 'text/html,application/xhtml+xml',
-          'user-agent':
-              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+          'user-agent': ClientUserAgent.mobileBrowser,
         },
       ),
       message: '通知公告请求超时，请稍后再试',
@@ -54,11 +53,9 @@ class AnnouncementApiClient {
     final response = await HttpTimeout.request(
       _httpClient.get(
         Uri.parse(item.url),
-        headers: const {
+        headers: {
           'accept': 'text/html,application/xhtml+xml',
-          'user-agent':
-              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+          'user-agent': ClientUserAgent.mobileBrowser,
         },
       ),
       message: '通知公告请求超时，请稍后再试',

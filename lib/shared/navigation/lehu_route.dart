@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 Route<T> lehuRoute<T>({
@@ -5,6 +7,13 @@ Route<T> lehuRoute<T>({
   RouteSettings? settings,
   bool fullscreenDialog = false,
 }) {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return CupertinoPageRoute<T>(
+      settings: settings,
+      fullscreenDialog: fullscreenDialog,
+      builder: (context) => _LehuRouteSurface(child: builder(context)),
+    );
+  }
   return PageRouteBuilder<T>(
     settings: settings,
     fullscreenDialog: fullscreenDialog,

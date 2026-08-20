@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import '../../core/certificate_policy.dart';
+import '../../core/client_user_agent.dart';
 import '../../core/forum_url_resolver.dart';
 import '../models/common.dart';
 import 'forum_auth_service.dart';
@@ -53,9 +54,6 @@ class DiscourseApiClient {
   Future<void> _requestStartQueue = Future<void>.value();
   DateTime? _lastRequestStartedAt;
 
-  static const _mobileChromeUserAgent =
-      'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-      '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
   static const _requestSpacing = Duration(milliseconds: 220);
 
   static http.Client _defaultHttpClient() {
@@ -185,7 +183,7 @@ class DiscourseApiClient {
       'accept': formRequest
           ? '*/*'
           : 'application/json, text/javascript, */*; q=0.01',
-      'user-agent': _mobileChromeUserAgent,
+      'user-agent': ClientUserAgent.mobileBrowser,
       'x-requested-with': 'XMLHttpRequest',
     };
     final cookie = await _authService.cookieHeader();

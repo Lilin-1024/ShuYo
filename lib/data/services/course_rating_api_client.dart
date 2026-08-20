@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
+import '../../core/client_user_agent.dart';
 import '../models/common.dart';
 import '../models/course_rating.dart';
 import 'http_timeout.dart';
@@ -98,11 +99,9 @@ class CourseRatingApiClient {
     final response = await HttpTimeout.request(
       _httpClient.get(
         uri,
-        headers: const {
+        headers: {
           'accept': 'application/json',
-          'user-agent':
-              'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-                  '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+          'user-agent': ClientUserAgent.mobileBrowser,
         },
       ),
       message: '课程评价请求超时，请稍后再试',

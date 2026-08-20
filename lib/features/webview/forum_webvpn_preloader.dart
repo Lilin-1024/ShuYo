@@ -6,6 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../core/certificate_policy.dart';
+import '../../core/client_user_agent.dart';
 import '../../core/forum_url_resolver.dart';
 
 class ForumWebVpnPreloader extends StatefulWidget {
@@ -21,10 +22,6 @@ class ForumWebVpnPreloader extends StatefulWidget {
 }
 
 class _ForumWebVpnPreloaderState extends State<ForumWebVpnPreloader> {
-  static const _mobileChromeUserAgent =
-      'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-      '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
-
   late final WebViewController _controller;
   bool _completed = false;
   Uri? _currentUri;
@@ -35,7 +32,7 @@ class _ForumWebVpnPreloaderState extends State<ForumWebVpnPreloader> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
-      ..setUserAgent(_mobileChromeUserAgent)
+      ..setUserAgent(ClientUserAgent.mobileBrowser)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {

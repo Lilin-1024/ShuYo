@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import '../../core/classroom_url_resolver.dart';
+import '../../core/client_user_agent.dart';
 import '../models/classroom.dart';
 import '../models/common.dart';
 import 'classroom_auth_service.dart';
@@ -130,9 +131,7 @@ class ClassroomApiClient {
     final headers = <String, String>{
       'accept': 'application/json, text/javascript, */*; q=0.01',
       'referer': ClassroomUrlResolver.baseUrl,
-      'user-agent':
-          'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-              '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+      'user-agent': ClientUserAgent.mobileBrowser,
       'x-requested-with': 'XMLHttpRequest',
     };
     if (ClassroomUrlResolver.usesWebVpn) {
