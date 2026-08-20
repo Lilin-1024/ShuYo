@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../data/models/category.dart';
 import '../../data/models/discourse_user.dart';
@@ -87,7 +88,7 @@ class _TopicListPageState extends State<TopicListPage> {
     }
     return ListView.separated(
       controller: _scrollController,
-      cacheExtent: 1200,
+      scrollCacheExtent: ScrollCacheExtent.pixels(1200),
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: widget.topics.length + (_hasFooter ? 1 : 0),

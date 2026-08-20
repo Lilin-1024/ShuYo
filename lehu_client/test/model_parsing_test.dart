@@ -752,7 +752,7 @@ void main() {
       () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
-    final now = DateTime(2026, 7, 30, 12, 0);
+    final now = DateTime.now();
     final staleKey = ForumDraftStore.newTopicKey('Lilin');
     await prefs.setString(
       staleKey,
