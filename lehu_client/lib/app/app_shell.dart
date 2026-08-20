@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/academic_url_resolver.dart';
 import '../core/client_app_info.dart';
+import '../core/client_update_policy.dart';
 import '../core/forum_url_resolver.dart';
 import '../data/models/forum_activity.dart';
 import '../data/models/forum_notification.dart';
@@ -1629,28 +1630,31 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (!mounted) {
         return;
       }
-      final version = bootstrap.version;
-      if (version.isNewerThan(ClientAppInfo.buildNumber)) {
-        final shouldPrompt = await _clientBackendRepository.shouldPromptUpdate(
-          version.latestBuild,
-        );
-        if (mounted && shouldPrompt) {
-          final openDownload = await showClientUpdatePrompt(
-            context,
-            update: version,
-          );
-          await _clientBackendRepository.markUpdatePrompted(
+      if (ClientUpdatePolicy.source == ClientUpdateSource.backend) {
+        final version = bootstrap.version;
+        if (version.isNewerThan(ClientAppInfo.buildNumber)) {
+          final shouldPrompt =
+              await _clientBackendRepository.shouldPromptUpdate(
             version.latestBuild,
           );
-          if (openDownload == true && version.hasDownloadUrl && mounted) {
-            await _openUpdateDownload(version.downloadUrl);
+          if (mounted && shouldPrompt) {
+            final openDownload = await showClientUpdatePrompt(
+              context,
+              update: version,
+            );
+            await _clientBackendRepository.markUpdatePrompted(
+              version.latestBuild,
+            );
+            if (openDownload == true && version.hasDownloadUrl && mounted) {
+              await _openUpdateDownload(version.downloadUrl);
+            }
+            return;
           }
-          return;
+        } else {
+          await _clientBackendRepository.ensureUpdateBaselineInitialized(
+            version.latestBuild,
+          );
         }
-      } else {
-        await _clientBackendRepository.ensureUpdateBaselineInitialized(
-          version.latestBuild,
-        );
       }
 
       if (!mounted) {

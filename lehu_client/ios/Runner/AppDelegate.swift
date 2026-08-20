@@ -3,6 +3,7 @@ import Photos
 import PhotosUI
 import UIKit
 import UniformTypeIdentifiers
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -13,6 +14,7 @@ import UniformTypeIdentifiers
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -169,7 +171,13 @@ extension AppDelegate: PHPickerViewControllerDelegate {
       result(nil)
       return
     }
-    let typeIdentifier = provider.registeredTypeIdentifiers.first ?? UTType.image.identifier
+    let imageTypes = provider.registeredTypeIdentifiers.compactMap { identifier in
+      UTType(identifier)?.conforms(to: .image) == true ? UTType(identifier) : nil
+    }
+    let selectedType = imageTypes.first { $0.preferredFilenameExtension != nil }
+      ?? imageTypes.first
+      ?? UTType.image
+    let typeIdentifier = selectedType.identifier
     provider.loadDataRepresentation(forTypeIdentifier: typeIdentifier) { data, error in
       DispatchQueue.main.async {
         if let error {
@@ -186,12 +194,11 @@ extension AppDelegate: PHPickerViewControllerDelegate {
           result(nil)
           return
         }
-        let type = UTType(typeIdentifier)
-        let mimeType = type?.preferredMIMEType ?? "image/jpeg"
-        let extensionName = type?.preferredFilenameExtension ?? "jpg"
+        let mimeType = selectedType.preferredMIMEType ?? "image/jpeg"
+        let extensionName = selectedType.preferredFilenameExtension ?? "jpg"
         result([
           "bytes": FlutterStandardTypedData(bytes: data),
-          "filename": "lehu_\(Int(Date().timeIntervalSince1970)).\(extensionName)",
+          "filename": "shuyo_\(Int(Date().timeIntervalSince1970)).\(extensionName)",
           "mimeType": mimeType
         ])
       }

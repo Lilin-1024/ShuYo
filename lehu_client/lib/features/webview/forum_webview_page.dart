@@ -6,6 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../core/certificate_policy.dart';
+import '../../core/client_user_agent.dart';
 import '../../shared/widgets/info_confirm_dialog.dart';
 
 class ForumWebViewPage extends StatefulWidget {
@@ -47,10 +48,6 @@ class ForumWebViewPage extends StatefulWidget {
 }
 
 class _ForumWebViewPageState extends State<ForumWebViewPage> {
-  static const _mobileChromeUserAgent =
-      'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-      '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36';
-
   late final WebViewController _controller;
   bool _loading = true;
   WebResourceError? _lastError;
@@ -70,7 +67,7 @@ class _ForumWebViewPageState extends State<ForumWebViewPage> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
-      ..setUserAgent(_mobileChromeUserAgent)
+      ..setUserAgent(ClientUserAgent.mobileBrowser)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {

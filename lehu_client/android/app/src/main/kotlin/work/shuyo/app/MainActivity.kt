@@ -138,12 +138,12 @@ class MainActivity : FlutterActivity() {
             return
         }
         val values = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, filename ?: "lehu_image.jpg")
+            put(MediaStore.Images.Media.DISPLAY_NAME, filename ?: "shuyo_image.jpg")
             put(MediaStore.Images.Media.MIME_TYPE, mimeType ?: "image/jpeg")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(
                     MediaStore.Images.Media.RELATIVE_PATH,
-                    "${Environment.DIRECTORY_PICTURES}/Lehu"
+                    "${Environment.DIRECTORY_PICTURES}/ShuYo"
                 )
                 put(MediaStore.Images.Media.IS_PENDING, 1)
             }

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/client_app_info.dart';
+import '../../core/client_update_policy.dart';
 import '../../data/repositories/client_backend_repository.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
+import '../../data/services/app_store_version_service.dart';
 import '../../data/services/client_settings_service.dart';
 import '../../shared/lehu_text_styles.dart';
 import '../../shared/navigation/lehu_route.dart';
@@ -112,6 +114,10 @@ class ClientSettingsPage extends StatelessWidget {
 
   Future<void> _checkForUpdate(BuildContext context) async {
     try {
+      if (ClientUpdatePolicy.source == ClientUpdateSource.appStore) {
+        await _checkAppStoreForUpdate(context);
+        return;
+      }
       final update = await backendRepository.checkForUpdate(forceRefresh: true);
       if (!context.mounted) {
         return;
@@ -128,11 +134,34 @@ class ClientSettingsPage extends StatelessWidget {
         return;
       }
       await _openExternalDownload(context, update.downloadUrl);
+    } on AppStoreVersionUnavailableException catch (error) {
+      if (context.mounted) {
+        _showSnack(context, error.message);
+      }
     } on Object catch (error) {
       if (context.mounted) {
         _showSnack(context, '检查更新失败：$error');
       }
     }
+  }
+
+  Future<void> _checkAppStoreForUpdate(BuildContext context) async {
+    final update = await AppStoreVersionService().checkForUpdate();
+    if (!context.mounted) {
+      return;
+    }
+    if (update == null) {
+      _showSnack(context, '已是最新版本');
+      return;
+    }
+    final openAppStore = await showAppStoreUpdatePrompt(
+      context,
+      update: update,
+    );
+    if (!context.mounted || !openAppStore) {
+      return;
+    }
+    await _openExternalDownload(context, update.productUrl);
   }
 
   Future<void> _openExternalDownload(BuildContext context, String url) async {

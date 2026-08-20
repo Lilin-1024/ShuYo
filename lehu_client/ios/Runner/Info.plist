@@ -27,9 +27,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>保存乐乎图片到相册。</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>保存乐乎图片到相册。</string>
+	<string>将 ShuYo 中的图片保存到系统相册。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

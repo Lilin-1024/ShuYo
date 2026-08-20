@@ -74,7 +74,7 @@ class ClientUpdateInfo {
   factory ClientUpdateInfo.fromJson(JsonMap json) {
     final announcementJson = json['announcement'];
     return ClientUpdateInfo(
-      appName: stringValue(json['appName'], 'Lehu'),
+      appName: stringValue(json['appName'], 'ShuYo'),
       latestVersion: stringValue(json['latestVersion'], '0.1.0'),
       latestBuild: intValue(json['latestBuild'], 1),
       forceUpdate: boolValue(json['forceUpdate'], false),

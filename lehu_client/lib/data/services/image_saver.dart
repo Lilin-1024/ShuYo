@@ -62,7 +62,7 @@ class ImageSaver {
         RegExp(r'\.[a-zA-Z0-9]{2,5}$').hasMatch(sanitized)) {
       return sanitized;
     }
-    return 'lehu_${DateTime.now().millisecondsSinceEpoch}${_extensionForMime(mimeType)}';
+    return 'shuyo_${DateTime.now().millisecondsSinceEpoch}${_extensionForMime(mimeType)}';
   }
 
   static String _mimeTypeFromPath(String path) {

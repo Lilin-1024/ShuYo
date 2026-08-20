@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '../../core/client_user_agent.dart';
 import '../../core/forum_url_resolver.dart';
 import 'forum_auth_service.dart';
 
@@ -25,9 +26,7 @@ class ForumImageHeaders {
     final cookie = await _authService.cookieHeader();
     final headers = <String, String>{
       HttpHeaders.refererHeader: ForumUrlResolver.baseUrl,
-      HttpHeaders.userAgentHeader:
-          'Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 '
-              '(KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+      HttpHeaders.userAgentHeader: ClientUserAgent.mobileBrowser,
       if (cookie != null && cookie.isNotEmpty) HttpHeaders.cookieHeader: cookie,
     };
     _cachedAt = DateTime.now();
