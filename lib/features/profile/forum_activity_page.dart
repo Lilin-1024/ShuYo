@@ -13,6 +13,7 @@ class ForumActivityPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.kind,
+    this.onRecoverConnection,
     this.onLoginRequired,
     this.onSessionExpired,
     this.onBookmarkChanged,
@@ -20,6 +21,7 @@ class ForumActivityPage extends StatefulWidget {
 
   final ForumRepository repository;
   final ForumActivityKind kind;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final Future<void> Function()? onLoginRequired;
   final Future<void> Function()? onSessionExpired;
   final VoidCallback? onBookmarkChanged;
@@ -134,6 +136,7 @@ class _ForumActivityPageState extends State<ForumActivityPage> {
       lehuRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
+          onRecoverConnection: widget.onRecoverConnection,
           topic: item.toTopicListItem(),
           onLoginRequired: widget.onLoginRequired,
           onSessionExpired: widget.onSessionExpired,

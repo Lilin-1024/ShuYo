@@ -17,12 +17,14 @@ class ForumSearchPage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.onLoginRequired,
+    this.onRecoverConnection,
     this.onSessionExpired,
     this.onBookmarkChanged,
   });
 
   final ForumRepository repository;
   final Future<void> Function() onLoginRequired;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final Future<void> Function()? onSessionExpired;
   final VoidCallback? onBookmarkChanged;
 
@@ -160,6 +162,7 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
       lehuRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
+          onRecoverConnection: widget.onRecoverConnection,
           topic: topic,
           onLoginRequired: widget.onLoginRequired,
           onSessionExpired: widget.onSessionExpired,

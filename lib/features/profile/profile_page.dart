@@ -13,8 +13,9 @@ class ProfilePage extends StatelessWidget {
     required this.profile,
     required this.summary,
     required this.isOnline,
+    required this.hasLocalAccount,
+    required this.hasCachedSummary,
     required this.isBusy,
-    required this.onLogin,
     required this.onEditProfile,
     required this.activityCountsFuture,
     required this.onOpenActivity,
@@ -23,35 +24,43 @@ class ProfilePage extends StatelessWidget {
   final UserProfile profile;
   final UserSummary summary;
   final bool isOnline;
+  final bool hasLocalAccount;
+  final bool hasCachedSummary;
   final bool isBusy;
-  final VoidCallback onLogin;
   final VoidCallback onEditProfile;
   final Future<ForumActivityCounts>? activityCountsFuture;
   final ValueChanged<ForumActivityKind> onOpenActivity;
 
   @override
   Widget build(BuildContext context) {
-    final visibleSummary = isOnline ? summary : _zeroSummary;
+    final visibleSummary = hasLocalAccount ? summary : _zeroSummary;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
         ProfileHeader(
           profile: profile,
-          title: isOnline ? profile.username : '立即登录',
-          subtitle: isOnline ? 'ID ${profile.id}' : '登录后查看个人资料',
-          avatarUrl: isOnline ? null : '',
-          backgroundUrl: isOnline ? null : '',
-          onTap: isBusy ? null : (isOnline ? onEditProfile : onLogin),
+          title: hasLocalAccount ? profile.username : '无法连接论坛',
+          subtitle: hasLocalAccount ? 'ID ${profile.id}' : '请尝试重新登录。',
+          avatarUrl: hasLocalAccount ? null : '',
+          backgroundUrl: hasLocalAccount ? null : '',
+          privateImage: hasLocalAccount,
+          onTap: isBusy
+              ? null
+              : hasLocalAccount
+                  ? (isOnline ? onEditProfile : null)
+                  : null,
           trailing: isBusy
               ? const SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(strokeWidth: 3),
                 )
-              : const Icon(Icons.chevron_right),
+              : hasLocalAccount
+                  ? const Icon(Icons.chevron_right)
+                  : null,
         ),
         const SizedBox(height: 16),
-        if (isOnline) ...[
+        if (hasLocalAccount) ...[
           _ActivitySummaryBar(
             fallback: ForumActivityCounts(
               topics: summary.topicCount,
@@ -59,11 +68,12 @@ class ProfilePage extends StatelessWidget {
               bookmarks: 0,
             ),
             future: activityCountsFuture,
-            onOpenActivity: isBusy ? null : onOpenActivity,
+            fallbackHasValues: hasCachedSummary,
+            onOpenActivity: isBusy || !isOnline ? null : onOpenActivity,
           ),
           const SizedBox(height: 20),
         ],
-        _StatList(summary: visibleSummary),
+        _StatList(summary: visibleSummary, showValues: hasCachedSummary),
       ],
     );
   }
@@ -84,11 +94,13 @@ class _ActivitySummaryBar extends StatelessWidget {
   const _ActivitySummaryBar({
     required this.fallback,
     required this.future,
+    required this.fallbackHasValues,
     required this.onOpenActivity,
   });
 
   final ForumActivityCounts fallback;
   final Future<ForumActivityCounts>? future;
+  final bool fallbackHasValues;
   final ValueChanged<ForumActivityKind>? onOpenActivity;
 
   @override
@@ -97,7 +109,8 @@ class _ActivitySummaryBar extends StatelessWidget {
     if (future == null) {
       return _ActivitySummaryContent(
         counts: fallback,
-        loadingBookmarks: false,
+        showTopicAndRead: fallbackHasValues,
+        loadingBookmarks: true,
         onOpenActivity: onOpenActivity,
       );
     }
@@ -106,8 +119,8 @@ class _ActivitySummaryBar extends StatelessWidget {
       builder: (context, snapshot) {
         return _ActivitySummaryContent(
           counts: snapshot.data ?? fallback,
-          loadingBookmarks: snapshot.connectionState != ConnectionState.done &&
-              snapshot.data == null,
+          showTopicAndRead: snapshot.hasData || fallbackHasValues,
+          loadingBookmarks: !snapshot.hasData,
           onOpenActivity: onOpenActivity,
         );
       },
@@ -118,11 +131,13 @@ class _ActivitySummaryBar extends StatelessWidget {
 class _ActivitySummaryContent extends StatelessWidget {
   const _ActivitySummaryContent({
     required this.counts,
+    required this.showTopicAndRead,
     required this.loadingBookmarks,
     required this.onOpenActivity,
   });
 
   final ForumActivityCounts counts;
+  final bool showTopicAndRead;
   final bool loadingBookmarks;
   final ValueChanged<ForumActivityKind>? onOpenActivity;
 
@@ -139,12 +154,12 @@ class _ActivitySummaryContent extends StatelessWidget {
         children: [
           _ActivityStatButton(
             kind: ForumActivityKind.topics,
-            value: compactCount(counts.topics),
+            value: showTopicAndRead ? compactCount(counts.topics) : '-',
             onTap: onOpenActivity,
           ),
           _ActivityStatButton(
             kind: ForumActivityKind.read,
-            value: compactCount(counts.read),
+            value: showTopicAndRead ? compactCount(counts.read) : '-',
             onTap: onOpenActivity,
           ),
           _ActivityStatButton(
@@ -208,20 +223,21 @@ class _ActivityStatButton extends StatelessWidget {
 }
 
 class _StatList extends StatelessWidget {
-  const _StatList({required this.summary});
+  const _StatList({required this.summary, required this.showValues});
 
   final UserSummary summary;
+  final bool showValues;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
     final stats = [
-      _StatItem('访问天数', '${summary.daysVisited}'),
-      _StatItem('浏览主题', '${summary.topicsEntered}'),
-      _StatItem('阅读分钟', '${summary.timeReadMinutes}'),
-      _StatItem('回复', '${summary.postCount}'),
-      _StatItem('收到赞', '${summary.likesReceived}'),
-      _StatItem('给出赞', '${summary.likesGiven}'),
+      _StatItem('访问天数', showValues ? '${summary.daysVisited}' : '-'),
+      _StatItem('浏览主题', showValues ? '${summary.topicsEntered}' : '-'),
+      _StatItem('阅读分钟', showValues ? '${summary.timeReadMinutes}' : '-'),
+      _StatItem('回复', showValues ? '${summary.postCount}' : '-'),
+      _StatItem('收到赞', showValues ? '${summary.likesReceived}' : '-'),
+      _StatItem('给出赞', showValues ? '${summary.likesGiven}' : '-'),
     ];
 
     return Column(

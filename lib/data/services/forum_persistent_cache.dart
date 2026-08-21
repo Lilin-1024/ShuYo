@@ -13,6 +13,8 @@ class ForumPersistentCache {
         _prefix =
             'forum.cache.v1.${ForumUrlResolver.mode.name}.${_safe(username)}.';
 
+  // Age only controls background refresh. Cached content remains readable
+  // while offline until it is evicted by the capacity policy.
   static const topicDetailMaxAge = Duration(days: 5);
   static const topicDetailMaxCount = 50;
   static const topicFeedMaxAge = Duration(days: 3);
@@ -30,18 +32,29 @@ class ForumPersistentCache {
 
   final SharedPreferences _preferences;
   final String _prefix;
+  int _writeGeneration = 0;
+  Future<void> _writeQueue = Future<void>.value();
 
   String get _feedIndexKey => '${_prefix}feeds.index';
   String get _detailIndexKey => '${_prefix}details.index';
   String get _privateMessagesKey => '${_prefix}privateMessages';
 
-  Future<void> saveTopicFeed(String feedKey, JsonMap json) async {
-    await _setEntry(_feedCacheKey(feedKey), json);
-    final keys = _stringList(_preferences.getString(_feedIndexKey));
-    if (!keys.contains(feedKey)) {
-      keys.add(feedKey);
-      await _preferences.setString(_feedIndexKey, jsonEncode(keys));
-    }
+  Future<void> saveTopicFeed(String feedKey, JsonMap json) {
+    final generation = _writeGeneration;
+    return _enqueueWrite(() async {
+      if (generation != _writeGeneration) {
+        return;
+      }
+      await _setEntry(_feedCacheKey(feedKey), json);
+      if (generation != _writeGeneration) {
+        return;
+      }
+      final keys = _stringList(_preferences.getString(_feedIndexKey));
+      if (!keys.contains(feedKey)) {
+        keys.add(feedKey);
+        await _preferences.setString(_feedIndexKey, jsonEncode(keys));
+      }
+    });
   }
 
   Future<Map<String, JsonMap>> loadTopicFeeds() async {
@@ -51,7 +64,7 @@ class ForumPersistentCache {
     final keptKeys = <String>[];
     for (final feedKey in keys) {
       final entry = _getEntry(_feedCacheKey(feedKey));
-      if (entry == null || _isExpired(entry.savedAt, topicFeedMaxAge)) {
+      if (entry == null) {
         await _preferences.remove(_feedCacheKey(feedKey));
         changed = true;
         continue;
@@ -69,22 +82,31 @@ class ForumPersistentCache {
     int topicId,
     JsonMap json, {
     required bool privateMessage,
-  }) async {
-    await _setEntry(
-      _detailCacheKey(topicId),
-      json,
-      metadata: {'privateMessage': privateMessage},
-    );
-    final index = _detailIndex();
-    index.removeWhere((entry) => entry.id == topicId);
-    index.add(
-      _DetailIndexEntry(
-        id: topicId,
-        savedAt: DateTime.now(),
-        privateMessage: privateMessage,
-      ),
-    );
-    await _saveDetailIndex(await _cleanDetailIndex(index));
+  }) {
+    final generation = _writeGeneration;
+    return _enqueueWrite(() async {
+      if (generation != _writeGeneration) {
+        return;
+      }
+      await _setEntry(
+        _detailCacheKey(topicId),
+        json,
+        metadata: {'privateMessage': privateMessage},
+      );
+      if (generation != _writeGeneration) {
+        return;
+      }
+      final index = _detailIndex();
+      index.removeWhere((entry) => entry.id == topicId);
+      index.add(
+        _DetailIndexEntry(
+          id: topicId,
+          savedAt: DateTime.now(),
+          privateMessage: privateMessage,
+        ),
+      );
+      await _saveDetailIndex(await _cleanDetailIndex(index));
+    });
   }
 
   Future<Map<int, JsonMap>> loadTopicDetails() async {
@@ -100,22 +122,45 @@ class ForumPersistentCache {
     return result;
   }
 
-  Future<void> removeTopicDetail(int topicId) async {
-    await _preferences.remove(_detailCacheKey(topicId));
-    final index = _detailIndex()..removeWhere((entry) => entry.id == topicId);
-    await _saveDetailIndex(index);
+  Future<void> removeTopicDetail(int topicId) {
+    final generation = _writeGeneration;
+    return _enqueueWrite(
+      () => _removeTopicDetail(topicId, generation: generation),
+    );
   }
 
   Future<void> savePrivateMessages(JsonMap json) {
-    return _setEntry(_privateMessagesKey, json);
+    final generation = _writeGeneration;
+    return _enqueueWrite(() async {
+      if (generation != _writeGeneration) {
+        return;
+      }
+      await _setEntry(_privateMessagesKey, json);
+    });
   }
 
   JsonMap? loadPrivateMessages() {
     return _getEntry(_privateMessagesKey)?.value;
   }
 
-  Future<void> removePrivateMessageTopic(int topicId) async {
-    await removeTopicDetail(topicId);
+  Future<void> removePrivateMessageTopic(int topicId) {
+    final generation = _writeGeneration;
+    return _enqueueWrite(() async {
+      await _removeTopicDetail(topicId, generation: generation);
+      if (generation != _writeGeneration) {
+        return;
+      }
+      await _removePrivateMessageTopic(topicId, generation: generation);
+    });
+  }
+
+  Future<void> _removePrivateMessageTopic(
+    int topicId, {
+    required int generation,
+  }) async {
+    if (generation != _writeGeneration) {
+      return;
+    }
     final entry = _getEntry(_privateMessagesKey);
     if (entry == null) {
       return;
@@ -140,7 +185,40 @@ class ForumPersistentCache {
       ...topicList,
       'topics': nextTopics,
     };
-    await savePrivateMessages(next);
+    await _setEntry(_privateMessagesKey, next);
+  }
+
+  Future<void> clearPrivateAccountData() {
+    _writeGeneration++;
+    return _enqueueWrite(() async {
+      await _preferences.remove(_privateMessagesKey);
+      final index = _detailIndex();
+      final privateIds = index
+          .where((entry) => entry.privateMessage)
+          .map((entry) => entry.id)
+          .toList(growable: false);
+      await Future.wait(
+        privateIds.map((id) => _preferences.remove(_detailCacheKey(id))),
+      );
+      await _saveDetailIndex(
+        index.where((entry) => !entry.privateMessage).toList(growable: false),
+      );
+    });
+  }
+
+  Future<void> _removeTopicDetail(
+    int topicId, {
+    required int generation,
+  }) async {
+    if (generation != _writeGeneration) {
+      return;
+    }
+    await _preferences.remove(_detailCacheKey(topicId));
+    if (generation != _writeGeneration) {
+      return;
+    }
+    final index = _detailIndex()..removeWhere((entry) => entry.id == topicId);
+    await _saveDetailIndex(index);
   }
 
   String _feedCacheKey(String feedKey) => '${_prefix}feed.${_safe(feedKey)}';
@@ -212,7 +290,6 @@ class ForumPersistentCache {
   Future<List<_DetailIndexEntry>> _cleanDetailIndex(
     List<_DetailIndexEntry> index,
   ) async {
-    final now = DateTime.now();
     final byId = <int, _DetailIndexEntry>{};
     for (final entry in index) {
       byId[entry.id] = entry;
@@ -220,12 +297,6 @@ class ForumPersistentCache {
     final privateEntries = <_DetailIndexEntry>[];
     final regularEntries = <_DetailIndexEntry>[];
     for (final entry in byId.values) {
-      final expired = !entry.privateMessage &&
-          now.difference(entry.savedAt) > topicDetailMaxAge;
-      if (expired) {
-        await _preferences.remove(_detailCacheKey(entry.id));
-        continue;
-      }
       if (entry.privateMessage) {
         privateEntries.add(entry);
       } else {
@@ -242,8 +313,45 @@ class ForumPersistentCache {
     ];
   }
 
-  bool _isExpired(DateTime savedAt, Duration maxAge) {
-    return DateTime.now().difference(savedAt) > maxAge;
+  Future<void> clear() async {
+    _writeGeneration++;
+    await _enqueueWrite(() async {
+      final keys = <String>[
+        _feedIndexKey,
+        _detailIndexKey,
+        _privateMessagesKey,
+      ];
+      keys.addAll(
+        _stringList(_preferences.getString(_feedIndexKey)).map(_feedCacheKey),
+      );
+      keys.addAll(_detailIndex().map((entry) => _detailCacheKey(entry.id)));
+      await Future.wait(keys.toSet().map(_preferences.remove));
+    });
+  }
+
+  Future<T> _enqueueWrite<T>(Future<T> Function() action) {
+    final result = _writeQueue.then((_) => action());
+    _writeQueue = result.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace __) {},
+    );
+    return result;
+  }
+
+  Future<int> storageSize() async {
+    final keys = <String>[
+      _feedIndexKey,
+      _detailIndexKey,
+      _privateMessagesKey,
+    ];
+    keys.addAll(
+        _stringList(_preferences.getString(_feedIndexKey)).map(_feedCacheKey));
+    keys.addAll(_detailIndex().map((entry) => _detailCacheKey(entry.id)));
+    var total = 0;
+    for (final key in keys.toSet()) {
+      total += (_preferences.getString(key)?.length ?? 0);
+    }
+    return total;
   }
 
   static List<String> _stringList(String? raw) {

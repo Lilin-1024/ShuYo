@@ -18,12 +18,14 @@ class NotificationsPage extends StatefulWidget {
   const NotificationsPage({
     super.key,
     required this.repository,
+    this.onRecoverConnection,
     this.onLoginRequired,
     this.onSessionExpired,
     this.onBookmarkChanged,
   });
 
   final ForumRepository repository;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final Future<void> Function()? onLoginRequired;
   final Future<void> Function()? onSessionExpired;
   final VoidCallback? onBookmarkChanged;
@@ -73,6 +75,7 @@ class _NotificationsPageState extends State<NotificationsPage>
         ].map((child) {
           return _NotificationListHost(
             repository: widget.repository,
+            onRecoverConnection: widget.onRecoverConnection,
             filter: child.filter,
             onLoginRequired: widget.onLoginRequired,
             onSessionExpired: widget.onSessionExpired,
@@ -94,6 +97,7 @@ class _NotificationListHost extends StatefulWidget {
   const _NotificationListHost({
     required this.repository,
     required this.filter,
+    this.onRecoverConnection,
     this.onLoginRequired,
     this.onSessionExpired,
     this.onBookmarkChanged,
@@ -101,6 +105,7 @@ class _NotificationListHost extends StatefulWidget {
 
   final ForumRepository repository;
   final NotificationFeedFilter filter;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final Future<void> Function()? onLoginRequired;
   final Future<void> Function()? onSessionExpired;
   final VoidCallback? onBookmarkChanged;
@@ -356,6 +361,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
       lehuRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
+          onRecoverConnection: widget.onRecoverConnection,
           topic: TopicListItem(
             id: item.topicId!,
             title: title,
@@ -384,7 +390,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
       return;
     }
     if (!widget.repository.isOnline) {
-      await widget.onLoginRequired?.call();
+      _showSnack('无法连接论坛，请尝试重新登录。');
       return;
     }
     await Navigator.of(context).push<void>(
@@ -395,6 +401,15 @@ class _NotificationListHostState extends State<_NotificationListHost> {
         ),
       ),
     );
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
 

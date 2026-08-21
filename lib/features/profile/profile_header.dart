@@ -16,6 +16,7 @@ class ProfileHeader extends StatelessWidget {
     this.backgroundUrl,
     this.onTap,
     this.trailing,
+    this.privateImage = false,
   });
 
   final UserProfile profile;
@@ -25,6 +26,7 @@ class ProfileHeader extends StatelessWidget {
   final String? backgroundUrl;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final bool privateImage;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +45,7 @@ class ProfileHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: _ProfileBackground(
                 url: backgroundUrl ?? profile.profileBackgroundUrl(),
+                privateImage: privateImage,
               ),
             ),
           ),
@@ -58,6 +61,7 @@ class ProfileHeader extends StatelessWidget {
               child: ForumAvatar(
                 url: avatarUrl ?? profile.avatarUrl(size: 144),
                 size: 68,
+                privateImage: privateImage,
               ),
             ),
           ),
@@ -111,9 +115,10 @@ class ProfileHeader extends StatelessWidget {
 }
 
 class _ProfileBackground extends StatelessWidget {
-  const _ProfileBackground({required this.url});
+  const _ProfileBackground({required this.url, this.privateImage = false});
 
   final String url;
+  final bool privateImage;
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +140,8 @@ class _ProfileBackground extends StatelessWidget {
     return ForumNetworkImage(
       url,
       fit: BoxFit.cover,
+      privateImage: privateImage,
+      pinned: privateImage,
       errorBuilder: (context, error, stackTrace) {
         return DecoratedBox(
           decoration: BoxDecoration(color: colors.surfaceMuted),

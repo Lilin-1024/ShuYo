@@ -42,6 +42,7 @@ class ForumCookedContent extends StatelessWidget {
     this.imageErrorHeight = 160,
     this.imageFit = BoxFit.contain,
     this.compactCards = false,
+    this.privateImage = false,
   });
 
   final String cooked;
@@ -62,6 +63,7 @@ class ForumCookedContent extends StatelessWidget {
   final double imageErrorHeight;
   final BoxFit imageFit;
   final bool compactCards;
+  final bool privateImage;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +93,7 @@ class ForumCookedContent extends StatelessWidget {
                 textHeight: textHeight,
                 textWeight: textWeight,
                 onOpenLink: (preview) => _openPreview(context, preview),
+                privateImage: privateImage,
               ),
             ),
           );
@@ -107,6 +110,7 @@ class ForumCookedContent extends StatelessWidget {
                   height: segment.imageHeight,
                   fit: imageFit,
                   errorHeight: imageErrorHeight,
+                  privateImage: privateImage,
                 ),
               ),
             ),
@@ -276,6 +280,7 @@ class _CookedTextBlock extends StatelessWidget {
     required this.textHeight,
     required this.textWeight,
     required this.onOpenLink,
+    required this.privateImage,
   });
 
   final CookedSegment segment;
@@ -284,6 +289,7 @@ class _CookedTextBlock extends StatelessWidget {
   final double textHeight;
   final FontWeight textWeight;
   final ValueChanged<CookedLinkPreview> onOpenLink;
+  final bool privateImage;
 
   @override
   Widget build(BuildContext context) {
@@ -425,6 +431,7 @@ class _CookedTextBlock extends StatelessWidget {
           size: size,
           fallbackStyle: style,
           onTap: run.link == null ? null : () => onOpenLink(run.link!),
+          privateImage: privateImage,
         ),
       );
     }
@@ -445,6 +452,7 @@ class _InlineEmoji extends StatefulWidget {
     required this.size,
     required this.fallbackStyle,
     this.onTap,
+    required this.privateImage,
   });
 
   final String url;
@@ -452,6 +460,7 @@ class _InlineEmoji extends StatefulWidget {
   final double size;
   final TextStyle fallbackStyle;
   final VoidCallback? onTap;
+  final bool privateImage;
 
   @override
   State<_InlineEmoji> createState() => _InlineEmojiState();
@@ -480,6 +489,7 @@ class _InlineEmojiState extends State<_InlineEmoji> {
               width: widget.size,
               height: widget.size,
               fit: BoxFit.contain,
+              privateImage: widget.privateImage,
               errorBuilder: (context, error, stackTrace) {
                 _reportFailure();
                 return const SizedBox.shrink();
@@ -508,6 +518,7 @@ class _CookedImage extends StatefulWidget {
     required this.height,
     required this.fit,
     required this.errorHeight,
+    required this.privateImage,
   });
 
   final String url;
@@ -515,6 +526,7 @@ class _CookedImage extends StatefulWidget {
   final int height;
   final BoxFit fit;
   final double errorHeight;
+  final bool privateImage;
 
   @override
   State<_CookedImage> createState() => _CookedImageState();
@@ -556,6 +568,7 @@ class _CookedImageState extends State<_CookedImage> {
               url: widget.url,
               fit: widget.fit,
               onImageSize: metadataSize == null ? _handleImageSize : null,
+              privateImage: widget.privateImage,
             ),
           ),
         );
@@ -576,11 +589,13 @@ class _NetworkImage extends StatelessWidget {
     required this.url,
     required this.fit,
     this.onImageSize,
+    this.privateImage = false,
   });
 
   final String url;
   final BoxFit fit;
   final ValueChanged<Size>? onImageSize;
+  final bool privateImage;
 
   @override
   Widget build(BuildContext context) {
@@ -593,6 +608,7 @@ class _NetworkImage extends StatelessWidget {
         height: double.infinity,
         fit: fit,
         onImageSize: onImageSize,
+        privateImage: privateImage,
         errorBuilder: (context, error, stackTrace) {
           return Center(
             child: Text(

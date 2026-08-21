@@ -8,10 +8,12 @@ class ForumAvatar extends StatelessWidget {
     super.key,
     required this.url,
     this.size = 36,
+    this.privateImage = false,
   });
 
   final String url;
   final double size;
+  final bool privateImage;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +26,8 @@ class ForumAvatar extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.cover,
+        privateImage: privateImage,
+        pinned: privateImage,
         errorBuilder: (context, error, stackTrace) {
           return _AvatarFallback(size: size);
         },

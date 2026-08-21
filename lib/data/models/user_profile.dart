@@ -82,6 +82,33 @@ class UserProfile {
       createdAt: dateValue(userJson['created_at']),
     );
   }
+
+  JsonMap toJson() {
+    return {
+      'user': {
+        ...user.toJson(),
+        'bio_excerpt': bioExcerpt,
+        'bio_raw': bioRaw,
+        'profile_background_upload_url': profileBackgroundUploadUrl,
+        'card_background_upload_url': cardBackgroundUploadUrl,
+        'system_avatar_template': systemAvatarTemplate,
+        'custom_avatar_template': customAvatarTemplate,
+        'custom_avatar_upload_id': customAvatarUploadId,
+        'system_avatar_upload_id': systemAvatarUploadId,
+        'user_option': {
+          'hide_profile': hideProfile,
+          'timezone': timezone,
+          'default_calendar': defaultCalendar,
+        },
+        'can_send_private_message_to_user': canSendPrivateMessage,
+        'can_edit': canEdit,
+        'can_upload_profile_header': canUploadProfileHeader,
+        'admin': admin,
+        'moderator': moderator,
+        'created_at': createdAt?.toIso8601String(),
+      },
+    };
+  }
 }
 
 class ProfileSettingsDraft {
@@ -187,6 +214,21 @@ class UserSummary {
       postCount: intValue(data['post_count']),
       timeReadSeconds: intValue(data['time_read']),
     );
+  }
+
+  JsonMap toJson() {
+    return {
+      'user_summary': {
+        'likes_given': likesGiven,
+        'likes_received': likesReceived,
+        'topics_entered': topicsEntered,
+        'posts_read_count': postsReadCount,
+        'days_visited': daysVisited,
+        'topic_count': topicCount,
+        'post_count': postCount,
+        'time_read': timeReadSeconds,
+      },
+    };
   }
 
   int get timeReadMinutes => (timeReadSeconds / 60).round();

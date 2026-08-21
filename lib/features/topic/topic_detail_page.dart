@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +28,7 @@ class TopicDetailPage extends StatefulWidget {
     required this.repository,
     required this.topic,
     this.targetPostNumber,
+    this.onRecoverConnection,
     this.onLoginRequired,
     this.onSessionExpired,
     this.onBookmarkChanged,
@@ -35,6 +37,7 @@ class TopicDetailPage extends StatefulWidget {
   final ForumRepository repository;
   final TopicListItem topic;
   final int? targetPostNumber;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final Future<void> Function()? onLoginRequired;
   final Future<void> Function()? onSessionExpired;
   final VoidCallback? onBookmarkChanged;
@@ -131,7 +134,16 @@ class _TopicDetailPageState extends State<TopicDetailPage>
                     return _ErrorState(
                       title: '帖子加载失败',
                       message: _topicLoadError(snapshot.error!),
-                      onRetry: _refresh,
+                      onRetry:
+                          widget.repository.hasLocalAccount ? _refresh : null,
+                    );
+                  }
+                  if (detail == null &&
+                      snapshot.connectionState == ConnectionState.done) {
+                    return const EmptyState(
+                      icon: Icons.article_outlined,
+                      title: '无法连接论坛',
+                      message: '请尝试重新登录。',
                     );
                   }
                   return RefreshIndicator(
@@ -194,6 +206,10 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   }
 
   Future<void> _requireLogin() async {
+    if (widget.repository.hasLocalAccount && !widget.repository.isOnline) {
+      _showSnack('无法连接论坛，请尝试重新登录。');
+      return;
+    }
     await widget.onLoginRequired?.call();
   }
 
@@ -286,7 +302,22 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   }
 
   Future<void> _refresh() async {
-    final future = widget.repository.fetchTopicDetail(
+    var repository = widget.repository;
+    var recoveredFromCache = false;
+    if (!widget.repository.isOnline) {
+      final recovery = await widget.onRecoverConnection?.call() ??
+          ForumRecoveryResult(
+            status: ForumRecoveryStatus.unavailable,
+            repository: widget.repository,
+          );
+      if (!recovery.isRestored || !recovery.repository.isOnline) {
+        _showSnack(_forumRecoveryMessage(recovery));
+        return;
+      }
+      repository = recovery.repository;
+      recoveredFromCache = true;
+    }
+    final future = repository.fetchTopicDetail(
       widget.topic.id,
       forceRefresh: true,
     );
@@ -297,9 +328,16 @@ class _TopicDetailPageState extends State<TopicDetailPage>
       final detail = await future;
       if (mounted) {
         setState(() => _detail = detail);
+        if (recoveredFromCache) {
+          _showSnack('已恢复论坛连接。');
+        }
       }
-    } on Object {
+    } on Object catch (error) {
+      if (error is ForumAuthException || _isForumTransportError(error)) {
+        repository.markConnectionUnavailable();
+      }
       if (mounted) {
+        _showSnack(_refreshFailureMessage(error, prefix: '刷新失败'));
         setState(() {});
       }
     }
@@ -369,6 +407,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
             posters: const [],
           ),
           targetPostNumber: preview.postNumber,
+          onRecoverConnection: widget.onRecoverConnection,
           onLoginRequired: widget.onLoginRequired,
           onSessionExpired: widget.onSessionExpired,
           onBookmarkChanged: widget.onBookmarkChanged,
@@ -1293,6 +1332,38 @@ class _TopicActionButton extends StatelessWidget {
   }
 }
 
+String _forumRecoveryMessage(ForumRecoveryResult result) {
+  if (result.status == ForumRecoveryStatus.requiresReauthentication) {
+    return '登录状态已失效，请通过首页刷新按钮重新认证。';
+  }
+  final error = result.error;
+  if (error is ForumApiException &&
+      error.message != forumRefreshTooFastMessage) {
+    return error.message;
+  }
+  return '无法连接论坛，请尝试重新登录。';
+}
+
+String _refreshFailureMessage(Object error, {required String prefix}) {
+  if (error is ForumAuthException) {
+    return '登录状态已失效，请通过首页刷新按钮重新认证。';
+  }
+  if (error is ForumApiException) {
+    if (error.message == forumRefreshTooFastMessage) {
+      return error.message;
+    }
+    return '$prefix：${error.message}';
+  }
+  return '$prefix：操作失败，请稍后重试';
+}
+
+bool _isForumTransportError(Object error) {
+  return error is SocketException ||
+      error is TimeoutException ||
+      error is HandshakeException ||
+      error is HttpException;
+}
+
 class _LoadingState extends StatelessWidget {
   const _LoadingState();
 
@@ -1308,12 +1379,12 @@ class _ErrorState extends StatelessWidget {
   const _ErrorState({
     required this.title,
     required this.message,
-    required this.onRetry,
+    this.onRetry,
   });
 
   final String title;
   final String message;
-  final VoidCallback onRetry;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -1321,11 +1392,13 @@ class _ErrorState extends StatelessWidget {
       icon: Icons.error_outline,
       title: title,
       message: message,
-      action: TextButton.icon(
-        onPressed: onRetry,
-        icon: const Icon(Icons.refresh),
-        label: const Text('重试'),
-      ),
+      action: onRetry == null
+          ? null
+          : TextButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('重试'),
+            ),
     );
   }
 }
