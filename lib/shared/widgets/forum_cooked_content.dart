@@ -8,6 +8,7 @@ import '../../data/models/forum_poll.dart';
 import '../../data/services/html_text.dart';
 import '../theme/lehu_theme.dart';
 import 'avatar.dart';
+import 'forum_inline_image_layout.dart';
 import 'forum_network_image.dart';
 
 typedef ForumPollVoteCallback = Future<void> Function(
@@ -39,7 +40,7 @@ class ForumCookedContent extends StatelessWidget {
     this.textBottomSpacing = 8,
     this.imageBottomSpacing = 10,
     this.imageErrorHeight = 160,
-    this.imageFit = BoxFit.cover,
+    this.imageFit = BoxFit.contain,
     this.compactCards = false,
   });
 
@@ -416,7 +417,7 @@ class _CookedTextBlock extends StatelessWidget {
   }
 }
 
-class _CookedImage extends StatelessWidget {
+class _CookedImage extends StatefulWidget {
   const _CookedImage({
     required this.url,
     required this.width,
@@ -432,25 +433,57 @@ class _CookedImage extends StatelessWidget {
   final double errorHeight;
 
   @override
+  State<_CookedImage> createState() => _CookedImageState();
+}
+
+class _CookedImageState extends State<_CookedImage> {
+  Size? _decodedSize;
+
+  @override
+  void didUpdateWidget(covariant _CookedImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _decodedSize = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final aspectRatio = width > 0 && height > 0 ? width / height : null;
-    final child = ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: aspectRatio == null
-          ? SizedBox(
-              width: double.infinity,
-              height: errorHeight,
-              child: _NetworkImage(url: url, fit: fit),
-            )
-          : AspectRatio(
-              aspectRatio: aspectRatio,
-              child: _NetworkImage(url: url, fit: fit),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fallbackWidth = MediaQuery.sizeOf(context).width;
+        final availableWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : fallbackWidth;
+        final metadataSize = widget.width > 0 && widget.height > 0
+            ? Size(widget.width.toDouble(), widget.height.toDouble())
+            : null;
+        final displaySize = ForumInlineImageLayout.displaySize(
+          availableWidth: availableWidth,
+          sourceSize: metadataSize ?? _decodedSize,
+          fallbackHeight: widget.errorHeight,
+        );
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            width: displaySize.width,
+            height: displaySize.height,
+            child: _NetworkImage(
+              url: widget.url,
+              fit: widget.fit,
+              onImageSize: metadataSize == null ? _handleImageSize : null,
             ),
+          ),
+        );
+      },
     );
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: double.infinity),
-      child: child,
-    );
+  }
+
+  void _handleImageSize(Size size) {
+    if (!mounted || _decodedSize == size) {
+      return;
+    }
+    setState(() => _decodedSize = size);
   }
 }
 
@@ -458,10 +491,12 @@ class _NetworkImage extends StatelessWidget {
   const _NetworkImage({
     required this.url,
     required this.fit,
+    this.onImageSize,
   });
 
   final String url;
   final BoxFit fit;
+  final ValueChanged<Size>? onImageSize;
 
   @override
   Widget build(BuildContext context) {
@@ -473,6 +508,7 @@ class _NetworkImage extends StatelessWidget {
         width: double.infinity,
         height: double.infinity,
         fit: fit,
+        onImageSize: onImageSize,
         errorBuilder: (context, error, stackTrace) {
           return Center(
             child: Text(
