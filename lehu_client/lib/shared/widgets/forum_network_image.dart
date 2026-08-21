@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../data/services/forum_image_headers.dart';
+import 'dart:io';
+
+import '../../data/services/forum_image_cache.dart';
 
 class ForumNetworkImage extends StatefulWidget {
   const ForumNetworkImage(
@@ -12,6 +14,9 @@ class ForumNetworkImage extends StatefulWidget {
     this.alignment = Alignment.center,
     this.errorBuilder,
     this.onImageSize,
+    this.variant = 'display',
+    this.privateImage = false,
+    this.pinned = false,
   });
 
   final String url;
@@ -21,13 +26,16 @@ class ForumNetworkImage extends StatefulWidget {
   final AlignmentGeometry alignment;
   final ImageErrorWidgetBuilder? errorBuilder;
   final ValueChanged<Size>? onImageSize;
+  final String variant;
+  final bool privateImage;
+  final bool pinned;
 
   @override
   State<ForumNetworkImage> createState() => _ForumNetworkImageState();
 }
 
 class _ForumNetworkImageState extends State<ForumNetworkImage> {
-  late Future<Map<String, String>?> _headersFuture;
+  late Future<File?> _fileFuture;
   late final ImageStreamListener _imageStreamListener;
   ImageProvider<Object>? _imageProvider;
   ImageStream? _imageStream;
@@ -36,7 +44,7 @@ class _ForumNetworkImageState extends State<ForumNetworkImage> {
   @override
   void initState() {
     super.initState();
-    _headersFuture = ForumImageHeaders.forUrl(widget.url);
+    _fileFuture = _loadFile();
     _imageStreamListener = ImageStreamListener(
       _handleImageFrame,
       onError: (Object error, StackTrace? stackTrace) => _detachImageStream(),
@@ -50,7 +58,7 @@ class _ForumNetworkImageState extends State<ForumNetworkImage> {
       _detachImageStream();
       _imageProvider = null;
       _decodedSize = null;
-      _headersFuture = ForumImageHeaders.forUrl(widget.url);
+      _fileFuture = _loadFile();
     } else if (oldWidget.onImageSize == null && widget.onImageSize != null) {
       final provider = _imageProvider;
       if (provider != null) {
@@ -70,8 +78,8 @@ class _ForumNetworkImageState extends State<ForumNetworkImage> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, String>?>(
-      future: _headersFuture,
+    return FutureBuilder<File?>(
+      future: _fileFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return _ImagePlaceholder(
@@ -79,7 +87,16 @@ class _ForumNetworkImageState extends State<ForumNetworkImage> {
             height: widget.height,
           );
         }
-        final provider = _ensureImageProvider(snapshot.data);
+        final file = snapshot.data;
+        if (file == null) {
+          return widget.errorBuilder?.call(
+                context,
+                const FileSystemException('图片加载失败，请稍后重试'),
+                StackTrace.current,
+              ) ??
+              _ImagePlaceholder(width: widget.width, height: widget.height);
+        }
+        final provider = _ensureImageProvider(file);
         return Image(
           image: provider,
           width: widget.width,
@@ -92,17 +109,33 @@ class _ForumNetworkImageState extends State<ForumNetworkImage> {
     );
   }
 
-  ImageProvider<Object> _ensureImageProvider(Map<String, String>? headers) {
+  ImageProvider<Object> _ensureImageProvider(File file) {
     final existing = _imageProvider;
     if (existing != null) {
       return existing;
     }
-    final provider = NetworkImage(widget.url, headers: headers);
+    final provider = FileImage(file);
     _imageProvider = provider;
     if (widget.onImageSize != null) {
       _listenForImageSize(provider);
     }
     return provider;
+  }
+
+  Future<File?> _loadFile() async {
+    try {
+      final cache = await ForumImageCache.shared();
+      return await cache.getImage(
+        widget.url,
+        variant: widget.variant,
+        namespace: widget.privateImage
+            ? ForumImageCache.currentPrivateNamespace()
+            : 'public',
+        pinned: widget.pinned,
+      );
+    } on Object {
+      return null;
+    }
   }
 
   void _listenForImageSize(ImageProvider<Object> provider) {

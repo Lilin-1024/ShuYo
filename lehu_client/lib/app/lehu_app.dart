@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../core/client_app_info.dart';
 import '../core/forum_url_resolver.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/client_settings_service.dart';
-import '../features/webview/forum_webvpn_preloader.dart';
 import 'app_shell.dart';
 import '../shared/theme/lehu_theme.dart';
 
@@ -20,8 +17,6 @@ class LehuApp extends StatefulWidget {
 class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   final _settingsService = ClientSettingsService();
   late final Future<_StartupData> _startupFuture;
-  ForumRepository? _startupRecoveredRepository;
-  bool _startupWebVpnRecoveryDone = false;
   String _manualThemeId = LehuThemes.defaultId;
   bool _followSystemTheme = false;
   Brightness _systemBrightness =
@@ -71,17 +66,8 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
             return _StartupLoading(theme: theme);
           }
           final data = snapshot.data!;
-          final repository = _startupRecoveredRepository ?? data.repository;
-          if (!repository.isOnline &&
-              data.autoUseWebVpnProxy &&
-              !_startupWebVpnRecoveryDone) {
-            return _StartupForumWebVpnRecovery(
-              theme: theme,
-              onFinished: _finishStartupWebVpnRecovery,
-            );
-          }
           return AppShell(
-            repository: repository,
+            repository: data.repository,
             reloadRepository: ForumRepositoryFactory.loadOnline,
             initialAutoUseWebVpnProxy: data.autoUseWebVpnProxy,
             selectedThemeId: theme.id,
@@ -112,16 +98,6 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
       repository: repository,
       autoUseWebVpnProxy: networkSettings.autoUseWebVpnProxy,
     );
-  }
-
-  void _finishStartupWebVpnRecovery(ForumRepository? repository) {
-    if (!mounted || _startupWebVpnRecoveryDone) {
-      return;
-    }
-    setState(() {
-      _startupWebVpnRecoveryDone = true;
-      _startupRecoveredRepository = repository;
-    });
   }
 
   Future<void> _loadTheme() async {
@@ -177,85 +153,6 @@ class _StartupData {
 
   final ForumRepository repository;
   final bool autoUseWebVpnProxy;
-}
-
-class _StartupForumWebVpnRecovery extends StatefulWidget {
-  const _StartupForumWebVpnRecovery({
-    required this.theme,
-    required this.onFinished,
-  });
-
-  final LehuThemeSpec theme;
-  final ValueChanged<ForumRepository?> onFinished;
-
-  @override
-  State<_StartupForumWebVpnRecovery> createState() =>
-      _StartupForumWebVpnRecoveryState();
-}
-
-class _StartupForumWebVpnRecoveryState
-    extends State<_StartupForumWebVpnRecovery> {
-  Timer? _preloadTimeout;
-  bool _finished = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _preloadTimeout = Timer(
-      const Duration(seconds: 8),
-      () => _finish(null),
-    );
-  }
-
-  @override
-  void dispose() {
-    _preloadTimeout?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        _StartupLoading(theme: widget.theme),
-        Positioned(
-          left: 0,
-          top: 0,
-          child: ForumWebVpnPreloader(onComplete: _handlePreloadComplete),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _handlePreloadComplete(bool success) async {
-    if (_finished) {
-      return;
-    }
-    _preloadTimeout?.cancel();
-    if (!success) {
-      _finish(null);
-      return;
-    }
-    try {
-      final repository = await ForumRepositoryFactory.loadOnline().timeout(
-        const Duration(seconds: 12),
-      );
-      _finish(repository);
-    } on Object {
-      _finish(null);
-    }
-  }
-
-  void _finish(ForumRepository? repository) {
-    if (_finished) {
-      return;
-    }
-    _finished = true;
-    _preloadTimeout?.cancel();
-    if (mounted) {
-      widget.onFinished(repository);
-    }
-  }
 }
 
 class _StartupLoading extends StatelessWidget {

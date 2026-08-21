@@ -23,6 +23,15 @@ class DiscourseUser {
     );
   }
 
+  JsonMap toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'avatar_template': avatarTemplate,
+      'trust_level': trustLevel,
+    };
+  }
+
   String avatarUrl({int size = 96}) {
     final resolved = avatarTemplate.replaceAll('{size}', '$size');
     return ForumUrlResolver.resolve(resolved);

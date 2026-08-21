@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../data/services/forum_image_headers.dart';
+import 'dart:io';
+
+import '../../data/services/forum_image_cache.dart';
 import '../../data/services/image_saver.dart';
 
 class FullscreenImagePage extends StatefulWidget {
@@ -9,10 +11,12 @@ class FullscreenImagePage extends StatefulWidget {
     String? url,
     List<String>? urls,
     this.initialIndex = 0,
+    this.privateImage = false,
   }) : urls = urls ?? (url == null ? const <String>[] : <String>[url]);
 
   final List<String> urls;
   final int initialIndex;
+  final bool privateImage;
 
   @override
   State<FullscreenImagePage> createState() => _FullscreenImagePageState();
@@ -71,6 +75,7 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
                         return _ZoomableNetworkImage(
                           key: ValueKey(urls[index]),
                           url: urls[index],
+                          privateImage: widget.privateImage,
                           onSwipePrevious: _previousPage,
                           onSwipeNext: _nextPage,
                           onZoomChanged: (zoomed) {
@@ -267,40 +272,6 @@ class _FullscreenImagePageState extends State<FullscreenImagePage> {
 
 enum _ImageAction { saveCurrent, saveAll }
 
-class _ImageLoadingProgress extends StatelessWidget {
-  const _ImageLoadingProgress({required this.progress});
-
-  final ImageChunkEvent progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final expected = progress.expectedTotalBytes;
-    final value = expected == null || expected <= 0
-        ? null
-        : progress.cumulativeBytesLoaded / expected;
-    return Center(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.38),
-          shape: BoxShape.circle,
-        ),
-        child: SizedBox.square(
-          dimension: 46,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: CircularProgressIndicator(
-              value: value?.clamp(0, 1).toDouble(),
-              strokeWidth: 3,
-              color: Colors.white,
-              backgroundColor: Colors.white24,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _ImageLoadError extends StatelessWidget {
   const _ImageLoadError({required this.onRetry});
 
@@ -342,12 +313,14 @@ class _ZoomableNetworkImage extends StatefulWidget {
     required this.onZoomChanged,
     required this.onSwipePrevious,
     required this.onSwipeNext,
+    required this.privateImage,
   });
 
   final String url;
   final ValueChanged<bool> onZoomChanged;
   final VoidCallback onSwipePrevious;
   final VoidCallback onSwipeNext;
+  final bool privateImage;
 
   @override
   State<_ZoomableNetworkImage> createState() => _ZoomableNetworkImageState();
@@ -361,7 +334,7 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
   final _controller = TransformationController();
   late final ImageStreamListener _imageListener;
   ImageStream? _imageStream;
-  Map<String, String>? _headers;
+  File? _cachedFile;
   Size? _imageSize;
   Size? _viewportSize;
   int _reloadToken = 0;
@@ -392,7 +365,7 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
       }
     });
     _controller.addListener(_handleTransformChanged);
-    _loadHeaders();
+    _loadCachedFile();
   }
 
   @override
@@ -408,12 +381,12 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.url != widget.url) {
       _imageSize = null;
-      _headers = null;
+      _cachedFile = null;
       _headersLoaded = false;
       _imageLoadFailed = false;
       _controller.value = Matrix4.identity();
       _setZoomed(false);
-      _loadHeaders();
+      _loadCachedFile();
     }
   }
 
@@ -488,25 +461,16 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     required double height,
     required BoxFit fit,
   }) {
-    return Image.network(
-      widget.url,
+    final file = _cachedFile;
+    if (file == null) {
+      return const SizedBox.expand();
+    }
+    return Image.file(
+      file,
       key: ValueKey('${widget.url}:$_reloadToken'),
       width: width,
       height: height,
       fit: fit,
-      headers: _headers,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) {
-          return child;
-        }
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            child,
-            _ImageLoadingProgress(progress: loadingProgress),
-          ],
-        );
-      },
       errorBuilder: (context, error, stackTrace) {
         return _ImageLoadError(onRetry: _retry);
       },
@@ -518,7 +482,11 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
       return;
     }
     final oldStream = _imageStream;
-    final newStream = NetworkImage(widget.url, headers: _headers).resolve(
+    final file = _cachedFile;
+    if (file == null) {
+      return;
+    }
+    final newStream = FileImage(file).resolve(
       createLocalImageConfiguration(context),
     );
     if (oldStream?.key == newStream.key) {
@@ -528,25 +496,35 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     _imageStream = newStream..addListener(_imageListener);
   }
 
-  Future<void> _loadHeaders() async {
-    Map<String, String>? headers;
+  Future<void> _loadCachedFile() async {
+    File? file;
     try {
-      headers = await ForumImageHeaders.forUrl(widget.url);
+      final cache = await ForumImageCache.shared();
+      file = await cache.getImage(
+        widget.url,
+        variant: 'original',
+        namespace: widget.privateImage
+            ? ForumImageCache.currentPrivateNamespace()
+            : 'public',
+      );
     } on Object {
-      headers = null;
+      file = null;
     }
     if (!mounted) {
       return;
     }
     setState(() {
-      _headers = headers;
+      _cachedFile = file;
       _headersLoaded = true;
     });
     _resolveImage();
   }
 
   Future<void> _retry() async {
-    final provider = NetworkImage(widget.url, headers: _headers);
+    final provider = _cachedFile == null ? null : FileImage(_cachedFile!);
+    if (provider == null) {
+      return;
+    }
     await provider.evict();
     if (!mounted) {
       return;
@@ -554,7 +532,7 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     _imageStream?.removeListener(_imageListener);
     _imageStream = null;
     _imageSize = null;
-    _headers = null;
+    _cachedFile = null;
     _headersLoaded = false;
     _imageLoadFailed = false;
     _zoomed = false;
@@ -562,7 +540,7 @@ class _ZoomableNetworkImageState extends State<_ZoomableNetworkImage> {
     _controller.value = Matrix4.identity();
     widget.onZoomChanged(false);
     setState(() {});
-    await _loadHeaders();
+    await _loadCachedFile();
   }
 
   void _handleInteractionUpdate(ScaleUpdateDetails details) {

@@ -43,6 +43,20 @@ class ForumActivityCounts {
       ForumActivityKind.bookmarks => bookmarks,
     };
   }
+
+  JsonMap toJson() => {
+        'topics': topics,
+        'read': read,
+        'bookmarks': bookmarks,
+      };
+
+  factory ForumActivityCounts.fromJson(JsonMap json) {
+    return ForumActivityCounts(
+      topics: intValue(json['topics']),
+      read: intValue(json['read']),
+      bookmarks: intValue(json['bookmarks']),
+    );
+  }
 }
 
 class ForumActivityItem {

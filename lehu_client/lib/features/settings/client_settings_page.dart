@@ -25,7 +25,10 @@ class ClientSettingsPage extends StatelessWidget {
     required this.onThemeChanged,
     required this.onFollowSystemThemeChanged,
     this.isOnline = false,
+    this.hasLocalAccount = false,
     this.onLogout,
+    this.loadForumCacheSize,
+    this.onClearForumCache,
   });
 
   final ClientSettingsService settingsService;
@@ -36,7 +39,10 @@ class ClientSettingsPage extends StatelessWidget {
   final Future<void> Function(String themeId) onThemeChanged;
   final Future<void> Function(bool enabled) onFollowSystemThemeChanged;
   final bool isOnline;
+  final bool hasLocalAccount;
   final Future<void> Function()? onLogout;
+  final Future<int> Function()? loadForumCacheSize;
+  final Future<int> Function()? onClearForumCache;
 
   @override
   Widget build(BuildContext context) {
@@ -100,8 +106,12 @@ class ClientSettingsPage extends StatelessWidget {
             title: '检查更新',
             onTap: () => _checkForUpdate(context),
           ),
-          if (isOnline && onLogout != null) ...[
-            const SizedBox(height: 14),
+          const SizedBox(height: 14),
+          _ForumCacheRow(
+            loadSize: loadForumCacheSize,
+            onClear: onClearForumCache,
+          ),
+          if (hasLocalAccount && onLogout != null) ...[
             _SettingsRow(
               title: '退出登录',
               onTap: () => _confirmLogout(context),
@@ -206,6 +216,95 @@ class ClientSettingsPage extends StatelessWidget {
     if (context.mounted) {
       Navigator.of(context).pop();
     }
+  }
+}
+
+class _ForumCacheRow extends StatefulWidget {
+  const _ForumCacheRow({required this.loadSize, required this.onClear});
+
+  final Future<int> Function()? loadSize;
+  final Future<int> Function()? onClear;
+
+  @override
+  State<_ForumCacheRow> createState() => _ForumCacheRowState();
+}
+
+class _ForumCacheRowState extends State<_ForumCacheRow> {
+  late Future<int> _sizeFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _sizeFuture = _loadSize();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ForumCacheRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.loadSize != widget.loadSize) {
+      _sizeFuture = _loadSize();
+    }
+  }
+
+  Future<int> _loadSize() => widget.loadSize?.call() ?? Future<int>.value(0);
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: _sizeFuture,
+      builder: (context, snapshot) {
+        return _SettingsRow(
+          title: '清除缓存',
+          onTap: widget.onClear == null ? null : () => _confirm(context),
+        );
+      },
+    );
+  }
+
+  Future<void> _confirm(BuildContext context) async {
+    final size = await _sizeFuture;
+    if (!context.mounted) {
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清除缓存'),
+        content: Text(
+          '当前占用 ${_formatBytes(size)}。清除后将删除已缓存的帖子、私信、个人资料数据和图片，但不会退出登录。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('清除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+    final released = await widget.onClear?.call() ?? 0;
+    if (context.mounted) {
+      setState(() => _sizeFuture = _loadSize());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('已释放 ${_formatBytes(released)}')),
+      );
+    }
+  }
+
+  static String _formatBytes(int bytes) {
+    if (bytes < 1024) {
+      return '$bytes B';
+    }
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    }
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }
 
@@ -695,7 +794,7 @@ class _SettingsRow extends StatelessWidget {
   });
 
   final String title;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

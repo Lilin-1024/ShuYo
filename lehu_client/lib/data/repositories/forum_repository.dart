@@ -22,6 +22,8 @@ import '../models/user_profile.dart';
 import '../services/discourse_api_client.dart';
 import '../services/client_settings_service.dart';
 import '../services/forum_auth_service.dart';
+import '../services/forum_account_snapshot.dart';
+import '../services/forum_image_cache.dart';
 import '../services/html_text.dart';
 import '../services/payload_factory.dart';
 import '../services/forum_persistent_cache.dart';
@@ -39,6 +41,32 @@ class TopicFeedQuery {
   String get key => '${categoryId ?? 'all'}:${hot ? 'hot' : 'latest'}';
 }
 
+enum ForumConnectionState {
+  firstUse,
+  cachedOffline,
+  online,
+}
+
+enum ForumRecoveryStatus {
+  restored,
+  requiresReauthentication,
+  unavailable,
+}
+
+class ForumRecoveryResult {
+  const ForumRecoveryResult({
+    required this.status,
+    required this.repository,
+    this.error,
+  });
+
+  final ForumRecoveryStatus status;
+  final ForumRepository repository;
+  final Object? error;
+
+  bool get isRestored => status == ForumRecoveryStatus.restored;
+}
+
 const _emptyUserSummary = UserSummary(
   likesGiven: 0,
   likesReceived: 0,
@@ -51,15 +79,22 @@ const _emptyUserSummary = UserSummary(
 );
 
 abstract class ForumRepository {
+  ForumConnectionState get connectionState;
+  bool get hasLocalAccount => connectionState != ForumConnectionState.firstUse;
+  bool get isCacheOnly => connectionState == ForumConnectionState.cachedOffline;
   bool get isOnline;
   Map<int, DiscourseUser> get users;
   List<ForumCategory> get categories;
   UserProfile get profile;
   UserSummary get userSummary;
+  bool get hasCachedUserSummary;
+  bool get hasCachedActivityCounts;
+  bool get hasCachedPrivateMessages;
   int get unreadNotificationCount;
   int get unreadPrivateMessageCount;
   bool get canCreateTopic;
   Future<void> refreshSession();
+  void markConnectionUnavailable();
 
   ForumCategory? categoryById(int id);
   bool get canLoadMoreLatest;
@@ -159,6 +194,9 @@ abstract class ForumRepository {
   Future<void> deletePost(Post post);
   Future<void> forgetPrivateMessage(int topicId);
   Future<void> clearLoginCookies();
+  Future<void> clearLocalAccount();
+  Future<int> forumCacheStorageSize();
+  Future<int> clearForumCache();
 }
 
 class FixtureForumRepository implements ForumRepository {
@@ -232,7 +270,25 @@ class FixtureForumRepository implements ForumRepository {
   final UserSummary userSummary;
 
   @override
+  ForumConnectionState get connectionState => ForumConnectionState.firstUse;
+
+  @override
+  bool get hasLocalAccount => false;
+
+  @override
+  bool get isCacheOnly => false;
+
+  @override
   bool get isOnline => false;
+
+  @override
+  bool get hasCachedUserSummary => false;
+
+  @override
+  bool get hasCachedActivityCounts => false;
+
+  @override
+  bool get hasCachedPrivateMessages => false;
 
   @override
   int get unreadNotificationCount => 0;
@@ -245,6 +301,9 @@ class FixtureForumRepository implements ForumRepository {
 
   @override
   Future<void> refreshSession() async {}
+
+  @override
+  void markConnectionUnavailable() {}
 
   @override
   ForumCategory? categoryById(int id) => _categories[id];
@@ -580,6 +639,15 @@ class FixtureForumRepository implements ForumRepository {
   @override
   Future<void> clearLoginCookies() async {}
 
+  @override
+  Future<void> clearLocalAccount() async {}
+
+  @override
+  Future<int> forumCacheStorageSize() async => 0;
+
+  @override
+  Future<int> clearForumCache() async => 0;
+
   static Future<JsonMap> _loadJson(AssetBundle bundle, String path) async {
     return jsonDecode(await bundle.loadString(path)) as JsonMap;
   }
@@ -626,16 +694,30 @@ class OnlineForumRepository implements ForumRepository {
     required FixtureForumRepository fallback,
     required CurrentUserSession session,
     required UserSummary userSummary,
+    required bool hasCachedUserSummary,
+    required UserProfile profile,
     required Map<int, ForumCategory> categories,
     required ForumPersistentCache persistentCache,
+    required ForumAccountSnapshotStore snapshotStore,
+    required ForumConnectionState connectionState,
+    DateTime? profileUpdatedAt,
+    DateTime? summaryUpdatedAt,
+    JsonMap? activityCountsJson,
+    DateTime? activityUpdatedAt,
   })  : _apiClient = apiClient,
         _authService = authService,
         _fallback = fallback,
         _session = session,
-        _profile = session.profile,
+        _profile = profile,
         _userSummary = userSummary,
+        _hasCachedUserSummary = hasCachedUserSummary,
         _categories = categories,
         _persistentCache = persistentCache,
+        _snapshotStore = snapshotStore,
+        _connectionState = connectionState,
+        _profileUpdatedAt = profileUpdatedAt,
+        _summaryUpdatedAt = summaryUpdatedAt,
+        _activityUpdatedAt = activityUpdatedAt,
         users = Map<int, DiscourseUser>.of(fallback.users) {
     users[session.user.id] = session.user;
   }
@@ -649,28 +731,66 @@ class OnlineForumRepository implements ForumRepository {
       throw const ForumAuthException();
     }
     final apiClient = DiscourseApiClient(authService: auth);
-    final CurrentUserSession session;
-    try {
-      session = await _fetchSession(apiClient);
-      await auth.persistLastCookieHeader();
-    } on ForumAuthException {
-      await auth.clearCachedCookies();
-      rethrow;
-    }
+    final session = await _fetchSession(apiClient);
+    await auth.persistLastCookieHeader();
     final persistentCache = await ForumPersistentCache.open(
       username: session.profile.username,
     );
+    final snapshotStore = const ForumAccountSnapshotStore();
     final repository = OnlineForumRepository._(
       apiClient: apiClient,
       authService: auth,
       fallback: fallback,
       session: session,
       userSummary: _emptyUserSummary,
+      hasCachedUserSummary: false,
+      profile: session.profile,
       categories: Map<int, ForumCategory>.of(fallback._categories),
       persistentCache: persistentCache,
+      snapshotStore: snapshotStore,
+      connectionState: ForumConnectionState.online,
     );
     await repository._restorePersistentCache();
+    await repository._saveAccountSnapshot();
     unawaited(repository._warmOptionalStartupData());
+    return repository;
+  }
+
+  static Future<OnlineForumRepository?> restoreOffline({
+    required FixtureForumRepository fallback,
+    ForumAuthService? authService,
+  }) async {
+    final snapshot = await const ForumAccountSnapshotStore().load();
+    if (snapshot == null || snapshot.session.username.isEmpty) {
+      return null;
+    }
+    final auth = authService ?? ForumAuthService();
+    final persistentCache = await ForumPersistentCache.open(
+      username: snapshot.session.username,
+    );
+    final repository = OnlineForumRepository._(
+      apiClient: DiscourseApiClient(authService: auth),
+      authService: auth,
+      fallback: fallback,
+      session: snapshot.session,
+      userSummary: snapshot.summary ?? _emptyUserSummary,
+      hasCachedUserSummary: snapshot.summary != null,
+      profile: snapshot.profile,
+      categories: Map<int, ForumCategory>.of(fallback._categories),
+      persistentCache: persistentCache,
+      snapshotStore: const ForumAccountSnapshotStore(),
+      connectionState: ForumConnectionState.cachedOffline,
+      profileUpdatedAt: snapshot.profileUpdatedAt,
+      summaryUpdatedAt: snapshot.summaryUpdatedAt,
+      activityCountsJson: snapshot.activityCounts,
+      activityUpdatedAt: snapshot.activityUpdatedAt,
+    );
+    if (snapshot.activityCounts != null) {
+      repository._activityCounts = _activityCountsFromJson(
+        snapshot.activityCounts!,
+      );
+    }
+    await repository._restorePersistentCache();
     return repository;
   }
 
@@ -678,16 +798,25 @@ class OnlineForumRepository implements ForumRepository {
   final ForumAuthService _authService;
   final FixtureForumRepository _fallback;
   final ForumPersistentCache _persistentCache;
+  final ForumAccountSnapshotStore _snapshotStore;
   CurrentUserSession _session;
   UserProfile _profile;
   UserSummary _userSummary;
+  bool _hasCachedUserSummary;
+  ForumConnectionState _connectionState;
+  DateTime? _profileUpdatedAt;
+  DateTime? _summaryUpdatedAt;
+  DateTime? _activityUpdatedAt;
+  int _cacheGeneration = 0;
   final Map<int, ForumCategory> _categories;
   final Map<int, TopicDetail> _topicDetails = {};
   final Map<int, Future<TopicDetail?>> _pendingTopicDetails = {};
   final Set<int> _staleTopicDetailIds = {};
   final Set<int> _trackedTopicVisits = {};
   final Map<String, UserProfile> _userProfiles = {};
+  final Map<String, Future<UserProfile>> _pendingUserProfiles = {};
   final Map<String, UserSummary> _userSummaries = {};
+  final Map<String, Future<UserSummary>> _pendingUserSummaries = {};
   final Map<String, List<TopicListItem>> _feedTopics = {};
   final Map<String, String?> _feedMorePaths = {};
   final Map<ForumActivityKind, List<ForumActivityItem>> _activityItems = {};
@@ -695,6 +824,7 @@ class OnlineForumRepository implements ForumRepository {
   final Map<NotificationFeedFilter, List<ForumNotification>> _notifications =
       {};
   ForumActivityCounts? _activityCounts;
+  Future<ForumActivityCounts>? _pendingActivityCounts;
   List<TopicListItem>? _privateMessages;
 
   @override
@@ -704,7 +834,26 @@ class OnlineForumRepository implements ForumRepository {
   List<ForumCategory> get categories => _sortedCategories(_categories);
 
   @override
-  bool get isOnline => true;
+  ForumConnectionState get connectionState => _connectionState;
+
+  @override
+  bool get hasLocalAccount => _connectionState != ForumConnectionState.firstUse;
+
+  @override
+  bool get isCacheOnly =>
+      _connectionState == ForumConnectionState.cachedOffline;
+
+  @override
+  bool get isOnline => _connectionState == ForumConnectionState.online;
+
+  @override
+  bool get hasCachedUserSummary => _hasCachedUserSummary;
+
+  @override
+  bool get hasCachedActivityCounts => _activityCounts != null;
+
+  @override
+  bool get hasCachedPrivateMessages => _privateMessages != null;
 
   @override
   UserProfile get profile => _profile;
@@ -725,11 +874,69 @@ class OnlineForumRepository implements ForumRepository {
   Future<void> refreshSession() async {
     final session = await _fetchSession(_apiClient);
     _session = session;
+    _connectionState = ForumConnectionState.online;
     users[session.user.id] = session.user;
+    await _authService.persistLastCookieHeader();
+    await _saveAccountSnapshot();
+  }
+
+  @override
+  void markConnectionUnavailable() {
+    if (_connectionState == ForumConnectionState.online) {
+      _connectionState = ForumConnectionState.cachedOffline;
+    }
   }
 
   @override
   Future<void> clearLoginCookies() => _authService.clearCookies();
+
+  @override
+  Future<void> clearLocalAccount() async {
+    _cacheGeneration++;
+    final imageCache = await ForumImageCache.shared();
+    await imageCache.deletePrivateNamespace(profile.username);
+    await _snapshotStore.clear();
+    await _persistentCache.clearPrivateAccountData();
+    _connectionState = ForumConnectionState.firstUse;
+    _topicDetails.removeWhere((_, detail) => detail.isPrivateMessage);
+    _privateMessages = null;
+  }
+
+  @override
+  Future<int> forumCacheStorageSize() async {
+    final structured = await _persistentCache.storageSize();
+    final images = await (await ForumImageCache.shared()).storageSize;
+    return structured + images;
+  }
+
+  @override
+  Future<int> clearForumCache() async {
+    _cacheGeneration++;
+    final before = await forumCacheStorageSize();
+    await _persistentCache.clear();
+    final imageCache = await ForumImageCache.shared();
+    await imageCache.clearAll();
+    _feedTopics.clear();
+    _feedMorePaths.clear();
+    _topicDetails.clear();
+    _pendingTopicDetails.clear();
+    _privateMessages = null;
+    _userProfiles.clear();
+    _userSummaries.clear();
+    users
+      ..clear()
+      ..[profile.id] = profile.user;
+    _activityItems.clear();
+    _createdTopicItems.clear();
+    _activityCounts = null;
+    _hasCachedUserSummary = false;
+    _profile = UserProfile(user: _session.user);
+    _profileUpdatedAt = null;
+    _summaryUpdatedAt = null;
+    _activityUpdatedAt = null;
+    await _saveAccountSnapshot();
+    return before;
+  }
 
   Future<void> _warmOptionalStartupData() async {
     try {
@@ -741,14 +948,34 @@ class OnlineForumRepository implements ForumRepository {
       // 分类数据不应影响登录态恢复；失败时保留本地兜底分类。
     }
     try {
-      await fetchUserSummary(profile.username, forceRefresh: true);
+      await fetchUserSummary(profile.username);
     } on Object {
       // 资料统计稍后进入个人页时仍会刷新。
     }
     try {
-      await fetchCurrentUserProfile(forceRefresh: true);
+      await fetchCurrentUserProfile();
     } on Object {
       // session 中的简略资料足够让客户端先进入在线状态。
+    }
+  }
+
+  Future<void> _saveAccountSnapshot() async {
+    if (profile.username.isEmpty) {
+      return;
+    }
+    final generation = _cacheGeneration;
+    final snapshot = ForumAccountSnapshot(
+      session: _session,
+      profile: _profile,
+      summary: _hasCachedUserSummary ? _userSummary : null,
+      lastOnlineAt: DateTime.now(),
+      profileUpdatedAt: _profileUpdatedAt,
+      summaryUpdatedAt: _summaryUpdatedAt,
+      activityCounts: _activityCounts?.toJson(),
+      activityUpdatedAt: _activityUpdatedAt,
+    );
+    if (generation == _cacheGeneration) {
+      await _snapshotStore.save(snapshot);
     }
   }
 
@@ -803,6 +1030,12 @@ class OnlineForumRepository implements ForumRepository {
     if (!forceRefresh && _feedTopics[query.key] != null) {
       return _feedTopics[query.key]!;
     }
+    if (!isOnline) {
+      if (forceRefresh) {
+        throw const ForumOfflineCacheMissException();
+      }
+      return _feedTopics[query.key] ?? const [];
+    }
     final json = await _apiClient.getJson(_feedPath(query));
     _mergeUsers(json);
     _feedMorePaths[query.key] = _parseMoreTopicsPath(json);
@@ -851,6 +1084,12 @@ class OnlineForumRepository implements ForumRepository {
     bool forceRefresh = false,
     bool trackVisit = false,
   }) {
+    if (!isOnline) {
+      if (forceRefresh) {
+        return Future.error(const ForumOfflineCacheMissException());
+      }
+      return Future.value(_topicDetails[id]);
+    }
     if (!forceRefresh) {
       final cached = _topicDetails[id];
       if (cached != null && !_staleTopicDetailIds.contains(id)) {
@@ -947,15 +1186,44 @@ class OnlineForumRepository implements ForumRepository {
   Future<UserProfile> fetchUserProfile(
     String username, {
     bool forceRefresh = false,
-  }) async {
+  }) {
     final key = username.toLowerCase();
+    final pending = _pendingUserProfiles[key];
+    if (pending != null) {
+      return pending;
+    }
+    final future = _fetchUserProfile(key, forceRefresh: forceRefresh);
+    _pendingUserProfiles[key] = future;
+    return future.whenComplete(() => _pendingUserProfiles.remove(key));
+  }
+
+  Future<UserProfile> _fetchUserProfile(
+    String key, {
+    required bool forceRefresh,
+  }) async {
+    if (key == profile.username.toLowerCase() && !forceRefresh) {
+      final updatedAt = _profileUpdatedAt;
+      if (_profileUpdatedAt != null &&
+          DateTime.now().difference(updatedAt!) < const Duration(days: 7)) {
+        return _profile;
+      }
+    }
     if (!forceRefresh && _userProfiles[key] != null) {
       return _userProfiles[key]!;
     }
+    if (!isOnline) {
+      if (forceRefresh) {
+        throw const ForumOfflineCacheMissException();
+      }
+      if (key == profile.username.toLowerCase()) {
+        return _profile;
+      }
+      throw const ForumOfflineCacheMissException();
+    }
     final json =
         await _apiClient.getJson('/u/${Uri.encodeComponent(key)}.json');
-    final profile = UserProfile.fromJson(json);
-    return _storeProfile(profile);
+    final fetchedProfile = UserProfile.fromJson(json);
+    return _storeProfile(fetchedProfile);
   }
 
   @override
@@ -969,10 +1237,40 @@ class OnlineForumRepository implements ForumRepository {
   Future<UserSummary> fetchUserSummary(
     String username, {
     bool forceRefresh = false,
-  }) async {
+  }) {
     final key = username.toLowerCase();
+    final pending = _pendingUserSummaries[key];
+    if (pending != null) {
+      return pending;
+    }
+    final future = _fetchUserSummary(key, forceRefresh: forceRefresh);
+    _pendingUserSummaries[key] = future;
+    return future.whenComplete(() => _pendingUserSummaries.remove(key));
+  }
+
+  Future<UserSummary> _fetchUserSummary(
+    String key, {
+    required bool forceRefresh,
+  }) async {
+    if (key == profile.username.toLowerCase() && !forceRefresh) {
+      final updatedAt = _summaryUpdatedAt;
+      if (_hasCachedUserSummary &&
+          updatedAt != null &&
+          DateTime.now().difference(updatedAt) < const Duration(hours: 6)) {
+        return _userSummary;
+      }
+    }
     if (!forceRefresh && _userSummaries[key] != null) {
       return _userSummaries[key]!;
+    }
+    if (!isOnline) {
+      if (forceRefresh) {
+        throw const ForumOfflineCacheMissException();
+      }
+      if (key == profile.username.toLowerCase() && _hasCachedUserSummary) {
+        return _userSummary;
+      }
+      throw const ForumOfflineCacheMissException();
     }
     final json = await _apiClient.getJson(
       '/u/${Uri.encodeComponent(key)}/summary.json',
@@ -981,6 +1279,9 @@ class OnlineForumRepository implements ForumRepository {
     _userSummaries[key] = summary;
     if (key == profile.username.toLowerCase()) {
       _userSummary = summary;
+      _hasCachedUserSummary = true;
+      _summaryUpdatedAt = DateTime.now();
+      await _saveAccountSnapshot();
     }
     return summary;
   }
@@ -988,33 +1289,49 @@ class OnlineForumRepository implements ForumRepository {
   @override
   Future<ForumActivityCounts> fetchActivityCounts({
     bool forceRefresh = false,
+  }) {
+    final pending = _pendingActivityCounts;
+    if (pending != null) {
+      return pending;
+    }
+    final future = _fetchActivityCounts(forceRefresh: forceRefresh);
+    _pendingActivityCounts = future;
+    return future.whenComplete(() => _pendingActivityCounts = null);
+  }
+
+  Future<ForumActivityCounts> _fetchActivityCounts({
+    required bool forceRefresh,
   }) async {
     if (!forceRefresh && _activityCounts != null) {
       return _activityCounts!;
+    }
+    if (!isOnline) {
+      if (forceRefresh) {
+        throw const ForumOfflineCacheMissException();
+      }
+      if (_activityCounts != null) {
+        return _activityCounts!;
+      }
+      throw const ForumOfflineCacheMissException();
     }
     final summary = await fetchUserSummary(
       profile.username,
       forceRefresh: forceRefresh,
     );
-    final activities = await Future.wait([
-      fetchUserActivity(ForumActivityKind.topics, forceRefresh: forceRefresh),
-      fetchUserActivity(ForumActivityKind.read, forceRefresh: forceRefresh),
-      fetchUserActivity(
-        ForumActivityKind.bookmarks,
-        forceRefresh: forceRefresh,
-      ),
-    ]);
-    final topics = activities[0];
-    final read = activities[1];
-    final bookmarks = activities[2];
-    return _activityCounts = ForumActivityCounts(
-      topics: _largerCount(summary.topicCount, topics.length),
-      read: _largerCount(summary.topicsEntered, read.length),
+    final bookmarks = await fetchUserActivity(
+      ForumActivityKind.bookmarks,
+      forceRefresh: forceRefresh,
+    );
+    final result = ForumActivityCounts(
+      topics: summary.topicCount,
+      read: summary.topicsEntered,
       bookmarks: bookmarks.length,
     );
+    _activityUpdatedAt = DateTime.now();
+    _activityCounts = result;
+    await _saveAccountSnapshot();
+    return result;
   }
-
-  int _largerCount(int left, int right) => left > right ? left : right;
 
   @override
   Future<List<ForumActivityItem>> fetchUserActivity(
@@ -1023,6 +1340,12 @@ class OnlineForumRepository implements ForumRepository {
   }) async {
     if (!forceRefresh && _activityItems[kind] != null) {
       return _activityItems[kind]!;
+    }
+    if (!isOnline) {
+      if (forceRefresh) {
+        throw const ForumOfflineCacheMissException();
+      }
+      return _activityItems[kind] ?? const [];
     }
     final json = await _apiClient.getJson(_activityPath(kind));
     _mergeUsers(json);
@@ -1038,6 +1361,9 @@ class OnlineForumRepository implements ForumRepository {
     final key = username.toLowerCase();
     if (!forceRefresh && _createdTopicItems[key] != null) {
       return _createdTopicItems[key]!;
+    }
+    if (!isOnline && forceRefresh) {
+      throw const ForumOfflineCacheMissException();
     }
     final encoded = Uri.encodeComponent(key);
     final json = await _apiClient.getJson('/topics/created-by/$encoded.json');
@@ -1213,6 +1539,12 @@ class OnlineForumRepository implements ForumRepository {
       _mergeUsers(cachedJson);
       return _privateMessages = _parsePrivateMessages(cachedJson);
     }
+    if (!isOnline) {
+      if (forceRefresh) {
+        throw const ForumOfflineCacheMissException();
+      }
+      return _privateMessages ?? const [];
+    }
     final username = profile.username.toLowerCase();
     final responses = await Future.wait([
       _apiClient.getJson('/topics/private-messages/$username.json'),
@@ -1316,6 +1648,12 @@ class OnlineForumRepository implements ForumRepository {
     NotificationFeedFilter filter, {
     bool forceRefresh = false,
   }) async {
+    if (!isOnline) {
+      if (forceRefresh) {
+        throw const ForumOfflineCacheMissException();
+      }
+      return _notifications[filter] ?? const [];
+    }
     if (filter == NotificationFeedFilter.all) {
       if (!forceRefresh && _notifications[filter] != null) {
         return _notifications[filter]!;
@@ -1722,6 +2060,8 @@ class OnlineForumRepository implements ForumRepository {
     _userProfiles[key] = profile;
     if (key == _session.username.toLowerCase()) {
       _profile = profile;
+      _profileUpdatedAt = DateTime.now();
+      unawaited(_saveAccountSnapshot());
     }
     return profile;
   }
@@ -1930,6 +2270,14 @@ class _HydratedTopicSnapshot {
   final JsonMap json;
 }
 
+ForumActivityCounts? _activityCountsFromJson(JsonMap json) {
+  try {
+    return ForumActivityCounts.fromJson(json);
+  } on Object {
+    return null;
+  }
+}
+
 List<ForumCategory> _sortedCategories(Map<int, ForumCategory> categories) {
   final list = categories.values.toList();
   list.sort((a, b) {
@@ -1948,6 +2296,11 @@ class ForumRepositoryFactory {
   static Future<ForumRepository> load() async {
     await _configureForumAccessMode();
     final fixture = await FixtureForumRepository.load();
+    final offline =
+        await OnlineForumRepository.restoreOffline(fallback: fixture);
+    if (offline != null) {
+      return offline;
+    }
     try {
       return await OnlineForumRepository.connect(
         fallback: fixture,

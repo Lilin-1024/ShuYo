@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -32,12 +33,12 @@ class MessagesPage extends StatefulWidget {
   const MessagesPage({
     super.key,
     required this.repository,
-    required this.onLoginRequired,
+    this.onRecoverConnection,
     this.refreshSignal = 0,
   });
 
   final ForumRepository repository;
-  final VoidCallback onLoginRequired;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final int refreshSignal;
 
   @override
@@ -88,16 +89,11 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Widget _messageList() {
-    if (!widget.repository.isOnline) {
-      return EmptyState(
+    if (!widget.repository.hasLocalAccount) {
+      return const EmptyState(
         icon: Icons.forum_outlined,
-        title: '登录后查看私信',
-        message: '私信会话需要乐乎登录态',
-        action: FilledButton.icon(
-          onPressed: widget.onLoginRequired,
-          icon: const Icon(Icons.login),
-          label: const Text('登录乐乎'),
-        ),
+        title: '无法连接论坛',
+        message: '请尝试重新登录。',
       );
     }
     if (_loading && _topics == null) {
@@ -123,12 +119,18 @@ class _MessagesPageState extends State<MessagesPage> {
         onRefresh: _refreshList,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 96),
+          children: [
+            const SizedBox(height: 96),
             EmptyState(
               icon: Icons.mark_chat_unread_outlined,
-              title: '暂无私信',
-              message: '从用户主页可以发起新的私信会话',
+              title: widget.repository.isCacheOnly &&
+                      !widget.repository.hasCachedPrivateMessages
+                  ? '无法连接论坛'
+                  : '暂无私信',
+              message: widget.repository.isCacheOnly &&
+                      !widget.repository.hasCachedPrivateMessages
+                  ? '请尝试重新登录。'
+                  : '从用户主页可以发起新的私信会话',
             ),
           ],
         ),
@@ -146,7 +148,11 @@ class _MessagesPageState extends State<MessagesPage> {
         itemBuilder: (context, index) {
           final group = groups[index];
           return ListTile(
-            leading: ForumAvatar(url: group.avatarUrl(size: 96), size: 42),
+            leading: ForumAvatar(
+              url: group.avatarUrl(size: 96),
+              size: 42,
+              privateImage: true,
+            ),
             title: Text(
               group.displayName,
               maxLines: 1,
@@ -219,10 +225,30 @@ class _MessagesPageState extends State<MessagesPage> {
     if (_refreshing) {
       return;
     }
+    if (!widget.repository.isOnline && silent) {
+      return;
+    }
     setState(() => _refreshing = true);
+    var recoveredFromCache = false;
+    var refreshRepository = widget.repository;
     try {
+      if (!refreshRepository.isOnline) {
+        final recovery = await widget.onRecoverConnection?.call() ??
+            ForumRecoveryResult(
+              status: ForumRecoveryStatus.unavailable,
+              repository: refreshRepository,
+            );
+        refreshRepository = recovery.repository;
+        if (!recovery.isRestored || !refreshRepository.isOnline) {
+          if (!silent && mounted) {
+            _showSnack(_forumRecoveryMessage(recovery));
+          }
+          return;
+        }
+        recoveredFromCache = true;
+      }
       final hiddenTopicIdsFuture = _loadHiddenTopicIds();
-      final topics = await widget.repository.fetchPrivateMessages(
+      final topics = await refreshRepository.fetchPrivateMessages(
         forceRefresh: true,
       );
       final hiddenTopicIds = await hiddenTopicIdsFuture;
@@ -241,20 +267,20 @@ class _MessagesPageState extends State<MessagesPage> {
         );
         _error = null;
       });
+      if (recoveredFromCache && mounted) {
+        _showSnack('已恢复论坛连接。');
+      }
     } on Object catch (error) {
+      if (error is ForumAuthException || _isForumTransportError(error)) {
+        refreshRepository.markConnectionUnavailable();
+      }
       if (!mounted) {
         return;
       }
       if (_topics == null) {
         setState(() => _error = error);
       } else if (!silent) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _refreshFailureMessage(error, prefix: '私信刷新失败'),
-            ),
-          ),
-        );
+        _showSnack(_refreshFailureMessage(error, prefix: '私信刷新失败'));
       }
     } finally {
       if (mounted) {
@@ -389,6 +415,7 @@ class _MessagesPageState extends State<MessagesPage> {
         lehuRoute(
           builder: (context) => _MessageTopicSelectionPage(
             repository: widget.repository,
+            onRecoverConnection: widget.onRecoverConnection,
             group: group,
             previewForTopic: _previewForTopic,
             onHideTopic: _hidePrivateMessageTopic,
@@ -410,6 +437,7 @@ class _MessagesPageState extends State<MessagesPage> {
       lehuRoute(
         builder: (context) => _MessageDetailPage(
           repository: widget.repository,
+          onRecoverConnection: widget.onRecoverConnection,
           topic: topic,
           counterpartTitle: counterpartTitle,
           counterpartUsername: counterpartUsername,
@@ -422,12 +450,14 @@ class _MessagesPageState extends State<MessagesPage> {
 class _MessageTopicSelectionPage extends StatefulWidget {
   const _MessageTopicSelectionPage({
     required this.repository,
+    this.onRecoverConnection,
     required this.group,
     required this.previewForTopic,
     required this.onHideTopic,
   });
 
   final ForumRepository repository;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final _PrivateConversationGroup group;
   final Future<_MessageTopicPreview> Function(TopicListItem topic)
       previewForTopic;
@@ -489,6 +519,7 @@ class _MessageTopicSelectionPageState
                 lehuRoute(
                   builder: (context) => _MessageDetailPage(
                     repository: widget.repository,
+                    onRecoverConnection: widget.onRecoverConnection,
                     topic: topic,
                     counterpartTitle: widget.group.displayName,
                     counterpartUsername: widget.group.singleUsername,
@@ -601,6 +632,9 @@ String _friendlyForumError(Object error) {
 }
 
 String _refreshFailureMessage(Object error, {required String prefix}) {
+  if (error is ForumAuthException) {
+    return '登录状态已失效，请通过首页刷新按钮重新认证。';
+  }
   final message = _friendlyForumError(error);
   if (message == forumRefreshTooFastMessage) {
     return message;
@@ -608,15 +642,36 @@ String _refreshFailureMessage(Object error, {required String prefix}) {
   return '$prefix：$message';
 }
 
+String _forumRecoveryMessage(ForumRecoveryResult result) {
+  if (result.status == ForumRecoveryStatus.requiresReauthentication) {
+    return '登录状态已失效，请通过首页刷新按钮重新认证。';
+  }
+  final error = result.error;
+  if (error is ForumApiException &&
+      error.message != forumRefreshTooFastMessage) {
+    return error.message;
+  }
+  return '无法连接论坛，请尝试重新登录。';
+}
+
+bool _isForumTransportError(Object error) {
+  return error is SocketException ||
+      error is TimeoutException ||
+      error is HandshakeException ||
+      error is HttpException;
+}
+
 class _MessageDetailPage extends StatefulWidget {
   const _MessageDetailPage({
     required this.repository,
+    this.onRecoverConnection,
     required this.topic,
     required this.counterpartTitle,
     this.counterpartUsername,
   });
 
   final ForumRepository repository;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final TopicListItem topic;
   final String counterpartTitle;
   final String? counterpartUsername;
@@ -644,10 +699,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     _detail = widget.repository.cachedTopicDetail(widget.topic.id);
     _loadingInitial = _detail == null;
     unawaited(_loadInitial(showLoading: _detail == null));
-    _autoRefreshTimer = Timer.periodic(
-      _autoRefreshInterval,
-      (_) => unawaited(_refreshDetailSilently()),
-    );
+    _ensureAutoRefreshTimer();
   }
 
   @override
@@ -705,10 +757,10 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     final detail = _detail;
     final posts = detail?.posts ?? const <Post>[];
     if (detail == null || posts.isEmpty) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.forum_outlined,
-        title: '暂无内容',
-        message: '这个私信会话没有返回消息',
+        title: widget.repository.isCacheOnly ? '无法连接论坛' : '暂无内容',
+        message: widget.repository.isCacheOnly ? '请尝试重新登录。' : '这个私信会话没有返回消息',
       );
     }
     return ListView.builder(
@@ -765,6 +817,10 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
   }
 
   Future<bool> _reply(String raw, List<UploadedImage> images) async {
+    if (!widget.repository.isOnline) {
+      _showSnack('无法连接论坛，请尝试重新登录。');
+      return false;
+    }
     if (_submitting) {
       return false;
     }
@@ -802,11 +858,27 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     if (_refreshing) {
       return;
     }
+    var repository = widget.repository;
+    var recoveredFromCache = false;
+    if (!repository.isOnline) {
+      final recovery = await widget.onRecoverConnection?.call() ??
+          ForumRecoveryResult(
+            status: ForumRecoveryStatus.unavailable,
+            repository: repository,
+          );
+      if (!recovery.isRestored || !recovery.repository.isOnline) {
+        _showSnack(_forumRecoveryMessage(recovery));
+        return;
+      }
+      repository = recovery.repository;
+      recoveredFromCache = true;
+      _ensureAutoRefreshTimer();
+    }
     final startedAt = DateTime.now();
     final previousIds = _detail?.posts.map((post) => post.id).toSet() ?? {};
     setState(() => _refreshing = true);
     try {
-      final fetched = await _fetchLatestDetail();
+      final fetched = await _fetchLatestDetail(repository);
       final detail = _mergeWithCurrentDetail(fetched);
       final nextIds = detail?.posts.map((post) => post.id).toSet() ?? {};
       final newIds = nextIds.difference(previousIds);
@@ -826,7 +898,13 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
         }
         _error = null;
       });
+      if (recoveredFromCache) {
+        _showSnack('已恢复论坛连接。');
+      }
     } on Object catch (error) {
+      if (error is ForumAuthException || _isForumTransportError(error)) {
+        repository.markConnectionUnavailable();
+      }
       if (!mounted) {
         return;
       }
@@ -843,6 +921,11 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
   }
 
   Future<void> _refreshDetailSilently() async {
+    if (!widget.repository.isOnline) {
+      _autoRefreshTimer?.cancel();
+      _autoRefreshTimer = null;
+      return;
+    }
     if (!mounted ||
         _autoRefreshing ||
         _refreshing ||
@@ -876,8 +959,18 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
     }
   }
 
-  Future<TopicDetail?> _fetchLatestDetail() {
-    return widget.repository.fetchTopicDetail(
+  void _ensureAutoRefreshTimer() {
+    if (_autoRefreshTimer != null || !widget.repository.isOnline) {
+      return;
+    }
+    _autoRefreshTimer = Timer.periodic(
+      _autoRefreshInterval,
+      (_) => unawaited(_refreshDetailSilently()),
+    );
+  }
+
+  Future<TopicDetail?> _fetchLatestDetail([ForumRepository? repository]) {
+    return (repository ?? widget.repository).fetchTopicDetail(
       widget.topic.id,
       forceRefresh: true,
     );
@@ -944,6 +1037,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
         builder: (context) => FullscreenImagePage(
           urls: urls,
           initialIndex: initialIndex,
+          privateImage: true,
         ),
       ),
     );
@@ -1289,6 +1383,7 @@ class _MessageCookedContent extends StatelessWidget {
       imageErrorHeight: 130,
       imageFit: BoxFit.contain,
       compactCards: true,
+      privateImage: true,
       onOpenUser: onOpenUser,
       onOpenImage: onOpenImage,
       onOpenInternalTopic: onOpenInternalTopic,

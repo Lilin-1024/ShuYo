@@ -41,6 +41,14 @@ class ForumAuthException extends ForumApiException {
   ]) : super(statusCode: statusCode);
 }
 
+class ForumOfflineCacheMissException extends ForumApiException {
+  const ForumOfflineCacheMissException() : super('无法连接论坛，请尝试重新登录。');
+}
+
+class ForumConnectionUnavailableException extends ForumApiException {
+  const ForumConnectionUnavailableException(super.message);
+}
+
 class DiscourseApiClient {
   DiscourseApiClient({
     required ForumAuthService authService,

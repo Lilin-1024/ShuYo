@@ -9,6 +9,7 @@ class HomeDashboardPage extends StatelessWidget {
     super.key,
     required this.profile,
     required this.isOnline,
+    required this.hasLocalAccount,
     required this.isBusy,
     required this.onLogin,
     required this.onRelogin,
@@ -24,6 +25,7 @@ class HomeDashboardPage extends StatelessWidget {
 
   final UserProfile profile;
   final bool isOnline;
+  final bool hasLocalAccount;
   final bool isBusy;
   final VoidCallback onLogin;
   final VoidCallback onRelogin;
@@ -46,11 +48,15 @@ class HomeDashboardPage extends StatelessWidget {
           const SizedBox(height: 10),
         ],
         _HomeRow(
-          title: isOnline ? '欢迎回来，${profile.username}' : '立即登录',
-          content: isOnline ? _greeting() : '登录后同步个人数据',
-          trailing: isOnline
+          title: hasLocalAccount ? '欢迎回来，${profile.username}' : '立即登录',
+          content: !hasLocalAccount
+              ? '登录后同步个人数据'
+              : isOnline
+                  ? _greeting()
+                  : '无法连接论坛，请尝试重新登录',
+          trailing: hasLocalAccount
               ? IconButton(
-                  tooltip: '重新登录',
+                  tooltip: '刷新论坛连接',
                   onPressed: isBusy ? null : onRelogin,
                   icon: isBusy
                       ? const SizedBox(
@@ -61,7 +67,7 @@ class HomeDashboardPage extends StatelessWidget {
                       : const Icon(Icons.refresh),
                 )
               : const Icon(Icons.login),
-          onTap: isOnline ? null : onLogin,
+          onTap: hasLocalAccount ? null : onLogin,
         ),
         _HomeRow(
           icon: Icons.event,

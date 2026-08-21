@@ -25,10 +25,12 @@ class UserProfilePage extends StatefulWidget {
     super.key,
     required this.repository,
     required this.username,
+    this.onRecoverConnection,
   });
 
   final ForumRepository repository;
   final String username;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
 
   @override
   State<UserProfilePage> createState() => _UserProfilePageState();
@@ -55,6 +57,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
+            if (widget.repository.isCacheOnly) {
+              return const EmptyState(
+                icon: Icons.person_off_outlined,
+                title: '无法连接论坛',
+                message: '请尝试重新登录。',
+              );
+            }
             return EmptyState(
               icon: Icons.person_off_outlined,
               title: '主页加载失败',
@@ -131,6 +140,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         builder: (context) => _UserCreatedTopicsPage(
           repository: widget.repository,
           username: profile.username,
+          onRecoverConnection: widget.onRecoverConnection,
         ),
       ),
     );
@@ -244,10 +254,12 @@ class _UserCreatedTopicsPage extends StatefulWidget {
   const _UserCreatedTopicsPage({
     required this.repository,
     required this.username,
+    this.onRecoverConnection,
   });
 
   final ForumRepository repository;
   final String username;
+  final Future<ForumRecoveryResult> Function()? onRecoverConnection;
 
   @override
   State<_UserCreatedTopicsPage> createState() => _UserCreatedTopicsPageState();
@@ -340,6 +352,7 @@ class _UserCreatedTopicsPageState extends State<_UserCreatedTopicsPage> {
       lehuRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
+          onRecoverConnection: widget.onRecoverConnection,
           topic: item.toTopicListItem(),
         ),
       ),

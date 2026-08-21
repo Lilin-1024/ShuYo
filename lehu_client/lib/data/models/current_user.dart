@@ -37,4 +37,14 @@ class CurrentUserSession {
       canCreateTopic: boolValue(json['can_create_topic']),
     );
   }
+
+  JsonMap toJson() {
+    return {
+      ...user.toJson(),
+      'unread_notifications': unreadNotifications,
+      'all_unread_notifications_count': allUnreadNotifications,
+      'new_personal_messages_notifications_count': newPersonalMessages,
+      'can_create_topic': canCreateTopic,
+    };
+  }
 }
