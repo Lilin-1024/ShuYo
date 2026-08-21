@@ -80,4 +80,29 @@ void main() {
     expect(find.byType(ForumNetworkImage), findsOneWidget);
     expect(tester.getSize(find.byType(ForumNetworkImage)), const Size(192, 96));
   });
+
+  testWidgets('cooked emoji images stay inline at the current text size',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 350,
+            child: ForumCookedContent(
+              cooked: '<p>before <img class="emoji" '
+                  'src="https://example.com/custom-campus.png" '
+                  'alt=":custom_campus:" width="20" height="20"> after</p>',
+              textColor: Colors.black,
+              onOpenImage: (_, __) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(ForumNetworkImage), findsOneWidget);
+    final size = tester.getSize(find.byType(ForumNetworkImage));
+    expect(size.width, closeTo(17.92, 0.01));
+    expect(size.height, closeTo(17.92, 0.01));
+  });
 }

@@ -17,6 +17,7 @@ class CookedTextRun {
     this.strikethrough = false,
     this.code = false,
     this.link,
+    this.inlineEmojiUrl,
   });
 
   final String text;
@@ -25,8 +26,12 @@ class CookedTextRun {
   final bool strikethrough;
   final bool code;
   final CookedLinkPreview? link;
+  final String? inlineEmojiUrl;
 
   bool hasSameStyle(CookedTextRun other) {
+    if (isInlineEmoji || other.isInlineEmoji) {
+      return false;
+    }
     return bold == other.bold &&
         italic == other.italic &&
         strikethrough == other.strikethrough &&
@@ -42,10 +47,12 @@ class CookedTextRun {
       strikethrough: strikethrough,
       code: code,
       link: link,
+      inlineEmojiUrl: inlineEmojiUrl,
     );
   }
 
   bool get isLink => link != null;
+  bool get isInlineEmoji => inlineEmojiUrl != null;
 
   bool _hasSameLink(CookedLinkPreview? other) {
     final current = link;
@@ -408,6 +415,25 @@ class HtmlText {
       }
     }
 
+    void addInlineEmoji(_HtmlImage image, _InlineTextStyle style) {
+      final text = image.inlineText;
+      if (text.isEmpty || image.src.isEmpty) {
+        addRun(text, style);
+        return;
+      }
+      inlineRuns.add(
+        CookedTextRun(
+          text,
+          bold: style.bold,
+          italic: style.italic,
+          strikethrough: style.strikethrough,
+          code: style.code,
+          link: style.link,
+          inlineEmojiUrl: _absoluteUrl(image.src),
+        ),
+      );
+    }
+
     void withBlock(_CookedTextBlockState state, void Function() callback) {
       flushText();
       final previous = blockState;
@@ -432,6 +458,8 @@ class HtmlText {
             imageHeight: image.height,
           ),
         );
+      } else if (image.isEmoji) {
+        addInlineEmoji(image, style);
       } else if (image.inlineText.isNotEmpty) {
         addRun(image.inlineText, style);
       }
@@ -671,13 +699,12 @@ class HtmlText {
   static List<CookedTextRun> _normalizeRuns(List<CookedTextRun> runs) {
     final normalized = <CookedTextRun>[];
     for (final run in runs) {
-      final text = EmojiText.render(
-        run.text
-            .replaceAll('\u00a0', ' ')
-            .replaceAll(RegExp(r'[ \t\f\v]+'), ' ')
-            .replaceAll(RegExp(r' *\n *'), '\n')
-            .replaceAll(RegExp(r'\n{3,}'), '\n\n'),
-      );
+      final compacted = run.text
+          .replaceAll('\u00a0', ' ')
+          .replaceAll(RegExp(r'[ \t\f\v]+'), ' ')
+          .replaceAll(RegExp(r' *\n *'), '\n')
+          .replaceAll(RegExp(r'\n{3,}'), '\n\n');
+      final text = run.code ? compacted : EmojiText.render(compacted);
       if (text.isEmpty) {
         continue;
       }
@@ -705,7 +732,7 @@ class HtmlText {
   static List<CookedTextRun> _normalizeCodeRuns(List<CookedTextRun> runs) {
     final normalized = <CookedTextRun>[];
     for (final run in runs) {
-      final text = EmojiText.render(run.text);
+      final text = run.text;
       if (text.isEmpty) {
         continue;
       }
@@ -1000,12 +1027,10 @@ class HtmlText {
   }
 
   static String _normalizeCodeBlockText(String value) {
-    return EmojiText.render(
-      value
-          .replaceAll('\r\n', '\n')
-          .replaceAll('\r', '\n')
-          .replaceAll(RegExp(r'\n+$'), ''),
-    );
+    return value
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n')
+        .replaceAll(RegExp(r'\n+$'), '');
   }
 
   static String _decodeEntities(String value) {
@@ -1071,15 +1096,19 @@ class _HtmlImage {
     required this.alt,
     required this.width,
     required this.height,
+    this.emoji = false,
   });
 
   final String src;
   final String alt;
   final int width;
   final int height;
+  final bool emoji;
+
+  bool get isEmoji => emoji || src.contains('/emoji/');
 
   bool get shouldRenderAsImage {
-    if (src.isEmpty || src.contains('/emoji/')) {
+    if (src.isEmpty || isEmoji) {
       return false;
     }
     if (width > 0 && height > 0 && width <= 32 && height <= 32) {
@@ -1105,6 +1134,7 @@ class _HtmlImage {
       alt: attrs['alt'] ?? attrs['title'] ?? '',
       width: int.tryParse(attrs['width'] ?? '') ?? 0,
       height: int.tryParse(attrs['height'] ?? '') ?? 0,
+      emoji: (attrs['class'] ?? '').split(RegExp(r'\s+')).contains('emoji'),
     );
   }
 
@@ -1114,6 +1144,7 @@ class _HtmlImage {
       alt: element.attributes['alt'] ?? element.attributes['title'] ?? '',
       width: int.tryParse(element.attributes['width'] ?? '') ?? 0,
       height: int.tryParse(element.attributes['height'] ?? '') ?? 0,
+      emoji: element.classes.contains('emoji'),
     );
   }
 }

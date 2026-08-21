@@ -87,12 +87,45 @@ void main() {
 
   test('renders generated unicode emoji shortcodes', () {
     final rendered = EmojiText.render(
-      ':melting_face: :flag_china: :cn: :person_medium_dark_skin_tone:',
+      ':melting_face: :flag_china: :cn: :person_medium_dark_skin_tone: '
+      ':south_korea: :wave:t2:',
     );
 
     expect(rendered, contains('\u{1FAE0}'));
     expect(rendered, contains('\u{1F1E8}\u{1F1F3}'));
     expect(rendered, contains('\u{1F9D1}\u{1F3FE}'));
+    expect(rendered, contains('\u{1F1F0}\u{1F1F7}'));
+    expect(rendered, contains('\u{1F44B}\u{1F3FB}'));
+    expect(EmojiText.render(':unknown_forum_emoji:'), ':unknown_forum_emoji:');
+  });
+
+  test('keeps code shortcodes literal while rendering surrounding emoji', () {
+    const cooked = '<p><code>:south_korea:</code> :south_korea:</p>'
+        '<pre>:south_korea:</pre>';
+    final segments = HtmlText.parseSegments(cooked);
+
+    expect(segments.first.runs.first.code, isTrue);
+    expect(segments.first.runs.first.text, ':south_korea:');
+    expect(segments.first.textValue, contains('\u{1F1F0}\u{1F1F7}'));
+    expect(segments.last.textBlockKind, CookedTextBlockKind.codeBlock);
+    expect(segments.last.textValue, ':south_korea:');
+  });
+
+  test('preserves server emoji images as inline cooked text runs', () {
+    const cooked = '<p>before '
+        '<img class="emoji" src="/images/emoji/twitter/south_korea.png" '
+        'alt=":south_korea:" width="20" height="20"> after '
+        '<img class="emoji" src="/uploads/default/custom-campus.png" '
+        'alt=":custom_campus:" width="20" height="20"></p>';
+    final segment = HtmlText.parseSegments(cooked).single;
+    final emojiRuns = segment.runs.where((run) => run.isInlineEmoji).toList();
+
+    expect(emojiRuns, hasLength(2));
+    expect(emojiRuns.first.text, '\u{1F1F0}\u{1F1F7}');
+    expect(emojiRuns.first.inlineEmojiUrl, contains('/images/emoji/'));
+    expect(emojiRuns.last.text, ':custom_campus:');
+    expect(emojiRuns.last.inlineEmojiUrl, contains('/uploads/default/'));
+    expect(HtmlText.images(cooked), isEmpty);
   });
 
   test('sanitizes emoji from forum titles', () {

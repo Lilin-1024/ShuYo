@@ -394,26 +394,110 @@ class _CookedTextBlock extends StatelessWidget {
     final runs =
         segment.runs.isEmpty ? [CookedTextRun(segment.value)] : segment.runs;
     return [
-      for (final run in runs)
-        TextSpan(
-          text: run.text,
-          style: baseStyle.copyWith(
-            color: run.isLink ? colors.accent : baseStyle.color,
-            fontWeight: run.bold ? FontWeight.w600 : baseStyle.fontWeight,
-            fontStyle: run.italic ? FontStyle.italic : baseStyle.fontStyle,
-            decoration: run.strikethrough
-                ? TextDecoration.lineThrough
-                : baseStyle.decoration,
-            fontFamily: run.code ? 'monospace' : baseStyle.fontFamily,
-            fontSize: run.code ? textSize * 0.92 : baseStyle.fontSize,
-            backgroundColor:
-                run.code ? colors.surfaceMuted.withValues(alpha: 0.82) : null,
-          ),
-          recognizer: run.link == null
-              ? null
-              : (TapGestureRecognizer()..onTap = () => onOpenLink(run.link!)),
-        ),
+      for (final run in runs) _spanForRun(run, baseStyle, colors),
     ];
+  }
+
+  InlineSpan _spanForRun(
+    CookedTextRun run,
+    TextStyle baseStyle,
+    LehuColors colors,
+  ) {
+    final style = baseStyle.copyWith(
+      color: run.isLink ? colors.accent : baseStyle.color,
+      fontWeight: run.bold ? FontWeight.w600 : baseStyle.fontWeight,
+      fontStyle: run.italic ? FontStyle.italic : baseStyle.fontStyle,
+      decoration:
+          run.strikethrough ? TextDecoration.lineThrough : baseStyle.decoration,
+      fontFamily: run.code ? 'monospace' : baseStyle.fontFamily,
+      fontSize: run.code ? textSize * 0.92 : baseStyle.fontSize,
+      backgroundColor:
+          run.code ? colors.surfaceMuted.withValues(alpha: 0.82) : null,
+    );
+    final emojiUrl = run.inlineEmojiUrl;
+    if (emojiUrl != null) {
+      final size = (style.fontSize ?? textSize) * 1.12;
+      return WidgetSpan(
+        alignment: PlaceholderAlignment.middle,
+        child: _InlineEmoji(
+          url: emojiUrl,
+          fallback: run.text,
+          size: size,
+          fallbackStyle: style,
+          onTap: run.link == null ? null : () => onOpenLink(run.link!),
+        ),
+      );
+    }
+    return TextSpan(
+      text: run.text,
+      style: style,
+      recognizer: run.link == null
+          ? null
+          : (TapGestureRecognizer()..onTap = () => onOpenLink(run.link!)),
+    );
+  }
+}
+
+class _InlineEmoji extends StatefulWidget {
+  const _InlineEmoji({
+    required this.url,
+    required this.fallback,
+    required this.size,
+    required this.fallbackStyle,
+    this.onTap,
+  });
+
+  final String url;
+  final String fallback;
+  final double size;
+  final TextStyle fallbackStyle;
+  final VoidCallback? onTap;
+
+  @override
+  State<_InlineEmoji> createState() => _InlineEmojiState();
+}
+
+class _InlineEmojiState extends State<_InlineEmoji> {
+  var _failed = false;
+
+  @override
+  void didUpdateWidget(covariant _InlineEmoji oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _failed = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final child = _failed
+        ? Text(widget.fallback, style: widget.fallbackStyle)
+        : SizedBox(
+            width: widget.size,
+            height: widget.size,
+            child: ForumNetworkImage(
+              widget.url,
+              width: widget.size,
+              height: widget.size,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                _reportFailure();
+                return const SizedBox.shrink();
+              },
+            ),
+          );
+    final tappable = widget.onTap == null
+        ? child
+        : GestureDetector(onTap: widget.onTap, child: child);
+    return Semantics(label: widget.fallback, child: tappable);
+  }
+
+  void _reportFailure() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_failed) {
+        setState(() => _failed = true);
+      }
+    });
   }
 }
 

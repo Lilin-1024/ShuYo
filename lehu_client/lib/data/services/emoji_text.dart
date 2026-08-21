@@ -1153,7 +1153,7 @@ class EmojiText {
     ..._aliases,
   };
 
-  static final _shortcodePattern = RegExp(r':([a-zA-Z0-9_+\-]+):');
+  static final _shortcodePattern = RegExp(r':([^:\s]+(?::t[2-6])?):');
 
   static List<EmojiEntry> entriesForShortcodes(List<String> shortcodes) {
     return [
