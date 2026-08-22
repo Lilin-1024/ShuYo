@@ -13,12 +13,18 @@ class AppHeader extends StatelessWidget {
     this.showMore = false,
     this.showSearch = false,
     this.showCreate = false,
+    this.showArchive = false,
+    this.showRefresh = false,
+    this.archiveView = false,
+    this.refreshing = false,
     this.notificationCount = 0,
     this.onBack,
     this.onSettings,
     this.onMore,
     this.onSearch,
     this.onCreate,
+    this.onArchive,
+    this.onRefresh,
     this.onTitleTap,
     this.onTitleDoubleTap,
   });
@@ -29,12 +35,18 @@ class AppHeader extends StatelessWidget {
   final bool showMore;
   final bool showSearch;
   final bool showCreate;
+  final bool showArchive;
+  final bool showRefresh;
+  final bool archiveView;
+  final bool refreshing;
   final int notificationCount;
   final VoidCallback? onBack;
   final VoidCallback? onSettings;
   final VoidCallback? onMore;
   final VoidCallback? onSearch;
   final VoidCallback? onCreate;
+  final VoidCallback? onArchive;
+  final VoidCallback? onRefresh;
   final VoidCallback? onTitleTap;
   final VoidCallback? onTitleDoubleTap;
   final VoidCallback onNotification;
@@ -95,13 +107,37 @@ class AppHeader extends StatelessWidget {
               onPressed: onCreate,
               icon: const Icon(Icons.add),
             ),
+          if (showArchive)
+            IconButton(
+              tooltip: archiveView ? '返回消息' : '归档',
+              onPressed: onArchive,
+              icon: Icon(
+                archiveView ? Icons.unarchive_outlined : Icons.archive_outlined,
+              ),
+            ),
+          if (showRefresh)
+            IconButton(
+              tooltip: '刷新消息',
+              onPressed: refreshing ? null : onRefresh,
+              icon: refreshing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+            ),
           if (showMore)
             IconButton(
               tooltip: '更多',
               onPressed: onMore,
               icon: const Icon(Icons.more_horiz),
             )
-          else if (!showSettings && !showSearch && !showCreate)
+          else if (!showSettings &&
+              !showSearch &&
+              !showCreate &&
+              !showArchive &&
+              !showRefresh)
             const SizedBox(width: 48),
           const SizedBox(width: 4),
         ],
