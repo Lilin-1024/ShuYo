@@ -88,6 +88,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _tabIndex = 0;
   TopicFeedQuery _feedQuery = const TopicFeedQuery();
   bool _reloadingSession = false;
+  bool _checkingForumConnection = false;
   bool _loadingMoreFeed = false;
   String? _loadMoreFeedError;
   DateTime? _lastLoadMoreFeedAttempt;
@@ -646,6 +647,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       profile: _repo.profile,
       isOnline: _repo.isOnline,
       hasLocalAccount: _repo.hasLocalAccount,
+      isCheckingConnection: _checkingForumConnection,
       isBusy: _reloadingSession,
       onLogin: _login,
       onRelogin: _relogin,
@@ -1128,7 +1130,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
 
     if (mounted) {
-      setState(() => _reloadingSession = true);
+      setState(() {
+        _reloadingSession = true;
+        _checkingForumConnection = true;
+      });
     }
     try {
       if (ForumUrlResolver.usesWebVpn) {
@@ -1174,7 +1179,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       );
     } finally {
       if (mounted) {
-        setState(() => _reloadingSession = false);
+        setState(() {
+          _reloadingSession = false;
+          _checkingForumConnection = false;
+        });
       }
     }
   }
@@ -1961,7 +1969,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   String _refreshFailureMessage(Object error, {required String prefix}) {
     if (error is ForumAuthException) {
-      return '登录状态已失效，请通过首页刷新按钮重新认证。';
+      return '登录状态已失效，请尝试重新登录';
     }
     final message = _friendlyError(error);
     if (message == forumRefreshTooFastMessage) {
@@ -1972,7 +1980,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   String _forumRecoveryMessage(ForumRecoveryResult result) {
     if (result.status == ForumRecoveryStatus.requiresReauthentication) {
-      return '登录状态已失效，请通过首页刷新按钮重新认证。';
+      return '登录状态已失效，请尝试重新登录';
     }
     final error = result.error;
     if (error is ForumApiException &&
