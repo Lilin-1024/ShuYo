@@ -1252,9 +1252,21 @@ void main() {
     });
 
     expect(schedule.maxWeek, 15);
+    expect(schedule.vacationWeek, 16);
+    expect(schedule.sessionsForWeek(schedule.vacationWeek), isEmpty);
+    expect(schedule.untimedForWeek(schedule.vacationWeek), isEmpty);
     expect(schedule.sessions.single.sections, [5, 6]);
     expect(schedule.sessions.single.weeks, [3, 7, 11, 15]);
     expect(schedule.untimedCourses.single.weeks, [1, 2, 3, 4]);
+
+    expect(
+      AcademicScheduleRepository.summaryFor(
+        schedule,
+        week: schedule.vacationWeek,
+        now: DateTime(2026, 7, 20),
+      ),
+      '假期中',
+    );
   });
 
   test('builds academic schedule widget snapshot', () {
@@ -1302,6 +1314,17 @@ void main() {
     expect(session['endText'], '14:40');
     expect(session['room'], 'EJ106');
     expect(session['weeks'], [3, 7, 11, 15]);
+
+    final vacationSnapshot = AcademicScheduleWidgetService.buildSnapshot(
+      schedule: schedule,
+      weekState: ScheduleWeekState(
+        currentWeek: schedule.maxWeek,
+        anchorMonday: DateTime(2026, 7, 13),
+      ),
+      now: DateTime(2026, 7, 20, 12),
+    );
+    expect(vacationSnapshot['activeWeek'], schedule.vacationWeek);
+    expect(vacationSnapshot['summary'], '假期中');
   });
 
   test('marks manual academic schedule sessions', () {

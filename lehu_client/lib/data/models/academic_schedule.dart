@@ -255,7 +255,14 @@ class AcademicSchedule {
     return values.reduce((a, b) => a > b ? a : b).clamp(1, 32);
   }
 
+  int get vacationWeek => maxWeek + 1;
+
+  bool isVacationWeek(int week) => week >= vacationWeek;
+
   List<CourseSession> sessionsForWeek(int week) {
+    if (isVacationWeek(week)) {
+      return const [];
+    }
     return sessions.where((session) => session.occursInWeek(week)).toList()
       ..sort((a, b) {
         final weekday = a.weekday.compareTo(b.weekday);
@@ -267,6 +274,9 @@ class AcademicSchedule {
   }
 
   List<UntimedCourse> untimedForWeek(int week) {
+    if (isVacationWeek(week)) {
+      return const [];
+    }
     return untimedCourses.where((course) => course.occursInWeek(week)).toList();
   }
 

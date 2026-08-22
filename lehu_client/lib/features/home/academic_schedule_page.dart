@@ -41,11 +41,17 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
   _ScheduleSlot? _selectedManualSlot;
   int _displayedWeek = 1;
   bool _refreshing = false;
+  bool _followsCurrentWeek = true;
+  Timer? _weekTimer;
 
   @override
   void initState() {
     super.initState();
     _loadFuture = _loadCached();
+    _weekTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _refreshDisplayedWeekIfNeeded(),
+    );
   }
 
   @override
@@ -101,15 +107,18 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
                 ? null
                 : () => setState(() {
                       _displayedWeek--;
+                      _followsCurrentWeek = false;
                       _selectedManualSlot = null;
                     }),
-            onNextWeek: _displayedWeek >= schedule.maxWeek
+            onNextWeek: _displayedWeek >= schedule.vacationWeek
                 ? null
                 : () => setState(() {
                       _displayedWeek++;
+                      _followsCurrentWeek = false;
                       _selectedManualSlot = null;
                     }),
             selectedManualSlot: _selectedManualSlot,
+            canAddCourse: !schedule.isVacationWeek(_displayedWeek),
             onEmptySlotTap: _handleEmptySlotTap,
             onCourseTap: _handleCourseTap,
           );
@@ -130,6 +139,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       _displayedWeek = schedule == null
           ? 1
           : widget.repository.activeWeekFromState(schedule, weekState);
+      _followsCurrentWeek = true;
     });
     unawaited(
       widget.widgetService.syncSchedule(
@@ -155,6 +165,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         _weekState = weekState;
         _displayedWeek =
             widget.repository.activeWeekFromState(schedule, weekState);
+        _followsCurrentWeek = true;
       });
       unawaited(
         widget.widgetService.syncSchedule(
@@ -220,7 +231,10 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     if (!mounted) {
       return;
     }
-    setState(() => _weekState = weekState);
+    setState(() {
+      _weekState = weekState;
+      _followsCurrentWeek = true;
+    });
     unawaited(
       widget.widgetService.syncSchedule(
         schedule: _schedule,
@@ -235,6 +249,10 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
   }
 
   Future<void> _handleEmptySlotTap(_ScheduleSlot slot) async {
+    final schedule = _schedule;
+    if (schedule == null || schedule.isVacationWeek(_displayedWeek)) {
+      return;
+    }
     final selected = _selectedManualSlot;
     if (selected != null && selected == slot) {
       await _openManualCourseSheet(slot);
@@ -245,7 +263,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
 
   Future<void> _openManualCourseSheet(_ScheduleSlot slot) async {
     final schedule = _schedule;
-    if (schedule == null) {
+    if (schedule == null || schedule.isVacationWeek(_displayedWeek)) {
       return;
     }
     final draft = await showModalBottomSheet<_ManualCourseDraft>(
@@ -642,6 +660,11 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
   }
 
   void _showScheduleReminderSnack(String prefix, int reminderCount) {
+    final schedule = _schedule;
+    if (schedule != null && schedule.isVacationWeek(_displayedWeek)) {
+      _showSnack('$prefix，假期中无课程提醒');
+      return;
+    }
     if (reminderCount > 0) {
       _showSnack('$prefix，已安排 $reminderCount 条课程提醒');
       return;
@@ -671,6 +694,40 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         );
       },
     );
+  }
+
+  void _refreshDisplayedWeekIfNeeded() {
+    final schedule = _schedule;
+    final weekState = _weekState;
+    if (!mounted ||
+        !_followsCurrentWeek ||
+        schedule == null ||
+        weekState == null) {
+      return;
+    }
+    final activeWeek = widget.repository.activeWeekFromState(
+      schedule,
+      weekState,
+    );
+    if (activeWeek == _displayedWeek) {
+      return;
+    }
+    setState(() {
+      _displayedWeek = activeWeek;
+      _selectedManualSlot = null;
+    });
+    unawaited(
+      widget.widgetService.syncSchedule(
+        schedule: schedule,
+        weekState: weekState,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _weekTimer?.cancel();
+    super.dispose();
   }
 }
 
@@ -1174,6 +1231,7 @@ class _ScheduleBody extends StatelessWidget {
     required this.onPreviousWeek,
     required this.onNextWeek,
     required this.selectedManualSlot,
+    required this.canAddCourse,
     required this.onEmptySlotTap,
     required this.onCourseTap,
   });
@@ -1184,6 +1242,7 @@ class _ScheduleBody extends StatelessWidget {
   final VoidCallback? onPreviousWeek;
   final VoidCallback? onNextWeek;
   final _ScheduleSlot? selectedManualSlot;
+  final bool canAddCourse;
   final ValueChanged<_ScheduleSlot> onEmptySlotTap;
   final ValueChanged<CourseSession> onCourseTap;
 
@@ -1197,6 +1256,7 @@ class _ScheduleBody extends StatelessWidget {
       children: [
         _WeekSwitcher(
           week: displayedWeek,
+          isVacation: schedule.isVacationWeek(displayedWeek),
           onPrevious: onPreviousWeek,
           onNext: onNextWeek,
         ),
@@ -1221,6 +1281,7 @@ class _ScheduleBody extends StatelessWidget {
                         weekState: weekState,
                         displayedWeek: displayedWeek,
                         selectedManualSlot: selectedManualSlot,
+                        canAddCourse: canAddCourse,
                         onEmptySlotTap: onEmptySlotTap,
                         onCourseTap: onCourseTap,
                       ),
@@ -1254,11 +1315,13 @@ class _ScheduleBody extends StatelessWidget {
 class _WeekSwitcher extends StatelessWidget {
   const _WeekSwitcher({
     required this.week,
+    required this.isVacation,
     required this.onPrevious,
     required this.onNext,
   });
 
   final int week;
+  final bool isVacation;
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
 
@@ -1275,7 +1338,7 @@ class _WeekSwitcher extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              '第 $week 周',
+              isVacation ? '假期中' : '第 $week 周',
               textAlign: TextAlign.center,
               style: LehuTextStyles.title(
                 size: 16.5,
@@ -1301,6 +1364,7 @@ class _ScheduleGrid extends StatelessWidget {
     required this.weekState,
     required this.displayedWeek,
     required this.selectedManualSlot,
+    required this.canAddCourse,
     required this.onEmptySlotTap,
     required this.onCourseTap,
   });
@@ -1315,6 +1379,7 @@ class _ScheduleGrid extends StatelessWidget {
   final ScheduleWeekState weekState;
   final int displayedWeek;
   final _ScheduleSlot? selectedManualSlot;
+  final bool canAddCourse;
   final ValueChanged<_ScheduleSlot> onEmptySlotTap;
   final ValueChanged<CourseSession> onCourseTap;
 
@@ -1339,6 +1404,7 @@ class _ScheduleGrid extends StatelessWidget {
                 weekState: weekState,
                 displayedWeek: displayedWeek,
                 selectedManualSlot: selectedManualSlot,
+                canAddCourse: canAddCourse,
                 onEmptySlotTap: onEmptySlotTap,
               ),
               for (final session in sessions)
@@ -1379,6 +1445,7 @@ class _GridBackground extends StatelessWidget {
     required this.weekState,
     required this.displayedWeek,
     required this.selectedManualSlot,
+    required this.canAddCourse,
     required this.onEmptySlotTap,
   });
 
@@ -1392,6 +1459,7 @@ class _GridBackground extends StatelessWidget {
   final ScheduleWeekState weekState;
   final int displayedWeek;
   final _ScheduleSlot? selectedManualSlot;
+  final bool canAddCourse;
   final ValueChanged<_ScheduleSlot> onEmptySlotTap;
 
   @override
@@ -1435,7 +1503,8 @@ class _GridBackground extends StatelessWidget {
                         weekday: weekdays[index],
                         section: section,
                       ),
-                      enabled: !_hasCourseAt(weekdays[index], section),
+                      enabled: canAddCourse &&
+                          !_hasCourseAt(weekdays[index], section),
                       selected: selectedManualSlot ==
                           _ScheduleSlot(
                             weekday: weekdays[index],
