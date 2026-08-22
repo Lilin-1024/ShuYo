@@ -11,6 +11,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.isOnline,
     required this.hasLocalAccount,
     required this.isCheckingConnection,
+    required this.isInitialConnectionCheck,
     required this.isBusy,
     required this.onLogin,
     required this.onRelogin,
@@ -28,6 +29,7 @@ class HomeDashboardPage extends StatelessWidget {
   final bool isOnline;
   final bool hasLocalAccount;
   final bool isCheckingConnection;
+  final bool isInitialConnectionCheck;
   final bool isBusy;
   final VoidCallback onLogin;
   final VoidCallback onRelogin;
@@ -53,16 +55,18 @@ class HomeDashboardPage extends StatelessWidget {
           title: hasLocalAccount ? '欢迎回来，${profile.username}' : '立即登录',
           content: !hasLocalAccount
               ? '登录后同步个人数据'
-              : isCheckingConnection
+              : isCheckingConnection && !isInitialConnectionCheck
                   ? '正在连接论坛...'
                   : isOnline
                       ? _greeting()
-                      : '无法连接论坛，请尝试重新登录',
+                      : isInitialConnectionCheck
+                          ? _greeting()
+                          : '无法连接论坛，请尝试重新登录',
           trailing: hasLocalAccount
               ? IconButton(
                   tooltip: '刷新论坛连接',
                   onPressed: isBusy ? null : onRelogin,
-                  icon: isBusy
+                  icon: isBusy && !isInitialConnectionCheck
                       ? const SizedBox(
                           width: 20,
                           height: 20,
