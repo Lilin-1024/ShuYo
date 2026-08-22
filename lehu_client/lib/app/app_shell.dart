@@ -90,6 +90,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   TopicFeedQuery _feedQuery = const TopicFeedQuery();
   bool _reloadingSession = false;
   bool _checkingForumConnection = false;
+  bool _isInitialForumConnectionCheck = false;
   bool _loadingMoreFeed = false;
   String? _loadMoreFeedError;
   DateTime? _lastLoadMoreFeedAttempt;
@@ -167,6 +168,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     unawaited(_loadNetworkSettings());
     unawaited(_refreshForumReachabilityQuietly(force: true));
     if (_repo.hasLocalAccount && !_repo.isOnline) {
+      _isInitialForumConnectionCheck = true;
       unawaited(_recoverForumConnection());
     }
     unawaited(_loadAnnouncementSummaryFromCache());
@@ -705,6 +707,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       isOnline: _repo.isOnline,
       hasLocalAccount: _repo.hasLocalAccount,
       isCheckingConnection: _checkingForumConnection,
+      isInitialConnectionCheck: _isInitialForumConnectionCheck,
       isBusy: _reloadingSession,
       onLogin: _login,
       onRelogin: _relogin,
@@ -1258,6 +1261,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         error: error,
       );
     } finally {
+      final wasInitialConnectionCheck = _isInitialForumConnectionCheck;
+      if (wasInitialConnectionCheck) {
+        _isInitialForumConnectionCheck = false;
+      }
       if (mounted) {
         setState(() {
           _reloadingSession = false;
