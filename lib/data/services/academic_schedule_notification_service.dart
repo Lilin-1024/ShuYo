@@ -259,7 +259,7 @@ class AcademicScheduleNotificationService {
       if (week < 1) {
         continue;
       }
-      if (week > schedule.maxWeek) {
+      if (schedule.isVacationWeek(week)) {
         break;
       }
       final sessions = schedule.sessions.where(

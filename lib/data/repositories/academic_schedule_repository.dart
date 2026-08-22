@@ -93,7 +93,7 @@ class AcademicScheduleRepository {
   }) {
     final todayMonday = startOfWeek(now ?? DateTime.now());
     final offset = todayMonday.difference(state.anchorMonday).inDays ~/ 7;
-    return (state.currentWeek + offset).clamp(1, schedule.maxWeek);
+    return (state.currentWeek + offset).clamp(1, schedule.vacationWeek);
   }
 
   DateTime dateForWeekday({
@@ -127,6 +127,9 @@ class AcademicScheduleRepository {
     required int week,
     required DateTime now,
   }) {
+    if (schedule.isVacationWeek(week)) {
+      return '假期中';
+    }
     final todayCourses = schedule.sessions
         .where((course) =>
             course.weekday == now.weekday && course.occursInWeek(week))

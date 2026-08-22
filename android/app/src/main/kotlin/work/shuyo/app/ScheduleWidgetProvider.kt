@@ -72,17 +72,30 @@ abstract class ScheduleWidgetBaseProvider(
         val now = LocalDateTime.now()
         val today = now.toLocalDate()
         val activeWeek = schedule.activeWeek(today)
-        val todayCourses = schedule.courses
-            .filter { course ->
-                course.weekday == today.dayOfWeek.value &&
-                    course.occursInWeek(activeWeek)
-            }
-            .sortedWith(compareBy<WidgetCourse> { it.startMinute }.thenBy { it.name })
+        val isVacation = activeWeek > schedule.maxWeek
+        val todayCourses = if (isVacation) {
+            emptyList()
+        } else {
+            schedule.courses
+                .filter { course ->
+                    course.weekday == today.dayOfWeek.value &&
+                        course.occursInWeek(activeWeek)
+                }
+                .sortedWith(compareBy<WidgetCourse> { it.startMinute }.thenBy { it.name })
+        }
         val nowMinute = now.hour * 60 + now.minute
         val upcoming = todayCourses.firstOrNull { it.endMinute >= nowMinute }
 
         if (compact) {
-            bindCompact(views, activeWeek, today.dayOfWeek.value, todayCourses, upcoming, nowMinute)
+            bindCompact(
+                views,
+                activeWeek,
+                today.dayOfWeek.value,
+                todayCourses,
+                upcoming,
+                nowMinute,
+                isVacation
+            )
             return views
         }
 
@@ -97,11 +110,15 @@ abstract class ScheduleWidgetBaseProvider(
         )
         views.setTextViewText(
             R.id.widget_meta,
-            "第${activeWeek}周 · ${weekdayName(today.dayOfWeek.value)}"
+            if (isVacation) {
+                "假期中 · ${weekdayName(today.dayOfWeek.value)}"
+            } else {
+                "第${activeWeek}周 · ${weekdayName(today.dayOfWeek.value)}"
+            }
         )
         views.setTextViewText(
             R.id.widget_status,
-            statusText(todayCourses, upcoming, nowMinute)
+            if (isVacation) "假期中" else statusText(todayCourses, upcoming, nowMinute)
         )
         rowBindings.forEachIndexed { index, binding ->
             bindCourseRow(views, binding, visibleCourses.getOrNull(index), nowMinute)
@@ -127,10 +144,20 @@ abstract class ScheduleWidgetBaseProvider(
         weekday: Int,
         todayCourses: List<WidgetCourse>,
         upcoming: WidgetCourse?,
-        nowMinute: Int
+        nowMinute: Int,
+        isVacation: Boolean
     ) {
         views.setTextViewText(R.id.widget_title, "课表")
-        views.setTextViewText(R.id.widget_meta, "第${activeWeek}周 · ${weekdayName(weekday)}")
+        views.setTextViewText(
+            R.id.widget_meta,
+            if (isVacation) "假期中 · ${weekdayName(weekday)}"
+            else "第${activeWeek}周 · ${weekdayName(weekday)}"
+        )
+        if (isVacation) {
+            views.setTextViewText(R.id.widget_status, "假期中")
+            views.setTextViewText(R.id.compact_course_meta, "点按打开 ShuYo")
+            return
+        }
         if (todayCourses.isEmpty()) {
             views.setTextViewText(R.id.widget_status, "今日暂无课程")
             views.setTextViewText(R.id.compact_course_meta, "点按打开 ShuYo")
@@ -247,10 +274,12 @@ private data class WidgetSchedule(
     val courses: List<WidgetCourse>
 ) {
     fun activeWeek(today: LocalDate): Int {
-        val anchor = parseDate(anchorMonday) ?: return currentWeek.coerceIn(1, maxWeek)
+        val vacationWeek = maxWeek + 1
+        val anchor = parseDate(anchorMonday)
+            ?: return currentWeek.coerceIn(1, vacationWeek)
         val todayMonday = today.minusDays((today.dayOfWeek.value - 1).toLong())
         val weekOffset = ChronoUnit.WEEKS.between(anchor, todayMonday).toInt()
-        return (currentWeek + weekOffset).coerceIn(1, maxWeek.coerceAtLeast(1))
+        return (currentWeek + weekOffset).coerceIn(1, vacationWeek.coerceAtLeast(2))
     }
 
     companion object {
