@@ -10,6 +10,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.profile,
     required this.isOnline,
     required this.hasLocalAccount,
+    required this.isCheckingConnection,
     required this.isBusy,
     required this.onLogin,
     required this.onRelogin,
@@ -26,6 +27,7 @@ class HomeDashboardPage extends StatelessWidget {
   final UserProfile profile;
   final bool isOnline;
   final bool hasLocalAccount;
+  final bool isCheckingConnection;
   final bool isBusy;
   final VoidCallback onLogin;
   final VoidCallback onRelogin;
@@ -51,9 +53,11 @@ class HomeDashboardPage extends StatelessWidget {
           title: hasLocalAccount ? '欢迎回来，${profile.username}' : '立即登录',
           content: !hasLocalAccount
               ? '登录后同步个人数据'
-              : isOnline
-                  ? _greeting()
-                  : '无法连接论坛，请尝试重新登录',
+              : isCheckingConnection
+                  ? '正在连接论坛...'
+                  : isOnline
+                      ? _greeting()
+                      : '无法连接论坛，请尝试重新登录',
           trailing: hasLocalAccount
               ? IconButton(
                   tooltip: '刷新论坛连接',

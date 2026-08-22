@@ -633,7 +633,7 @@ String _friendlyForumError(Object error) {
 
 String _refreshFailureMessage(Object error, {required String prefix}) {
   if (error is ForumAuthException) {
-    return '登录状态已失效，请通过首页刷新按钮重新认证。';
+    return '登录状态已失效，请尝试重新登录';
   }
   final message = _friendlyForumError(error);
   if (message == forumRefreshTooFastMessage) {
@@ -644,7 +644,7 @@ String _refreshFailureMessage(Object error, {required String prefix}) {
 
 String _forumRecoveryMessage(ForumRecoveryResult result) {
   if (result.status == ForumRecoveryStatus.requiresReauthentication) {
-    return '登录状态已失效，请通过首页刷新按钮重新认证。';
+    return '登录状态已失效，请尝试重新登录';
   }
   final error = result.error;
   if (error is ForumApiException &&
