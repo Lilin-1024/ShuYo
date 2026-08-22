@@ -83,6 +83,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   static const _forumAccessModeReloadTimeout = Duration(seconds: 12);
   static const _forumBadgeRefreshInterval = Duration(seconds: 90);
   static const _feedLoadMoreThrottle = Duration(milliseconds: 900);
+  static const _minimumForumRefreshDuration = Duration(milliseconds: 420);
   static const _exitBackPressInterval = Duration(seconds: 2);
 
   int _tabIndex = 0;
@@ -128,6 +129,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   DateTime? _lastExitBackAt;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
+  final _forumTopicListController = TopicListPageController();
+  final _forumRefreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
   Completer<bool>? _forumWebVpnPreloadCompleter;
   Completer<bool>? _academicWebVpnPreloadCompleter;
   int _forumWebVpnPreloadToken = 0;
@@ -209,6 +212,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     onCreate: _openCreateTopic,
                     onSettings: _openClientSettings,
                     onNotification: _openNotifications,
+                    onTitleDoubleTap: _tabIndex == 1
+                        ? () => unawaited(_handleForumHeaderDoubleTap())
+                        : null,
                   ),
                   Expanded(child: _bodyForTab()),
                 ],
@@ -972,6 +978,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           child: _topicList(
             future: _feedFuture,
             refresh: _refreshFeed,
+            controller: _forumTopicListController,
+            refreshIndicatorKey: _forumRefreshIndicatorKey,
             canLoadMore: _repo.canLoadMoreFeed(_feedQuery),
             isLoadingMore: _loadingMoreFeed,
             loadMoreError: _loadMoreFeedError,
@@ -985,6 +993,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Widget _topicList({
     required Future<List<TopicListItem>> future,
     required Future<void> Function() refresh,
+    required TopicListPageController controller,
+    required GlobalKey<RefreshIndicatorState> refreshIndicatorKey,
     required bool canLoadMore,
     required bool isLoadingMore,
     required String? loadMoreError,
@@ -1010,6 +1020,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         final visibleTopics = topics ?? const <TopicListItem>[];
         if (visibleTopics.isEmpty) {
           return RefreshIndicator(
+            key: refreshIndicatorKey,
             onRefresh: refresh,
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -1025,8 +1036,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           );
         }
         return RefreshIndicator(
+          key: refreshIndicatorKey,
           onRefresh: refresh,
           child: TopicListPage(
+            controller: controller,
             topics: visibleTopics,
             users: _repo.users,
             previewForTopic: _repo.fetchTopicPreview,
@@ -1041,6 +1054,22 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         );
       },
     );
+  }
+
+  Future<void> _handleForumHeaderDoubleTap() async {
+    if (_tabIndex != 1) {
+      return;
+    }
+    await _forumTopicListController.scrollToTop();
+    if (!mounted || _tabIndex != 1) {
+      return;
+    }
+    final refreshIndicator = _forumRefreshIndicatorKey.currentState;
+    if (refreshIndicator == null) {
+      await _refreshFeed();
+      return;
+    }
+    await refreshIndicator.show();
   }
 
   void _resetFeedFuture({bool forceRefresh = false}) {
@@ -1215,44 +1244,53 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshFeed() async {
+    final startedAt = DateTime.now();
     final queryKey = _feedQuery.key;
-    if (!_repo.isOnline) {
-      final recovery = await _recoverForumConnection();
-      if (!mounted) {
-        return;
-      }
-      if (!recovery.isRestored || !recovery.repository.isOnline) {
-        _showSnack(_forumRecoveryMessage(recovery));
-        return;
-      }
-    }
-    final repository = _repo;
-    final future = _cacheFeedFuture(
-      queryKey,
-      repository.fetchTopicFeed(_feedQuery, forceRefresh: true),
-    );
-    setState(() {
-      _feedFuture = future;
-      _loadMoreFeedError = null;
-    });
     try {
-      await future;
-      if (mounted) {
-        setState(() {});
+      if (!_repo.isOnline) {
+        final recovery = await _recoverForumConnection();
+        if (!mounted) {
+          return;
+        }
+        if (!recovery.isRestored || !recovery.repository.isOnline) {
+          _showSnack(_forumRecoveryMessage(recovery));
+          return;
+        }
       }
-    } on Object catch (error) {
-      if (error is ForumAuthException || _isForumTransportError(error)) {
-        repository.markConnectionUnavailable();
-      }
-      if (!mounted) {
-        return;
-      }
-      if (_feedSnapshots[queryKey] != null) {
+      final repository = _repo;
+      final future = _cacheFeedFuture(
+        queryKey,
+        repository.fetchTopicFeed(_feedQuery, forceRefresh: true),
+      );
+      setState(() {
+        _feedFuture = future;
+        _loadMoreFeedError = null;
+      });
+      try {
+        await future;
+        if (mounted) {
+          setState(() {});
+        }
+      } on Object catch (error) {
+        if (error is ForumAuthException || _isForumTransportError(error)) {
+          repository.markConnectionUnavailable();
+        }
+        if (!mounted) {
+          return;
+        }
+        if (_feedSnapshots[queryKey] != null) {
+          _showSnack(_refreshFailureMessage(error, prefix: '列表刷新失败'));
+          setState(() {});
+          return;
+        }
         _showSnack(_refreshFailureMessage(error, prefix: '列表刷新失败'));
-        setState(() {});
-        return;
       }
-      _showSnack(_refreshFailureMessage(error, prefix: '列表刷新失败'));
+    } finally {
+      final remaining =
+          _minimumForumRefreshDuration - DateTime.now().difference(startedAt);
+      if (remaining > Duration.zero) {
+        await Future<void>.delayed(remaining);
+      }
     }
   }
 

@@ -16,6 +16,7 @@ import '../../shared/widgets/forum_network_image.dart';
 class TopicListPage extends StatefulWidget {
   const TopicListPage({
     super.key,
+    this.controller,
     required this.topics,
     required this.users,
     required this.previewForTopic,
@@ -28,6 +29,7 @@ class TopicListPage extends StatefulWidget {
     this.onLoadMore,
   });
 
+  final TopicListPageController? controller;
   final List<TopicListItem> topics;
   final Map<int, DiscourseUser> users;
   final Future<TopicPreview> Function(int id) previewForTopic;
@@ -41,6 +43,24 @@ class TopicListPage extends StatefulWidget {
 
   @override
   State<TopicListPage> createState() => _TopicListPageState();
+}
+
+class TopicListPageController {
+  _TopicListPageState? _state;
+
+  Future<void> scrollToTop() {
+    return _state?._scrollToTop() ?? Future<void>.value();
+  }
+
+  void _attach(_TopicListPageState state) {
+    _state = state;
+  }
+
+  void _detach(_TopicListPageState state) {
+    if (_state == state) {
+      _state = null;
+    }
+  }
 }
 
 class _TopicListPageState extends State<TopicListPage> {
@@ -59,12 +79,17 @@ class _TopicListPageState extends State<TopicListPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    widget.controller?._attach(this);
     _scheduleInitialPreviewWarmup(notify: false);
   }
 
   @override
   void didUpdateWidget(covariant TopicListPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?._detach(this);
+      widget.controller?._attach(this);
+    }
     final topicIds = widget.topics.map((topic) => topic.id).toSet();
     _previewFutures.removeWhere((id, _) => !topicIds.contains(id));
     _previewCache.removeWhere((id, _) => !topicIds.contains(id));
@@ -73,6 +98,7 @@ class _TopicListPageState extends State<TopicListPage> {
 
   @override
   void dispose() {
+    widget.controller?._detach(this);
     _scrollController
       ..removeListener(_onScroll)
       ..dispose();
@@ -214,6 +240,17 @@ class _TopicListPageState extends State<TopicListPage> {
         setState(() => _requestingMore = false);
       }
     }
+  }
+
+  Future<void> _scrollToTop() async {
+    if (!_scrollController.hasClients || _scrollController.offset <= 0) {
+      return;
+    }
+    await _scrollController.animateTo(
+      0,
+      duration: const Duration(milliseconds: 340),
+      curve: Curves.easeOutCubic,
+    );
   }
 }
 
