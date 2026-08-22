@@ -1216,7 +1216,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _refreshFeed() async {
     final queryKey = _feedQuery.key;
-    var recoveredFromCache = false;
     if (!_repo.isOnline) {
       final recovery = await _recoverForumConnection();
       if (!mounted) {
@@ -1226,7 +1225,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _showSnack(_forumRecoveryMessage(recovery));
         return;
       }
-      recoveredFromCache = true;
     }
     final repository = _repo;
     final future = _cacheFeedFuture(
@@ -1241,9 +1239,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       await future;
       if (mounted) {
         setState(() {});
-        if (recoveredFromCache) {
-          _showSnack('已恢复论坛连接。');
-        }
       }
     } on Object catch (error) {
       if (error is ForumAuthException || _isForumTransportError(error)) {
@@ -1552,10 +1547,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _reloadingSession = false;
         _activityCountsFuture = null;
         _clearFeedSnapshots();
-        _resetFeedFuture();
+        _resetFeedFuture(forceRefresh: true);
       });
       unawaited(_initializeForumBadges());
-      _showSnack('已加载论坛');
       unawaited(_checkClientBackendPrompts());
     } on Object catch (error) {
       if (!mounted) {
@@ -1581,10 +1575,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       setState(() {
         _activityCountsFuture = null;
         _clearFeedSnapshots();
-        _resetFeedFuture();
+        _resetFeedFuture(forceRefresh: true);
       });
       unawaited(_initializeForumBadges());
-      _showSnack('已恢复论坛连接。');
       return;
     }
     await _showErrorDialog(

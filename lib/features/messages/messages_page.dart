@@ -229,7 +229,6 @@ class _MessagesPageState extends State<MessagesPage> {
       return;
     }
     setState(() => _refreshing = true);
-    var recoveredFromCache = false;
     var refreshRepository = widget.repository;
     try {
       if (!refreshRepository.isOnline) {
@@ -245,7 +244,6 @@ class _MessagesPageState extends State<MessagesPage> {
           }
           return;
         }
-        recoveredFromCache = true;
       }
       final hiddenTopicIdsFuture = _loadHiddenTopicIds();
       final topics = await refreshRepository.fetchPrivateMessages(
@@ -267,9 +265,6 @@ class _MessagesPageState extends State<MessagesPage> {
         );
         _error = null;
       });
-      if (recoveredFromCache && mounted) {
-        _showSnack('已恢复论坛连接。');
-      }
     } on Object catch (error) {
       if (error is ForumAuthException || _isForumTransportError(error)) {
         refreshRepository.markConnectionUnavailable();
@@ -859,7 +854,6 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       return;
     }
     var repository = widget.repository;
-    var recoveredFromCache = false;
     if (!repository.isOnline) {
       final recovery = await widget.onRecoverConnection?.call() ??
           ForumRecoveryResult(
@@ -871,7 +865,6 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
         return;
       }
       repository = recovery.repository;
-      recoveredFromCache = true;
       _ensureAutoRefreshTimer();
     }
     final startedAt = DateTime.now();
@@ -898,9 +891,6 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
         }
         _error = null;
       });
-      if (recoveredFromCache) {
-        _showSnack('已恢复论坛连接。');
-      }
     } on Object catch (error) {
       if (error is ForumAuthException || _isForumTransportError(error)) {
         repository.markConnectionUnavailable();

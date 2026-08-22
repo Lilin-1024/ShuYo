@@ -303,7 +303,6 @@ class _TopicDetailPageState extends State<TopicDetailPage>
 
   Future<void> _refresh() async {
     var repository = widget.repository;
-    var recoveredFromCache = false;
     if (!widget.repository.isOnline) {
       final recovery = await widget.onRecoverConnection?.call() ??
           ForumRecoveryResult(
@@ -315,7 +314,6 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         return;
       }
       repository = recovery.repository;
-      recoveredFromCache = true;
     }
     final future = repository.fetchTopicDetail(
       widget.topic.id,
@@ -328,9 +326,6 @@ class _TopicDetailPageState extends State<TopicDetailPage>
       final detail = await future;
       if (mounted) {
         setState(() => _detail = detail);
-        if (recoveredFromCache) {
-          _showSnack('已恢复论坛连接。');
-        }
       }
     } on Object catch (error) {
       if (error is ForumAuthException || _isForumTransportError(error)) {
