@@ -123,6 +123,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _seenMessageBadgeCount = 0;
   int _localNotificationBadgeCount = 0;
   int _messageRefreshSignal = 0;
+  bool _showArchivedMessages = false;
+  bool _messageSelectionActive = false;
+  bool _messageRefreshing = false;
   Set<String> _seenNotificationKeys = const {};
   bool _notificationSeenKeysInitialized = false;
   DateTime? _lastForumReachabilityCheck;
@@ -130,6 +133,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
   final _forumTopicListController = TopicListPageController();
+  final _messagesPageController = MessagesPageController();
   final _forumRefreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
   Completer<bool>? _forumWebVpnPreloadCompleter;
   Completer<bool>? _academicWebVpnPreloadCompleter;
@@ -207,9 +211,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                     showSettings: canOpenClientSettings,
                     showSearch: isForumTab,
                     showCreate: isForumTab,
+                    showArchive: _tabIndex == 2 &&
+                        _repo.hasLocalAccount &&
+                        !_messageSelectionActive,
+                    showRefresh: _tabIndex == 2 &&
+                        _repo.hasLocalAccount &&
+                        !_messageSelectionActive,
+                    archiveView: _showArchivedMessages,
+                    refreshing: _messageRefreshing,
                     notificationCount: _notificationBadgeCount,
                     onSearch: _openSearch,
                     onCreate: _openCreateTopic,
+                    onArchive: _toggleMessageArchiveView,
+                    onRefresh: _refreshMessagesFromHeader,
                     onSettings: _openClientSettings,
                     onNotification: _openNotifications,
                     onTitleDoubleTap: _tabIndex == 1
@@ -357,10 +371,42 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     return switch (_tabIndex) {
       0 => '首页',
       1 => '论坛',
-      2 => '消息',
+      2 => _showArchivedMessages ? '归档' : '消息',
       3 => '我',
       _ => 'ShuYo',
     };
+  }
+
+  void _toggleMessageArchiveView() {
+    _setMessageArchiveView(!_showArchivedMessages);
+  }
+
+  void _setMessageArchiveView(bool showArchived) {
+    if (!mounted || _showArchivedMessages == showArchived) {
+      return;
+    }
+    setState(() => _showArchivedMessages = showArchived);
+  }
+
+  void _refreshMessagesFromHeader() {
+    if (!mounted) {
+      return;
+    }
+    unawaited(_messagesPageController.refresh());
+  }
+
+  void _setMessageSelectionActive(bool active) {
+    if (!mounted || _messageSelectionActive == active) {
+      return;
+    }
+    setState(() => _messageSelectionActive = active);
+  }
+
+  void _setMessageRefreshing(bool refreshing) {
+    if (!mounted || _messageRefreshing == refreshing) {
+      return;
+    }
+    setState(() => _messageRefreshing = refreshing);
   }
 
   int get _notificationBadgeCount {
@@ -601,9 +647,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (_repo.hasLocalAccount) {
       forumContent = _forumBody();
       messagesContent = MessagesPage(
+        controller: _messagesPageController,
         repository: _repo,
         onRecoverConnection: _recoverForumConnection,
         refreshSignal: _messageRefreshSignal,
+        showArchived: _showArchivedMessages,
+        onArchiveViewChanged: _setMessageArchiveView,
+        onSelectionChanged: _setMessageSelectionActive,
+        onRefreshStateChanged: _setMessageRefreshing,
       );
     } else if (_isForumWebVpnRecoveryPending) {
       forumContent = const _LoadingState();
@@ -1582,6 +1633,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
       setState(() {
         _repo = nextRepository;
+        _showArchivedMessages = false;
+        _messageSelectionActive = false;
+        _messageRefreshing = false;
         _reloadingSession = false;
         _activityCountsFuture = null;
         _clearFeedSnapshots();
@@ -1642,6 +1696,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
       setState(() {
         _repo = nextRepository;
+        _showArchivedMessages = false;
+        _messageSelectionActive = false;
+        _messageRefreshing = false;
         _reloadingSession = false;
         _activityCountsFuture = null;
         _clearFeedSnapshots();
@@ -1673,6 +1730,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
     setState(() {
       _repo = nextRepository;
+      _showArchivedMessages = false;
+      _messageSelectionActive = false;
+      _messageRefreshing = false;
       _activityCountsFuture = null;
       _clearFeedSnapshots();
       _resetFeedFuture();
@@ -1874,6 +1934,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
       setState(() {
         _repo = nextRepository;
+        _showArchivedMessages = false;
+        _messageSelectionActive = false;
+        _messageRefreshing = false;
         _reloadingSession = false;
         _activityCountsFuture = null;
         _clearFeedSnapshots();

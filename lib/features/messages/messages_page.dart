@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,55 +33,123 @@ import '../topic/topic_detail_page.dart';
 class MessagesPage extends StatefulWidget {
   const MessagesPage({
     super.key,
+    this.controller,
     required this.repository,
     this.onRecoverConnection,
     this.refreshSignal = 0,
+    this.showArchived = false,
+    this.onArchiveViewChanged,
+    this.onSelectionChanged,
+    this.onRefreshStateChanged,
   });
 
+  final MessagesPageController? controller;
   final ForumRepository repository;
   final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final int refreshSignal;
+  final bool showArchived;
+  final ValueChanged<bool>? onArchiveViewChanged;
+  final ValueChanged<bool>? onSelectionChanged;
+  final ValueChanged<bool>? onRefreshStateChanged;
 
   @override
   State<MessagesPage> createState() => _MessagesPageState();
 }
 
+class MessagesPageController {
+  _MessagesPageState? _state;
+
+  Future<void> refresh() {
+    return _state?._refreshList() ?? Future<void>.value();
+  }
+
+  void _attach(_MessagesPageState state) {
+    _state = state;
+  }
+
+  void _detach(_MessagesPageState state) {
+    if (_state == state) {
+      _state = null;
+    }
+  }
+}
+
 class _MessagesPageState extends State<MessagesPage> {
-  static const _hiddenPrivateMessagesPrefix = 'forum.privateMessages.hidden.';
+  static const _archivedPrivateMessagesPrefix =
+      'forum.privateMessages.archived.v1.';
+  static const _legacyHiddenPrivateMessagesPrefix =
+      'forum.privateMessages.hidden.';
 
   final _previewFutures = <int, Future<_MessageTopicPreview>>{};
+  final _messageScrollController = ScrollController();
   List<TopicListItem>? _topics;
-  Set<int> _hiddenTopicIds = const {};
+  Set<int> _archivedTopicIds = const {};
+  Set<int> _selectedTopicIds = {};
   Object? _error;
   bool _loading = true;
   bool _refreshing = false;
+  late bool _showArchived;
+  int _refreshOperationId = 0;
+  double _messageRowExtent = 0;
 
-  String get _hiddenPrivateMessagesKey {
-    return '$_hiddenPrivateMessagesPrefix'
+  String get _archivedPrivateMessagesKey {
+    return '$_archivedPrivateMessagesPrefix'
+        '${widget.repository.profile.username.toLowerCase()}';
+  }
+
+  String get _legacyHiddenPrivateMessagesKey {
+    return '$_legacyHiddenPrivateMessagesPrefix'
         '${widget.repository.profile.username.toLowerCase()}';
   }
 
   @override
   void initState() {
     super.initState();
+    widget.controller?._attach(this);
+    _showArchived = widget.showArchived;
     unawaited(_loadInitial());
   }
 
   @override
   void didUpdateWidget(covariant MessagesPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?._detach(this);
+      widget.controller?._attach(this);
+    }
     if (oldWidget.repository != widget.repository) {
+      _refreshOperationId++;
+      if (_refreshing) {
+        _refreshing = false;
+        widget.onRefreshStateChanged?.call(false);
+      }
       _previewFutures.clear();
       _topics = null;
-      _hiddenTopicIds = const {};
+      _archivedTopicIds = const {};
+      _selectedTopicIds = {};
+      widget.onSelectionChanged?.call(false);
       _error = null;
       _loading = true;
+      _showArchived = widget.showArchived;
+      _messageRowExtent = 0;
       unawaited(_loadInitial());
       return;
     }
-    if (oldWidget.refreshSignal != widget.refreshSignal) {
-      unawaited(_refreshList());
+    if (oldWidget.showArchived != widget.showArchived) {
+      _showArchived = widget.showArchived;
+      _selectedTopicIds = {};
+      widget.onSelectionChanged?.call(false);
     }
+    if (oldWidget.refreshSignal != widget.refreshSignal) {
+      unawaited(_refreshList(silent: true, showIndicator: false));
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller?._detach(this);
+    _messageScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -115,101 +184,215 @@ class _MessagesPageState extends State<MessagesPage> {
 
     final groups = _conversationGroups(_visibleTopics);
     if (groups.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _refreshList,
+      return _messageListWithPullGesture(
         child: ListView(
+          controller: _messageScrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             const SizedBox(height: 96),
             EmptyState(
-              icon: Icons.mark_chat_unread_outlined,
-              title: widget.repository.isCacheOnly &&
-                      !widget.repository.hasCachedPrivateMessages
-                  ? '无法连接论坛'
-                  : '暂无私信',
-              message: widget.repository.isCacheOnly &&
-                      !widget.repository.hasCachedPrivateMessages
-                  ? '请尝试重新登录。'
-                  : '从用户主页可以发起新的私信会话',
+              icon: _showArchived
+                  ? Icons.archive_outlined
+                  : Icons.mark_chat_unread_outlined,
+              title: _showArchived
+                  ? '暂无归档消息'
+                  : widget.repository.isCacheOnly &&
+                          !widget.repository.hasCachedPrivateMessages
+                      ? '无法连接论坛'
+                      : '暂无私信',
+              message: _showArchived
+                  ? '返回消息列表查看新消息'
+                  : widget.repository.isCacheOnly &&
+                          !widget.repository.hasCachedPrivateMessages
+                      ? '请尝试重新登录。'
+                      : '从用户主页可以发起新的私信会话',
             ),
           ],
         ),
       );
     }
-    return RefreshIndicator(
-      onRefresh: _refreshList,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 16),
-        itemCount: groups.length,
-        separatorBuilder: (context, index) {
-          return Divider(height: 1, color: context.lehuColors.border);
-        },
-        itemBuilder: (context, index) {
-          final group = groups[index];
-          return ListTile(
-            leading: ForumAvatar(
-              url: group.avatarUrl(size: 96),
-              size: 42,
-              privateImage: true,
-            ),
-            title: Text(
-              group.displayName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LehuTextStyles.title(
-                color: context.lehuColors.textPrimary,
-                size: 15.5,
-                weight: FontWeight.w500,
+    return Column(
+      children: [
+        if (_selectedTopicIds.isNotEmpty) _selectionBar(),
+        Expanded(
+          child: _messageListWithPullGesture(
+            child: ListView.separated(
+              controller: _messageScrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: groups.length,
+              separatorBuilder: (context, index) {
+                return Divider(height: 1, color: context.lehuColors.border);
+              },
+              itemBuilder: (context, index) => _MessageRowSizeReporter(
+                onSizeChanged: index == 0 ? _setMessageRowExtent : null,
+                child: _buildGroupItem(groups[index]),
               ),
             ),
-            subtitle: _TopicPreviewLine(
-              future: _previewForTopic(group.latestTopic),
-              fallback: group.latestTopic.title,
-            ),
-            trailing: Text(
-              TimeFormat.compact(
-                group.latestTime,
-                relativeWithinDay: true,
-              ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _messageListWithPullGesture({required Widget child}) {
+    return _ArchivePullToSwitch(
+      showArchived: _showArchived,
+      threshold: _archivePullThreshold,
+      onSwitch: _setArchiveView,
+      child: child,
+    );
+  }
+
+  double get _archivePullThreshold {
+    if (_messageRowExtent <= 0) {
+      return 84;
+    }
+    return _messageRowExtent * 1.5;
+  }
+
+  void _setMessageRowExtent(Size size) {
+    if (!mounted || size.height <= 0 || size.height == _messageRowExtent) {
+      return;
+    }
+    setState(() => _messageRowExtent = size.height);
+  }
+
+  Widget _buildGroupItem(_PrivateConversationGroup group) {
+    final colors = context.lehuColors;
+    final selected = _isGroupSelected(group);
+    final archived = _showArchived;
+    final tile = ListTile(
+      selected: selected,
+      leading: _groupLeading(group, selected),
+      title: Text(
+        group.displayName,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: LehuTextStyles.title(
+          color: colors.textPrimary,
+          size: 15.5,
+          weight: FontWeight.w500,
+        ),
+      ),
+      subtitle: _TopicPreviewLine(
+        future: _previewForTopic(group.latestTopic),
+        fallback: group.latestTopic.title,
+      ),
+      trailing: Text(
+        TimeFormat.compact(
+          group.latestTime,
+          relativeWithinDay: true,
+        ),
+        style: TextStyle(color: colors.textMuted, fontSize: 12.5),
+      ),
+      onTap: () {
+        if (_selectedTopicIds.isNotEmpty) {
+          _toggleGroupSelection(group);
+        } else {
+          unawaited(_openGroup(group));
+        }
+      },
+      onLongPress: () => _toggleGroupSelection(group),
+    );
+    if (_selectedTopicIds.isNotEmpty) {
+      return tile;
+    }
+    return Dismissible(
+      key: ValueKey('message-group-${group.topicIds.join('-')}'),
+      direction: DismissDirection.endToStart,
+      background: _ArchiveDismissBackground(archived: archived),
+      onDismissed: (_) => unawaited(
+        _setTopicsArchived(
+          group.topicIds,
+          archived: !archived,
+        ),
+      ),
+      child: tile,
+    );
+  }
+
+  Widget _groupLeading(_PrivateConversationGroup group, bool selected) {
+    final avatar = ForumAvatar(
+      url: group.avatarUrl(size: 96),
+      size: 42,
+      privateImage: true,
+    );
+    if (_selectedTopicIds.isEmpty) {
+      return avatar;
+    }
+    return Checkbox(
+      value: selected,
+      onChanged: (_) => _toggleGroupSelection(group),
+    );
+  }
+
+  Widget _selectionBar() {
+    final colors = context.lehuColors;
+    final archived = _showArchived;
+    return Container(
+      height: 52,
+      color: colors.surface,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: '取消选择',
+            onPressed: () => _setSelectedTopicIds(const {}),
+            icon: const Icon(Icons.close),
+          ),
+          Expanded(
+            child: Text(
+              '已选择 ${_selectedTopicIds.length} 个会话',
               style: TextStyle(
-                color: context.lehuColors.textMuted,
-                fontSize: 12.5,
+                color: colors.textPrimary,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            onTap: () => _openGroup(group),
-            onLongPress: () => _handleGroupLongPress(group),
-          );
-        },
+          ),
+          IconButton(
+            tooltip: archived ? '取消归档' : '归档',
+            onPressed: () => unawaited(
+              _setTopicsArchived(
+                _selectedTopicIds,
+                archived: !archived,
+              ),
+            ),
+            icon: Icon(
+              archived ? Icons.unarchive_outlined : Icons.archive_outlined,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   List<TopicListItem> get _visibleTopics {
     final topics = _topics;
-    if (topics == null || _hiddenTopicIds.isEmpty) {
+    if (topics == null) {
       return topics ?? const [];
     }
     return topics
-        .where((topic) => !_hiddenTopicIds.contains(topic.id))
+        .where((topic) => _archivedTopicIds.contains(topic.id) == _showArchived)
         .toList(growable: false);
   }
 
   Future<void> _loadInitial() async {
     try {
-      final hiddenTopicIdsFuture = _loadHiddenTopicIds();
+      final archivedTopicIdsFuture = _loadArchivedTopicIds();
       final topics = await widget.repository.fetchPrivateMessages();
-      final hiddenTopicIds = await hiddenTopicIdsFuture;
+      final archivedTopicIds = await archivedTopicIdsFuture;
       if (!mounted) {
         return;
       }
       setState(() {
         _topics = topics;
-        _hiddenTopicIds = hiddenTopicIds;
+        _archivedTopicIds = archivedTopicIds;
         _error = null;
         _loading = false;
       });
-      unawaited(_refreshList(silent: true));
+      unawaited(_refreshList(silent: true, showIndicator: false));
     } on Object catch (error) {
       if (!mounted) {
         return;
@@ -221,14 +404,23 @@ class _MessagesPageState extends State<MessagesPage> {
     }
   }
 
-  Future<void> _refreshList({bool silent = false}) async {
+  Future<void> _refreshList({
+    bool silent = false,
+    bool showIndicator = true,
+  }) async {
     if (_refreshing) {
       return;
     }
     if (!widget.repository.isOnline && silent) {
       return;
     }
-    setState(() => _refreshing = true);
+    final operationId = ++_refreshOperationId;
+    if (showIndicator) {
+      setState(() => _refreshing = true);
+      widget.onRefreshStateChanged?.call(true);
+    } else {
+      _refreshing = true;
+    }
     var refreshRepository = widget.repository;
     try {
       if (!refreshRepository.isOnline) {
@@ -245,23 +437,20 @@ class _MessagesPageState extends State<MessagesPage> {
           return;
         }
       }
-      final hiddenTopicIdsFuture = _loadHiddenTopicIds();
+      final archivedTopicIdsFuture = _loadArchivedTopicIds();
       final topics = await refreshRepository.fetchPrivateMessages(
         forceRefresh: true,
       );
-      final hiddenTopicIds = await hiddenTopicIdsFuture;
+      final archivedTopicIds = await archivedTopicIdsFuture;
       if (!mounted) {
         return;
       }
-      final visibleTopicIds = topics
-          .where((topic) => !hiddenTopicIds.contains(topic.id))
-          .map((topic) => topic.id)
-          .toSet();
+      final topicIds = topics.map((topic) => topic.id).toSet();
       setState(() {
         _topics = topics;
-        _hiddenTopicIds = hiddenTopicIds;
+        _archivedTopicIds = archivedTopicIds;
         _previewFutures.removeWhere(
-          (topicId, _) => !visibleTopicIds.contains(topicId),
+          (topicId, _) => !topicIds.contains(topicId),
         );
         _error = null;
       });
@@ -278,58 +467,149 @@ class _MessagesPageState extends State<MessagesPage> {
         _showSnack(_refreshFailureMessage(error, prefix: '私信刷新失败'));
       }
     } finally {
-      if (mounted) {
-        setState(() => _refreshing = false);
+      if (mounted && operationId == _refreshOperationId) {
+        _refreshing = false;
+        if (showIndicator) {
+          widget.onRefreshStateChanged?.call(false);
+        }
       }
     }
   }
 
-  Future<Set<int>> _loadHiddenTopicIds() async {
+  Future<Set<int>> _loadArchivedTopicIds() async {
     final prefs = await SharedPreferences.getInstance();
-    final values = prefs.getStringList(_hiddenPrivateMessagesKey) ?? const [];
-    return values
+    final archived = _parseTopicIds(
+      prefs.getStringList(_archivedPrivateMessagesKey),
+    );
+    final legacyHidden = _parseTopicIds(
+      prefs.getStringList(_legacyHiddenPrivateMessagesKey),
+    );
+    if (legacyHidden.isEmpty) {
+      return archived;
+    }
+    final migrated = {...archived, ...legacyHidden};
+    await prefs.setStringList(
+      _archivedPrivateMessagesKey,
+      _sortedTopicIdStrings(migrated),
+    );
+    await prefs.remove(_legacyHiddenPrivateMessagesKey);
+    return migrated;
+  }
+
+  Set<int> _parseTopicIds(List<String>? values) {
+    return (values ?? const [])
         .map(int.tryParse)
         .whereType<int>()
         .where((id) => id > 0)
         .toSet();
   }
 
-  Future<void> _saveHiddenTopicIds(Set<int> ids) async {
-    final prefs = await SharedPreferences.getInstance();
-    final values = ids.map((id) => '$id').toList()..sort();
-    await prefs.setStringList(_hiddenPrivateMessagesKey, values);
+  List<String> _sortedTopicIdStrings(Set<int> ids) {
+    return ids.map((id) => '$id').toList()..sort();
   }
 
-  Future<void> _hidePrivateMessageTopic(int topicId) async {
-    final next = {..._hiddenTopicIds, topicId};
-    await _saveHiddenTopicIds(next);
-    await widget.repository.forgetPrivateMessage(topicId);
+  Future<void> _saveArchivedTopicIds(Set<int> ids) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _archivedPrivateMessagesKey,
+      _sortedTopicIdStrings(ids),
+    );
+  }
+
+  Future<void> _setTopicsArchived(
+    Iterable<int> topicIds, {
+    required bool archived,
+  }) async {
+    final ids = topicIds.toSet();
+    if (ids.isEmpty) {
+      return;
+    }
+    final next = {..._archivedTopicIds};
+    if (archived) {
+      next.addAll(ids);
+    } else {
+      next.removeAll(ids);
+    }
+    await _saveArchivedTopicIds(next);
     if (!mounted) {
       return;
     }
+    final nextSelection = {..._selectedTopicIds}..removeAll(ids);
+    final selectionChanged = !_sameIntSet(
+      _selectedTopicIds,
+      nextSelection,
+    );
     setState(() {
-      _hiddenTopicIds = next;
-      _previewFutures.remove(topicId);
+      _archivedTopicIds = next;
+      _selectedTopicIds = nextSelection;
     });
+    if (selectionChanged) {
+      widget.onSelectionChanged?.call(nextSelection.isNotEmpty);
+    }
+    _showSnack(archived ? '已归档' : '已取消归档');
   }
 
-  void _handleGroupLongPress(_PrivateConversationGroup group) {
-    if (group.topics.length > 1) {
+  void _setArchiveView(bool showArchived) {
+    if (_showArchived == showArchived) {
       return;
     }
-    unawaited(_deleteLocalConversation(group.topics.first));
+    final hadSelection = _selectedTopicIds.isNotEmpty;
+    setState(() {
+      _showArchived = showArchived;
+      _selectedTopicIds = {};
+    });
+    if (hadSelection) {
+      widget.onSelectionChanged?.call(false);
+    }
+    widget.onArchiveViewChanged?.call(showArchived);
+    _resetMessageListPosition();
   }
 
-  Future<bool> _deleteLocalConversation(TopicListItem topic) async {
-    final confirmed = await _confirmLocalConversationDeletion(context, topic);
-    if (!confirmed) {
-      return false;
+  void _resetMessageListPosition() {
+    void animateToTop() {
+      if (!mounted || !_messageScrollController.hasClients) {
+        return;
+      }
+      final position = _messageScrollController.position;
+      final target = position.minScrollExtent;
+      if ((position.pixels - target).abs() < 0.5) {
+        return;
+      }
+      unawaited(
+        _messageScrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOutCubic,
+        ),
+      );
     }
-    await _hidePrivateMessageTopic(topic.id);
-    if (mounted) {
-      _showSnack('会话已删除');
+
+    animateToTop();
+    WidgetsBinding.instance.addPostFrameCallback((_) => animateToTop());
+  }
+
+  bool _isGroupSelected(_PrivateConversationGroup group) {
+    return group.topicIds.every(_selectedTopicIds.contains);
+  }
+
+  void _toggleGroupSelection(_PrivateConversationGroup group) {
+    final ids = group.topicIds;
+    final next = {..._selectedTopicIds};
+    if (_isGroupSelected(group)) {
+      next.removeAll(ids);
+    } else {
+      next.addAll(ids);
     }
-    return true;
+    _setSelectedTopicIds(next);
+  }
+
+  void _setSelectedTopicIds(Iterable<int> topicIds) {
+    final next = topicIds.toSet();
+    if (_sameIntSet(_selectedTopicIds, next)) {
+      return;
+    }
+    setState(() => _selectedTopicIds = next);
+    widget.onSelectionChanged?.call(next.isNotEmpty);
   }
 
   void _showSnack(String message) {
@@ -413,7 +693,8 @@ class _MessagesPageState extends State<MessagesPage> {
             onRecoverConnection: widget.onRecoverConnection,
             group: group,
             previewForTopic: _previewForTopic,
-            onHideTopic: _hidePrivateMessageTopic,
+            archived: _showArchived,
+            onSetTopicsArchived: _setTopicsArchived,
           ),
         ),
       );
@@ -448,7 +729,8 @@ class _MessageTopicSelectionPage extends StatefulWidget {
     this.onRecoverConnection,
     required this.group,
     required this.previewForTopic,
-    required this.onHideTopic,
+    required this.archived,
+    required this.onSetTopicsArchived,
   });
 
   final ForumRepository repository;
@@ -456,7 +738,11 @@ class _MessageTopicSelectionPage extends StatefulWidget {
   final _PrivateConversationGroup group;
   final Future<_MessageTopicPreview> Function(TopicListItem topic)
       previewForTopic;
-  final Future<void> Function(int topicId) onHideTopic;
+  final bool archived;
+  final Future<void> Function(
+    Iterable<int> topicIds, {
+    required bool archived,
+  }) onSetTopicsArchived;
 
   @override
   State<_MessageTopicSelectionPage> createState() =>
@@ -466,6 +752,7 @@ class _MessageTopicSelectionPage extends StatefulWidget {
 class _MessageTopicSelectionPageState
     extends State<_MessageTopicSelectionPage> {
   late List<TopicListItem> _topics;
+  final Set<int> _selectedTopicIds = {};
 
   @override
   void initState() {
@@ -476,147 +763,137 @@ class _MessageTopicSelectionPageState
   @override
   Widget build(BuildContext context) {
     final colors = context.lehuColors;
+    final hasSelection = _selectedTopicIds.isNotEmpty;
     return Scaffold(
       backgroundColor: colors.background,
-      appBar: AppBar(title: Text(widget.group.displayName)),
+      appBar: AppBar(
+        title: Text(
+          hasSelection
+              ? '已选择 ${_selectedTopicIds.length} 个会话'
+              : widget.group.displayName,
+        ),
+        actions: [
+          if (hasSelection)
+            IconButton(
+              tooltip: widget.archived ? '取消归档' : '归档',
+              onPressed: () => unawaited(_applyArchiveSelection()),
+              icon: Icon(
+                widget.archived
+                    ? Icons.unarchive_outlined
+                    : Icons.archive_outlined,
+              ),
+            ),
+        ],
+      ),
       body: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _topics.length,
         separatorBuilder: (context, index) =>
             Divider(height: 1, color: colors.border),
-        itemBuilder: (context, index) {
-          final topic = _topics[index];
-          return ListTile(
-            title: Text(
-              topic.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: LehuTextStyles.title(
-                color: colors.textPrimary,
-                size: 15.5,
-                weight: FontWeight.w500,
-              ),
-            ),
-            subtitle: _TopicPreviewLine(
-              future: widget.previewForTopic(topic),
-              fallback: topic.title,
-            ),
-            trailing: Text(
-              TimeFormat.compact(
-                topic.lastPostedAt ?? topic.createdAt,
-                relativeWithinDay: true,
-              ),
-              style: TextStyle(color: colors.textMuted, fontSize: 12.5),
-            ),
-            onLongPress: () => unawaited(_deleteLocalConversation(topic)),
-            onTap: () {
-              Navigator.of(context).push<void>(
-                lehuRoute(
-                  builder: (context) => _MessageDetailPage(
-                    repository: widget.repository,
-                    onRecoverConnection: widget.onRecoverConnection,
-                    topic: topic,
-                    counterpartTitle: widget.group.displayName,
-                    counterpartUsername: widget.group.singleUsername,
-                  ),
-                ),
-              );
-            },
-          );
-        },
+        itemBuilder: (context, index) => _buildTopicItem(_topics[index]),
       ),
     );
   }
 
-  Future<void> _deleteLocalConversation(TopicListItem topic) async {
-    final confirmed = await _confirmLocalConversationDeletion(context, topic);
-    if (!confirmed) {
+  Widget _buildTopicItem(TopicListItem topic) {
+    final colors = context.lehuColors;
+    final selected = _selectedTopicIds.contains(topic.id);
+    final tile = ListTile(
+      selected: selected,
+      leading: _topicLeading(topic, selected),
+      title: Text(
+        topic.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: LehuTextStyles.title(
+          color: colors.textPrimary,
+          size: 15.5,
+          weight: FontWeight.w500,
+        ),
+      ),
+      subtitle: _TopicPreviewLine(
+        future: widget.previewForTopic(topic),
+        fallback: topic.title,
+      ),
+      trailing: Text(
+        TimeFormat.compact(
+          topic.lastPostedAt ?? topic.createdAt,
+          relativeWithinDay: true,
+        ),
+        style: TextStyle(color: colors.textMuted, fontSize: 12.5),
+      ),
+      onLongPress: () => _toggleTopicSelection(topic),
+      onTap: () {
+        if (_selectedTopicIds.isNotEmpty) {
+          _toggleTopicSelection(topic);
+          return;
+        }
+        Navigator.of(context).push<void>(
+          lehuRoute(
+            builder: (context) => _MessageDetailPage(
+              repository: widget.repository,
+              onRecoverConnection: widget.onRecoverConnection,
+              topic: topic,
+              counterpartTitle: widget.group.displayName,
+              counterpartUsername: widget.group.singleUsername,
+            ),
+          ),
+        );
+      },
+    );
+    if (_selectedTopicIds.isNotEmpty) {
+      return tile;
+    }
+    return Dismissible(
+      key: ValueKey('message-topic-${topic.id}'),
+      direction: DismissDirection.endToStart,
+      background: _ArchiveDismissBackground(archived: widget.archived),
+      onDismissed: (_) => unawaited(
+        _applyArchive({topic.id}),
+      ),
+      child: tile,
+    );
+  }
+
+  Widget _topicLeading(TopicListItem topic, bool selected) {
+    if (_selectedTopicIds.isEmpty) {
+      return const Icon(Icons.chat_bubble_outline);
+    }
+    return Checkbox(
+      value: selected,
+      onChanged: (_) => _toggleTopicSelection(topic),
+    );
+  }
+
+  void _toggleTopicSelection(TopicListItem topic) {
+    setState(() {
+      if (!_selectedTopicIds.add(topic.id)) {
+        _selectedTopicIds.remove(topic.id);
+      }
+    });
+  }
+
+  Future<void> _applyArchiveSelection() async {
+    await _applyArchive(_selectedTopicIds);
+  }
+
+  Future<void> _applyArchive(Iterable<int> topicIds) async {
+    final ids = topicIds.toSet();
+    if (ids.isEmpty) {
       return;
     }
-    await widget.onHideTopic(topic.id);
+    await widget.onSetTopicsArchived(ids, archived: !widget.archived);
     if (!mounted) {
       return;
     }
     setState(() {
-      _topics = _topics.where((item) => item.id != topic.id).toList();
+      _topics = _topics.where((item) => !ids.contains(item.id)).toList();
+      _selectedTopicIds.removeAll(ids);
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('会话已删除')),
-    );
     if (_topics.isEmpty) {
       Navigator.of(context).pop(true);
     }
   }
-}
-
-Future<bool> _confirmLocalConversationDeletion(
-  BuildContext context,
-  TopicListItem topic,
-) async {
-  final wantsDelete = await showModalBottomSheet<bool>(
-    context: context,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.58),
-    builder: (context) {
-      final colors = Theme.of(context).colorScheme;
-      return SafeArea(
-        top: false,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-          decoration: BoxDecoration(
-            color: colors.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.delete_outline),
-                title: const Text('删除'),
-                subtitle: Text(
-                  topic.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onTap: () => Navigator.of(context).pop(true),
-              ),
-              ListTile(
-                leading: const Icon(Icons.close),
-                title: const Text('取消'),
-                onTap: () => Navigator.of(context).pop(false),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-  if (wantsDelete != true || !context.mounted) {
-    return false;
-  }
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('确认删除会话'),
-        content: const Text(
-          '将从本机永久删除此私信会话记录。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
-          ),
-        ],
-      );
-    },
-  );
-  return confirmed == true;
 }
 
 String _friendlyForumError(Object error) {
@@ -1868,6 +2145,7 @@ class _PrivateConversationGroup {
   final Map<int, DiscourseUser> users;
   final List<TopicListItem> topics;
 
+  List<int> get topicIds => topics.map((topic) => topic.id).toList();
   TopicListItem get latestTopic => topics.first;
   DateTime? get latestTime => latestTopic.lastPostedAt ?? latestTopic.createdAt;
 
@@ -1902,6 +2180,304 @@ class _PrivateConversationGroup {
       }
     }
     return '';
+  }
+}
+
+class _ArchiveDismissBackground extends StatelessWidget {
+  const _ArchiveDismissBackground({required this.archived});
+
+  final bool archived;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    return Container(
+      color: colors.accent,
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.only(right: 24),
+      child: Icon(
+        archived ? Icons.unarchive_outlined : Icons.archive_outlined,
+        color: colors.onAccent,
+      ),
+    );
+  }
+}
+
+class _MessageRowSizeReporter extends SingleChildRenderObjectWidget {
+  const _MessageRowSizeReporter({
+    required super.child,
+    required this.onSizeChanged,
+  });
+
+  final ValueChanged<Size>? onSizeChanged;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) {
+    return _MessageRowSizeRenderObject(onSizeChanged);
+  }
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _MessageRowSizeRenderObject renderObject,
+  ) {
+    renderObject.onSizeChanged = onSizeChanged;
+  }
+}
+
+class _MessageRowSizeRenderObject extends RenderProxyBox {
+  _MessageRowSizeRenderObject(this.onSizeChanged);
+
+  ValueChanged<Size>? onSizeChanged;
+  Size? _lastSize;
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    final nextSize = size;
+    if (nextSize == _lastSize || onSizeChanged == null) {
+      return;
+    }
+    _lastSize = nextSize;
+    final callback = onSizeChanged;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (attached) {
+        callback?.call(nextSize);
+      }
+    });
+  }
+}
+
+class _ArchivePullToSwitch extends StatefulWidget {
+  const _ArchivePullToSwitch({
+    required this.child,
+    required this.showArchived,
+    required this.threshold,
+    required this.onSwitch,
+  });
+
+  final Widget child;
+  final bool showArchived;
+  final double threshold;
+  final ValueChanged<bool> onSwitch;
+
+  @override
+  State<_ArchivePullToSwitch> createState() => _ArchivePullToSwitchState();
+}
+
+class _ArchivePullToSwitchState extends State<_ArchivePullToSwitch>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _settleController;
+  double _pullDistance = 0;
+  double _nativeOverscroll = 0;
+  double _settlePullDistance = 0;
+  double _settleNativeOverscroll = 0;
+  bool _tracking = false;
+  bool _switched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _settleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 240),
+    )..addListener(_handleSettleAnimationTick);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ArchivePullToSwitch oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.showArchived != widget.showArchived ||
+        oldWidget.threshold != widget.threshold) {
+      if (!_switched) {
+        _resetPullState();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _settleController
+      ..removeListener(_handleSettleAnimationTick)
+      ..dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lehuColors;
+    final settleFactor = 1 - _settleController.value;
+    final displayedPullDistance = _settleController.isAnimating
+        ? _settlePullDistance * settleFactor
+        : _pullDistance;
+    final displayedNativeOverscroll = _settleController.isAnimating
+        ? _settleNativeOverscroll * settleFactor
+        : _nativeOverscroll;
+    final childOffset = displayedPullDistance > displayedNativeOverscroll
+        ? displayedPullDistance - displayedNativeOverscroll
+        : 0.0;
+    return NotificationListener<ScrollNotification>(
+      onNotification: _handleScrollNotification,
+      child: ClipRect(
+        child: Stack(
+          children: [
+            if (displayedPullDistance > 0)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: displayedPullDistance,
+                child: ColoredBox(
+                  color: colors.accent,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 24),
+                      child: Icon(
+                        widget.showArchived
+                            ? Icons.unarchive_outlined
+                            : Icons.archive_outlined,
+                        color: colors.onAccent,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            Transform.translate(
+              offset: Offset(0, childOffset),
+              child: widget.child,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification.depth != 0 || notification.metrics.axis != Axis.vertical) {
+      return false;
+    }
+    final metrics = notification.metrics;
+    if (notification is ScrollStartNotification) {
+      _settleController.stop();
+      _tracking = metrics.pixels <= metrics.minScrollExtent + 0.5;
+      _switched = false;
+      _resetPullState();
+      return false;
+    }
+    if (!_tracking) {
+      return false;
+    }
+    final nativeOverscroll = _nativeOverscrollFor(metrics);
+    if (notification is OverscrollNotification) {
+      if (nativeOverscroll > 0) {
+        _updatePullDistance(nativeOverscroll, nativeOverscroll);
+      } else if (notification.overscroll < 0) {
+        _updatePullDistance(_pullDistance - notification.overscroll, 0);
+      } else if (notification.overscroll > 0) {
+        _updatePullDistance(_pullDistance - notification.overscroll, 0);
+      }
+      return false;
+    }
+    if (notification is ScrollUpdateNotification) {
+      if (nativeOverscroll > 0) {
+        _updatePullDistance(nativeOverscroll, nativeOverscroll);
+      } else {
+        final delta = notification.scrollDelta ?? 0;
+        if (delta < 0) {
+          _updatePullDistance(_pullDistance - delta, 0);
+        } else if (delta > 0 && _pullDistance > 0) {
+          _updatePullDistance(_pullDistance - delta, 0);
+        }
+      }
+      if (metrics.pixels > metrics.minScrollExtent + 1 && _pullDistance <= 0) {
+        _tracking = false;
+      }
+      return false;
+    }
+    if (notification is ScrollEndNotification) {
+      _tracking = false;
+      if (!_switched && (_pullDistance != 0 || _nativeOverscroll != 0)) {
+        setState(() {
+          _pullDistance = 0;
+          _nativeOverscroll = 0;
+        });
+      }
+    }
+    return false;
+  }
+
+  double _nativeOverscrollFor(ScrollMetrics metrics) {
+    final distance = metrics.minScrollExtent - metrics.pixels;
+    return distance > 0 ? distance : 0;
+  }
+
+  void _updatePullDistance(
+    double distance,
+    double nativeOverscroll,
+  ) {
+    if (!mounted || _switched) {
+      return;
+    }
+    final next = distance.clamp(0.0, widget.threshold).toDouble();
+    final reachedThreshold = next >= widget.threshold;
+    if (next == _pullDistance && nativeOverscroll == _nativeOverscroll) {
+      return;
+    }
+    if (reachedThreshold) {
+      _switched = true;
+      _tracking = false;
+      final settlePullDistance = next;
+      final settleNativeOverscroll = nativeOverscroll;
+      widget.onSwitch(!widget.showArchived);
+      _startSettleAnimation(
+        settlePullDistance,
+        settleNativeOverscroll,
+      );
+      return;
+    }
+    setState(() {
+      _pullDistance = next;
+      _nativeOverscroll = nativeOverscroll;
+    });
+  }
+
+  void _startSettleAnimation(
+    double pullDistance,
+    double nativeOverscroll,
+  ) {
+    _settlePullDistance = pullDistance;
+    _settleNativeOverscroll = nativeOverscroll;
+    _settleController
+      ..stop()
+      ..value = 0;
+    unawaited(_settleController.forward());
+  }
+
+  void _handleSettleAnimationTick() {
+    if (!mounted) {
+      return;
+    }
+    if (_settleController.isCompleted) {
+      _pullDistance = 0;
+      _nativeOverscroll = 0;
+      _settlePullDistance = 0;
+      _settleNativeOverscroll = 0;
+    }
+    setState(() {});
+  }
+
+  void _resetPullState() {
+    _settleController.stop();
+    if (_pullDistance == 0 && _nativeOverscroll == 0) {
+      return;
+    }
+    setState(() {
+      _pullDistance = 0;
+      _nativeOverscroll = 0;
+      _settlePullDistance = 0;
+      _settleNativeOverscroll = 0;
+    });
   }
 }
 
