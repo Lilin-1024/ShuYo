@@ -18,6 +18,7 @@ class LehuApp extends StatefulWidget {
 
 class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   final _settingsService = ClientSettingsService();
+  final _onboardingController = StartupOnboardingController();
   late final Future<_StartupData> _startupFuture;
   String _manualThemeId = LehuThemes.defaultId;
   bool _followSystemTheme = false;
@@ -37,6 +38,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _onboardingController.dispose();
     super.dispose();
   }
 
@@ -80,6 +82,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
             onForumLoginCompleted: () {
               setState(() => _forumLoginSignal++);
             },
+            controller: _onboardingController,
             child: AppShell(
               repository: data.repository,
               reloadRepository: ForumRepositoryFactory.loadOnline,
@@ -91,6 +94,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
               academicLoginSignal: _academicLoginSignal,
               forumLoginSignal: _forumLoginSignal,
               initialHasAcademicSession: data.hasAcademicSession,
+              onboardingController: _onboardingController,
             ),
           );
         },

@@ -41,6 +41,7 @@ import '../features/home/home_dashboard_page.dart';
 import '../features/home/topic_list_page.dart';
 import '../features/messages/messages_page.dart';
 import '../features/messages/notifications_page.dart';
+import '../features/onboarding/startup_onboarding.dart';
 import '../features/profile/profile_page.dart';
 import '../features/profile/forum_activity_page.dart';
 import '../features/profile/profile_settings_page.dart';
@@ -69,6 +70,7 @@ class AppShell extends StatefulWidget {
     required this.academicLoginSignal,
     required this.forumLoginSignal,
     required this.initialHasAcademicSession,
+    required this.onboardingController,
   });
 
   final ForumRepository repository;
@@ -81,6 +83,7 @@ class AppShell extends StatefulWidget {
   final int academicLoginSignal;
   final int forumLoginSignal;
   final bool initialHasAcademicSession;
+  final StartupOnboardingController onboardingController;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -210,8 +213,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _finishAcademicLogin() async {
-    final verified = await _syncScheduleAfterWebVpnLogin();
-    if (mounted) setState(() => _hasAcademicSession = verified);
+    if (mounted) setState(() => _hasAcademicSession = true);
+    await _persistAcademicLoginCookies();
+    await _syncScheduleAfterWebVpnLogin();
+  }
+
+  Future<void> _persistAcademicLoginCookies() async {
+    try {
+      await AcademicAuthService().cookieHeader();
+    } on Object catch (error) {
+      debugPrint('[LEHU_WEBVPN] academic-cookie-persist-error: $error');
+    }
   }
 
   @override
@@ -737,9 +749,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       isCheckingConnection: _checkingForumConnection,
       isInitialConnectionCheck: _isInitialForumConnectionCheck,
       isBusy: _reloadingSession,
-      onLogin: () => unawaited(
-        _hasAcademicSession ? _login() : _openAcademicLogin(),
-      ),
+      onLogin: _openAccountManager,
       onRelogin: _relogin,
       onOpenAcademicSystem: _syncingAcademicSchedule
           ? _showScheduleSyncingSnack
@@ -752,6 +762,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       todayCourseContent:
           _syncingAcademicSchedule ? '课表获取中...' : _scheduleSummaryText,
       announcementContent: _announcementSummaryText,
+    );
+  }
+
+  void _openAccountManager() {
+    widget.onboardingController.openAccountManager(
+      academicLoggedIn: _hasAcademicSession,
+      forumLoggedIn: _repo.hasLocalAccount,
     );
   }
 
@@ -2154,8 +2171,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       lehuRoute(builder: (context) => const NativeLoginPage()),
     );
     if (loggedIn != true || !mounted) return;
-    final verified = await _syncScheduleAfterWebVpnLogin();
-    if (mounted) setState(() => _hasAcademicSession = verified);
+    setState(() => _hasAcademicSession = true);
+    await _persistAcademicLoginCookies();
+    await _syncScheduleAfterWebVpnLogin();
   }
 
   void _showScheduleSyncingSnack() {

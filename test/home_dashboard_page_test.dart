@@ -49,6 +49,46 @@ void main() {
     expect(loginTapped, isTrue);
   });
 
+  testWidgets('opens account management when both accounts are logged in',
+      (tester) async {
+    var accountTapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeDashboardPage(
+            profile: UserProfile(
+              user: const DiscourseUser(
+                id: 1,
+                username: 'user',
+                avatarTemplate: '',
+              ),
+            ),
+            isOnline: true,
+            hasLocalAccount: true,
+            hasAcademicAccount: true,
+            isAcademicLoginCompleting: false,
+            isCheckingConnection: false,
+            isInitialConnectionCheck: false,
+            isBusy: false,
+            onLogin: () => accountTapped = true,
+            onRelogin: () {},
+            onOpenAcademicSystem: () {},
+            onOpenAnnouncements: () {},
+            onOpenEmptyClassroom: () {},
+            onOpenCourseRatings: () {},
+            showForumNetworkWarning: false,
+            onOpenWebVpnProxy: () {},
+            todayCourseContent: '今日暂无课程',
+            announcementContent: '暂无公告',
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('欢迎回来，user'));
+    expect(accountTapped, isTrue);
+  });
+
   testWidgets('disables forum login while campus login is completing',
       (tester) async {
     var loginTapped = false;

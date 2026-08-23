@@ -95,7 +95,7 @@ class HomeDashboardPage extends StatelessWidget {
                           : const Icon(Icons.refresh),
                     )
                   : const Icon(Icons.login),
-          onTap: hasLocalAccount || isAcademicLoginCompleting ? null : onLogin,
+          onTap: isAcademicLoginCompleting ? null : onLogin,
         ),
         _HomeRow(
           icon: Icons.event,

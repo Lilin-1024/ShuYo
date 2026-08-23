@@ -7,6 +7,23 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../data/services/client_settings_service.dart';
 import '../auth/native_login_page.dart';
 
+class StartupOnboardingController extends ChangeNotifier {
+  bool _academicLoggedIn = false;
+  bool _forumLoggedIn = false;
+
+  bool get academicLoggedIn => _academicLoggedIn;
+  bool get forumLoggedIn => _forumLoggedIn;
+
+  void openAccountManager({
+    required bool academicLoggedIn,
+    required bool forumLoggedIn,
+  }) {
+    _academicLoggedIn = academicLoggedIn;
+    _forumLoggedIn = forumLoggedIn;
+    notifyListeners();
+  }
+}
+
 class StartupOnboarding extends StatefulWidget {
   const StartupOnboarding({
     super.key,
@@ -16,6 +33,7 @@ class StartupOnboarding extends StatefulWidget {
     required this.initialForumLoggedIn,
     required this.onAcademicLoginCompleted,
     required this.onForumLoginCompleted,
+    required this.controller,
     this.settingsService,
   });
 
@@ -25,24 +43,64 @@ class StartupOnboarding extends StatefulWidget {
   final bool initialForumLoggedIn;
   final VoidCallback onAcademicLoginCompleted;
   final VoidCallback onForumLoginCompleted;
+  final StartupOnboardingController controller;
   final ClientSettingsService? settingsService;
 
   @override
   State<StartupOnboarding> createState() => _StartupOnboardingState();
 }
 
-class _StartupOnboardingState extends State<StartupOnboarding> {
-  final _controller = PageController();
+class _StartupOnboardingState extends State<StartupOnboarding>
+    with SingleTickerProviderStateMixin {
+  final _pageController = PageController();
   late final ClientSettingsService _settingsService =
       widget.settingsService ?? ClientSettingsService();
+  late final AnimationController _panelAnimationController;
+  late final Animation<Offset> _panelSlideAnimation;
+  late final Animation<double> _barrierOpacityAnimation;
   int _page = 0;
   late bool _visible = !widget.initiallyCompleted;
+  bool _accountManagerMode = false;
   late bool _academicLoggedIn = widget.initialAcademicLoggedIn;
   late bool _forumLoggedIn = widget.initialForumLoggedIn;
 
   @override
+  void initState() {
+    super.initState();
+    _panelAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 360),
+      reverseDuration: const Duration(milliseconds: 240),
+    );
+    final curvedAnimation = CurvedAnimation(
+      parent: _panelAnimationController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+    _panelSlideAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(curvedAnimation);
+    _barrierOpacityAnimation = CurvedAnimation(
+      parent: _panelAnimationController,
+      curve: const Interval(0, .72, curve: Curves.easeOut),
+      reverseCurve: Curves.easeIn,
+    );
+    widget.controller.addListener(_openAccountManager);
+    if (_visible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _panelAnimationController.forward();
+      });
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant StartupOnboarding oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller.removeListener(_openAccountManager);
+      widget.controller.addListener(_openAccountManager);
+    }
     if (widget.initialAcademicLoggedIn != oldWidget.initialAcademicLoggedIn) {
       _academicLoggedIn = widget.initialAcademicLoggedIn;
     }
@@ -51,15 +109,36 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
     }
   }
 
+  void _openAccountManager() {
+    if (!mounted) return;
+    setState(() {
+      _visible = true;
+      _accountManagerMode = true;
+      _page = 2;
+      _academicLoggedIn = widget.controller.academicLoggedIn;
+      _forumLoggedIn = widget.controller.forumLoggedIn;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pageController.hasClients) {
+        _pageController.jumpToPage(2);
+      }
+      if (mounted) _panelAnimationController.forward(from: 0);
+    });
+  }
+
   Future<void> _continue() async {
     if (_page == 1) await _requestNotifications();
     if (!mounted) return;
     if (_page < 2) {
-      await _controller.nextPage(
+      await _pageController.nextPage(
         duration: const Duration(milliseconds: 320),
         curve: Curves.easeOutCubic,
       );
       if (mounted) setState(() => _page++);
+      return;
+    }
+    if (_accountManagerMode) {
+      await _complete();
       return;
     }
     if (_academicLoggedIn && _forumLoggedIn) await _complete();
@@ -92,13 +171,36 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
   }
 
   Future<void> _complete() async {
-    await _settingsService.saveStartupOnboardingCompleted(true);
+    if (!_accountManagerMode) {
+      await _settingsService.saveStartupOnboardingCompleted(true);
+    }
+    await _hidePanel();
+  }
+
+  Future<void> _goBack() async {
+    if (_page <= 0) return;
+    await _pageController.previousPage(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+    if (mounted) setState(() => _page--);
+  }
+
+  Future<void> _closeAccountManager() async {
+    if (_accountManagerMode) await _hidePanel();
+  }
+
+  Future<void> _hidePanel() async {
+    if (!_visible) return;
+    await _panelAnimationController.reverse();
     if (mounted) setState(() => _visible = false);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    widget.controller.removeListener(_openAccountManager);
+    _panelAnimationController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -135,12 +237,21 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
         widget.child,
         if (_visible) ...[
           Positioned.fill(
-            child: ModalBarrier(
-              color: Colors.black.withValues(alpha: .32),
-              dismissible: false,
+            child: FadeTransition(
+              opacity: _barrierOpacityAnimation,
+              child: ModalBarrier(
+                color: Colors.black.withValues(alpha: .32),
+                dismissible: false,
+              ),
             ),
           ),
-          Align(alignment: Alignment.bottomCenter, child: _panel(context)),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: SlideTransition(
+              position: _panelSlideAnimation,
+              child: _panel(context),
+            ),
+          ),
         ],
       ],
     );
@@ -148,11 +259,17 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
 
   Widget _panel(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final canSkip = _page == 2 && _academicLoggedIn && !_forumLoggedIn;
-    final showFooter = _page < 2 || (_academicLoggedIn && _forumLoggedIn);
+    final canSkip = !_accountManagerMode &&
+        _page == 2 &&
+        _academicLoggedIn &&
+        !_forumLoggedIn;
+    final showFooter = _accountManagerMode ||
+        _page < 2 ||
+        (_academicLoggedIn && _forumLoggedIn);
     return Material(
+      key: const ValueKey('startup-onboarding-panel'),
       color: colors.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
         top: false,
@@ -175,6 +292,15 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
+                    if (_page > 0)
+                      Positioned(
+                        left: 8,
+                        child: IconButton(
+                          tooltip: '返回上一页',
+                          onPressed: _goBack,
+                          icon: const Icon(Icons.arrow_back),
+                        ),
+                      ),
                     if (canSkip)
                       Positioned(
                         right: 12,
@@ -183,12 +309,22 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
                           child: const Text('跳过'),
                         ),
                       ),
+                    if (_accountManagerMode)
+                      Positioned(
+                        right: 8,
+                        child: IconButton(
+                          tooltip: '关闭',
+                          onPressed: _closeAccountManager,
+                          icon: const Icon(Icons.close),
+                        ),
+                      ),
                   ],
                 ),
               ),
               Expanded(
                 child: PageView(
-                  controller: _controller,
+                  key: const ValueKey('startup-onboarding-pages'),
+                  controller: _pageController,
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
                     _welcome(context),
@@ -197,19 +333,40 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
                   ],
                 ),
               ),
-              if (showFooter)
-                Padding(
+              SizedBox(
+                key: const ValueKey('startup-onboarding-footer'),
+                height: 112,
+                child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 18),
-                  child: FilledButton(
-                    onPressed: _continue,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                    ),
-                    child: Text(_page == 2 ? '开始使用' : '继续'),
-                  ),
-                )
-              else
-                const SizedBox(height: 18),
+                  child: showFooter
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (_page == 0) ...[
+                              _terms(context),
+                              const SizedBox(height: 8),
+                            ],
+                            FilledButton(
+                              onPressed: _continue,
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size.fromHeight(52),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                _accountManagerMode && _page == 2
+                                    ? '完成'
+                                    : _page == 2
+                                        ? '开始使用'
+                                        : '继续',
+                              ),
+                            ),
+                          ],
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
             ],
           ),
         ),
@@ -226,76 +383,46 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
           _feature(Icons.forum_outlined, '乐乎论坛', '浏览校园动态，参与讨论'),
           _feature(Icons.notifications_none, '重要提醒', '不错过课程和校园通知'),
         ],
-        showTerms: true,
       );
 
   Widget _notifications(BuildContext context) => _content(
         context,
-        '开启通知',
-        '用于提醒课表、课程变更和重要消息',
+        '开启推送通知',
+        '用于课程提醒',
         [
           _feature(
             Icons.notifications_active_outlined,
-            '及时收到提醒',
+            'ShuYo会发送上课提醒，请在下一步中授予我们推送通知权限',
             '你可以随时在系统设置中关闭通知',
           ),
         ],
       );
 
-  Widget _login(BuildContext context) => SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Column(
-                children: [
-                  Image.asset(
-                    'assets/images/icon_clear_blue.png',
-                    width: 64,
-                    height: 64,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '登录',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                'ShuYo 使用双账户系统，包括上大校园账户和乐乎论坛账户。',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            _accountTile(
-              context,
-              icon: Icons.school_outlined,
-              title: '上大校园账户',
-              description: '用于访问课程表、教室查询等校园服务',
-              loggedIn: _academicLoggedIn,
-              onTap: _openAcademicLogin,
-            ),
-            _accountTile(
-              context,
-              icon: Icons.forum_outlined,
-              title: '乐乎账户',
-              description: '用于访问上海大学校内论坛，首次使用需注册',
-              loggedIn: _forumLoggedIn,
-              onTap: _forumLoggedIn ? null : _openForumLogin,
-            ),
-          ],
+  Widget _login(BuildContext context) => _pageLayout(
+        context,
+        header: _pageHeader(
+          context,
+          title: '登录',
+          subtitle: 'ShuYo 使用双账户系统，包括上大校园账户和乐乎论坛账户。',
         ),
+        bottomChildren: [
+          _accountTile(
+            context,
+            icon: Icons.school_outlined,
+            title: '上大校园账户',
+            description: '用于访问课程表、教室查询等校园服务',
+            loggedIn: _academicLoggedIn,
+            onTap: _academicLoggedIn ? null : _openAcademicLogin,
+          ),
+          _accountTile(
+            context,
+            icon: Icons.forum_outlined,
+            title: '乐乎账户',
+            description: '用于访问上海大学校内论坛',
+            loggedIn: _forumLoggedIn,
+            onTap: _forumLoggedIn ? null : _openForumLogin,
+          ),
+        ],
       );
 
   Widget _accountTile(
@@ -310,13 +437,13 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
           child: Row(
             children: [
-              Icon(icon, size: 28),
+              Icon(icon, size: 26),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -356,8 +483,10 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right),
+              if (onTap != null) ...[
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right),
+              ],
             ],
           ),
         ),
@@ -369,68 +498,85 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
     BuildContext context,
     String title,
     String subtitle,
-    List<Widget> items, {
-    bool showTerms = false,
+    List<Widget> items,
+  ) {
+    return _pageLayout(
+      context,
+      header: _pageHeader(context, title: title, subtitle: subtitle),
+      bottomChildren: items,
+    );
+  }
+
+  Widget _pageLayout(
+    BuildContext context, {
+    required Widget header,
+    required List<Widget> bottomChildren,
   }) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Column(
-              children: [
-                Image.asset(
-                  'assets/images/icon_clear_blue.png',
-                  width: 72,
-                  height: 72,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Center(
-            child: Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          ...items,
-          if (showTerms)
-            Padding(
-              padding: const EdgeInsets.only(top: 24),
-              child: Center(
-                child: Text.rich(
-                  TextSpan(
-                    text: '使用本app即表示您已同意我们的',
-                    children: [
-                      _link(context, '使用条款'),
-                      const TextSpan(text: '和'),
-                      _link(context, '隐私政策'),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
-            ),
+          header,
+          const SizedBox(height: 32),
+          ...bottomChildren,
         ],
       ),
     );
   }
+
+  Widget _pageHeader(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Column(
+        children: [
+          Image.asset(
+            'assets/images/icon_clear_blue.png',
+            width: 88,
+            height: 88,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: Theme.of(context)
+                .textTheme
+                .headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _terms(BuildContext context) => Center(
+        child: Text.rich(
+          TextSpan(
+            text: '继续即表示您已同意我们的',
+            children: [
+              _link(context, '使用条款'),
+              const TextSpan(text: '和'),
+              _link(context, '隐私政策'),
+            ],
+          ),
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 12,
+          ),
+        ),
+      );
 
   InlineSpan _link(BuildContext context, String label) => WidgetSpan(
         child: GestureDetector(
@@ -450,29 +596,33 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
       );
 
   Widget _feature(IconData icon, String title, String description) => Padding(
-        padding: const EdgeInsets.only(bottom: 18),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 28),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+        padding: const EdgeInsets.only(bottom: 14),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 76),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(icon, size: 26),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(description, style: const TextStyle(height: 1.4)),
-                ],
+                    const SizedBox(height: 6),
+                    Text(description, style: const TextStyle(height: 1.45)),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
 }

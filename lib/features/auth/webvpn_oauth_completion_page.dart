@@ -8,6 +8,20 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../../core/academic_url_resolver.dart';
 import '../../core/client_user_agent.dart';
 
+@visibleForTesting
+bool hasWebVpnNavigationProgressed(String? failedUrl, String? currentUrl) {
+  if (failedUrl == null || currentUrl == null) return false;
+  return _normalizedWebVpnUrl(failedUrl) != _normalizedWebVpnUrl(currentUrl);
+}
+
+String _normalizedWebVpnUrl(String value) {
+  final uri = Uri.tryParse(value);
+  if (uri == null) return value;
+  final withoutFragment =
+      uri.replace(fragment: '').toString().replaceFirst(RegExp(r'#$'), '');
+  return withoutFragment.replaceFirst(RegExp(r'/$'), '');
+}
+
 class WebVpnOAuthCompletionPage extends StatefulWidget {
   const WebVpnOAuthCompletionPage({
     super.key,
@@ -23,13 +37,19 @@ class WebVpnOAuthCompletionPage extends StatefulWidget {
 
 class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
   static final _portalUri = Uri.parse('https://webvpn.shu.edu.cn');
+  static const _resourceErrorConfirmationDelay = Duration(seconds: 3);
 
   late final WebViewController _controller;
   Timer? _cookiePollTimer;
   Timer? _timeoutTimer;
+  Timer? _resourceErrorTimer;
   bool _completed = false;
+  bool _terminalFailure = false;
   bool _openingAcademicSystem = false;
   bool _checkingTicketLogin = false;
+  String? _lastNavigationUrl;
+  String? _pendingResourceErrorUrl;
+  int _resourceErrorGeneration = 0;
   String? _error;
   String _status = '正在建立 WebVPN 校园服务会话';
 
@@ -48,11 +68,7 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
             unawaited(_checkLoginCookie());
           },
           onNavigationRequest: _handleNavigationRequest,
-          onWebResourceError: (error) {
-            if (error.isForMainFrame != false) {
-              _fail('WebVPN 登录会话建立失败：${error.description}');
-            }
-          },
+          onWebResourceError: _handleWebResourceError,
         ),
       );
     unawaited(_start());
@@ -62,6 +78,7 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
   void dispose() {
     _cookiePollTimer?.cancel();
     _timeoutTimer?.cancel();
+    _resourceErrorTimer?.cancel();
     super.dispose();
   }
 
@@ -159,6 +176,9 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
   void _handleNavigation(String value, {bool pageFinished = false}) {
     final uri = Uri.tryParse(value);
     if (uri == null) return;
+    _clearTransientResourceErrorAfterNavigation(value);
+    _lastNavigationUrl = value;
+    if (_terminalFailure) return;
     if (kDebugMode) {
       debugPrint('[SHU_AUTH_CALLBACK] ${uri.host}${uri.path}');
     }
@@ -199,8 +219,93 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
     return NavigationDecision.prevent;
   }
 
+  void _handleWebResourceError(WebResourceError error) {
+    if (_completed || _terminalFailure || error.isForMainFrame == false) {
+      return;
+    }
+    final failedUrl = error.url ?? _lastNavigationUrl;
+    if (kDebugMode) {
+      debugPrint(
+        '[SHU_AUTH_CALLBACK] web-resource-error '
+        'code=${error.errorCode} type=${error.errorType} url=$failedUrl '
+        'description=${error.description}',
+      );
+    }
+    _resourceErrorTimer?.cancel();
+    _pendingResourceErrorUrl = failedUrl;
+    final generation = ++_resourceErrorGeneration;
+    _resourceErrorTimer = Timer(
+      _resourceErrorConfirmationDelay,
+      () => unawaited(
+        _confirmWebResourceError(
+          generation: generation,
+          failedUrl: failedUrl,
+          description: error.description,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmWebResourceError({
+    required int generation,
+    required String? failedUrl,
+    required String description,
+  }) async {
+    if (!_isCurrentResourceError(generation)) return;
+    String? currentUrl;
+    try {
+      currentUrl = await _controller.currentUrl();
+    } on Object {
+      currentUrl = _lastNavigationUrl;
+    }
+    if (!_isCurrentResourceError(generation)) return;
+    if (hasWebVpnNavigationProgressed(failedUrl, currentUrl)) {
+      _clearPendingResourceError();
+      return;
+    }
+    try {
+      final cookies =
+          await WebViewCookieManager().getCookies(domain: _portalUri);
+      if (!_isCurrentResourceError(generation)) return;
+      if (cookies.any(
+        (cookie) => cookie.name == 'webvpn-token' && cookie.value.isNotEmpty,
+      )) {
+        _clearPendingResourceError();
+        await _openAcademicSystem();
+        return;
+      }
+    } on Object {
+      // Cookie 查询失败时仍按当前页面状态判断是否展示错误。
+    }
+    if (!_isCurrentResourceError(generation)) return;
+    _clearPendingResourceError();
+    _fail('WebVPN 登录会话建立失败：$description');
+  }
+
+  bool _isCurrentResourceError(int generation) {
+    return !_completed &&
+        !_terminalFailure &&
+        mounted &&
+        generation == _resourceErrorGeneration;
+  }
+
+  void _clearTransientResourceErrorAfterNavigation(String nextUrl) {
+    final failedUrl = _pendingResourceErrorUrl;
+    if (failedUrl != null &&
+        hasWebVpnNavigationProgressed(failedUrl, nextUrl)) {
+      _clearPendingResourceError();
+    }
+  }
+
+  void _clearPendingResourceError() {
+    _resourceErrorTimer?.cancel();
+    _resourceErrorTimer = null;
+    _pendingResourceErrorUrl = null;
+    _resourceErrorGeneration++;
+  }
+
   Future<void> _checkLoginCookie() async {
-    if (_completed) return;
+    if (_completed || _terminalFailure) return;
     final cookies = await WebViewCookieManager().getCookies(domain: _portalUri);
     if (cookies.any(
       (cookie) => cookie.name == 'webvpn-token' && cookie.value.isNotEmpty,
@@ -210,7 +315,9 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
   }
 
   Future<void> _openAcademicSystem() async {
-    if (_completed || _openingAcademicSystem || !mounted) return;
+    if (_completed || _terminalFailure || _openingAcademicSystem || !mounted) {
+      return;
+    }
     _openingAcademicSystem = true;
     setState(() => _status = '正在进入上海大学教务系统');
     try {
@@ -226,7 +333,7 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
   }
 
   Future<void> _verifyAfterTicketLogin() async {
-    if (_completed || _checkingTicketLogin) return;
+    if (_completed || _terminalFailure || _checkingTicketLogin) return;
     _checkingTicketLogin = true;
     if (mounted) setState(() => _status = '正在完成教务系统票据登录');
     await Future<void>.delayed(const Duration(seconds: 6));
@@ -249,15 +356,18 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
   }
 
   void _succeed() {
-    if (_completed || !mounted) return;
+    if (_completed || _terminalFailure || !mounted) return;
     _completed = true;
+    _clearPendingResourceError();
     _cookiePollTimer?.cancel();
     _timeoutTimer?.cancel();
     Navigator.of(context).pop(true);
   }
 
   void _fail(String message) {
-    if (_completed || !mounted || _error != null) return;
+    if (_completed || _terminalFailure || !mounted || _error != null) return;
+    _terminalFailure = true;
+    _clearPendingResourceError();
     _cookiePollTimer?.cancel();
     _timeoutTimer?.cancel();
     setState(() => _error = message);
