@@ -29,7 +29,7 @@ void main() {
     await tester.pumpWidget(app(completed: false));
 
     expect(find.text('主页'), findsOneWidget);
-    expect(find.text('欢迎使用 ShuYo'), findsOneWidget);
+    expect(find.text('欢迎使用ShuYo'), findsOneWidget);
     final panel = find.byKey(const ValueKey('startup-onboarding-panel'));
     final initialTop = tester.getTopLeft(panel).dy;
 
@@ -51,11 +51,44 @@ void main() {
     );
   });
 
+  testWidgets('dismisses onboarding from the barrier without completing it',
+      (tester) async {
+    await tester.pumpWidget(app(completed: false));
+    await tester.pumpAndSettle();
+
+    await tester.tapAt(const Offset(16, 16));
+    await tester.pumpAndSettle();
+
+    expect(find.text('欢迎使用ShuYo'), findsNothing);
+    expect(find.text('主页'), findsOneWidget);
+    expect(
+      (await SharedPreferences.getInstance()).containsKey(
+        'client.onboarding.startup.completed',
+      ),
+      isFalse,
+    );
+  });
+
+  testWidgets('dismisses onboarding by dragging the top handle down',
+      (tester) async {
+    await tester.pumpWidget(app(completed: false));
+    await tester.pumpAndSettle();
+
+    await tester.drag(
+      find.byKey(const ValueKey('startup-onboarding-drag-handle')),
+      const Offset(0, 180),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('欢迎使用ShuYo'), findsNothing);
+    expect(find.text('主页'), findsOneWidget);
+  });
+
   testWidgets('skips onboarding after it has been completed', (tester) async {
     await tester.pumpWidget(app(completed: true));
 
     expect(find.text('主页'), findsOneWidget);
-    expect(find.text('欢迎使用 ShuYo'), findsNothing);
+    expect(find.text('欢迎使用ShuYo'), findsNothing);
   });
 
   testWidgets('third page shows account actions and allows forum skip',
@@ -105,22 +138,22 @@ void main() {
 
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
-    expect(find.text('开启通知'), findsOneWidget);
+    expect(find.text('开启通知权限'), findsOneWidget);
     expect(find.byTooltip('返回上一页'), findsOneWidget);
 
     await tester.tap(find.byTooltip('返回上一页'));
     await tester.pumpAndSettle();
-    expect(find.text('欢迎使用 ShuYo'), findsOneWidget);
+    expect(find.text('欢迎使用ShuYo'), findsOneWidget);
 
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
-    expect(find.text('登录'), findsOneWidget);
+    expect(find.text('账号管理'), findsOneWidget);
 
     await tester.tap(find.byTooltip('返回上一页'));
     await tester.pumpAndSettle();
-    expect(find.text('开启通知'), findsOneWidget);
+    expect(find.text('开启通知权限'), findsOneWidget);
   });
 
   testWidgets('reopens completed onboarding on the account page',
@@ -141,7 +174,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('登录'), findsOneWidget);
+    expect(find.text('账号管理'), findsOneWidget);
     expect(find.text('已登录'), findsNWidgets(2));
     expect(find.text('完成'), findsOneWidget);
     expect(find.byTooltip('关闭'), findsOneWidget);
@@ -162,12 +195,18 @@ void main() {
     await tester.pumpWidget(app(completed: false));
     await tester.pumpAndSettle();
 
-    final subtitleBottom = tester.getBottomLeft(find.text('让校园生活更简单')).dy;
+    final titleBottom = tester.getBottomLeft(find.text('欢迎使用ShuYo')).dy;
     final firstItemTop = tester.getTopLeft(find.text('课表与空教室')).dy;
     final secondItemTop = tester.getTopLeft(find.text('乐乎论坛')).dy;
+    expect(
+      tester.getTopLeft(find.byIcon(Icons.calendar_month)).dx,
+      greaterThanOrEqualTo(56),
+    );
     final pages = find.byKey(const ValueKey('startup-onboarding-pages'));
     final initialPagesSize = tester.getSize(pages);
-    expect(firstItemTop - subtitleBottom, lessThan(60));
+    final terms = find.textContaining('继续即表示您已同意');
+    expect(find.ancestor(of: terms, matching: pages), findsOneWidget);
+    expect(firstItemTop - titleBottom, lessThan(60));
     expect(secondItemTop - firstItemTop, greaterThanOrEqualTo(76));
 
     final panelTopBefore = tester
@@ -180,11 +219,22 @@ void main() {
         .dy;
     expect(panelTopDuring, panelTopBefore);
     await tester.pumpAndSettle();
+    expect(terms.hitTestable(), findsNothing);
     expect(tester.getSize(pages), initialPagesSize);
+    expect(find.byIcon(Icons.notifications_active_outlined), findsNothing);
+    final notificationCopy = tester.widget<Text>(
+      find.textContaining('ShuYo 会发送上课提醒，请在下一步中授予'),
+    );
+    expect(notificationCopy.textAlign, TextAlign.center);
+    expect(notificationCopy.style?.fontSize, 16);
 
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
     expect(tester.getSize(pages), initialPagesSize);
+    expect(
+      tester.getTopLeft(find.byIcon(Icons.school_outlined)).dx,
+      greaterThanOrEqualTo(40),
+    );
     expect(tester.takeException(), isNull);
   });
 }

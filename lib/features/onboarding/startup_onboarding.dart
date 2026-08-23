@@ -190,6 +190,23 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     if (_accountManagerMode) await _hidePanel();
   }
 
+  void _handlePanelDragUpdate(DragUpdateDetails details) {
+    final delta = details.primaryDelta ?? 0;
+    if (delta == 0) return;
+    final panelHeight = MediaQuery.sizeOf(context).height * .86;
+    _panelAnimationController.value =
+        (_panelAnimationController.value - delta / panelHeight).clamp(0, 1);
+  }
+
+  void _handlePanelDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity > 500 || _panelAnimationController.value < .8) {
+      unawaited(_hidePanel());
+      return;
+    }
+    unawaited(_panelAnimationController.forward());
+  }
+
   Future<void> _hidePanel() async {
     if (!_visible) return;
     await _panelAnimationController.reverse();
@@ -241,7 +258,8 @@ class _StartupOnboardingState extends State<StartupOnboarding>
               opacity: _barrierOpacityAnimation,
               child: ModalBarrier(
                 color: Colors.black.withValues(alpha: .32),
-                dismissible: false,
+                dismissible: true,
+                onDismiss: () => unawaited(_hidePanel()),
               ),
             ),
           ),
@@ -278,47 +296,56 @@ class _StartupOnboardingState extends State<StartupOnboarding>
           height: MediaQuery.sizeOf(context).height * .86,
           child: Column(
             children: [
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: colors.outlineVariant,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    if (_page > 0)
-                      Positioned(
-                        left: 8,
-                        child: IconButton(
-                          tooltip: '返回上一页',
-                          onPressed: _goBack,
-                          icon: const Icon(Icons.arrow_back),
+              GestureDetector(
+                key: const ValueKey('startup-onboarding-drag-handle'),
+                behavior: HitTestBehavior.opaque,
+                onVerticalDragUpdate: _handlePanelDragUpdate,
+                onVerticalDragEnd: _handlePanelDragEnd,
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: colors.outlineVariant,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                    if (canSkip)
-                      Positioned(
-                        right: 12,
-                        child: TextButton(
-                          onPressed: _complete,
-                          child: const Text('跳过'),
+                      if (_page > 0)
+                        Positioned(
+                          left: 8,
+                          top: 4,
+                          child: IconButton(
+                            tooltip: '返回上一页',
+                            onPressed: _goBack,
+                            icon: const Icon(Icons.arrow_back),
+                          ),
                         ),
-                      ),
-                    if (_accountManagerMode)
-                      Positioned(
-                        right: 8,
-                        child: IconButton(
-                          tooltip: '关闭',
-                          onPressed: _closeAccountManager,
-                          icon: const Icon(Icons.close),
+                      if (canSkip)
+                        Positioned(
+                          right: 12,
+                          top: 4,
+                          child: TextButton(
+                            onPressed: _complete,
+                            child: const Text('跳过'),
+                          ),
                         ),
-                      ),
-                  ],
+                      if (_accountManagerMode)
+                        Positioned(
+                          right: 8,
+                          top: 4,
+                          child: IconButton(
+                            tooltip: '关闭',
+                            onPressed: _closeAccountManager,
+                            icon: const Icon(Icons.close),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               Expanded(
@@ -335,34 +362,25 @@ class _StartupOnboardingState extends State<StartupOnboarding>
               ),
               SizedBox(
                 key: const ValueKey('startup-onboarding-footer'),
-                height: 112,
+                height: 78,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 18),
                   child: showFooter
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            if (_page == 0) ...[
-                              _terms(context),
-                              const SizedBox(height: 8),
-                            ],
-                            FilledButton(
-                              onPressed: _continue,
-                              style: FilledButton.styleFrom(
-                                minimumSize: const Size.fromHeight(52),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                _accountManagerMode && _page == 2
-                                    ? '完成'
-                                    : _page == 2
-                                        ? '开始使用'
-                                        : '继续',
-                              ),
+                      ? FilledButton(
+                          onPressed: _continue,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
+                          ),
+                          child: Text(
+                            _accountManagerMode && _page == 2
+                                ? '完成'
+                                : _page == 2
+                                    ? '开始使用'
+                                    : '继续',
+                          ),
                         )
                       : const SizedBox.shrink(),
                 ),
@@ -376,24 +394,33 @@ class _StartupOnboardingState extends State<StartupOnboarding>
 
   Widget _welcome(BuildContext context) => _content(
         context,
-        '欢迎使用 ShuYo',
-        '让校园生活更简单',
+        '欢迎使用ShuYo',
+        null,
         [
           _feature(Icons.calendar_month, '课表与空教室', '快速查看课程安排和可用教室'),
           _feature(Icons.forum_outlined, '乐乎论坛', '浏览校园动态，参与讨论'),
-          _feature(Icons.notifications_none, '重要提醒', '不错过课程和校园通知'),
+          _feature(Icons.notifications_none, '重要提醒', '不错过课程和校园公告'),
         ],
+        pageFooter: _terms(context),
       );
 
   Widget _notifications(BuildContext context) => _content(
         context,
-        '开启推送通知',
-        '用于课程提醒',
+        '开启通知权限',
+        null,
         [
-          _feature(
-            Icons.notifications_active_outlined,
-            'ShuYo会发送上课提醒，请在下一步中授予我们推送通知权限',
-            '你可以随时在系统设置中关闭通知',
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: Text(
+              'ShuYo 会发送上课提醒，请在下一步中授予我们推送通知权限，'
+              '你可以随时在系统设置中关闭通知',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
           ),
         ],
       );
@@ -402,9 +429,11 @@ class _StartupOnboardingState extends State<StartupOnboarding>
         context,
         header: _pageHeader(
           context,
-          title: '登录',
-          subtitle: 'ShuYo 使用双账户系统，包括上大校园账户和乐乎论坛账户。',
+          title: '账号管理',
+          subtitle: 'ShuYo 使用双账户系统，包括上大校园账户和乐乎账户。',
+          subtitlePadding: const EdgeInsets.symmetric(horizontal: 18),
         ),
+        headerSpacing: 22,
         bottomChildren: [
           _accountTile(
             context,
@@ -440,7 +469,7 @@ class _StartupOnboardingState extends State<StartupOnboarding>
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 4),
+          padding: const EdgeInsets.fromLTRB(16, 20, 4, 20),
           child: Row(
             children: [
               Icon(icon, size: 26),
@@ -472,7 +501,6 @@ class _StartupOnboardingState extends State<StartupOnboarding>
                         ],
                       ],
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       description,
                       style: TextStyle(
@@ -495,15 +523,13 @@ class _StartupOnboardingState extends State<StartupOnboarding>
   }
 
   Widget _content(
-    BuildContext context,
-    String title,
-    String subtitle,
-    List<Widget> items,
-  ) {
+      BuildContext context, String title, String? subtitle, List<Widget> items,
+      {Widget? pageFooter}) {
     return _pageLayout(
       context,
       header: _pageHeader(context, title: title, subtitle: subtitle),
       bottomChildren: items,
+      pageFooter: pageFooter,
     );
   }
 
@@ -511,24 +537,38 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     BuildContext context, {
     required Widget header,
     required List<Widget> bottomChildren,
+    Widget? pageFooter,
+    double headerSpacing = 32,
   }) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          header,
-          const SizedBox(height: 32),
-          ...bottomChildren,
-        ],
-      ),
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                header,
+                SizedBox(height: headerSpacing),
+                ...bottomChildren,
+              ],
+            ),
+          ),
+        ),
+        if (pageFooter != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+            child: pageFooter,
+          ),
+      ],
     );
   }
 
   Widget _pageHeader(
     BuildContext context, {
     required String title,
-    required String subtitle,
+    String? subtitle,
+    EdgeInsets subtitlePadding = EdgeInsets.zero,
   }) {
     return Center(
       child: Column(
@@ -541,20 +581,25 @@ class _StartupOnboardingState extends State<StartupOnboarding>
           const SizedBox(height: 12),
           Text(
             title,
-            style: Theme.of(context)
-                .textTheme
-                .headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              height: 1.5,
+          if (subtitle != null) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: subtitlePadding,
+              child: Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -595,8 +640,13 @@ class _StartupOnboardingState extends State<StartupOnboarding>
         ),
       );
 
-  Widget _feature(IconData icon, String title, String description) => Padding(
-        padding: const EdgeInsets.only(bottom: 14),
+  Widget _feature(
+    IconData icon,
+    String title,
+    String description,
+  ) =>
+      Padding(
+        padding: const EdgeInsets.only(left: 32, bottom: 8),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 76),
           child: Row(
@@ -613,11 +663,13 @@ class _StartupOnboardingState extends State<StartupOnboarding>
                       title,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: 17,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(description, style: const TextStyle(height: 1.45)),
+                    Text(
+                      description,
+                      style: const TextStyle(fontSize: 15, height: 1.4),
+                    ),
                   ],
                 ),
               ),
