@@ -22,6 +22,7 @@ void main() {
             isOnline: false,
             hasLocalAccount: false,
             hasAcademicAccount: true,
+            isAcademicLoginCompleting: false,
             isCheckingConnection: false,
             isInitialConnectionCheck: false,
             isBusy: false,
@@ -46,5 +47,49 @@ void main() {
 
     await tester.tap(find.text('你好！'));
     expect(loginTapped, isTrue);
+  });
+
+  testWidgets('disables forum login while campus login is completing',
+      (tester) async {
+    var loginTapped = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeDashboardPage(
+            profile: UserProfile(
+              user: const DiscourseUser(
+                id: 0,
+                username: '',
+                avatarTemplate: '',
+              ),
+            ),
+            isOnline: false,
+            hasLocalAccount: false,
+            hasAcademicAccount: false,
+            isAcademicLoginCompleting: true,
+            isCheckingConnection: false,
+            isInitialConnectionCheck: false,
+            isBusy: false,
+            onLogin: () => loginTapped = true,
+            onRelogin: () {},
+            onOpenAcademicSystem: () {},
+            onOpenAnnouncements: () {},
+            onOpenEmptyClassroom: () {},
+            onOpenCourseRatings: () {},
+            showForumNetworkWarning: false,
+            onOpenWebVpnProxy: () {},
+            todayCourseContent: '课表获取中...',
+            announcementContent: '暂无公告',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('正在完成校园登录'), findsOneWidget);
+    expect(find.text('正在获取课表...'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.tap(find.text('正在完成校园登录'));
+    expect(loginTapped, isFalse);
   });
 }

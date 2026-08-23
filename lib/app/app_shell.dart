@@ -733,6 +733,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       isOnline: _repo.isOnline,
       hasLocalAccount: _repo.hasLocalAccount,
       hasAcademicAccount: _hasAcademicSession,
+      isAcademicLoginCompleting: _syncingAcademicSchedule,
       isCheckingConnection: _checkingForumConnection,
       isInitialConnectionCheck: _isInitialForumConnectionCheck,
       isBusy: _reloadingSession,
@@ -2121,6 +2122,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _openAcademicLogin() async {
+    if (_syncingAcademicSchedule) {
+      _showScheduleSyncingSnack();
+      return;
+    }
     if (!AcademicUrlResolver.usesWebVpn) {
       final enableWebVpn = await showDialog<bool>(
         context: context,

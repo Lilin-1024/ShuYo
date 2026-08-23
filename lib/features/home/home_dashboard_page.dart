@@ -11,6 +11,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.isOnline,
     required this.hasLocalAccount,
     required this.hasAcademicAccount,
+    required this.isAcademicLoginCompleting,
     required this.isCheckingConnection,
     required this.isInitialConnectionCheck,
     required this.isBusy,
@@ -30,6 +31,7 @@ class HomeDashboardPage extends StatelessWidget {
   final bool isOnline;
   final bool hasLocalAccount;
   final bool hasAcademicAccount;
+  final bool isAcademicLoginCompleting;
   final bool isCheckingConnection;
   final bool isInitialConnectionCheck;
   final bool isBusy;
@@ -56,13 +58,17 @@ class HomeDashboardPage extends StatelessWidget {
         _HomeRow(
           title: hasLocalAccount
               ? '欢迎回来，${profile.username}'
-              : hasAcademicAccount
-                  ? '你好！'
-                  : '立即登录',
+              : isAcademicLoginCompleting
+                  ? '正在完成校园登录'
+                  : hasAcademicAccount
+                      ? '你好！'
+                      : '立即登录',
           content: !hasLocalAccount
-              ? hasAcademicAccount
-                  ? '暂未登录乐乎论坛'
-                  : '登录后同步个人数据'
+              ? isAcademicLoginCompleting
+                  ? '正在获取课表...'
+                  : hasAcademicAccount
+                      ? '暂未登录乐乎论坛'
+                      : '登录后同步个人数据'
               : isCheckingConnection && !isInitialConnectionCheck
                   ? '正在连接论坛...'
                   : isOnline
@@ -70,20 +76,26 @@ class HomeDashboardPage extends StatelessWidget {
                       : isInitialConnectionCheck
                           ? _greeting()
                           : '无法连接乐乎论坛，请稍后重试',
-          trailing: hasLocalAccount
-              ? IconButton(
-                  tooltip: '刷新论坛连接',
-                  onPressed: isBusy ? null : onRelogin,
-                  icon: isBusy && !isInitialConnectionCheck
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 3),
-                        )
-                      : const Icon(Icons.refresh),
+          trailing: isAcademicLoginCompleting && !hasLocalAccount
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 3),
                 )
-              : const Icon(Icons.login),
-          onTap: hasLocalAccount ? null : onLogin,
+              : hasLocalAccount
+                  ? IconButton(
+                      tooltip: '刷新论坛连接',
+                      onPressed: isBusy ? null : onRelogin,
+                      icon: isBusy && !isInitialConnectionCheck
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 3),
+                            )
+                          : const Icon(Icons.refresh),
+                    )
+                  : const Icon(Icons.login),
+          onTap: hasLocalAccount || isAcademicLoginCompleting ? null : onLogin,
         ),
         _HomeRow(
           icon: Icons.event,

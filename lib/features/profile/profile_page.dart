@@ -33,14 +33,13 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visibleSummary = hasLocalAccount ? summary : _zeroSummary;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
         ProfileHeader(
           profile: profile,
           title: hasLocalAccount ? profile.username : '暂未登录乐乎论坛',
-          subtitle: hasLocalAccount ? 'ID ${profile.id}' : '登录功能即将开放',
+          subtitle: hasLocalAccount ? 'ID ${profile.id}' : '登录后可查看个人资料',
           avatarUrl: hasLocalAccount ? null : '',
           backgroundUrl: hasLocalAccount ? null : '',
           privateImage: hasLocalAccount,
@@ -72,23 +71,12 @@ class ProfilePage extends StatelessWidget {
             onOpenActivity: isBusy || !isOnline ? null : onOpenActivity,
           ),
           const SizedBox(height: 20),
+          _StatList(summary: summary, showValues: hasCachedSummary),
         ],
-        _StatList(summary: visibleSummary, showValues: hasCachedSummary),
       ],
     );
   }
 }
-
-const _zeroSummary = UserSummary(
-  likesGiven: 0,
-  likesReceived: 0,
-  topicsEntered: 0,
-  postsReadCount: 0,
-  daysVisited: 0,
-  topicCount: 0,
-  postCount: 0,
-  timeReadSeconds: 0,
-);
 
 class _ActivitySummaryBar extends StatelessWidget {
   const _ActivitySummaryBar({
