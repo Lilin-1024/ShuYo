@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../core/client_app_info.dart';
 import '../core/forum_url_resolver.dart';
 import '../data/repositories/forum_repository.dart';
+import '../data/services/academic_auth_service.dart';
 import '../data/services/client_settings_service.dart';
 import 'app_shell.dart';
+import '../features/onboarding/startup_onboarding.dart';
 import '../shared/theme/lehu_theme.dart';
 
 class LehuApp extends StatefulWidget {
@@ -19,6 +21,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   late final Future<_StartupData> _startupFuture;
   String _manualThemeId = LehuThemes.defaultId;
   bool _followSystemTheme = false;
+  int _academicLoginSignal = 0;
   Brightness _systemBrightness =
       WidgetsBinding.instance.platformDispatcher.platformBrightness;
 
@@ -66,14 +69,24 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
             return _StartupLoading(theme: theme);
           }
           final data = snapshot.data!;
-          return AppShell(
-            repository: data.repository,
-            reloadRepository: ForumRepositoryFactory.loadOnline,
-            initialAutoUseWebVpnProxy: data.autoUseWebVpnProxy,
-            selectedThemeId: theme.id,
-            followSystemTheme: _followSystemTheme,
-            onThemeChanged: _changeTheme,
-            onFollowSystemThemeChanged: _changeFollowSystemTheme,
+          return StartupOnboarding(
+            initiallyCompleted: data.onboardingCompleted,
+            initialAcademicLoggedIn: data.hasAcademicSession,
+            initialForumLoggedIn: data.repository.hasLocalAccount,
+            onAcademicLoginCompleted: () {
+              setState(() => _academicLoginSignal++);
+            },
+            child: AppShell(
+              repository: data.repository,
+              reloadRepository: ForumRepositoryFactory.loadOnline,
+              initialAutoUseWebVpnProxy: data.autoUseWebVpnProxy,
+              selectedThemeId: theme.id,
+              followSystemTheme: _followSystemTheme,
+              onThemeChanged: _changeTheme,
+              onFollowSystemThemeChanged: _changeFollowSystemTheme,
+              academicLoginSignal: _academicLoginSignal,
+              initialHasAcademicSession: data.hasAcademicSession,
+            ),
           );
         },
       ),
@@ -94,9 +107,15 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
       useWebVpn: networkSettings.autoUseWebVpnProxy,
     );
     final repository = await ForumRepositoryFactory.load();
+    final hasAcademicSession = networkSettings.autoUseWebVpnProxy &&
+        await AcademicAuthService().hasWebVpnSession();
+    final onboardingCompleted =
+        await _settingsService.loadStartupOnboardingCompleted();
     return _StartupData(
       repository: repository,
       autoUseWebVpnProxy: networkSettings.autoUseWebVpnProxy,
+      hasAcademicSession: hasAcademicSession,
+      onboardingCompleted: onboardingCompleted,
     );
   }
 
@@ -149,10 +168,14 @@ class _StartupData {
   const _StartupData({
     required this.repository,
     required this.autoUseWebVpnProxy,
+    required this.hasAcademicSession,
+    required this.onboardingCompleted,
   });
 
   final ForumRepository repository;
   final bool autoUseWebVpnProxy;
+  final bool hasAcademicSession;
+  final bool onboardingCompleted;
 }
 
 class _StartupLoading extends StatelessWidget {

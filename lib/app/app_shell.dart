@@ -22,12 +22,13 @@ import '../data/repositories/forum_repository.dart';
 import '../data/services/academic_schedule_notification_service.dart';
 import '../data/services/academic_schedule_widget_service.dart';
 import '../data/services/academic_schedule_api_client.dart';
+import '../data/services/academic_auth_service.dart';
 import '../data/services/client_settings_service.dart';
 import '../data/services/discourse_api_client.dart';
 import '../data/services/forum_image_headers.dart';
 import '../data/services/forum_image_cache.dart';
 import '../data/services/forum_reachability_service.dart';
-import '../features/auth/login_webview_page.dart';
+import '../features/auth/native_login_page.dart';
 import '../features/forum/create_topic_page.dart';
 import '../features/forum/forum_filter_bar.dart';
 import '../features/forum/forum_search_page.dart';
@@ -47,7 +48,6 @@ import '../features/settings/client_settings_page.dart';
 import '../features/topic/topic_detail_page.dart';
 import '../features/webview/academic_webvpn_preloader.dart';
 import '../features/webview/forum_webvpn_preloader.dart';
-import '../features/webview/forum_webview_page.dart';
 import '../shared/navigation/lehu_route.dart';
 import '../shared/theme/lehu_theme.dart';
 import '../shared/widgets/client_update_prompt.dart';
@@ -65,6 +65,8 @@ class AppShell extends StatefulWidget {
     required this.followSystemTheme,
     required this.onThemeChanged,
     required this.onFollowSystemThemeChanged,
+    required this.academicLoginSignal,
+    required this.initialHasAcademicSession,
   });
 
   final ForumRepository repository;
@@ -74,6 +76,8 @@ class AppShell extends StatefulWidget {
   final bool followSystemTheme;
   final Future<void> Function(String themeId) onThemeChanged;
   final Future<void> Function(bool enabled) onFollowSystemThemeChanged;
+  final int academicLoginSignal;
+  final bool initialHasAcademicSession;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -120,6 +124,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   bool _checkingClientBackendPrompts = false;
   bool _forumNetworkUnavailable = false;
   late bool _autoUseWebVpnProxy;
+  late bool _hasAcademicSession;
   int _seenNotificationBadgeCount = 0;
   int _seenMessageBadgeCount = 0;
   int _localNotificationBadgeCount = 0;
@@ -149,6 +154,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _repo = widget.repository;
     _autoUseWebVpnProxy = widget.initialAutoUseWebVpnProxy;
+    _hasAcademicSession = widget.initialHasAcademicSession;
     _scheduleRepository = AcademicScheduleRepository();
     _scheduleNotificationService = AcademicScheduleNotificationService(
       repository: _scheduleRepository,
@@ -186,6 +192,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_checkClientBackendPrompts());
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant AppShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.academicLoginSignal != oldWidget.academicLoginSignal) {
+      unawaited(_finishAcademicLogin());
+    }
+  }
+
+  Future<void> _finishAcademicLogin() async {
+    final verified = await _syncScheduleAfterWebVpnLogin();
+    if (mounted) setState(() => _hasAcademicSession = verified);
   }
 
   @override
@@ -664,13 +683,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     } else {
       forumContent = const EmptyState(
         icon: Icons.forum,
-        title: '无法连接论坛',
-        message: '请尝试重新登录。',
+        title: '暂未登录乐乎论坛',
+        message: '论坛原生登录功能即将开放',
       );
       messagesContent = const EmptyState(
         icon: Icons.chat_bubble,
-        title: '无法连接论坛',
-        message: '请尝试重新登录。',
+        title: '暂未登录乐乎论坛',
+        message: '登录后可查看论坛消息',
       );
     }
     return IndexedStack(
@@ -706,10 +725,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       profile: _repo.profile,
       isOnline: _repo.isOnline,
       hasLocalAccount: _repo.hasLocalAccount,
+      hasAcademicAccount: _hasAcademicSession,
       isCheckingConnection: _checkingForumConnection,
       isInitialConnectionCheck: _isInitialForumConnectionCheck,
       isBusy: _reloadingSession,
-      onLogin: _login,
+      onLogin: () => unawaited(_openAcademicLogin()),
       onRelogin: _relogin,
       onOpenAcademicSystem: _syncingAcademicSchedule
           ? _showScheduleSyncingSnack
@@ -830,10 +850,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _syncScheduleAfterWebVpnLogin() async {
+  Future<bool> _syncScheduleAfterWebVpnLogin() async {
     if (_syncingAcademicSchedule) {
       debugPrint('[LEHU_WEBVPN] schedule-sync skipped: already loading');
-      return;
+      return false;
     }
     debugPrint('[LEHU_WEBVPN] schedule-sync start');
     _loadingScheduleSummary = true;
@@ -849,7 +869,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         if (mounted) {
           setState(() => _scheduleSummaryText = summary.text);
         }
-        return;
+        return false;
       }
       await Future<void>.delayed(const Duration(seconds: 1));
       debugPrint('[LEHU_WEBVPN] schedule-sync refreshSchedule');
@@ -857,7 +877,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       final summary = await _scheduleRepository.homeSummary();
       unawaited(_scheduleWidgetService.syncFromCache());
       if (!mounted) {
-        return;
+        return false;
       }
       setState(() => _scheduleSummaryText = summary.text);
       await _scheduleNotificationService.syncScheduleReminders(
@@ -865,6 +885,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       );
       _showSnack('WebVPN已登录，课表已同步');
       debugPrint('[LEHU_WEBVPN] schedule-sync success');
+      return true;
     } on AcademicAuthException catch (error) {
       debugPrint('[LEHU_WEBVPN] schedule-sync auth-error: $error');
       if (mounted) {
@@ -873,6 +894,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           setState(() => _scheduleSummaryText = summary.text);
         }
       }
+      _showSnack('校园账户登录未完成，请重试');
+      return false;
     } on Object catch (error) {
       debugPrint('[LEHU_WEBVPN] schedule-sync error: $error');
       if (mounted) {
@@ -881,6 +904,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           setState(() => _scheduleSummaryText = summary.text);
         }
       }
+      _showSnack('课表同步失败，请稍后重试');
+      return false;
     } finally {
       _loadingScheduleSummary = false;
       if (mounted) {
@@ -1435,7 +1460,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<void> _openSearch() async {
     if (!_repo.isOnline) {
       _showSnack(
-        '无法连接论坛，请尝试重新登录。',
+        _forumUnavailableMessage,
       );
       return;
     }
@@ -1455,7 +1480,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<void> _openUserProfile(String username) async {
     if (!_repo.isOnline) {
       _showSnack(
-        '无法连接论坛，请尝试重新登录。',
+        _forumUnavailableMessage,
       );
       return;
     }
@@ -1475,7 +1500,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openProfileSettings() async {
     if (!_repo.isOnline) {
-      _showSnack('无法连接论坛，请尝试重新登录。');
+      _showSnack(_forumUnavailableMessage);
       return;
     }
     final changed = await Navigator.of(context).push<bool>(
@@ -1500,7 +1525,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openProfileActivity(ForumActivityKind kind) async {
     if (!_repo.isOnline) {
-      _showSnack('无法连接论坛，请尝试重新登录。');
+      _showSnack(_forumUnavailableMessage);
       return;
     }
     await Navigator.of(context).push<void>(
@@ -1548,6 +1573,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (!mounted || previousAutoProxy == _autoUseWebVpnProxy) {
       return;
     }
+    await AcademicAuthService().clearCookies();
+    await _repo.clearLoginCookies();
+    if (!mounted) return;
+    setState(() => _hasAcademicSession = false);
     await _reloadForumRepositoryAfterAccessModeChange();
   }
 
@@ -1566,7 +1595,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openCreateTopic() async {
     if (!_repo.isOnline) {
-      _showSnack('无法连接论坛，请尝试重新登录。');
+      _showSnack(_forumUnavailableMessage);
       return;
     }
     final result = await Navigator.of(context).push<CreatedTopicResult>(
@@ -1603,7 +1632,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<void> _openNotifications() async {
     if (!_repo.isOnline) {
       _showSnack(
-        '无法连接论坛，请尝试重新登录。',
+        _forumUnavailableMessage,
       );
       return;
     }
@@ -1622,44 +1651,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _login() async {
-    if (_reloadingSession) {
-      return;
-    }
-    final logged = await Navigator.of(context).push<bool>(
-      lehuRoute(builder: (context) => const LoginWebViewPage()),
-    );
-    if (logged != true || !mounted) {
-      return;
-    }
-    ForumImageHeaders.clearCache();
-    setState(() => _reloadingSession = true);
-    try {
-      final nextRepository = await widget.reloadRepository();
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _repo = nextRepository;
-        _showArchivedMessages = false;
-        _messageSelectionActive = false;
-        _messageRefreshing = false;
-        _reloadingSession = false;
-        _activityCountsFuture = null;
-        _clearFeedSnapshots();
-        _resetFeedFuture(forceRefresh: true);
-      });
-      unawaited(_initializeForumBadges());
-      unawaited(_checkClientBackendPrompts());
-    } on Object catch (error) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _reloadingSession = false);
-      await _showErrorDialog(
-        title: '登录态检测失败',
-        message: _loginError(error),
-      );
-    }
+    _showSnack('乐乎论坛原生登录暂未接入');
   }
 
   Future<void> _relogin() async {
@@ -1791,24 +1783,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _openWebVpnProxy() async {
-    final navigator = Navigator.of(context);
-    debugPrint('[LEHU_WEBVPN] open webvpn proxy');
-    final completed = await navigator.push<bool>(
-      lehuRoute(
-        builder: (context) => const ForumWebViewPage(
-          title: 'WebVPN',
-          url: ForumUrlResolver.webVpnPortalUrl,
-          autoCloseUrlPrefixes: [
-            ForumUrlResolver.webVpnSiteNavUrl,
-            ForumUrlResolver.webVpnSiteNavHomeUrl,
-          ],
-        ),
-      ),
-    );
-    debugPrint('[LEHU_WEBVPN] webvpn page completed=$completed');
-    if (!mounted || completed != true) {
-      return;
-    }
     try {
       await _setAutoUseWebVpnProxy(true);
     } on Object catch (error) {
@@ -1818,13 +1792,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (!mounted) {
       return;
     }
-    setState(() {
-      _tabIndex = 0;
-    });
+    setState(() => _tabIndex = 0);
+    await _openAcademicLogin();
+    if (!mounted) return;
     unawaited(_recoverForumConnection());
     unawaited(_refreshForumReachabilityQuietly(force: true));
     unawaited(_checkClientBackendPrompts());
-    await _syncScheduleAfterWebVpnLogin();
   }
 
   Future<void> _openCourseRatings() async {
@@ -1995,33 +1968,36 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _openAcademicLogin() async {
-    if (AcademicUrlResolver.usesWebVpn) {
-      await Navigator.of(context).push<void>(
-        lehuRoute(
-          builder: (context) => ForumWebViewPage(
-            title: '教务系统',
-            url: AcademicUrlResolver.entryUri.toString(),
-            initialNoticeTitle: '教务系统说明',
-            initialNoticeMessage:
-                '当前已开启WebVPN代理。完成统一身份认证后，课表通常可以直接同步。\n\n本应用只读取课表数据，不会收集或保存你的账号密码。',
-            initialNoticeDelay: const Duration(seconds: 5),
+    if (!AcademicUrlResolver.usesWebVpn) {
+      final enableWebVpn = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('直连登录暂未接入'),
+          content: const Text(
+            '当前版本尚缺少直连教务认证所需的网络信息。请先开启 WebVPN，再使用原生登录。',
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('开启 WebVPN'),
+            ),
+          ],
         ),
       );
-      return;
+      if (enableWebVpn != true || !mounted) return;
+      await _setAutoUseWebVpnProxy(true);
     }
-    await Navigator.of(context).push<void>(
-      lehuRoute(
-        builder: (context) => ForumWebViewPage(
-          title: '教务系统',
-          url: AcademicUrlResolver.entryUri.toString(),
-          initialNoticeTitle: '教务系统登录',
-          initialNoticeMessage:
-              '教务系统为独立系统，需要你在网页中单独登录一次。\n\n本应用只读取课表数据，不会收集或保存你的账号密码。',
-          initialNoticeDelay: const Duration(seconds: 5),
-        ),
-      ),
+    if (!mounted) return;
+    final loggedIn = await Navigator.of(context).push<bool>(
+      lehuRoute(builder: (context) => const NativeLoginPage()),
     );
+    if (loggedIn != true || !mounted) return;
+    final verified = await _syncScheduleAfterWebVpnLogin();
+    if (mounted) setState(() => _hasAcademicSession = verified);
   }
 
   void _showScheduleSyncingSnack() {
@@ -2036,6 +2012,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       SnackBar(content: Text(message)),
     );
   }
+
+  String get _forumUnavailableMessage =>
+      _repo.hasLocalAccount ? '无法连接乐乎论坛，请稍后重试。' : '暂未登录乐乎论坛';
 
   Future<void> _showErrorDialog({
     required String title,
@@ -2089,16 +2068,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return error.message;
     }
     return '无法连接论坛，请尝试重新登录。';
-  }
-
-  String _loginError(Object error) {
-    if (error is ForumAuthException) {
-      return '还没有检测到登录态。请确认已在网页中登录成功，再点“完成”。';
-    }
-    if (error is ForumApiException) {
-      return error.message;
-    }
-    return '登录态检测失败，请确认能访问校园网或使用 VPN。';
   }
 }
 

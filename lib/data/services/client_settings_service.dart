@@ -40,6 +40,8 @@ class ClientSettingsService {
   static const scheduleNotificationsEnabledKey =
       'client.notifications.schedule.enabled';
   static const autoUseWebVpnProxyKey = 'client.network.webvpn.auto_proxy';
+  static const startupOnboardingCompletedKey =
+      'client.onboarding.startup.completed';
   static const themeIdKey = 'client.theme.id';
   static const followSystemThemeKey = 'client.theme.follow_system';
 
@@ -66,7 +68,7 @@ class ClientSettingsService {
   Future<ClientNetworkSettings> loadNetworkSettings() async {
     final prefs = await _preferencesLoader();
     return ClientNetworkSettings(
-      autoUseWebVpnProxy: prefs.getBool(autoUseWebVpnProxyKey) ?? false,
+      autoUseWebVpnProxy: prefs.getBool(autoUseWebVpnProxyKey) ?? true,
     );
   }
 
@@ -99,5 +101,15 @@ class ClientSettingsService {
   Future<void> saveFollowSystemTheme(bool enabled) async {
     final prefs = await _preferencesLoader();
     await prefs.setBool(followSystemThemeKey, enabled);
+  }
+
+  Future<bool> loadStartupOnboardingCompleted() async {
+    final prefs = await _preferencesLoader();
+    return prefs.getBool(startupOnboardingCompletedKey) ?? false;
+  }
+
+  Future<void> saveStartupOnboardingCompleted(bool completed) async {
+    final prefs = await _preferencesLoader();
+    await prefs.setBool(startupOnboardingCompletedKey, completed);
   }
 }

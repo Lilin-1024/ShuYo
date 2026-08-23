@@ -10,6 +10,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.profile,
     required this.isOnline,
     required this.hasLocalAccount,
+    required this.hasAcademicAccount,
     required this.isCheckingConnection,
     required this.isInitialConnectionCheck,
     required this.isBusy,
@@ -28,6 +29,7 @@ class HomeDashboardPage extends StatelessWidget {
   final UserProfile profile;
   final bool isOnline;
   final bool hasLocalAccount;
+  final bool hasAcademicAccount;
   final bool isCheckingConnection;
   final bool isInitialConnectionCheck;
   final bool isBusy;
@@ -52,16 +54,22 @@ class HomeDashboardPage extends StatelessWidget {
           const SizedBox(height: 10),
         ],
         _HomeRow(
-          title: hasLocalAccount ? '欢迎回来，${profile.username}' : '立即登录',
+          title: hasLocalAccount
+              ? '欢迎回来，${profile.username}'
+              : hasAcademicAccount
+                  ? '你好！'
+                  : '立即登录',
           content: !hasLocalAccount
-              ? '登录后同步个人数据'
+              ? hasAcademicAccount
+                  ? '暂未登录乐乎论坛'
+                  : '登录后同步个人数据'
               : isCheckingConnection && !isInitialConnectionCheck
                   ? '正在连接论坛...'
                   : isOnline
                       ? _greeting()
                       : isInitialConnectionCheck
                           ? _greeting()
-                          : '无法连接论坛，请尝试重新登录',
+                          : '无法连接乐乎论坛，请稍后重试',
           trailing: hasLocalAccount
               ? IconButton(
                   tooltip: '刷新论坛连接',
@@ -74,8 +82,10 @@ class HomeDashboardPage extends StatelessWidget {
                         )
                       : const Icon(Icons.refresh),
                 )
-              : const Icon(Icons.login),
-          onTap: hasLocalAccount ? null : onLogin,
+              : hasAcademicAccount
+                  ? null
+                  : const Icon(Icons.login),
+          onTap: hasLocalAccount || hasAcademicAccount ? null : onLogin,
         ),
         _HomeRow(
           icon: Icons.event,

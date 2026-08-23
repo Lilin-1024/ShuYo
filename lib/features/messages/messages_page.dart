@@ -161,8 +161,8 @@ class _MessagesPageState extends State<MessagesPage> {
     if (!widget.repository.hasLocalAccount) {
       return const EmptyState(
         icon: Icons.forum_outlined,
-        title: '无法连接论坛',
-        message: '请尝试重新登录。',
+        title: '暂未登录乐乎论坛',
+        message: '登录后可查看论坛消息',
       );
     }
     if (_loading && _topics == null) {

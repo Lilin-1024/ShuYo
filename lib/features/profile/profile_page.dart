@@ -39,8 +39,8 @@ class ProfilePage extends StatelessWidget {
       children: [
         ProfileHeader(
           profile: profile,
-          title: hasLocalAccount ? profile.username : '无法连接论坛',
-          subtitle: hasLocalAccount ? 'ID ${profile.id}' : '请尝试重新登录。',
+          title: hasLocalAccount ? profile.username : '暂未登录乐乎论坛',
+          subtitle: hasLocalAccount ? 'ID ${profile.id}' : '登录功能即将开放',
           avatarUrl: hasLocalAccount ? null : '',
           backgroundUrl: hasLocalAccount ? null : '',
           privateImage: hasLocalAccount,

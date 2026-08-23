@@ -653,6 +653,29 @@ class _NetworkSettingsPageState extends State<_NetworkSettingsPage> {
     if (_saving) {
       return;
     }
+    final current = _settings;
+    if (current?.autoUseWebVpnProxy == true && !settings.autoUseWebVpnProxy) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('关闭 WebVPN 代理？'),
+          content: const Text(
+            '关闭后，校园和论坛链接将改为直连，并且需要重新登录。直连服务通常只能在校园网或学校 VPN 中访问。\n\n当前版本的直连原生登录尚待接入。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('仍然关闭'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
     setState(() {
       _saving = true;
       _settings = settings;

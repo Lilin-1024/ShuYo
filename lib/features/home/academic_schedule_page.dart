@@ -222,7 +222,8 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     if (!mounted) {
       return;
     }
-    _showSnack('登录完成后请再次点击刷新');
+    await _loadCached();
+    if (mounted && _schedule != null) _showSnack('课表已同步');
   }
 
   Future<void> _setDisplayedWeekAsCurrent() async {

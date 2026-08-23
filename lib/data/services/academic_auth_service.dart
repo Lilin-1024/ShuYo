@@ -10,6 +10,21 @@ class AcademicAuthService {
 
   final WebViewCookieManager _cookieManager;
 
+  Future<void> clearCookies() => _cookieManager.clearCookies();
+
+  Future<bool> hasWebVpnSession() async {
+    try {
+      final cookies = await _cookieManager.getCookies(
+        domain: Uri.parse(ForumUrlResolver.webVpnPortalUrl),
+      );
+      return cookies.any(
+        (cookie) => cookie.name == 'webvpn-token' && cookie.value.isNotEmpty,
+      );
+    } on Object {
+      return false;
+    }
+  }
+
   Future<String?> cookieHeader() async {
     final cookies = [
       if (AcademicUrlResolver.usesWebVpn)
