@@ -28,6 +28,7 @@ import '../data/services/discourse_api_client.dart';
 import '../data/services/forum_image_headers.dart';
 import '../data/services/forum_image_cache.dart';
 import '../data/services/forum_reachability_service.dart';
+import '../data/services/forum_auth_service.dart';
 import '../features/auth/native_login_page.dart';
 import '../features/forum/create_topic_page.dart';
 import '../features/forum/forum_filter_bar.dart';
@@ -66,6 +67,7 @@ class AppShell extends StatefulWidget {
     required this.onThemeChanged,
     required this.onFollowSystemThemeChanged,
     required this.academicLoginSignal,
+    required this.forumLoginSignal,
     required this.initialHasAcademicSession,
   });
 
@@ -77,6 +79,7 @@ class AppShell extends StatefulWidget {
   final Future<void> Function(String themeId) onThemeChanged;
   final Future<void> Function(bool enabled) onFollowSystemThemeChanged;
   final int academicLoginSignal;
+  final int forumLoginSignal;
   final bool initialHasAcademicSession;
 
   @override
@@ -141,11 +144,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   final _forumTopicListController = TopicListPageController();
   final _messagesPageController = MessagesPageController();
   final _forumRefreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
-  Completer<bool>? _forumWebVpnPreloadCompleter;
+  Completer<ForumWebVpnPreparationResult>? _forumWebVpnPreloadCompleter;
   Completer<bool>? _academicWebVpnPreloadCompleter;
   int _forumWebVpnPreloadToken = 0;
   int _academicWebVpnPreloadToken = 0;
   int _forumRepositoryReloadToken = 0;
+  int _forumRecoveryGeneration = 0;
   Future<ForumRecoveryResult>? _forumRecoveryFuture;
 
   @override
@@ -199,6 +203,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     super.didUpdateWidget(oldWidget);
     if (widget.academicLoginSignal != oldWidget.academicLoginSignal) {
       unawaited(_finishAcademicLogin());
+    }
+    if (widget.forumLoginSignal != oldWidget.forumLoginSignal) {
+      unawaited(_reloadForumAfterLogin());
     }
   }
 
@@ -684,7 +691,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       forumContent = const EmptyState(
         icon: Icons.forum,
         title: '暂未登录乐乎论坛',
-        message: '论坛原生登录功能即将开放',
+        message: '登录后可浏览和参与论坛讨论',
       );
       messagesContent = const EmptyState(
         icon: Icons.chat_bubble,
@@ -729,7 +736,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       isCheckingConnection: _checkingForumConnection,
       isInitialConnectionCheck: _isInitialForumConnectionCheck,
       isBusy: _reloadingSession,
-      onLogin: () => unawaited(_openAcademicLogin()),
+      onLogin: () => unawaited(
+        _hasAcademicSession ? _login() : _openAcademicLogin(),
+      ),
       onRelogin: _relogin,
       onOpenAcademicSystem: _syncingAcademicSchedule
           ? _showScheduleSyncingSnack
@@ -951,31 +960,32 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<bool> _prepareForumWebVpnSessionInBackground() async {
+  Future<ForumWebVpnPreparationResult>
+      _prepareForumWebVpnSessionInBackground() async {
     if (!ForumUrlResolver.usesWebVpn) {
-      return true;
+      return ForumWebVpnPreparationResult.ready;
     }
     if (!mounted) {
-      return false;
+      return ForumWebVpnPreparationResult.unavailable;
     }
     final existing = _forumWebVpnPreloadCompleter;
     if (existing != null) {
       return existing.future.timeout(
-        const Duration(seconds: 25),
-        onTimeout: () => false,
+        const Duration(seconds: 12),
+        onTimeout: () => ForumWebVpnPreparationResult.unavailable,
       );
     }
-    final completer = Completer<bool>();
+    final completer = Completer<ForumWebVpnPreparationResult>();
     setState(() {
       _forumWebVpnPreloadCompleter = completer;
       _forumWebVpnPreloadToken++;
     });
     try {
       return await completer.future.timeout(
-        const Duration(seconds: 25),
+        const Duration(seconds: 12),
         onTimeout: () {
           debugPrint('[LEHU_WEBVPN] background forum preload timeout');
-          return false;
+          return ForumWebVpnPreparationResult.unavailable;
         },
       );
     } finally {
@@ -985,11 +995,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  void _completeForumWebVpnPreload(bool success) {
+  void _completeForumWebVpnPreload(ForumWebVpnPreparationResult result) {
     final completer = _forumWebVpnPreloadCompleter;
-    debugPrint('[LEHU_WEBVPN] background forum preload complete=$success');
+    debugPrint('[LEHU_WEBVPN] background forum preload complete=$result');
     if (completer != null && !completer.isCompleted) {
-      completer.complete(success);
+      completer.complete(result);
     }
   }
 
@@ -1202,8 +1212,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (pending != null) {
       return pending;
     }
+    final generation = _forumRecoveryGeneration;
     final operation = _performForumConnectionRecovery(
       forceValidation: forceValidation,
+      generation: generation,
     );
     late final Future<ForumRecoveryResult> shared;
     shared = operation.whenComplete(() {
@@ -1217,6 +1229,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<ForumRecoveryResult> _performForumConnectionRecovery({
     required bool forceValidation,
+    required int generation,
   }) async {
     if (!mounted) {
       return ForumRecoveryResult(
@@ -1244,28 +1257,26 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       });
     }
     try {
-      if (ForumUrlResolver.usesWebVpn) {
-        final prepared = await _prepareForumWebVpnSessionInBackground();
-        if (!prepared) {
-          _repo.markConnectionUnavailable();
-          return ForumRecoveryResult(
-            status: ForumRecoveryStatus.unavailable,
-            repository: _repo,
-          );
-        }
-      }
-      await _repo.refreshSession().timeout(
-            _forumAccessModeReloadTimeout,
-            onTimeout: () => throw const ForumConnectionUnavailableException(
-              '论坛连接超时，请稍后再试',
-            ),
-          );
+      final nextRepository = await _connectForumRepositoryWithFallback(
+        generation,
+      );
+      _ensureForumRecoveryCurrent(generation);
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _repo = nextRepository;
+          _activityCountsFuture = null;
+          _clearFeedSnapshots();
+          _resetFeedFuture(forceRefresh: true);
+        });
         unawaited(_loadLocalForumBadges());
       }
       return ForumRecoveryResult(
         status: ForumRecoveryStatus.restored,
+        repository: nextRepository,
+      );
+    } on _ForumRecoveryCancelled {
+      return ForumRecoveryResult(
+        status: ForumRecoveryStatus.unavailable,
         repository: _repo,
       );
     } on ForumAuthException catch (error) {
@@ -1290,12 +1301,61 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (wasInitialConnectionCheck) {
         _isInitialForumConnectionCheck = false;
       }
-      if (mounted) {
+      if (mounted && generation == _forumRecoveryGeneration) {
         setState(() {
           _reloadingSession = false;
           _checkingForumConnection = false;
         });
       }
+    }
+  }
+
+  Future<ForumRepository> _connectForumRepositoryWithFallback(
+    int generation,
+  ) async {
+    try {
+      final repository = await widget.reloadRepository();
+      _ensureForumRecoveryCurrent(generation);
+      return repository;
+    } on ForumAuthException {
+      rethrow;
+    } on Object catch (firstError) {
+      _ensureForumRecoveryCurrent(generation);
+      if (!ForumUrlResolver.usesWebVpn || !_isForumTransportError(firstError)) {
+        rethrow;
+      }
+      final prepared = await _prepareForumWebVpnSessionInBackground();
+      _ensureForumRecoveryCurrent(generation);
+      if (prepared == ForumWebVpnPreparationResult.loginRequired) {
+        throw const ForumAuthException('论坛登录状态已失效');
+      }
+      if (prepared != ForumWebVpnPreparationResult.ready) rethrow;
+      final repository = await widget.reloadRepository();
+      _ensureForumRecoveryCurrent(generation);
+      return repository;
+    }
+  }
+
+  void _ensureForumRecoveryCurrent(int generation) {
+    if (generation != _forumRecoveryGeneration) {
+      throw const _ForumRecoveryCancelled();
+    }
+  }
+
+  void _cancelForumRecovery() {
+    _forumRecoveryGeneration++;
+    final completer = _forumWebVpnPreloadCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete(ForumWebVpnPreparationResult.unavailable);
+    }
+    _forumWebVpnPreloadCompleter = null;
+    _forumRecoveryFuture = null;
+    if (mounted) {
+      setState(() {
+        _reloadingSession = false;
+        _checkingForumConnection = false;
+        _isInitialForumConnectionCheck = false;
+      });
     }
   }
 
@@ -1560,9 +1620,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           onFollowSystemThemeChanged: widget.onFollowSystemThemeChanged,
           isOnline: _repo.isOnline,
           hasLocalAccount: _repo.hasLocalAccount,
+          hasAcademicAccount: _hasAcademicSession,
           loadForumCacheSize: _repo.forumCacheStorageSize,
           onClearForumCache: _clearForumCache,
-          onLogout: _logout,
+          onForumLogout: _logoutForumAccount,
+          onAcademicLogout: _logoutAcademicAccount,
         ),
       ),
     );
@@ -1651,7 +1713,50 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _login() async {
-    _showSnack('乐乎论坛原生登录暂未接入');
+    if (_reloadingSession) return;
+    if (ForumUrlResolver.usesWebVpn && !_hasAcademicSession) {
+      await _openAcademicLogin();
+      if (!mounted || !_hasAcademicSession) return;
+    }
+    final loggedIn = await Navigator.of(context).push<bool>(
+      lehuRoute(builder: (context) => const NativeLoginPage.forum()),
+    );
+    if (loggedIn == true && mounted) {
+      await _reloadForumAfterLogin();
+    }
+  }
+
+  Future<bool> _reloadForumAfterLogin() async {
+    if (_reloadingSession) return false;
+    setState(() => _reloadingSession = true);
+    try {
+      final nextRepository = await widget.reloadRepository();
+      if (!nextRepository.hasLocalAccount) {
+        throw const ForumAuthException('论坛未返回有效的登录会话');
+      }
+      if (!mounted) return false;
+      setState(() {
+        _repo = nextRepository;
+        _showArchivedMessages = false;
+        _messageSelectionActive = false;
+        _messageRefreshing = false;
+        _reloadingSession = false;
+        _activityCountsFuture = null;
+        _clearFeedSnapshots();
+        _resetFeedFuture(forceRefresh: true);
+      });
+      unawaited(_initializeForumBadges());
+      _showSnack('乐乎论坛已登录');
+      return true;
+    } on Object catch (error) {
+      if (!mounted) return false;
+      setState(() => _reloadingSession = false);
+      await _showErrorDialog(
+        title: '论坛登录未完成',
+        message: _friendlyError(error),
+      );
+      return false;
+    }
   }
 
   Future<void> _relogin() async {
@@ -1671,20 +1776,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       unawaited(_initializeForumBadges());
       return;
     }
-    await _showErrorDialog(
-      title: '论坛连接失败',
-      message: _forumRecoveryMessage(recovery),
+    if (recovery.status == ForumRecoveryStatus.requiresReauthentication) {
+      _showSnack('论坛登录状态已失效，请重新登录');
+      await _login();
+      return;
+    }
+    final relogin = await _confirmForumRelogin(
+      _forumRecoveryMessage(recovery),
     );
-    if (recovery.status == ForumRecoveryStatus.requiresReauthentication &&
-        mounted) {
+    if (relogin && mounted) {
       await _login();
     }
   }
 
-  Future<void> _logout() async {
-    if (_reloadingSession) {
-      return;
-    }
+  Future<void> _logoutForumAccount() async {
+    _cancelForumRecovery();
     setState(() => _reloadingSession = true);
     try {
       await _repo.clearLocalAccount();
@@ -1704,17 +1810,64 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _resetFeedFuture();
       });
       unawaited(_initializeForumBadges());
-      _showSnack('已退出登录');
+      _showSnack('已退出乐乎论坛账户');
     } on Object catch (error) {
       if (!mounted) {
         return;
       }
       setState(() => _reloadingSession = false);
       await _showErrorDialog(
-        title: '退出登录失败',
+        title: '论坛账户退出失败',
         message: _friendlyError(error),
       );
     }
+  }
+
+  Future<void> _logoutAcademicAccount() async {
+    _cancelForumRecovery();
+    setState(() => _reloadingSession = true);
+    try {
+      final clearedNames = await AcademicAuthService().clearCookies();
+      await ForumAuthService().removeCachedCookieNames(clearedNames);
+      if (!mounted) return;
+      setState(() {
+        _hasAcademicSession = false;
+        _reloadingSession = false;
+        if (ForumUrlResolver.usesWebVpn) {
+          _repo.markConnectionUnavailable();
+        }
+      });
+      _showSnack('已退出上大校园账户');
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _reloadingSession = false);
+      await _showErrorDialog(
+        title: '校园账户退出失败',
+        message: _friendlyError(error),
+      );
+    }
+  }
+
+  Future<bool> _confirmForumRelogin(String message) async {
+    if (!mounted) return false;
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('论坛连接失败'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('重新登录'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   Future<void> _clearExpiredLogin() async {
@@ -2072,10 +2225,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 }
 
 bool _isForumTransportError(Object error) {
-  return error is SocketException ||
+  return error is ForumConnectionUnavailableException ||
+      error is SocketException ||
       error is TimeoutException ||
       error is HandshakeException ||
       error is HttpException;
+}
+
+class _ForumRecoveryCancelled implements Exception {
+  const _ForumRecoveryCancelled();
 }
 
 class _NotificationFeedBadge {

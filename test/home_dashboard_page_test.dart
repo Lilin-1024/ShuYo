@@ -7,6 +7,7 @@ import 'package:shuyo/features/home/home_dashboard_page.dart';
 void main() {
   testWidgets('shows the campus-only greeting and forum login reminder',
       (tester) async {
+    var loginTapped = false;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -24,7 +25,7 @@ void main() {
             isCheckingConnection: false,
             isInitialConnectionCheck: false,
             isBusy: false,
-            onLogin: () {},
+            onLogin: () => loginTapped = true,
             onRelogin: () {},
             onOpenAcademicSystem: () {},
             onOpenAnnouncements: () {},
@@ -42,5 +43,8 @@ void main() {
     expect(find.text('你好！'), findsOneWidget);
     expect(find.text('暂未登录乐乎论坛'), findsOneWidget);
     expect(find.text('立即登录'), findsNothing);
+
+    await tester.tap(find.text('你好！'));
+    expect(loginTapped, isTrue);
   });
 }

@@ -26,7 +26,9 @@ class ClientSettingsPage extends StatelessWidget {
     required this.onFollowSystemThemeChanged,
     this.isOnline = false,
     this.hasLocalAccount = false,
-    this.onLogout,
+    this.hasAcademicAccount = false,
+    this.onForumLogout,
+    this.onAcademicLogout,
     this.loadForumCacheSize,
     this.onClearForumCache,
   });
@@ -40,7 +42,9 @@ class ClientSettingsPage extends StatelessWidget {
   final Future<void> Function(bool enabled) onFollowSystemThemeChanged;
   final bool isOnline;
   final bool hasLocalAccount;
-  final Future<void> Function()? onLogout;
+  final bool hasAcademicAccount;
+  final Future<void> Function()? onForumLogout;
+  final Future<void> Function()? onAcademicLogout;
   final Future<int> Function()? loadForumCacheSize;
   final Future<int> Function()? onClearForumCache;
 
@@ -111,10 +115,26 @@ class ClientSettingsPage extends StatelessWidget {
             loadSize: loadForumCacheSize,
             onClear: onClearForumCache,
           ),
-          if (hasLocalAccount && onLogout != null) ...[
+          if (hasLocalAccount && onForumLogout != null) ...[
             _SettingsRow(
-              title: '退出登录',
-              onTap: () => _confirmLogout(context),
+              title: '退出乐乎论坛账户',
+              onTap: () => _confirmLogout(
+                context,
+                title: '退出乐乎论坛账户？',
+                message: '退出后将清除论坛会话和本地账户数据，校园账户不会受影响。',
+                onLogout: onForumLogout!,
+              ),
+            ),
+          ],
+          if (hasAcademicAccount && onAcademicLogout != null) ...[
+            _SettingsRow(
+              title: '退出上大校园账户',
+              onTap: () => _confirmLogout(
+                context,
+                title: '退出上大校园账户？',
+                message: '退出后课表和校园服务需要重新登录。WebVPN 模式下论坛将暂时无法连接，但论坛账户数据会保留。',
+                onLogout: onAcademicLogout!,
+              ),
             ),
           ],
         ],
@@ -189,13 +209,18 @@ class ClientSettingsPage extends StatelessWidget {
     }
   }
 
-  Future<void> _confirmLogout(BuildContext context) async {
+  Future<void> _confirmLogout(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required Future<void> Function() onLogout,
+  }) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('退出登录'),
-          content: const Text('退出后论坛相关功能需要重新登录。'),
+          title: Text(title),
+          content: Text(message),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -212,7 +237,7 @@ class ClientSettingsPage extends StatelessWidget {
     if (confirmed != true) {
       return;
     }
-    await onLogout?.call();
+    await onLogout();
     if (context.mounted) {
       Navigator.of(context).pop();
     }

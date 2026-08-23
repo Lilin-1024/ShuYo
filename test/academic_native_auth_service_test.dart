@@ -13,4 +13,11 @@ void main() {
     expect(base64Decode(second), hasLength(128));
     expect(second, isNot(first));
   });
+
+  test('sendError explains the rate limit and alternate method', () {
+    expect(
+      AcademicNativeAuthService.messageForCode('sendError'),
+      '验证码发送过于频繁，请切换验证方式或稍后再试',
+    );
+  });
 }

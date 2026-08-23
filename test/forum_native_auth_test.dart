@@ -1,0 +1,100 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shuyo/data/services/academic_native_auth_service.dart';
+import 'package:shuyo/features/auth/forum_oauth_completion_page.dart';
+import 'package:shuyo/features/auth/forum_registration_placeholder_page.dart';
+import 'package:shuyo/data/services/forum_auth_service.dart';
+
+void main() {
+  test('cached forum cookies survive a partial WebView cookie restore', () {
+    final merged = ForumAuthService.mergeCookieHeaders(
+      'webvpn-token=old; _t=forum-session; _forum_session=discourse',
+      'webvpn-token=new',
+    );
+
+    expect(merged, contains('webvpn-token=new'));
+    expect(merged, contains('_t=forum-session'));
+    expect(merged, contains('_forum_session=discourse'));
+    expect(merged, isNot(contains('webvpn-token=old')));
+  });
+
+  group('forum OAuth callback', () {
+    test('accepts direct and WebVPN callback hosts', () {
+      expect(
+        AcademicNativeAuthService.isForumOAuthCallback(
+          Uri.parse(
+            'https://bbs.shu.edu.cn/auth/oauth2_basic/callback?code=x&state=y',
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        AcademicNativeAuthService.isForumOAuthCallback(
+          Uri.parse(
+            'https://https-bbs-shu-edu-cn-443.webvpn.shu.edu.cn/auth/oauth2_basic/callback?code=x&state=y',
+          ),
+        ),
+        isTrue,
+      );
+    });
+
+    test('rejects incomplete or external callbacks', () {
+      expect(
+        AcademicNativeAuthService.isForumOAuthCallback(
+          Uri.parse(
+            'https://bbs.shu.edu.cn/auth/oauth2_basic/callback?code=x',
+          ),
+        ),
+        isFalse,
+      );
+      expect(
+        AcademicNativeAuthService.isForumOAuthCallback(
+          Uri.parse(
+            'https://example.com/auth/oauth2_basic/callback?code=x&state=y',
+          ),
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  test('recognizes direct and WebVPN registration routes', () {
+    expect(
+      isForumRegistrationUri(
+        Uri.parse('https://bbs.shu.edu.cn/u/account-created'),
+      ),
+      isTrue,
+    );
+    expect(
+      isForumRegistrationUri(
+        Uri.parse(
+          'https://https-bbs-shu-edu-cn-443.webvpn.shu.edu.cn/signup',
+        ),
+      ),
+      isTrue,
+    );
+    expect(
+      isForumRegistrationUri(
+        Uri.parse('https://bbs.shu.edu.cn/latest'),
+      ),
+      isFalse,
+    );
+  });
+
+  testWidgets('registration placeholder does not submit an API request',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: ForumRegistrationPlaceholderPage()),
+    );
+
+    expect(find.text('设置论坛昵称'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '完成注册'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'ShuYoUser');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, '完成注册'));
+    await tester.pump();
+
+    expect(find.text('论坛注册接口暂未接入'), findsOneWidget);
+  });
+}

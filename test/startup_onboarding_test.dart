@@ -13,6 +13,7 @@ void main() {
         initialAcademicLoggedIn: academicLoggedIn,
         initialForumLoggedIn: false,
         onAcademicLoginCompleted: () {},
+        onForumLoginCompleted: () {},
         child: const Scaffold(body: Text('主页')),
       ),
     );
@@ -54,5 +55,19 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  testWidgets('onboarding asks for the campus account first',
+      (tester) async {
+    await tester.pumpWidget(app(completed: false));
+
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('乐乎账户'));
+    await tester.pump();
+
+    expect(find.text('请先登录上大校园账户'), findsOneWidget);
   });
 }

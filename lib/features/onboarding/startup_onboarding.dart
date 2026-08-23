@@ -15,6 +15,7 @@ class StartupOnboarding extends StatefulWidget {
     required this.initialAcademicLoggedIn,
     required this.initialForumLoggedIn,
     required this.onAcademicLoginCompleted,
+    required this.onForumLoginCompleted,
     this.settingsService,
   });
 
@@ -23,6 +24,7 @@ class StartupOnboarding extends StatefulWidget {
   final bool initialAcademicLoggedIn;
   final bool initialForumLoggedIn;
   final VoidCallback onAcademicLoginCompleted;
+  final VoidCallback onForumLoginCompleted;
   final ClientSettingsService? settingsService;
 
   @override
@@ -72,12 +74,21 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
     widget.onAcademicLoginCompleted();
   }
 
-  void _openForumPlaceholder() {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(content: Text('乐乎论坛原生登录暂未接入')),
-      );
+  Future<void> _openForumLogin() async {
+    if (!_academicLoggedIn) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('请先登录上大校园账户')),
+        );
+      return;
+    }
+    final loggedIn = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const NativeLoginPage.forum()),
+    );
+    if (loggedIn != true || !mounted) return;
+    setState(() => _forumLoggedIn = true);
+    widget.onForumLoginCompleted();
   }
 
   Future<void> _complete() async {
@@ -281,7 +292,7 @@ class _StartupOnboardingState extends State<StartupOnboarding> {
               title: '乐乎账户',
               description: '用于访问上海大学校内论坛，首次使用需注册',
               loggedIn: _forumLoggedIn,
-              onTap: _forumLoggedIn ? null : _openForumPlaceholder,
+              onTap: _forumLoggedIn ? null : _openForumLogin,
             ),
           ],
         ),

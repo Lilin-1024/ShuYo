@@ -10,7 +10,40 @@ class AcademicAuthService {
 
   final WebViewCookieManager _cookieManager;
 
-  Future<void> clearCookies() => _cookieManager.clearCookies();
+  Future<Set<String>> clearCookies() async {
+    final clearedSharedNames = <String>{};
+    final domains = <(Uri, bool)>[
+      (Uri.parse(ForumUrlResolver.webVpnPortalUrl), true),
+      (Uri.parse(AcademicConstants.baseUrl), false),
+      (Uri.parse(AcademicUrlResolver.webVpnBaseUrl), false),
+      (Uri.parse('https://oauth.shu.edu.cn'), true),
+      (Uri.parse('https://https-oauth-shu-edu-cn-443.webvpn.shu.edu.cn'), true),
+      (
+        Uri.parse('https://https-newsso-shu-edu-cn-443.webvpn.shu.edu.cn'),
+        true
+      ),
+    ];
+    for (final (domain, sharedWithForum) in domains) {
+      List<WebViewCookie> cookies;
+      try {
+        cookies = await _cookieManager.getCookies(domain: domain);
+      } on Object {
+        continue;
+      }
+      for (final cookie in cookies) {
+        if (sharedWithForum) clearedSharedNames.add(cookie.name);
+        await _cookieManager.setCookie(
+          WebViewCookie(
+            name: cookie.name,
+            value: '',
+            domain: cookie.domain,
+            path: cookie.path,
+          ),
+        );
+      }
+    }
+    return clearedSharedNames;
+  }
 
   Future<bool> hasWebVpnSession() async {
     try {

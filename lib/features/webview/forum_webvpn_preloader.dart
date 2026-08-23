@@ -9,13 +9,15 @@ import '../../core/certificate_policy.dart';
 import '../../core/client_user_agent.dart';
 import '../../core/forum_url_resolver.dart';
 
+enum ForumWebVpnPreparationResult { ready, loginRequired, unavailable }
+
 class ForumWebVpnPreloader extends StatefulWidget {
   const ForumWebVpnPreloader({
     super.key,
     required this.onComplete,
   });
 
-  final ValueChanged<bool> onComplete;
+  final ValueChanged<ForumWebVpnPreparationResult> onComplete;
 
   @override
   State<ForumWebVpnPreloader> createState() => _ForumWebVpnPreloaderState();
@@ -52,6 +54,7 @@ class _ForumWebVpnPreloaderState extends State<ForumWebVpnPreloader> {
             _debug(
               'web-resource-error ${error.errorCode}: ${error.description}',
             );
+            _complete(ForumWebVpnPreparationResult.unavailable);
           },
           onHttpError: (error) {
             _debug('http-error ${error.response?.statusCode ?? 'unknown'}');
@@ -83,7 +86,11 @@ class _ForumWebVpnPreloaderState extends State<ForumWebVpnPreloader> {
     }
     final url = '${ForumUrlResolver.webVpnBaseUrl}/latest';
     _debug('load-latest', url);
-    await _controller.loadRequest(Uri.parse(url));
+    try {
+      await _controller.loadRequest(Uri.parse(url));
+    } on Object {
+      _complete(ForumWebVpnPreparationResult.unavailable);
+    }
   }
 
   Future<void> _configureAndroidWebView() async {
@@ -109,21 +116,15 @@ class _ForumWebVpnPreloaderState extends State<ForumWebVpnPreloader> {
       return;
     }
     if (_isForumLoginUrl(url)) {
-      _completed = true;
       await Future<void>.delayed(const Duration(milliseconds: 500));
-      if (mounted) {
-        widget.onComplete(false);
-      }
+      _complete(ForumWebVpnPreparationResult.loginRequired);
       return;
     }
     if (_completed || !_isPreparedForumUrl(url)) {
       return;
     }
-    _completed = true;
     await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (mounted) {
-      widget.onComplete(true);
-    }
+    _complete(ForumWebVpnPreparationResult.ready);
   }
 
   bool _isPreparedForumUrl(String url) {
@@ -167,6 +168,12 @@ class _ForumWebVpnPreloaderState extends State<ForumWebVpnPreloader> {
       return Uri.tryParse(platform.url);
     }
     return null;
+  }
+
+  void _complete(ForumWebVpnPreparationResult result) {
+    if (_completed || !mounted) return;
+    _completed = true;
+    widget.onComplete(result);
   }
 
   void _debug(String message, [String? url]) {

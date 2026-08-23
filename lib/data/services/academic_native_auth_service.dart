@@ -7,8 +7,11 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../core/academic_url_resolver.dart';
 import '../../core/client_user_agent.dart';
+import '../../core/forum_url_resolver.dart';
 
 enum AcademicVerificationMethod { wecom, sms }
+
+enum _NativeAuthTarget { academic, forum }
 
 class AcademicLoginChallenge {
   const AcademicLoginChallenge({required this.methods});
@@ -54,7 +57,18 @@ class AcademicPasswordEncryptor {
 
 class AcademicNativeAuthService {
   AcademicNativeAuthService({HttpClient? httpClient})
-      : _client = httpClient ?? HttpClient() {
+      : _target = _NativeAuthTarget.academic,
+        _cookieManager = WebViewCookieManager(),
+        _client = httpClient ?? HttpClient() {
+    _client.connectionTimeout = const Duration(seconds: 20);
+  }
+
+  AcademicNativeAuthService.forForum({
+    HttpClient? httpClient,
+    WebViewCookieManager? cookieManager,
+  })  : _target = _NativeAuthTarget.forum,
+        _cookieManager = cookieManager ?? WebViewCookieManager(),
+        _client = httpClient ?? HttpClient() {
     _client.connectionTimeout = const Duration(seconds: 20);
   }
 
@@ -63,8 +77,11 @@ class AcademicNativeAuthService {
       'https://${AcademicUrlResolver.webVpnHost}/';
   static const _webVpnPortal = 'https://webvpn.shu.edu.cn';
   static const _webVpnHost = 'webvpn.shu.edu.cn';
+  final _NativeAuthTarget _target;
+  final WebViewCookieManager _cookieManager;
   final HttpClient _client;
   final List<_StoredCookie> _cookies = [];
+  bool _webViewCookiesImported = false;
 
   Uri? _loginUri;
   String? _params;
@@ -193,20 +210,33 @@ class AcademicNativeAuthService {
   }
 
   Future<Uri> _discoverLoginUri() async {
-    var uri = Uri.parse(_academicWebVpnEntry);
-    for (var redirects = 0; redirects < 12; redirects++) {
+    if (_target == _NativeAuthTarget.forum) {
+      await _importWebViewCookies();
+    }
+    var uri = _target == _NativeAuthTarget.academic
+        ? Uri.parse(_academicWebVpnEntry)
+        : ForumUrlResolver.uri('/auth/oauth2_basic');
+    for (var redirects = 0; redirects < 16; redirects++) {
       final response = await _request('GET', uri);
       final next = _redirectTarget(response, uri);
       await response.drain<void>();
       if (next == null) {
         if (uri.path.contains(_newssoPathMarker)) return uri;
-        if (uri.host == _webVpnHost) {
+        if (_target == _NativeAuthTarget.academic && uri.host == _webVpnHost) {
           uri = await _startWebVpnOAuth();
           continue;
         }
+        if (_target == _NativeAuthTarget.forum &&
+            ForumUrlResolver.usesWebVpn &&
+            uri.host == _webVpnHost) {
+          throw const AcademicNativeAuthException(
+            'webVpnLoginRequired',
+            '使用 WebVPN 登录论坛前，请先完成上大校园账户登录',
+          );
+        }
         throw const AcademicNativeAuthException(
           'loginPageNotFound',
-          '无法取得学校统一认证入口',
+          '无法取得该服务的统一认证入口',
         );
       }
       if (next.path.contains(_newssoPathMarker)) {
@@ -223,10 +253,7 @@ class AcademicNativeAuthService {
   Future<Uri> _resolveAuthorizationCallback(Uri uri) async {
     var current = uri;
     for (var redirects = 0; redirects < 16; redirects++) {
-      if (current.host == _webVpnHost &&
-          current.path == '/callback/oauth2' &&
-          (current.queryParameters.containsKey('code') ||
-              current.queryParameters.containsKey('authCode'))) {
+      if (_isExpectedCallback(current)) {
         return current;
       }
       final response = await _request('GET', current);
@@ -234,13 +261,57 @@ class AcademicNativeAuthService {
       await response.drain<void>();
       if (next == null) {
         throw const AcademicNativeAuthException(
-          'webVpnCallbackMissing',
-          '统一认证成功，但未进入 WebVPN 授权回调',
+          'callbackMissing',
+          '统一认证成功，但未进入目标服务的授权回调',
         );
       }
       current = next;
     }
     throw const AcademicNativeAuthException('tooManyRedirects', '登录授权跳转次数过多');
+  }
+
+  bool _isExpectedCallback(Uri uri) {
+    if (_target == _NativeAuthTarget.academic) {
+      return uri.host == _webVpnHost &&
+          uri.path == '/callback/oauth2' &&
+          (uri.queryParameters.containsKey('code') ||
+              uri.queryParameters.containsKey('authCode'));
+    }
+    return isForumOAuthCallback(uri);
+  }
+
+  @visibleForTesting
+  static bool isForumOAuthCallback(Uri uri) {
+    return ForumUrlResolver.isKnownForumHost(uri.host.toLowerCase()) &&
+        uri.path == '/auth/oauth2_basic/callback' &&
+        uri.queryParameters.containsKey('code') &&
+        uri.queryParameters.containsKey('state');
+  }
+
+  Future<void> _importWebViewCookies() async {
+    if (_webViewCookiesImported) return;
+    _webViewCookiesImported = true;
+    final domains = <Uri>{
+      ForumUrlResolver.baseUri,
+      Uri.parse(ForumUrlResolver.webVpnPortalUrl),
+      Uri.parse('https://oauth.shu.edu.cn'),
+      Uri.parse('https://https-oauth-shu-edu-cn-443.webvpn.shu.edu.cn'),
+    };
+    for (final domain in domains) {
+      List<WebViewCookie> cookies;
+      try {
+        cookies = await _cookieManager.getCookies(domain: domain);
+      } on Object {
+        continue;
+      }
+      for (final cookie in cookies) {
+        if (cookie.name.isEmpty || cookie.value.isEmpty) continue;
+        final nativeCookie = Cookie(cookie.name, cookie.value)
+          ..domain = cookie.domain
+          ..path = cookie.path;
+        _saveCookies(domain, [nativeCookie]);
+      }
+    }
   }
 
   Future<Map<String, dynamic>> _jsonRequest(
@@ -268,7 +339,7 @@ class AcademicNativeAuthService {
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _debugJsonError(uri, response.statusCode, json);
       final code = json['message']?.toString() ?? 'http${response.statusCode}';
-      throw AcademicNativeAuthException(code, _messageForCode(code));
+      throw AcademicNativeAuthException(code, messageForCode(code));
     }
     return json;
   }
@@ -426,7 +497,7 @@ class AcademicNativeAuthService {
     if (code != 'success') {
       throw AcademicNativeAuthException(
         code ?? 'unknown',
-        _messageForCode(code ?? 'unknown'),
+        messageForCode(code ?? 'unknown'),
       );
     }
   }
@@ -465,12 +536,14 @@ class AcademicNativeAuthService {
     }
   }
 
-  String _messageForCode(String code) => switch (code) {
+  @visibleForTesting
+  static String messageForCode(String code) => switch (code) {
         'badPassword' => '学号或密码错误',
         'userNotFound' => '未找到该校园账户',
         'invalidCode' => '验证码错误或已失效',
         'userLocked' => '账户已被锁定，请稍后重试',
         'ipLimitExceeded' => '登录请求过于频繁，请稍后重试',
+        'sendError' || 'senderror' => '验证码发送过于频繁，请切换验证方式或稍后再试',
         'userNotAllowed' => '该账户暂时无法登录此服务',
         'internalServerError' => '学校认证服务暂时不可用',
         _ => '登录失败，请稍后重试（$code）',

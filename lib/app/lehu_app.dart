@@ -22,6 +22,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   String _manualThemeId = LehuThemes.defaultId;
   bool _followSystemTheme = false;
   int _academicLoginSignal = 0;
+  int _forumLoginSignal = 0;
   Brightness _systemBrightness =
       WidgetsBinding.instance.platformDispatcher.platformBrightness;
 
@@ -76,6 +77,9 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
             onAcademicLoginCompleted: () {
               setState(() => _academicLoginSignal++);
             },
+            onForumLoginCompleted: () {
+              setState(() => _forumLoginSignal++);
+            },
             child: AppShell(
               repository: data.repository,
               reloadRepository: ForumRepositoryFactory.loadOnline,
@@ -85,6 +89,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
               onThemeChanged: _changeTheme,
               onFollowSystemThemeChanged: _changeFollowSystemTheme,
               academicLoginSignal: _academicLoginSignal,
+              forumLoginSignal: _forumLoginSignal,
               initialHasAcademicSession: data.hasAcademicSession,
             ),
           );

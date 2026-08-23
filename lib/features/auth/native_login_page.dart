@@ -3,17 +3,34 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../data/services/academic_native_auth_service.dart';
+import '../../data/services/verification_delivery_service.dart';
+import 'forum_oauth_completion_page.dart';
+import 'forum_registration_placeholder_page.dart';
 import 'webvpn_oauth_completion_page.dart';
 
+enum NativeLoginDestination { academic, forum }
+
 class NativeLoginPage extends StatefulWidget {
-  const NativeLoginPage({super.key});
+  const NativeLoginPage({
+    super.key,
+    this.destination = NativeLoginDestination.academic,
+  });
+
+  const NativeLoginPage.forum({super.key})
+      : destination = NativeLoginDestination.forum;
+
+  final NativeLoginDestination destination;
 
   @override
   State<NativeLoginPage> createState() => _NativeLoginPageState();
 }
 
 class _NativeLoginPageState extends State<NativeLoginPage> {
-  final _authService = AcademicNativeAuthService();
+  late final AcademicNativeAuthService _authService =
+      widget.destination == NativeLoginDestination.forum
+          ? AcademicNativeAuthService.forForum()
+          : AcademicNativeAuthService();
+  final _verificationDeliveryService = VerificationDeliveryService();
   final _studentId = TextEditingController();
   final _password = TextEditingController();
   final _code = TextEditingController();
@@ -48,7 +65,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(switch (_step) {
-            0 => '上大校园账户',
+            0 => widget.destination == NativeLoginDestination.forum
+                ? '乐乎论坛账户'
+                : '上大校园账户',
             _ => '验证身份',
           }),
         ),
@@ -71,7 +90,10 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
           key: const ValueKey('credentials'),
           padding: const EdgeInsets.all(24),
           children: [
-            Text('使用上海大学账户来访问各种校园服务',
+            Text(
+                widget.destination == NativeLoginDestination.forum
+                    ? '使用上海大学统一认证登录乐乎论坛'
+                    : '使用上海大学账户来访问各种校园服务',
                 style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 28),
@@ -148,8 +170,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                     icon: Icon(Icons.sms_outlined)),
             ],
             selected: {_method},
-            onSelectionChanged:
-                _busy ? null : (value) => setState(() => _method = value.first),
+            onSelectionChanged: _busy
+                ? null
+                : (value) => _selectVerificationMethod(value.first),
           ),
           const SizedBox(height: 12),
           Text(_methodHint(methods),
@@ -201,19 +224,23 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       _password.clear();
       if (!mounted) return;
       if (result.callbackUri != null) {
-        await _completeWebVpnLogin(result.callbackUri!);
+        await _completeLogin(result.callbackUri!);
         return;
       }
       final challenge = result.challenge;
       if (challenge == null) throw StateError('学校未返回登录结果');
       final methods = challenge.methods.keys;
+      final preferred =
+          await _verificationDeliveryService.preferredMethod(methods);
+      final remaining =
+          await _verificationDeliveryService.remainingCooldown(preferred);
+      if (!mounted) return;
       setState(() {
         _challenge = challenge;
-        _method = methods.contains(AcademicVerificationMethod.wecom)
-            ? AcademicVerificationMethod.wecom
-            : methods.first;
+        _method = preferred;
         _step = 1;
       });
+      _startCountdown(remaining);
     } on AcademicNativeAuthException catch (error) {
       _showError(error.message);
     } on Object {
@@ -228,12 +255,16 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     setState(() => _busy = true);
     try {
       await _authService.sendCode(_method);
+      await _verificationDeliveryService.markSent(_method);
       if (!mounted) return;
-      _startCountdown();
+      _startCountdown(VerificationDeliveryService.cooldown);
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('验证码已发送')));
     } on AcademicNativeAuthException catch (error) {
       _showError(error.message);
+      if (error.code.toLowerCase() == 'senderror') {
+        await _selectAlternateMethod();
+      }
     } on Object {
       _showError('验证码发送失败，请稍后重试');
     } finally {
@@ -248,7 +279,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       final callbackUri = await _authService.verifyCode(
           method: _method, code: _code.text.trim());
       if (!mounted) return;
-      await _completeWebVpnLogin(callbackUri);
+      await _completeLogin(callbackUri);
     } on AcademicNativeAuthException catch (error) {
       _showError(error.message);
     } on Object {
@@ -258,9 +289,28 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     }
   }
 
-  Future<void> _completeWebVpnLogin(Uri callbackUri) async {
+  Future<void> _completeLogin(Uri callbackUri) async {
     await _authService.installCookiesInWebView();
     if (!mounted) return;
+    if (widget.destination == NativeLoginDestination.forum) {
+      final result =
+          await Navigator.of(context).push<ForumOAuthCompletionResult>(
+        MaterialPageRoute(
+          builder: (_) => ForumOAuthCompletionPage(callbackUri: callbackUri),
+        ),
+      );
+      if (!mounted) return;
+      if (result == ForumOAuthCompletionResult.loggedIn) {
+        Navigator.of(context).pop(true);
+      } else if (result == ForumOAuthCompletionResult.registrationRequired) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => const ForumRegistrationPlaceholderPage(),
+          ),
+        );
+      }
+      return;
+    }
     final completed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => WebVpnOAuthCompletionPage(callbackUri: callbackUri),
@@ -277,9 +327,32 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         : '发送至手机号 $target';
   }
 
-  void _startCountdown() {
+  Future<void> _selectVerificationMethod(
+    AcademicVerificationMethod method,
+  ) async {
     _countdownTimer?.cancel();
-    setState(() => _countdown = 60);
+    final remaining =
+        await _verificationDeliveryService.remainingCooldown(method);
+    if (!mounted) return;
+    setState(() => _method = method);
+    _startCountdown(remaining);
+  }
+
+  Future<void> _selectAlternateMethod() async {
+    final methods = _challenge?.methods.keys.toSet() ?? const {};
+    if (methods.length < 2) return;
+    final alternate = methods.firstWhere((method) => method != _method);
+    await _selectVerificationMethod(alternate);
+  }
+
+  void _startCountdown(Duration remaining) {
+    _countdownTimer?.cancel();
+    final seconds = remaining.inSeconds;
+    if (seconds <= 0) {
+      if (mounted) setState(() => _countdown = 0);
+      return;
+    }
+    setState(() => _countdown = seconds);
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted || _countdown <= 1) {
         timer.cancel();

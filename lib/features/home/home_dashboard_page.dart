@@ -82,10 +82,8 @@ class HomeDashboardPage extends StatelessWidget {
                         )
                       : const Icon(Icons.refresh),
                 )
-              : hasAcademicAccount
-                  ? null
-                  : const Icon(Icons.login),
-          onTap: hasLocalAccount || hasAcademicAccount ? null : onLogin,
+              : const Icon(Icons.login),
+          onTap: hasLocalAccount ? null : onLogin,
         ),
         _HomeRow(
           icon: Icons.event,

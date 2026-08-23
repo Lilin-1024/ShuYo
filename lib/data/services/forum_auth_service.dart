@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -21,22 +22,18 @@ class ForumAuthService {
       'forum.auth.cached_cookie_header.webvpn';
 
   Future<String?> cookieHeader() async {
+    final cachedHeader = await _cachedCookieHeader();
     String? webViewHeader;
     try {
       webViewHeader = await _webViewCookieHeader();
     } on Object {
       webViewHeader = null;
     }
-    if (webViewHeader != null && webViewHeader.isNotEmpty) {
-      _rememberLastHeader(webViewHeader);
-      return webViewHeader;
+    final merged = mergeCookieHeaders(cachedHeader, webViewHeader);
+    if (merged != null) {
+      _rememberLastHeader(merged);
     }
-    final cachedHeader = await _cachedCookieHeader();
-    if (cachedHeader != null && cachedHeader.isNotEmpty) {
-      _rememberLastHeader(cachedHeader);
-      return cachedHeader;
-    }
-    return null;
+    return merged;
   }
 
   Future<void> persistLastCookieHeader() async {
@@ -110,7 +107,78 @@ class ForumAuthService {
   }
 
   Future<void> clearCookies() async {
-    await _cookieManager.clearCookies();
+    for (final domain in [
+      Uri.parse('https://${ForumUrlResolver.webVpnHost}'),
+      Uri.parse('https://bbs.shu.edu.cn'),
+    ]) {
+      List<WebViewCookie> cookies;
+      try {
+        cookies = await _cookieManager.getCookies(domain: domain);
+      } on Object {
+        continue;
+      }
+      for (final cookie in cookies) {
+        await _cookieManager.setCookie(
+          WebViewCookie(
+            name: cookie.name,
+            value: '',
+            domain: cookie.domain,
+            path: cookie.path,
+          ),
+        );
+      }
+    }
     await clearCachedCookies();
+  }
+
+  @visibleForTesting
+  static String? mergeCookieHeaders(String? cached, String? webView) {
+    final values = _parseCookieHeader(cached)
+      ..addAll(_parseCookieHeader(webView));
+    return values.isEmpty ? null : _encodeCookieHeader(values);
+  }
+
+  static Map<String, String> _parseCookieHeader(String? header) {
+    final values = <String, String>{};
+    if (header == null || header.trim().isEmpty) return values;
+    for (final part in header.split(';')) {
+      final index = part.indexOf('=');
+      if (index <= 0) continue;
+      final name = part.substring(0, index).trim();
+      final value = part.substring(index + 1).trim();
+      if (name.isNotEmpty && value.isNotEmpty) values[name] = value;
+    }
+    return values;
+  }
+
+  static String _encodeCookieHeader(Map<String, String> values) =>
+      values.entries.map((entry) => '${entry.key}=${entry.value}').join('; ');
+}
+
+extension ForumAuthCookieMaintenance on ForumAuthService {
+  Future<void> removeCachedCookieNames(Set<String> names) async {
+    if (names.isEmpty) return;
+    final prefs = await _preferencesLoader();
+    for (final mode in ForumAccessMode.values) {
+      final key = _cacheKey(mode);
+      final filtered = ForumAuthService._parseCookieHeader(prefs.getString(key))
+        ..removeWhere((name, _) => names.contains(name));
+      if (filtered.isEmpty) {
+        await prefs.remove(key);
+      } else {
+        await prefs.setString(
+          key,
+          ForumAuthService._encodeCookieHeader(filtered),
+        );
+      }
+    }
+    final current = _lastCookieHeader;
+    if (current != null) {
+      final filtered = ForumAuthService._parseCookieHeader(current)
+        ..removeWhere((name, _) => names.contains(name));
+      _lastCookieHeader = filtered.isEmpty
+          ? null
+          : ForumAuthService._encodeCookieHeader(filtered);
+    }
   }
 }
