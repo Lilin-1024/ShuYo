@@ -1659,7 +1659,7 @@ class _CourseBlock extends StatelessWidget {
         borderRadius: BorderRadius.circular(_scheduleCourseRadius),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(7),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 7),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(_scheduleCourseRadius),
           ),
