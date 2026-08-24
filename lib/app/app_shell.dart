@@ -154,6 +154,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   int _forumRepositoryReloadToken = 0;
   int _forumRecoveryGeneration = 0;
   Future<ForumRecoveryResult>? _forumRecoveryFuture;
+  bool _onboardingStatusSyncScheduled = false;
 
   @override
   void initState() {
@@ -175,6 +176,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _announcementRepository = AnnouncementRepository();
     _classroomRepository = ClassroomRepository();
     _courseRatingRepository = CourseRatingRepository();
+    widget.onboardingController.setForumReconnectHandler(
+      () => unawaited(_relogin()),
+    );
     _resetFeedFuture();
     unawaited(_initializeForumBadges());
     unawaited(_refreshScheduleSummaryQuietly());
@@ -214,6 +218,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _finishAcademicLogin() async {
     if (mounted) setState(() => _hasAcademicSession = true);
+    _syncOnboardingAccountStatus();
     await _persistAcademicLoginCookies();
     await _syncScheduleAfterWebVpnLogin();
   }
@@ -362,6 +367,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _scheduleSummaryTimer?.cancel();
     _announcementSummaryTimer?.cancel();
     _forumBadgeRefreshTimer?.cancel();
+    widget.onboardingController.setForumReconnectHandler(null);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -630,9 +636,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         );
       }
     } on ForumAuthException {
-      _repo.markConnectionUnavailable();
+      _repo.markAuthenticationRequired();
       if (mounted) {
         setState(() {});
+        _syncOnboardingAccountStatus();
       }
       // 会话已明确失效，但保留账户和所有缓存，等待首页重新认证。
     } on Object catch (error) {
@@ -744,6 +751,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       profile: _repo.profile,
       isOnline: _repo.isOnline,
       hasLocalAccount: _repo.hasLocalAccount,
+      forumRequiresReauthentication: _repo.connectionState ==
+          ForumConnectionState.reauthenticationRequired,
       hasAcademicAccount: _hasAcademicSession,
       isAcademicLoginCompleting: _syncingAcademicSchedule,
       isCheckingConnection: _checkingForumConnection,
@@ -768,8 +777,36 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void _openAccountManager() {
     widget.onboardingController.openAccountManager(
       academicLoggedIn: _hasAcademicSession,
-      forumLoggedIn: _repo.hasLocalAccount,
+      forumStatus: _forumAccountStatus,
     );
+  }
+
+  ForumAccountStatus get _forumAccountStatus {
+    if (!_repo.hasLocalAccount) return ForumAccountStatus.signedOut;
+    if (_checkingForumConnection || _reloadingSession) {
+      return ForumAccountStatus.connecting;
+    }
+    return switch (_repo.connectionState) {
+      ForumConnectionState.firstUse => ForumAccountStatus.signedOut,
+      ForumConnectionState.cachedOffline =>
+        ForumAccountStatus.connectionUnavailable,
+      ForumConnectionState.reauthenticationRequired =>
+        ForumAccountStatus.reauthenticationRequired,
+      ForumConnectionState.online => ForumAccountStatus.loggedIn,
+    };
+  }
+
+  void _syncOnboardingAccountStatus() {
+    if (_onboardingStatusSyncScheduled || !mounted) return;
+    _onboardingStatusSyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _onboardingStatusSyncScheduled = false;
+      if (!mounted) return;
+      widget.onboardingController.updateAccountStatus(
+        academicLoggedIn: _hasAcademicSession,
+        forumStatus: _forumAccountStatus,
+      );
+    });
   }
 
   Future<void> _loadNetworkSettings() async {
@@ -825,6 +862,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       setState(() {
         _forumNetworkUnavailable = result.isUnavailable;
       });
+      _syncOnboardingAccountStatus();
     } on Object {
       // 未知检测错误不展示内网不可达提示，避免把证书等非网络问题误报。
     } finally {
@@ -1273,6 +1311,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _reloadingSession = true;
         _checkingForumConnection = true;
       });
+      _syncOnboardingAccountStatus();
     }
     try {
       final nextRepository = await _connectForumRepositoryWithFallback(
@@ -1298,7 +1337,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         repository: _repo,
       );
     } on ForumAuthException catch (error) {
-      _repo.markConnectionUnavailable();
+      _repo.markAuthenticationRequired();
       return ForumRecoveryResult(
         status: ForumRecoveryStatus.requiresReauthentication,
         repository: _repo,
@@ -1324,6 +1363,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           _reloadingSession = false;
           _checkingForumConnection = false;
         });
+        _syncOnboardingAccountStatus();
       }
     }
   }
@@ -1433,9 +1473,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           setState(() {});
         }
       } on Object catch (error) {
-        if (error is ForumAuthException || _isForumTransportError(error)) {
+        if (error is ForumAuthException) {
+          repository.markAuthenticationRequired();
+        } else if (_isForumTransportError(error)) {
           repository.markConnectionUnavailable();
         }
+        _syncOnboardingAccountStatus();
         if (!mounted) {
           return;
         }
@@ -1747,6 +1790,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<bool> _reloadForumAfterLogin() async {
     if (_reloadingSession) return false;
     setState(() => _reloadingSession = true);
+    _syncOnboardingAccountStatus();
     try {
       final nextRepository = await widget.reloadRepository();
       if (!nextRepository.hasLocalAccount) {
@@ -1763,12 +1807,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _clearFeedSnapshots();
         _resetFeedFuture(forceRefresh: true);
       });
+      _syncOnboardingAccountStatus();
       unawaited(_initializeForumBadges());
       _showSnack('乐乎论坛已登录');
       return true;
     } on Object catch (error) {
       if (!mounted) return false;
+      if (error is ForumAuthException) {
+        _repo.markAuthenticationRequired();
+      } else if (_isForumTransportError(error)) {
+        _repo.markConnectionUnavailable();
+      }
       setState(() => _reloadingSession = false);
+      _syncOnboardingAccountStatus();
       await _showErrorDialog(
         title: '论坛登录未完成',
         message: _friendlyError(error),
@@ -1810,6 +1861,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<void> _logoutForumAccount() async {
     _cancelForumRecovery();
     setState(() => _reloadingSession = true);
+    _syncOnboardingAccountStatus();
     try {
       await _repo.clearLocalAccount();
       await _repo.clearLoginCookies();
@@ -1827,6 +1879,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _clearFeedSnapshots();
         _resetFeedFuture();
       });
+      _syncOnboardingAccountStatus();
       unawaited(_initializeForumBadges());
       _showSnack('已退出乐乎论坛账户');
     } on Object catch (error) {
@@ -1834,6 +1887,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return;
       }
       setState(() => _reloadingSession = false);
+      _syncOnboardingAccountStatus();
       await _showErrorDialog(
         title: '论坛账户退出失败',
         message: _friendlyError(error),
@@ -1855,10 +1909,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           _repo.markConnectionUnavailable();
         }
       });
+      _syncOnboardingAccountStatus();
       _showSnack('已退出上大校园账户');
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _reloadingSession = false);
+      _syncOnboardingAccountStatus();
       await _showErrorDialog(
         title: '校园账户退出失败',
         message: _friendlyError(error),
@@ -1895,6 +1951,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       // Cookie 清理失败不应阻断 UI 回到可用状态。
     }
     final nextRepository = await ForumRepositoryFactory.load();
+    nextRepository.markAuthenticationRequired();
     if (!mounted) {
       return;
     }
@@ -1907,6 +1964,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       _clearFeedSnapshots();
       _resetFeedFuture();
     });
+    _syncOnboardingAccountStatus();
     unawaited(_initializeForumBadges());
   }
 
@@ -2069,6 +2127,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final accessMode = ForumUrlResolver.mode;
     final previousRepository = _repo;
     setState(() => _reloadingSession = true);
+    _syncOnboardingAccountStatus();
     try {
       final nextRepository = await _loadForumRepositoryForAccessModeChange();
       if (!_isCurrentForumRepositoryReload(reloadToken, accessMode)) {
@@ -2080,6 +2139,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         setState(() {
           _reloadingSession = false;
         });
+        _syncOnboardingAccountStatus();
         unawaited(_recoverForumConnection());
         return;
       }
@@ -2093,6 +2153,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _clearFeedSnapshots();
         _resetFeedFuture();
       });
+      _syncOnboardingAccountStatus();
       unawaited(_initializeForumBadges());
       if (nextRepository.isOnline) {
         _showSnack('已切换论坛访问方式');
@@ -2106,6 +2167,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return;
       }
       setState(() => _reloadingSession = false);
+      _syncOnboardingAccountStatus();
       await _showErrorDialog(
         title: '论坛重新加载失败',
         message: _friendlyError(error),
@@ -2172,6 +2234,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     );
     if (loggedIn != true || !mounted) return;
     setState(() => _hasAcademicSession = true);
+    _syncOnboardingAccountStatus();
     await _persistAcademicLoginCookies();
     await _syncScheduleAfterWebVpnLogin();
   }
@@ -2189,8 +2252,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     );
   }
 
-  String get _forumUnavailableMessage =>
-      _repo.hasLocalAccount ? '无法连接乐乎论坛，请稍后重试。' : '暂未登录乐乎论坛';
+  String get _forumUnavailableMessage {
+    if (_repo.connectionState ==
+        ForumConnectionState.reauthenticationRequired) {
+      return '论坛登录状态已失效，请重新登录';
+    }
+    return _repo.hasLocalAccount ? '无法连接乐乎论坛，请稍后重试。' : '暂未登录乐乎论坛';
+  }
 
   Future<void> _showErrorDialog({
     required String title,

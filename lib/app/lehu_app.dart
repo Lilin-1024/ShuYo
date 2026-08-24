@@ -75,7 +75,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
           return StartupOnboarding(
             initiallyCompleted: data.onboardingCompleted,
             initialAcademicLoggedIn: data.hasAcademicSession,
-            initialForumLoggedIn: data.repository.hasLocalAccount,
+            initialForumStatus: _forumAccountStatus(data.repository),
             onAcademicLoginCompleted: () {
               setState(() => _academicLoginSignal++);
             },
@@ -171,6 +171,17 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
       });
     }
   }
+}
+
+ForumAccountStatus _forumAccountStatus(ForumRepository repository) {
+  return switch (repository.connectionState) {
+    ForumConnectionState.firstUse => ForumAccountStatus.signedOut,
+    ForumConnectionState.cachedOffline =>
+      ForumAccountStatus.connectionUnavailable,
+    ForumConnectionState.reauthenticationRequired =>
+      ForumAccountStatus.reauthenticationRequired,
+    ForumConnectionState.online => ForumAccountStatus.loggedIn,
+  };
 }
 
 class _StartupData {

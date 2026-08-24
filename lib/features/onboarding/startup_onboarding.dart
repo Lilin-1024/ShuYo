@@ -1,26 +1,81 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/services/client_settings_service.dart';
 import '../auth/native_login_page.dart';
 
+enum ForumAccountStatus {
+  signedOut,
+  connecting,
+  loggedIn,
+  connectionUnavailable,
+  reauthenticationRequired,
+}
+
 class StartupOnboardingController extends ChangeNotifier {
   bool _academicLoggedIn = false;
-  bool _forumLoggedIn = false;
+  ForumAccountStatus _forumStatus = ForumAccountStatus.signedOut;
+  VoidCallback? _onForumReconnect;
+  int _openRequest = 0;
+  bool _notificationScheduled = false;
+  bool _disposed = false;
 
   bool get academicLoggedIn => _academicLoggedIn;
-  bool get forumLoggedIn => _forumLoggedIn;
+  ForumAccountStatus get forumStatus => _forumStatus;
+  int get openRequest => _openRequest;
 
   void openAccountManager({
     required bool academicLoggedIn,
-    required bool forumLoggedIn,
+    required ForumAccountStatus forumStatus,
   }) {
     _academicLoggedIn = academicLoggedIn;
-    _forumLoggedIn = forumLoggedIn;
-    notifyListeners();
+    _forumStatus = forumStatus;
+    _openRequest++;
+    _notifyListenersSafely();
+  }
+
+  void setForumReconnectHandler(VoidCallback? handler) {
+    _onForumReconnect = handler;
+  }
+
+  void updateAccountStatus({
+    required bool academicLoggedIn,
+    required ForumAccountStatus forumStatus,
+  }) {
+    if (_academicLoggedIn == academicLoggedIn && _forumStatus == forumStatus) {
+      return;
+    }
+    _academicLoggedIn = academicLoggedIn;
+    _forumStatus = forumStatus;
+    _notifyListenersSafely();
+  }
+
+  void reconnectForum() => _onForumReconnect?.call();
+
+  void _notifyListenersSafely() {
+    if (_disposed) return;
+    if (SchedulerBinding.instance.schedulerPhase !=
+        SchedulerPhase.persistentCallbacks) {
+      notifyListeners();
+      return;
+    }
+    if (_notificationScheduled) return;
+    _notificationScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _notificationScheduled = false;
+      if (!_disposed) notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _onForumReconnect = null;
+    super.dispose();
   }
 }
 
@@ -30,7 +85,7 @@ class StartupOnboarding extends StatefulWidget {
     required this.child,
     required this.initiallyCompleted,
     required this.initialAcademicLoggedIn,
-    required this.initialForumLoggedIn,
+    required this.initialForumStatus,
     required this.onAcademicLoginCompleted,
     required this.onForumLoginCompleted,
     required this.controller,
@@ -40,7 +95,7 @@ class StartupOnboarding extends StatefulWidget {
   final Widget child;
   final bool initiallyCompleted;
   final bool initialAcademicLoggedIn;
-  final bool initialForumLoggedIn;
+  final ForumAccountStatus initialForumStatus;
   final VoidCallback onAcademicLoginCompleted;
   final VoidCallback onForumLoginCompleted;
   final StartupOnboardingController controller;
@@ -61,12 +116,15 @@ class _StartupOnboardingState extends State<StartupOnboarding>
   int _page = 0;
   late bool _visible = !widget.initiallyCompleted;
   bool _accountManagerMode = false;
+  bool _showForumCampusAccountHint = false;
   late bool _academicLoggedIn = widget.initialAcademicLoggedIn;
-  late bool _forumLoggedIn = widget.initialForumLoggedIn;
+  late ForumAccountStatus _forumStatus = widget.initialForumStatus;
+  late int _handledOpenRequest;
 
   @override
   void initState() {
     super.initState();
+    _handledOpenRequest = widget.controller.openRequest;
     _panelAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 360),
@@ -86,7 +144,7 @@ class _StartupOnboardingState extends State<StartupOnboarding>
       curve: const Interval(0, .72, curve: Curves.easeOut),
       reverseCurve: Curves.easeIn,
     );
-    widget.controller.addListener(_openAccountManager);
+    widget.controller.addListener(_handleControllerChange);
     if (_visible) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _panelAnimationController.forward();
@@ -98,25 +156,38 @@ class _StartupOnboardingState extends State<StartupOnboarding>
   void didUpdateWidget(covariant StartupOnboarding oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
-      oldWidget.controller.removeListener(_openAccountManager);
-      widget.controller.addListener(_openAccountManager);
+      oldWidget.controller.removeListener(_handleControllerChange);
+      widget.controller.addListener(_handleControllerChange);
+      _handledOpenRequest = widget.controller.openRequest;
     }
     if (widget.initialAcademicLoggedIn != oldWidget.initialAcademicLoggedIn) {
       _academicLoggedIn = widget.initialAcademicLoggedIn;
+      if (_academicLoggedIn) _showForumCampusAccountHint = false;
     }
-    if (widget.initialForumLoggedIn != oldWidget.initialForumLoggedIn) {
-      _forumLoggedIn = widget.initialForumLoggedIn;
+    if (widget.initialForumStatus != oldWidget.initialForumStatus) {
+      _forumStatus = widget.initialForumStatus;
     }
   }
 
-  void _openAccountManager() {
+  void _handleControllerChange() {
     if (!mounted) return;
+    final shouldOpen = _handledOpenRequest != widget.controller.openRequest;
+    if (!shouldOpen) {
+      setState(() {
+        _academicLoggedIn = widget.controller.academicLoggedIn;
+        _forumStatus = widget.controller.forumStatus;
+        if (_academicLoggedIn) _showForumCampusAccountHint = false;
+      });
+      return;
+    }
+    _handledOpenRequest = widget.controller.openRequest;
     setState(() {
       _visible = true;
       _accountManagerMode = true;
       _page = 2;
       _academicLoggedIn = widget.controller.academicLoggedIn;
-      _forumLoggedIn = widget.controller.forumLoggedIn;
+      _forumStatus = widget.controller.forumStatus;
+      _showForumCampusAccountHint = false;
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && _pageController.hasClients) {
@@ -141,7 +212,9 @@ class _StartupOnboardingState extends State<StartupOnboarding>
       await _complete();
       return;
     }
-    if (_academicLoggedIn && _forumLoggedIn) await _complete();
+    if (_academicLoggedIn && _forumStatus == ForumAccountStatus.loggedIn) {
+      await _complete();
+    }
   }
 
   Future<void> _openAcademicLogin() async {
@@ -149,25 +222,43 @@ class _StartupOnboardingState extends State<StartupOnboarding>
       MaterialPageRoute(builder: (_) => const NativeLoginPage()),
     );
     if (loggedIn != true || !mounted) return;
-    setState(() => _academicLoggedIn = true);
+    setState(() {
+      _academicLoggedIn = true;
+      _showForumCampusAccountHint = false;
+    });
     widget.onAcademicLoginCompleted();
   }
 
   Future<void> _openForumLogin() async {
     if (!_academicLoggedIn) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          const SnackBar(content: Text('请先登录上大校园账户')),
-        );
+      _showCampusAccountRequiredHint();
       return;
+    }
+    if (_showForumCampusAccountHint) {
+      setState(() => _showForumCampusAccountHint = false);
     }
     final loggedIn = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const NativeLoginPage.forum()),
     );
     if (loggedIn != true || !mounted) return;
-    setState(() => _forumLoggedIn = true);
+    setState(() => _forumStatus = ForumAccountStatus.connecting);
     widget.onForumLoginCompleted();
+  }
+
+  void _reconnectForum() {
+    if (!_academicLoggedIn) {
+      _showCampusAccountRequiredHint();
+      return;
+    }
+    if (_showForumCampusAccountHint) {
+      setState(() => _showForumCampusAccountHint = false);
+    }
+    widget.controller.reconnectForum();
+  }
+
+  void _showCampusAccountRequiredHint() {
+    if (_showForumCampusAccountHint) return;
+    setState(() => _showForumCampusAccountHint = true);
   }
 
   Future<void> _complete() async {
@@ -215,7 +306,7 @@ class _StartupOnboardingState extends State<StartupOnboarding>
 
   @override
   void dispose() {
-    widget.controller.removeListener(_openAccountManager);
+    widget.controller.removeListener(_handleControllerChange);
     _panelAnimationController.dispose();
     _pageController.dispose();
     super.dispose();
@@ -280,10 +371,10 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     final canSkip = !_accountManagerMode &&
         _page == 2 &&
         _academicLoggedIn &&
-        !_forumLoggedIn;
+        _forumStatus != ForumAccountStatus.loggedIn;
     final showFooter = _accountManagerMode ||
         _page < 2 ||
-        (_academicLoggedIn && _forumLoggedIn);
+        (_academicLoggedIn && _forumStatus == ForumAccountStatus.loggedIn);
     return Material(
       key: const ValueKey('startup-onboarding-panel'),
       color: colors.surface,
@@ -440,26 +531,102 @@ class _StartupOnboardingState extends State<StartupOnboarding>
             icon: Icons.school_outlined,
             title: '上大校园账户',
             description: '用于访问课程表、教室查询等校园服务',
-            loggedIn: _academicLoggedIn,
+            statusLabel: _academicLoggedIn ? '已登录' : null,
             onTap: _academicLoggedIn ? null : _openAcademicLogin,
           ),
-          _accountTile(
-            context,
-            icon: Icons.forum_outlined,
-            title: '乐乎账户',
-            description: '用于访问上海大学校内论坛',
-            loggedIn: _forumLoggedIn,
-            onTap: _forumLoggedIn ? null : _openForumLogin,
-          ),
+          _forumAccountTile(context),
+          _forumCampusAccountHint(context),
         ],
       );
+
+  Widget _forumCampusAccountHint(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      reverseDuration: const Duration(milliseconds: 160),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) => SizeTransition(
+        sizeFactor: animation,
+        alignment: Alignment.topCenter,
+        child: FadeTransition(opacity: animation, child: child),
+      ),
+      child: _showForumCampusAccountHint
+          ? Padding(
+              key: const ValueKey('forum-campus-account-hint'),
+              padding: const EdgeInsets.fromLTRB(56, 0, 4, 12),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, size: 16, color: colors.error),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      '请先登录上大校园账户',
+                      style: TextStyle(
+                        color: colors.error,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : const SizedBox(
+              key: ValueKey('forum-campus-account-hint-hidden'),
+            ),
+    );
+  }
+
+  Widget _forumAccountTile(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final (label, color, busy, onTap) = switch (_forumStatus) {
+      ForumAccountStatus.signedOut => (
+          null,
+          null,
+          false,
+          _openForumLogin as VoidCallback
+        ),
+      ForumAccountStatus.connecting => (
+          '正在连接',
+          colors.onSurfaceVariant,
+          true,
+          null
+        ),
+      ForumAccountStatus.loggedIn => ('已登录', colors.primary, false, null),
+      ForumAccountStatus.connectionUnavailable => (
+          '连接异常',
+          colors.error,
+          false,
+          _reconnectForum,
+        ),
+      ForumAccountStatus.reauthenticationRequired => (
+          '登录已失效',
+          colors.error,
+          false,
+          _openForumLogin as VoidCallback,
+        ),
+    };
+    return _accountTile(
+      context,
+      icon: Icons.forum_outlined,
+      title: '乐乎账户',
+      description: '用于访问上海大学校内论坛',
+      statusLabel: label,
+      statusColor: color,
+      busy: busy,
+      onTap: onTap,
+    );
+  }
 
   Widget _accountTile(
     BuildContext context, {
     required IconData icon,
     required String title,
     required String description,
-    required bool loggedIn,
+    String? statusLabel,
+    Color? statusColor,
+    bool busy = false,
     required VoidCallback? onTap,
   }) {
     final colors = Theme.of(context).colorScheme;
@@ -489,12 +656,12 @@ class _StartupOnboardingState extends State<StartupOnboarding>
                             ),
                           ),
                         ),
-                        if (loggedIn) ...[
+                        if (statusLabel != null) ...[
                           const SizedBox(width: 8),
                           Text(
-                            '已登录',
+                            statusLabel,
                             style: TextStyle(
-                              color: colors.primary,
+                              color: statusColor ?? colors.primary,
                               fontSize: 13,
                             ),
                           ),
@@ -511,7 +678,14 @@ class _StartupOnboardingState extends State<StartupOnboarding>
                   ],
                 ),
               ),
-              if (onTap != null) ...[
+              if (busy) ...[
+                const SizedBox(width: 8),
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              ] else if (onTap != null) ...[
                 const SizedBox(width: 8),
                 const Icon(Icons.chevron_right),
               ],

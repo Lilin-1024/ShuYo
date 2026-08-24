@@ -10,6 +10,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.profile,
     required this.isOnline,
     required this.hasLocalAccount,
+    required this.forumRequiresReauthentication,
     required this.hasAcademicAccount,
     required this.isAcademicLoginCompleting,
     required this.isCheckingConnection,
@@ -30,6 +31,7 @@ class HomeDashboardPage extends StatelessWidget {
   final UserProfile profile;
   final bool isOnline;
   final bool hasLocalAccount;
+  final bool forumRequiresReauthentication;
   final bool hasAcademicAccount;
   final bool isAcademicLoginCompleting;
   final bool isCheckingConnection;
@@ -75,7 +77,9 @@ class HomeDashboardPage extends StatelessWidget {
                       ? _greeting()
                       : isInitialConnectionCheck
                           ? _greeting()
-                          : '无法连接乐乎论坛，请稍后重试',
+                          : forumRequiresReauthentication
+                              ? '论坛登录已失效，请重新登录'
+                              : '无法连接乐乎论坛，请稍后重试',
           trailing: isAcademicLoginCompleting && !hasLocalAccount
               ? const SizedBox(
                   width: 20,

@@ -44,6 +44,7 @@ class TopicFeedQuery {
 enum ForumConnectionState {
   firstUse,
   cachedOffline,
+  reauthenticationRequired,
   online,
 }
 
@@ -81,7 +82,9 @@ const _emptyUserSummary = UserSummary(
 abstract class ForumRepository {
   ForumConnectionState get connectionState;
   bool get hasLocalAccount => connectionState != ForumConnectionState.firstUse;
-  bool get isCacheOnly => connectionState == ForumConnectionState.cachedOffline;
+  bool get isCacheOnly =>
+      connectionState == ForumConnectionState.cachedOffline ||
+      connectionState == ForumConnectionState.reauthenticationRequired;
   bool get isOnline;
   Map<int, DiscourseUser> get users;
   List<ForumCategory> get categories;
@@ -95,6 +98,7 @@ abstract class ForumRepository {
   bool get canCreateTopic;
   Future<void> refreshSession();
   void markConnectionUnavailable();
+  void markAuthenticationRequired();
 
   ForumCategory? categoryById(int id);
   bool get canLoadMoreLatest;
@@ -304,6 +308,9 @@ class FixtureForumRepository implements ForumRepository {
 
   @override
   void markConnectionUnavailable() {}
+
+  @override
+  void markAuthenticationRequired() {}
 
   @override
   ForumCategory? categoryById(int id) => _categories[id];
@@ -841,7 +848,8 @@ class OnlineForumRepository implements ForumRepository {
 
   @override
   bool get isCacheOnly =>
-      _connectionState == ForumConnectionState.cachedOffline;
+      _connectionState == ForumConnectionState.cachedOffline ||
+      _connectionState == ForumConnectionState.reauthenticationRequired;
 
   @override
   bool get isOnline => _connectionState == ForumConnectionState.online;
@@ -884,6 +892,13 @@ class OnlineForumRepository implements ForumRepository {
   void markConnectionUnavailable() {
     if (_connectionState == ForumConnectionState.online) {
       _connectionState = ForumConnectionState.cachedOffline;
+    }
+  }
+
+  @override
+  void markAuthenticationRequired() {
+    if (_connectionState != ForumConnectionState.firstUse) {
+      _connectionState = ForumConnectionState.reauthenticationRequired;
     }
   }
 

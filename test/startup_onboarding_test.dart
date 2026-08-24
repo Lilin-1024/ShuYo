@@ -9,14 +9,14 @@ void main() {
   Widget app({
     required bool completed,
     bool academicLoggedIn = false,
-    bool forumLoggedIn = false,
+    ForumAccountStatus forumStatus = ForumAccountStatus.signedOut,
     StartupOnboardingController? controller,
   }) {
     return MaterialApp(
       home: StartupOnboarding(
         initiallyCompleted: completed,
         initialAcademicLoggedIn: academicLoggedIn,
-        initialForumLoggedIn: forumLoggedIn,
+        initialForumStatus: forumStatus,
         onAcademicLoginCompleted: () {},
         onForumLoginCompleted: () {},
         controller: controller ?? StartupOnboardingController(),
@@ -117,18 +117,37 @@ void main() {
     );
   });
 
-  testWidgets('onboarding asks for the campus account first', (tester) async {
-    await tester.pumpWidget(app(completed: false));
+  testWidgets('shows an inline campus account hint before forum login',
+      (tester) async {
+    final controller = StartupOnboardingController();
+    await tester.pumpWidget(app(completed: false, controller: controller));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
+    expect(find.text('请先登录上大校园账户'), findsNothing);
+
     await tester.tap(find.text('乐乎账户'));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 110));
 
     expect(find.text('请先登录上大校园账户'), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+    final hint = find.byKey(const ValueKey('forum-campus-account-hint'));
+    final fade = tester.widget<FadeTransition>(
+      find.ancestor(of: hint, matching: find.byType(FadeTransition)).first,
+    );
+    expect(fade.opacity.value, greaterThan(0));
+    expect(fade.opacity.value, lessThan(1));
+
+    controller.updateAccountStatus(
+      academicLoggedIn: true,
+      forumStatus: ForumAccountStatus.signedOut,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('请先登录上大校园账户'), findsNothing);
   });
 
   testWidgets('second and third pages can return to the previous page',
@@ -163,14 +182,14 @@ void main() {
       app(
         completed: true,
         academicLoggedIn: true,
-        forumLoggedIn: true,
+        forumStatus: ForumAccountStatus.loggedIn,
         controller: controller,
       ),
     );
 
     controller.openAccountManager(
       academicLoggedIn: true,
-      forumLoggedIn: true,
+      forumStatus: ForumAccountStatus.loggedIn,
     );
     await tester.pumpAndSettle();
 
@@ -183,6 +202,83 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('主页'), findsOneWidget);
     expect(find.text('登录'), findsNothing);
+  });
+
+  testWidgets('keeps forum account status synchronized while manager is open',
+      (tester) async {
+    final controller = StartupOnboardingController();
+    var reconnectTapped = false;
+    await tester.pumpWidget(
+      app(
+        completed: true,
+        academicLoggedIn: true,
+        forumStatus: ForumAccountStatus.connectionUnavailable,
+        controller: controller,
+      ),
+    );
+
+    controller.openAccountManager(
+      academicLoggedIn: true,
+      forumStatus: ForumAccountStatus.connectionUnavailable,
+    );
+    controller.setForumReconnectHandler(() => reconnectTapped = true);
+    await tester.pumpAndSettle();
+
+    expect(find.text('连接异常'), findsOneWidget);
+    expect(find.text('已登录'), findsOneWidget);
+    await tester.tap(find.text('乐乎账户'));
+    expect(reconnectTapped, isTrue);
+
+    controller.updateAccountStatus(
+      academicLoggedIn: true,
+      forumStatus: ForumAccountStatus.connecting,
+    );
+    await tester.pump();
+    expect(find.text('正在连接'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    controller.updateAccountStatus(
+      academicLoggedIn: true,
+      forumStatus: ForumAccountStatus.reauthenticationRequired,
+    );
+    await tester.pump();
+    expect(find.text('登录已失效'), findsOneWidget);
+
+    controller.updateAccountStatus(
+      academicLoggedIn: true,
+      forumStatus: ForumAccountStatus.loggedIn,
+    );
+    await tester.pump();
+    expect(find.text('已登录'), findsNWidgets(2));
+    expect(find.text('账号管理'), findsOneWidget);
+  });
+
+  testWidgets('defers account notifications triggered during a widget update',
+      (tester) async {
+    final controller = StartupOnboardingController();
+
+    Widget buildApp(int signal) => MaterialApp(
+          home: StartupOnboarding(
+            initiallyCompleted: true,
+            initialAcademicLoggedIn: false,
+            initialForumStatus: ForumAccountStatus.signedOut,
+            onAcademicLoginCompleted: () {},
+            onForumLoginCompleted: () {},
+            controller: controller,
+            child: _ControllerUpdateProbe(
+              controller: controller,
+              signal: signal,
+            ),
+          ),
+        );
+
+    await tester.pumpWidget(buildApp(0));
+    await tester.pumpWidget(buildApp(1));
+    await tester.pumpAndSettle();
+
+    expect(controller.academicLoggedIn, isTrue);
+    expect(controller.forumStatus, ForumAccountStatus.loggedIn);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('keeps onboarding content top-aligned on an iPhone 17 viewport',
@@ -237,4 +333,33 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+}
+
+class _ControllerUpdateProbe extends StatefulWidget {
+  const _ControllerUpdateProbe({
+    required this.controller,
+    required this.signal,
+  });
+
+  final StartupOnboardingController controller;
+  final int signal;
+
+  @override
+  State<_ControllerUpdateProbe> createState() => _ControllerUpdateProbeState();
+}
+
+class _ControllerUpdateProbeState extends State<_ControllerUpdateProbe> {
+  @override
+  void didUpdateWidget(covariant _ControllerUpdateProbe oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.signal != oldWidget.signal) {
+      widget.controller.updateAccountStatus(
+        academicLoggedIn: true,
+        forumStatus: ForumAccountStatus.loggedIn,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => const Scaffold(body: Text('主页'));
 }

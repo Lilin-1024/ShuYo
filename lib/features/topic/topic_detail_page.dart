@@ -328,7 +328,9 @@ class _TopicDetailPageState extends State<TopicDetailPage>
         setState(() => _detail = detail);
       }
     } on Object catch (error) {
-      if (error is ForumAuthException || _isForumTransportError(error)) {
+      if (error is ForumAuthException) {
+        repository.markAuthenticationRequired();
+      } else if (_isForumTransportError(error)) {
         repository.markConnectionUnavailable();
       }
       if (mounted) {

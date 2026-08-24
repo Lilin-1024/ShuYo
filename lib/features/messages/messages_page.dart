@@ -455,7 +455,9 @@ class _MessagesPageState extends State<MessagesPage> {
         _error = null;
       });
     } on Object catch (error) {
-      if (error is ForumAuthException || _isForumTransportError(error)) {
+      if (error is ForumAuthException) {
+        refreshRepository.markAuthenticationRequired();
+      } else if (_isForumTransportError(error)) {
         refreshRepository.markConnectionUnavailable();
       }
       if (!mounted) {
@@ -1169,7 +1171,9 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
         _error = null;
       });
     } on Object catch (error) {
-      if (error is ForumAuthException || _isForumTransportError(error)) {
+      if (error is ForumAuthException) {
+        repository.markAuthenticationRequired();
+      } else if (_isForumTransportError(error)) {
         repository.markConnectionUnavailable();
       }
       if (!mounted) {

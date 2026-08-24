@@ -21,6 +21,7 @@ void main() {
             ),
             isOnline: false,
             hasLocalAccount: false,
+            forumRequiresReauthentication: false,
             hasAcademicAccount: true,
             isAcademicLoginCompleting: false,
             isCheckingConnection: false,
@@ -65,6 +66,7 @@ void main() {
             ),
             isOnline: true,
             hasLocalAccount: true,
+            forumRequiresReauthentication: false,
             hasAcademicAccount: true,
             isAcademicLoginCompleting: false,
             isCheckingConnection: false,
@@ -105,6 +107,7 @@ void main() {
             ),
             isOnline: false,
             hasLocalAccount: false,
+            forumRequiresReauthentication: false,
             hasAcademicAccount: false,
             isAcademicLoginCompleting: true,
             isCheckingConnection: false,
@@ -131,5 +134,45 @@ void main() {
 
     await tester.tap(find.text('正在完成校园登录'));
     expect(loginTapped, isFalse);
+  });
+
+  testWidgets('distinguishes an expired forum login from a network failure',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HomeDashboardPage(
+            profile: UserProfile(
+              user: const DiscourseUser(
+                id: 1,
+                username: 'user',
+                avatarTemplate: '',
+              ),
+            ),
+            isOnline: false,
+            hasLocalAccount: true,
+            forumRequiresReauthentication: true,
+            hasAcademicAccount: true,
+            isAcademicLoginCompleting: false,
+            isCheckingConnection: false,
+            isInitialConnectionCheck: false,
+            isBusy: false,
+            onLogin: () {},
+            onRelogin: () {},
+            onOpenAcademicSystem: () {},
+            onOpenAnnouncements: () {},
+            onOpenEmptyClassroom: () {},
+            onOpenCourseRatings: () {},
+            showForumNetworkWarning: false,
+            onOpenWebVpnProxy: () {},
+            todayCourseContent: '今日暂无课程',
+            announcementContent: '暂无公告',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('论坛登录已失效，请重新登录'), findsOneWidget);
+    expect(find.text('无法连接乐乎论坛，请稍后重试'), findsNothing);
   });
 }
