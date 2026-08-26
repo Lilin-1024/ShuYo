@@ -67,4 +67,8 @@ class _FakeAcademicAuthService implements AcademicAuthService {
 
   @override
   Future<bool> hasWebVpnSession() async => false;
+
+  @override
+  Future<WebVpnSessionStatus> validateWebVpnSession() async =>
+      WebVpnSessionStatus.loginRequired;
 }

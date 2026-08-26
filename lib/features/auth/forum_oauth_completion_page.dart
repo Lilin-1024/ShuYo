@@ -205,6 +205,7 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
     if (_completed || _checkingSession || !_forumReached) return;
     _checkingSession = true;
     try {
+      await _authService.refreshFromWebView();
       final apiClient = DiscourseApiClient(authService: _authService);
       final session = await apiClient.getJson('/session/current.json');
       if (session['current_user'] is Map) {

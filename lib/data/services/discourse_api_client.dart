@@ -73,14 +73,16 @@ class DiscourseApiClient {
   }
 
   Future<JsonMap> getJson(String path) async {
+    final uri = _uri(path);
     final headers = await _headers();
     final response = await HttpTimeout.request(
       _send(() => _httpClient.get(
-            _uri(path),
+            uri,
             headers: headers,
           )),
       message: '论坛请求超时，请稍后再试',
     );
+    await _storeResponseCookies(uri, response);
     return _decode(response);
   }
 
@@ -88,6 +90,7 @@ class DiscourseApiClient {
     String path, {
     required int topicId,
   }) async {
+    final uri = _uri(path);
     final headers = await _headers(
       csrfToken: await _csrf(),
       referer: '${ForumUrlResolver.baseUrl}/',
@@ -95,59 +98,66 @@ class DiscourseApiClient {
     );
     final response = await HttpTimeout.request(
       _send(() => _httpClient.get(
-            _uri(path),
+            uri,
             headers: headers,
           )),
       message: '论坛请求超时，请稍后再试',
     );
+    await _storeResponseCookies(uri, response);
     return _decode(response);
   }
 
   Future<JsonMap> postForm(String path, String body) async {
+    final uri = _uri(path);
     final headers = await _headers(
       csrfToken: await _csrf(),
       formRequest: true,
     );
     final response = await HttpTimeout.request(
       _send(() => _httpClient.post(
-            _uri(path),
+            uri,
             headers: headers,
             body: body,
           )),
       message: '论坛请求超时，请稍后再试',
     );
+    await _storeResponseCookies(uri, response);
     return _decode(response);
   }
 
   Future<JsonMap> putForm(String path, String body) async {
+    final uri = _uri(path);
     final headers = await _headers(
       csrfToken: await _csrf(),
       formRequest: true,
     );
     final response = await HttpTimeout.request(
       _send(() => _httpClient.put(
-            _uri(path),
+            uri,
             headers: headers,
             body: body,
           )),
       message: '论坛请求超时，请稍后再试',
     );
+    await _storeResponseCookies(uri, response);
     return _decode(response);
   }
 
   Future<JsonMap> deleteForm(String path, String body) async {
+    final uri = _uri(path);
     final headers = await _headers(
       csrfToken: await _csrf(),
       formRequest: true,
     );
     final response = await HttpTimeout.request(
       _send(() => _httpClient.delete(
-            _uri(path),
+            uri,
             headers: headers,
             body: body,
           )),
       message: '论坛请求超时，请稍后再试',
     );
+    await _storeResponseCookies(uri, response);
     return _decode(response);
   }
 
@@ -158,7 +168,8 @@ class DiscourseApiClient {
     required Uint8List fileBytes,
     required String filename,
   }) async {
-    final request = http.MultipartRequest('POST', _uri(path));
+    final uri = _uri(path);
+    final request = http.MultipartRequest('POST', uri);
     request.headers.addAll(await _headers(csrfToken: await _csrf()));
     request.fields.addAll(fields);
     request.files.add(
@@ -178,7 +189,18 @@ class DiscourseApiClient {
       timeout: HttpTimeout.upload,
       message: '论坛上传超时，请稍后再试',
     );
+    await _storeResponseCookies(uri, response);
     return _decode(response);
+  }
+
+  Future<void> _storeResponseCookies(
+    Uri uri,
+    http.BaseResponse response,
+  ) async {
+    await _authService.updateFromSetCookieHeaders(
+      uri,
+      response.headersSplitValues['set-cookie'] ?? const <String>[],
+    );
   }
 
   Future<Map<String, String>> _headers({

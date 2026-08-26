@@ -245,6 +245,14 @@ void main() {
     expect(find.text('登录已失效'), findsOneWidget);
 
     controller.updateAccountStatus(
+      academicLoggedIn: false,
+      forumStatus: ForumAccountStatus.waitingForAcademicLogin,
+    );
+    await tester.pump();
+    expect(find.text('等待校园账户登录'), findsOneWidget);
+    expect(find.text('已登录'), findsNothing);
+
+    controller.updateAccountStatus(
       academicLoggedIn: true,
       forumStatus: ForumAccountStatus.loggedIn,
     );

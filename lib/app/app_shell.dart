@@ -786,6 +786,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (_checkingForumConnection || _reloadingSession) {
       return ForumAccountStatus.connecting;
     }
+    if (ForumUrlResolver.usesWebVpn && !_hasAcademicSession) {
+      return ForumAccountStatus.waitingForAcademicLogin;
+    }
     return switch (_repo.connectionState) {
       ForumConnectionState.firstUse => ForumAccountStatus.signedOut,
       ForumConnectionState.cachedOffline =>
@@ -1313,7 +1316,31 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       });
       _syncOnboardingAccountStatus();
     }
+
     try {
+      if (ForumUrlResolver.usesWebVpn) {
+        final portalStatus = await _validateAcademicSessionForForum();
+        _ensureForumRecoveryCurrent(generation);
+        if (portalStatus == WebVpnSessionStatus.loginRequired) {
+          _repo.markConnectionUnavailable();
+          return ForumRecoveryResult(
+            status: ForumRecoveryStatus.requiresReauthentication,
+            repository: _repo,
+            error: const ForumAuthException('校园账户登录状态已失效'),
+          );
+        }
+        if (portalStatus == WebVpnSessionStatus.unavailable) {
+          _repo.markConnectionUnavailable();
+          return ForumRecoveryResult(
+            status: ForumRecoveryStatus.unavailable,
+            repository: _repo,
+            error: const ForumConnectionUnavailableException(
+              '暂时无法验证 WebVPN 连接，请稍后重试',
+            ),
+          );
+        }
+      }
+
       final nextRepository = await _connectForumRepositoryWithFallback(
         generation,
       );
@@ -1366,6 +1393,19 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _syncOnboardingAccountStatus();
       }
     }
+  }
+
+  Future<WebVpnSessionStatus> _validateAcademicSessionForForum() async {
+    final status = await AcademicAuthService().validateWebVpnSession();
+    if (!mounted) return status;
+    if (status == WebVpnSessionStatus.loginRequired && _hasAcademicSession) {
+      setState(() => _hasAcademicSession = false);
+      _syncOnboardingAccountStatus();
+    } else if (status == WebVpnSessionStatus.valid && !_hasAcademicSession) {
+      setState(() => _hasAcademicSession = true);
+      _syncOnboardingAccountStatus();
+    }
+    return status;
   }
 
   Future<ForumRepository> _connectForumRepositoryWithFallback(
@@ -1775,9 +1815,20 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _login() async {
     if (_reloadingSession) return;
+    var academicReauthenticated = false;
     if (ForumUrlResolver.usesWebVpn && !_hasAcademicSession) {
       await _openAcademicLogin();
       if (!mounted || !_hasAcademicSession) return;
+      academicReauthenticated = true;
+    }
+    if (academicReauthenticated && _repo.hasLocalAccount) {
+      final recovery = await _recoverForumConnection(forceValidation: true);
+      if (!mounted || recovery.isRestored) return;
+      if (!_hasAcademicSession ||
+          recovery.status == ForumRecoveryStatus.unavailable) {
+        _showSnack(_forumRecoveryMessage(recovery));
+        return;
+      }
     }
     final loggedIn = await Navigator.of(context).push<bool>(
       lehuRoute(builder: (context) => const NativeLoginPage.forum()),
@@ -1846,6 +1897,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     if (recovery.status == ForumRecoveryStatus.requiresReauthentication) {
+      if (ForumUrlResolver.usesWebVpn && !_hasAcademicSession) {
+        _showSnack('校园账户登录状态已失效，请先重新登录');
+        await _openAcademicLogin();
+        if (!mounted || !_hasAcademicSession) return;
+        final retried = await _recoverForumConnection(forceValidation: true);
+        if (!mounted || retried.isRestored) return;
+        if (retried.status != ForumRecoveryStatus.requiresReauthentication) {
+          _showSnack(_forumRecoveryMessage(retried));
+          return;
+        }
+      }
       _showSnack('论坛登录状态已失效，请重新登录');
       await _login();
       return;
@@ -2253,6 +2315,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   String get _forumUnavailableMessage {
+    if (ForumUrlResolver.usesWebVpn &&
+        _repo.hasLocalAccount &&
+        !_hasAcademicSession) {
+      return '校园账户登录状态已失效，请先重新登录';
+    }
     if (_repo.connectionState ==
         ForumConnectionState.reauthenticationRequired) {
       return '论坛登录状态已失效，请重新登录';

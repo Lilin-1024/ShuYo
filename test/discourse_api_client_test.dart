@@ -60,9 +60,32 @@ void main() {
       ),
     );
   });
+
+  test('persists Set-Cookie values returned by native API requests', () async {
+    final auth = _NoCookieForumAuthService();
+    final client = DiscourseApiClient(
+      authService: auth,
+      httpClient: MockClient((request) async {
+        return http.Response(
+          '{"current_user":null}',
+          200,
+          headers: const {
+            'set-cookie': '_forum_session=rotated; Path=/; Max-Age=3600',
+          },
+        );
+      }),
+    );
+
+    await client.getJson('/session/current.json');
+
+    expect(auth.responseCookieHeaders,
+        contains('_forum_session=rotated; Path=/; Max-Age=3600'));
+  });
 }
 
 class _NoCookieForumAuthService implements ForumAuthService {
+  final responseCookieHeaders = <String>[];
+
   @override
   Future<String?> cookieHeader() async => null;
 
@@ -77,4 +100,15 @@ class _NoCookieForumAuthService implements ForumAuthService {
 
   @override
   Future<void> persistLastCookieHeader() async {}
+
+  @override
+  Future<void> refreshFromWebView() async {}
+
+  @override
+  Future<void> updateFromSetCookieHeaders(
+    Uri responseUri,
+    Iterable<String> headerValues,
+  ) async {
+    responseCookieHeaders.addAll(headerValues);
+  }
 }

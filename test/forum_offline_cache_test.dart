@@ -172,4 +172,13 @@ class _NoCookieForumAuthService implements ForumAuthService {
 
   @override
   Future<void> persistLastCookieHeader() async {}
+
+  @override
+  Future<void> refreshFromWebView() async {}
+
+  @override
+  Future<void> updateFromSetCookieHeaders(
+    Uri responseUri,
+    Iterable<String> headerValues,
+  ) async {}
 }

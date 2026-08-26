@@ -48,6 +48,7 @@ void main() {
     final restarted = AcademicAuthService(
       cookieLoader: (_) async => const [],
       cookieSetter: (cookie) async => restored.add(cookie),
+      webVpnSessionValidator: (_) async => WebVpnSessionStatus.valid,
     );
 
     expect(await restarted.hasWebVpnSession(), isTrue);
@@ -67,5 +68,45 @@ void main() {
         contains('JSESSIONID=academic-session'),
       ),
     );
+  });
+
+  test('does not treat a stale portal token as an authenticated session',
+      () async {
+    final portal = Uri.parse(ForumUrlResolver.webVpnPortalUrl);
+    final service = AcademicAuthService(
+      cookieLoader: (domain) async => domain.host == portal.host
+          ? [
+              WebViewCookie(
+                name: 'webvpn-token',
+                value: 'stale-session',
+                domain: portal.host,
+              ),
+            ]
+          : const [],
+      cookieSetter: (_) async {},
+      webVpnSessionValidator: (_) async => WebVpnSessionStatus.loginRequired,
+    );
+
+    expect(await service.hasWebVpnSession(), isFalse);
+  });
+
+  test('keeps a cached account when WebVPN validation is temporarily offline',
+      () async {
+    final portal = Uri.parse(ForumUrlResolver.webVpnPortalUrl);
+    final service = AcademicAuthService(
+      cookieLoader: (domain) async => domain.host == portal.host
+          ? [
+              WebViewCookie(
+                name: 'webvpn-token',
+                value: 'possibly-valid-session',
+                domain: portal.host,
+              ),
+            ]
+          : const [],
+      cookieSetter: (_) async {},
+      webVpnSessionValidator: (_) async => WebVpnSessionStatus.unavailable,
+    );
+
+    expect(await service.hasWebVpnSession(), isTrue);
   });
 }

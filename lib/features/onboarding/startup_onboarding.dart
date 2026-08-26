@@ -13,6 +13,7 @@ enum ForumAccountStatus {
   connecting,
   loggedIn,
   connectionUnavailable,
+  waitingForAcademicLogin,
   reauthenticationRequired,
 }
 
@@ -253,6 +254,13 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     if (_showForumCampusAccountHint) {
       setState(() => _showForumCampusAccountHint = false);
     }
+    widget.controller.reconnectForum();
+  }
+
+  Future<void> _restoreForumAfterAcademicLogin() async {
+    await _openAcademicLogin();
+    if (!mounted || !_academicLoggedIn) return;
+    setState(() => _forumStatus = ForumAccountStatus.connecting);
     widget.controller.reconnectForum();
   }
 
@@ -599,6 +607,12 @@ class _StartupOnboardingState extends State<StartupOnboarding>
           colors.error,
           false,
           _reconnectForum,
+        ),
+      ForumAccountStatus.waitingForAcademicLogin => (
+          '等待校园账户登录',
+          colors.error,
+          false,
+          _restoreForumAfterAcademicLogin as VoidCallback,
         ),
       ForumAccountStatus.reauthenticationRequired => (
           '登录已失效',

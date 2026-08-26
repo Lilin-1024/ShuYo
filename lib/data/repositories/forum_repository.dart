@@ -2333,7 +2333,9 @@ class ForumRepositoryFactory {
     ).timeout(
       _requiredOnlineTimeout,
       onTimeout: () {
-        throw const ForumApiException('论坛连接超时，请检查网络或开启 WebVPN 代理');
+        throw const ForumConnectionUnavailableException(
+          '论坛连接超时，请检查网络或开启 WebVPN 代理',
+        );
       },
     );
   }
