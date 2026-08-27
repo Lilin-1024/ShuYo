@@ -227,7 +227,8 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
   }
 
   Future<void> _setDisplayedWeekAsCurrent() async {
-    await widget.repository.setCurrentWeek(_displayedWeek);
+    final week = _displayedWeek;
+    await widget.repository.setCurrentWeek(week);
     final weekState = await widget.repository.loadWeekState();
     if (!mounted) {
       return;
@@ -242,11 +243,10 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         weekState: weekState,
       ),
     );
-    final reminderCount =
-        await widget.notificationService.syncScheduleReminders(
+    await widget.notificationService.syncScheduleReminders(
       requestPermission: true,
     );
-    _showScheduleReminderSnack('已设为当前周', reminderCount);
+    _showSnack('已将第${week}周设为当周');
   }
 
   Future<void> _handleEmptySlotTap(_ScheduleSlot slot) async {
