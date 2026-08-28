@@ -246,7 +246,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     await widget.notificationService.syncScheduleReminders(
       requestPermission: true,
     );
-    _showSnack('已将第${week}周设为当周');
+    _showSnack('已将第$week周设为当周');
   }
 
   Future<void> _handleEmptySlotTap(_ScheduleSlot slot) async {
