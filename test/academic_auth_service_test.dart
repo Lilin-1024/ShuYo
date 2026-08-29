@@ -136,4 +136,24 @@ void main() {
       isTrue,
     );
   });
+
+  test('explicit logout blocks cached session restoration until login',
+      () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'academic.auth.cached_cookies.webvpn',
+      '{"portal":[{"name":"webvpn-token","value":"old-session","domain":"webvpn.shu.edu.cn","path":"/"}]}',
+    );
+    final service = AcademicAuthService(
+      cookieLoader: (_) async => const [],
+      cookieSetter: (_) async {},
+      webVpnSessionValidator: (_) async => WebVpnSessionStatus.valid,
+    );
+
+    await service.clearCookies();
+    expect(await service.hasAcademicSession(), isFalse);
+
+    await service.markLoggedIn();
+    expect(await service.hasAcademicSession(), isFalse);
+  });
 }

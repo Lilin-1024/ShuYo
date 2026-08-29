@@ -49,6 +49,9 @@ class _FakeAcademicAuthService implements AcademicAuthService {
   Future<Set<String>> clearCookies() async => {};
 
   @override
+  Future<void> markLoggedIn() async {}
+
+  @override
   Future<String?> cookieHeader() async => null;
 
   @override

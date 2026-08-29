@@ -40,6 +40,9 @@ class AcademicAuthService {
 
   static const _cachedDirectCookiesKey = 'academic.auth.cached_cookies.direct';
   static const _cachedWebVpnCookiesKey = 'academic.auth.cached_cookies.webvpn';
+  // Explicit logout must win over a temporarily unavailable WebVPN endpoint
+  // and any cookies that a WebView has not removed yet.
+  static const _explicitlySignedOutKey = 'academic.auth.explicitly_signed_out';
   static const _portalGroup = 'portal';
   static const _academicGroup = 'academic';
 
@@ -68,6 +71,11 @@ class AcademicAuthService {
         true
       ),
     ];
+    final prefs = await _preferencesLoader();
+    // Record the user's intent before touching the WebView. Cookie deletion
+    // can fail on a transient WebVPN/WebView error, but must not resurrect the
+    // account on the next app launch.
+    await prefs.setBool(_explicitlySignedOutKey, true);
     for (final (domain, sharedWithForum) in domains) {
       List<WebViewCookie> cookies;
       try {
@@ -77,22 +85,38 @@ class AcademicAuthService {
       }
       for (final cookie in cookies) {
         if (sharedWithForum) clearedSharedNames.add(cookie.name);
-        await _cookieSetter(
-          WebViewCookie(
-            name: cookie.name,
-            value: '',
-            domain: cookie.domain,
-            path: cookie.path,
-          ),
-        );
+        try {
+          await _cookieSetter(
+            WebViewCookie(
+              name: cookie.name,
+              value: '',
+              domain: cookie.domain,
+              path: cookie.path,
+            ),
+          );
+        } on Object {
+          // Continue clearing other domains; the persistent logout marker
+          // above protects against a partial WebView cleanup.
+        }
       }
     }
-    final prefs = await _preferencesLoader();
     await Future.wait([
       prefs.remove(_cachedDirectCookiesKey),
       prefs.remove(_cachedWebVpnCookiesKey),
+      prefs.setBool(_explicitlySignedOutKey, true),
     ]);
     return clearedSharedNames;
+  }
+
+  /// Clears the persistent logout marker after a user completes login.
+  Future<void> markLoggedIn() async {
+    final prefs = await _preferencesLoader();
+    await prefs.remove(_explicitlySignedOutKey);
+  }
+
+  Future<bool> _isExplicitlySignedOut() async {
+    final prefs = await _preferencesLoader();
+    return prefs.getBool(_explicitlySignedOutKey) == true;
   }
 
   Future<bool> hasWebVpnSession() async {
@@ -107,6 +131,7 @@ class AcademicAuthService {
   /// The WebView remains the source of the session cookies; this method only
   /// restores and probes those cookies so a restart can recover the account.
   Future<bool> hasAcademicSession() async {
+    if (await _isExplicitlySignedOut()) return false;
     final status = AcademicUrlResolver.usesWebVpn
         ? await validateWebVpnSession()
         : await validateDirectAcademicSession();
@@ -114,6 +139,9 @@ class AcademicAuthService {
   }
 
   Future<WebVpnSessionStatus> validateDirectAcademicSession() async {
+    if (await _isExplicitlySignedOut()) {
+      return WebVpnSessionStatus.loginRequired;
+    }
     final cached = await _loadCachedCookies(webVpn: false);
     final live = await _loadLiveCookies(webVpn: false);
     final merged = _mergeCookieGroups(cached, live);
@@ -200,6 +228,9 @@ class AcademicAuthService {
   }
 
   Future<WebVpnSessionStatus> validateWebVpnSession() async {
+    if (await _isExplicitlySignedOut()) {
+      return WebVpnSessionStatus.loginRequired;
+    }
     final cached = await _loadCachedCookies(webVpn: true);
     final live = await _loadLiveCookies(webVpn: true);
     final merged = _mergeCookieGroups(cached, live);
@@ -298,6 +329,7 @@ class AcademicAuthService {
       }
     }
     if (values.isEmpty) return null;
+    await markLoggedIn();
     return values.entries
         .map((entry) => '${entry.key}=${entry.value}')
         .join('; ');
