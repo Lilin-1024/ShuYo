@@ -4,6 +4,7 @@ import '../core/client_app_info.dart';
 import '../core/forum_url_resolver.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/academic_auth_service.dart';
+import '../data/services/app_data_migration_service.dart';
 import '../data/services/client_settings_service.dart';
 import 'app_shell.dart';
 import '../features/onboarding/startup_onboarding.dart';
@@ -18,6 +19,7 @@ class LehuApp extends StatefulWidget {
 
 class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   final _settingsService = ClientSettingsService();
+  final _dataMigrationService = AppDataMigrationService();
   final _onboardingController = StartupOnboardingController();
   late final Future<_StartupData> _startupFuture;
   String _manualThemeId = LehuThemes.defaultId;
@@ -110,6 +112,9 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   }
 
   Future<_StartupData> _loadStartup() async {
+    // This must run before any repository/auth service reads local state.  The
+    // migration intentionally resets this major release to a fresh install.
+    await _dataMigrationService.migrateIfNeeded();
     await ClientAppInfo.load();
     final networkSettings = await _settingsService.loadNetworkSettings();
     ForumUrlResolver.configure(
@@ -128,6 +133,14 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   }
 
   Future<void> _loadTheme() async {
+    // Theme preferences are part of the data reset.  Wait for startup (and
+    // therefore the migration) before reading them, otherwise this parallel
+    // task could briefly restore a legacy theme after an upgrade.
+    try {
+      await _startupFuture;
+    } on Object {
+      return;
+    }
     final themeId = await _settingsService.loadThemeId();
     final followSystemTheme = await _settingsService.loadFollowSystemTheme();
     if (!mounted) {
