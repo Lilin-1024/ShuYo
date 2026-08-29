@@ -21,6 +21,8 @@ class StartupOnboardingController extends ChangeNotifier {
   bool _academicLoggedIn = false;
   ForumAccountStatus _forumStatus = ForumAccountStatus.signedOut;
   VoidCallback? _onForumReconnect;
+  Future<void> Function()? _onAcademicLogout;
+  Future<void> Function()? _onForumLogout;
   int _openRequest = 0;
   bool _notificationScheduled = false;
   bool _disposed = false;
@@ -57,6 +59,21 @@ class StartupOnboardingController extends ChangeNotifier {
 
   void reconnectForum() => _onForumReconnect?.call();
 
+  void setAccountLogoutHandlers({
+    Future<void> Function()? onAcademicLogout,
+    Future<void> Function()? onForumLogout,
+  }) {
+    _onAcademicLogout = onAcademicLogout;
+    _onForumLogout = onForumLogout;
+  }
+
+  Future<void> logoutAcademic() async => await _onAcademicLogout?.call();
+
+  Future<void> logoutForum() async => await _onForumLogout?.call();
+
+  bool get canLogoutAcademic => _onAcademicLogout != null;
+  bool get canLogoutForum => _onForumLogout != null;
+
   void _notifyListenersSafely() {
     if (_disposed) return;
     if (SchedulerBinding.instance.schedulerPhase !=
@@ -76,6 +93,8 @@ class StartupOnboardingController extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _onForumReconnect = null;
+    _onAcademicLogout = null;
+    _onForumLogout = null;
     super.dispose();
   }
 }
@@ -89,6 +108,8 @@ class StartupOnboarding extends StatefulWidget {
     required this.initialForumStatus,
     required this.onAcademicLoginCompleted,
     required this.onForumLoginCompleted,
+    this.onAcademicLogout,
+    this.onForumLogout,
     required this.controller,
     this.settingsService,
   });
@@ -99,6 +120,8 @@ class StartupOnboarding extends StatefulWidget {
   final ForumAccountStatus initialForumStatus;
   final VoidCallback onAcademicLoginCompleted;
   final VoidCallback onForumLoginCompleted;
+  final Future<void> Function()? onAcademicLogout;
+  final Future<void> Function()? onForumLogout;
   final StartupOnboardingController controller;
   final ClientSettingsService? settingsService;
 
@@ -230,6 +253,17 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     widget.onAcademicLoginCompleted();
   }
 
+  Future<void> _logoutAcademic() async {
+    final callback =
+        widget.onAcademicLogout ?? widget.controller.logoutAcademic;
+    final confirmed = await _confirmLogout(
+      title: '退出上大校园账户？',
+      message: '退出后课表和校园服务需要重新登录。论坛账户也需在登录校园账户后使用。',
+    );
+    if (!confirmed || !mounted) return;
+    await callback();
+  }
+
   Future<void> _openForumLogin() async {
     if (!_academicLoggedIn) {
       _showCampusAccountRequiredHint();
@@ -244,6 +278,40 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     if (loggedIn != true || !mounted) return;
     setState(() => _forumStatus = ForumAccountStatus.connecting);
     widget.onForumLoginCompleted();
+  }
+
+  Future<void> _logoutForum() async {
+    final callback = widget.onForumLogout ?? widget.controller.logoutForum;
+    final confirmed = await _confirmLogout(
+      title: '退出乐乎论坛账户？',
+      message: '退出后将清除论坛会话和本地账户数据，校园账户不会受影响。',
+    );
+    if (!confirmed || !mounted) return;
+    await callback();
+  }
+
+  Future<bool> _confirmLogout({
+    required String title,
+    required String message,
+  }) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('退出'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   void _reconnectForum() {
@@ -540,7 +608,12 @@ class _StartupOnboardingState extends State<StartupOnboarding>
             title: '上大校园账户',
             description: '用于访问课程表、教室查询等校园服务',
             statusLabel: _academicLoggedIn ? '已登录' : null,
-            onTap: _academicLoggedIn ? null : _openAcademicLogin,
+            onTap: _academicLoggedIn
+                ? (widget.onAcademicLogout == null &&
+                        !widget.controller.canLogoutAcademic
+                    ? null
+                    : _logoutAcademic)
+                : _openAcademicLogin,
           ),
           _forumAccountTile(context),
           _forumCampusAccountHint(context),
@@ -601,7 +674,14 @@ class _StartupOnboardingState extends State<StartupOnboarding>
           true,
           null
         ),
-      ForumAccountStatus.loggedIn => ('已登录', colors.primary, false, null),
+      ForumAccountStatus.loggedIn => (
+          '已登录',
+          colors.primary,
+          false,
+          widget.onForumLogout == null && !widget.controller.canLogoutForum
+              ? null
+              : _logoutForum,
+        ),
       ForumAccountStatus.connectionUnavailable => (
           '连接异常',
           colors.error,

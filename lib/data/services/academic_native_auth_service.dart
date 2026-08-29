@@ -73,8 +73,7 @@ class AcademicNativeAuthService {
   }
 
   static const _newssoPathMarker = '/oauth2/login/';
-  static const _academicWebVpnEntry =
-      'https://${AcademicUrlResolver.webVpnHost}/';
+  static Uri get _academicEntry => AcademicUrlResolver.entryUri;
   static const _webVpnPortal = 'https://webvpn.shu.edu.cn';
   static const _webVpnHost = 'webvpn.shu.edu.cn';
   final _NativeAuthTarget _target;
@@ -159,9 +158,8 @@ class AcademicNativeAuthService {
         '登录成功，但学校未返回授权地址',
       );
     }
-    final callbackUri = await _resolveAuthorizationCallback(
-      loginUri.resolve(redirect),
-    );
+    final callbackUri = loginUri.resolve(redirect);
+    _validateUri(callbackUri);
     _clearChallenge();
     return AcademicLoginResult(callbackUri: callbackUri);
   }
@@ -202,9 +200,8 @@ class AcademicNativeAuthService {
         '验证成功，但学校未返回授权地址',
       );
     }
-    final callbackUri = await _resolveAuthorizationCallback(
-      loginUri.resolve(redirect),
-    );
+    final callbackUri = loginUri.resolve(redirect);
+    _validateUri(callbackUri);
     _clearChallenge();
     return callbackUri;
   }
@@ -214,7 +211,7 @@ class AcademicNativeAuthService {
       await _importWebViewCookies();
     }
     var uri = _target == _NativeAuthTarget.academic
-        ? Uri.parse(_academicWebVpnEntry)
+        ? _academicEntry
         : ForumUrlResolver.uri('/auth/oauth2_basic');
     for (var redirects = 0; redirects < 16; redirects++) {
       final response = await _request('GET', uri);
@@ -248,36 +245,6 @@ class AcademicNativeAuthService {
       uri = next;
     }
     throw const AcademicNativeAuthException('tooManyRedirects', '认证入口跳转次数过多');
-  }
-
-  Future<Uri> _resolveAuthorizationCallback(Uri uri) async {
-    var current = uri;
-    for (var redirects = 0; redirects < 16; redirects++) {
-      if (_isExpectedCallback(current)) {
-        return current;
-      }
-      final response = await _request('GET', current);
-      final next = _redirectTarget(response, current);
-      await response.drain<void>();
-      if (next == null) {
-        throw const AcademicNativeAuthException(
-          'callbackMissing',
-          '统一认证成功，但未进入目标服务的授权回调',
-        );
-      }
-      current = next;
-    }
-    throw const AcademicNativeAuthException('tooManyRedirects', '登录授权跳转次数过多');
-  }
-
-  bool _isExpectedCallback(Uri uri) {
-    if (_target == _NativeAuthTarget.academic) {
-      return uri.host == _webVpnHost &&
-          uri.path == '/callback/oauth2' &&
-          (uri.queryParameters.containsKey('code') ||
-              uri.queryParameters.containsKey('authCode'));
-    }
-    return isForumOAuthCallback(uri);
   }
 
   @visibleForTesting

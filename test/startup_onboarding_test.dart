@@ -11,6 +11,8 @@ void main() {
     bool academicLoggedIn = false,
     ForumAccountStatus forumStatus = ForumAccountStatus.signedOut,
     StartupOnboardingController? controller,
+    Future<void> Function()? onAcademicLogout,
+    Future<void> Function()? onForumLogout,
   }) {
     return MaterialApp(
       home: StartupOnboarding(
@@ -19,6 +21,8 @@ void main() {
         initialForumStatus: forumStatus,
         onAcademicLoginCompleted: () {},
         onForumLoginCompleted: () {},
+        onAcademicLogout: onAcademicLogout,
+        onForumLogout: onForumLogout,
         controller: controller ?? StartupOnboardingController(),
         child: const Scaffold(body: Text('主页')),
       ),
@@ -259,6 +263,44 @@ void main() {
     await tester.pump();
     expect(find.text('已登录'), findsNWidgets(2));
     expect(find.text('账号管理'), findsOneWidget);
+  });
+
+  testWidgets('logged-in accounts can be logged out from account management',
+      (tester) async {
+    final controller = StartupOnboardingController();
+    var academicLoggedOut = false;
+    var forumLoggedOut = false;
+    await tester.pumpWidget(
+      app(
+        completed: true,
+        academicLoggedIn: true,
+        forumStatus: ForumAccountStatus.loggedIn,
+        controller: controller,
+        onAcademicLogout: () async => academicLoggedOut = true,
+        onForumLogout: () async => forumLoggedOut = true,
+      ),
+    );
+
+    controller.openAccountManager(
+      academicLoggedIn: true,
+      forumStatus: ForumAccountStatus.loggedIn,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('上大校园账户'));
+    await tester.pumpAndSettle();
+    expect(find.text('退出上大校园账户？'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, '退出'));
+    await tester.pumpAndSettle();
+    expect(academicLoggedOut, isTrue);
+    expect(forumLoggedOut, isFalse);
+
+    await tester.tap(find.text('乐乎账户'));
+    await tester.pumpAndSettle();
+    expect(find.text('退出乐乎论坛账户？'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, '退出'));
+    await tester.pumpAndSettle();
+    expect(forumLoggedOut, isTrue);
   });
 
   testWidgets('defers account notifications triggered during a widget update',

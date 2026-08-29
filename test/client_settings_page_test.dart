@@ -14,10 +14,8 @@ import 'package:shuyo/features/settings/client_settings_page.dart';
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('settings exposes independent account logout actions',
+  testWidgets('settings no longer exposes account logout actions',
       (tester) async {
-    var forumLoggedOut = false;
-    var academicLoggedOut = false;
     await tester.pumpWidget(
       MaterialApp(
         home: ClientSettingsPage(
@@ -37,24 +35,12 @@ void main() {
           followSystemTheme: false,
           onThemeChanged: (_) async {},
           onFollowSystemThemeChanged: (_) async {},
-          hasLocalAccount: true,
-          hasAcademicAccount: true,
-          onForumLogout: () async => forumLoggedOut = true,
-          onAcademicLogout: () async => academicLoggedOut = true,
         ),
       ),
     );
 
-    expect(find.text('退出乐乎论坛账户'), findsOneWidget);
-    expect(find.text('退出上大校园账户'), findsOneWidget);
-
-    await tester.tap(find.text('退出乐乎论坛账户'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, '退出'));
-    await tester.pumpAndSettle();
-
-    expect(forumLoggedOut, isTrue);
-    expect(academicLoggedOut, isFalse);
+    expect(find.text('退出乐乎论坛账户'), findsNothing);
+    expect(find.text('退出上大校园账户'), findsNothing);
   });
 }
 
@@ -67,6 +53,13 @@ class _FakeAcademicAuthService implements AcademicAuthService {
 
   @override
   Future<bool> hasWebVpnSession() async => false;
+
+  @override
+  Future<bool> hasAcademicSession() async => false;
+
+  @override
+  Future<WebVpnSessionStatus> validateDirectAcademicSession() async =>
+      WebVpnSessionStatus.loginRequired;
 
   @override
   Future<WebVpnSessionStatus> validateWebVpnSession() async =>

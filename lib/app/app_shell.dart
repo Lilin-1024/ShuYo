@@ -179,6 +179,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     widget.onboardingController.setForumReconnectHandler(
       () => unawaited(_relogin()),
     );
+    widget.onboardingController.setAccountLogoutHandlers(
+      onAcademicLogout: _logoutAcademicAccount,
+      onForumLogout: _logoutForumAccount,
+    );
     _resetFeedFuture();
     unawaited(_initializeForumBadges());
     unawaited(_refreshScheduleSummaryQuietly());
@@ -368,6 +372,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _announcementSummaryTimer?.cancel();
     _forumBadgeRefreshTimer?.cancel();
     widget.onboardingController.setForumReconnectHandler(null);
+    widget.onboardingController.setAccountLogoutHandlers();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -951,7 +956,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       await _scheduleNotificationService.syncScheduleReminders(
         requestPermission: true,
       );
-      _showSnack('WebVPN已登录，课表已同步');
+      _showSnack('校园账户已登录，课表已同步');
       debugPrint('[LEHU_WEBVPN] schedule-sync success');
       return true;
     } on AcademicAuthException catch (error) {
@@ -1720,12 +1725,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           onThemeChanged: widget.onThemeChanged,
           onFollowSystemThemeChanged: widget.onFollowSystemThemeChanged,
           isOnline: _repo.isOnline,
-          hasLocalAccount: _repo.hasLocalAccount,
-          hasAcademicAccount: _hasAcademicSession,
           loadForumCacheSize: _repo.forumCacheStorageSize,
           onClearForumCache: _clearForumCache,
-          onForumLogout: _logoutForumAccount,
-          onAcademicLogout: _logoutAcademicAccount,
         ),
       ),
     );
@@ -2266,29 +2267,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (_syncingAcademicSchedule) {
       _showScheduleSyncingSnack();
       return;
-    }
-    if (!AcademicUrlResolver.usesWebVpn) {
-      final enableWebVpn = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('直连登录暂未接入'),
-          content: const Text(
-            '当前版本尚缺少直连教务认证所需的网络信息。请先开启 WebVPN，再使用原生登录。',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('开启 WebVPN'),
-            ),
-          ],
-        ),
-      );
-      if (enableWebVpn != true || !mounted) return;
-      await _setAutoUseWebVpnProxy(true);
     }
     if (!mounted) return;
     final loggedIn = await Navigator.of(context).push<bool>(

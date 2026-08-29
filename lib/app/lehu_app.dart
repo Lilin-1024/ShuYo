@@ -116,8 +116,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
       useWebVpn: networkSettings.autoUseWebVpnProxy,
     );
     final repository = await ForumRepositoryFactory.load();
-    final hasAcademicSession = networkSettings.autoUseWebVpnProxy &&
-        await AcademicAuthService().hasWebVpnSession();
+    final hasAcademicSession = await AcademicAuthService().hasAcademicSession();
     final onboardingCompleted =
         await _settingsService.loadStartupOnboardingCompleted();
     return _StartupData(

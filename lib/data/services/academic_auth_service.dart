@@ -21,6 +21,8 @@ class AcademicAuthService {
     Future<void> Function(WebViewCookie cookie)? cookieSetter,
     Future<WebVpnSessionStatus> Function(String cookieHeader)?
         webVpnSessionValidator,
+    Future<WebVpnSessionStatus> Function(String cookieHeader)?
+        directSessionValidator,
   })  : _cookieManager = cookieManager ??
             (cookieLoader == null || cookieSetter == null
                 ? WebViewCookieManager()
@@ -32,6 +34,8 @@ class AcademicAuthService {
     _cookieSetter = cookieSetter ?? _cookieManager!.setCookie;
     _webVpnSessionValidator =
         webVpnSessionValidator ?? _validateWebVpnSessionOverNetwork;
+    _directSessionValidator =
+        directSessionValidator ?? _validateDirectAcademicSessionOverNetwork;
   }
 
   static const _cachedDirectCookiesKey = 'academic.auth.cached_cookies.direct';
@@ -45,6 +49,8 @@ class AcademicAuthService {
   late final Future<void> Function(WebViewCookie cookie) _cookieSetter;
   late final Future<WebVpnSessionStatus> Function(String cookieHeader)
       _webVpnSessionValidator;
+  late final Future<WebVpnSessionStatus> Function(String cookieHeader)
+      _directSessionValidator;
 
   Future<Set<String>> clearCookies() async {
     // These shared authentication cookies may only exist in the persisted
@@ -95,6 +101,102 @@ class AcademicAuthService {
     // the cached account available and retry validation with the next forum
     // recovery instead of destroying a potentially valid session.
     return status != WebVpnSessionStatus.loginRequired;
+  }
+
+  /// Validates the campus account using the currently selected access mode.
+  /// The WebView remains the source of the session cookies; this method only
+  /// restores and probes those cookies so a restart can recover the account.
+  Future<bool> hasAcademicSession() async {
+    final status = AcademicUrlResolver.usesWebVpn
+        ? await validateWebVpnSession()
+        : await validateDirectAcademicSession();
+    return status != WebVpnSessionStatus.loginRequired;
+  }
+
+  Future<WebVpnSessionStatus> validateDirectAcademicSession() async {
+    final cached = await _loadCachedCookies(webVpn: false);
+    final live = await _loadLiveCookies(webVpn: false);
+    final merged = _mergeCookieGroups(cached, live);
+    await _persistCookies(merged, webVpn: false);
+    await _restoreCookies(merged);
+    final cookies = merged[_academicGroup] ?? const <WebViewCookie>[];
+    final header = cookies
+        .where((cookie) => cookie.name.isNotEmpty && cookie.value.isNotEmpty)
+        .map((cookie) => '${cookie.name}=${cookie.value}')
+        .join('; ');
+    if (header.isEmpty) return WebVpnSessionStatus.loginRequired;
+    return _directSessionValidator(header).timeout(
+      const Duration(seconds: 15),
+      onTimeout: () => WebVpnSessionStatus.unavailable,
+    );
+  }
+
+  Future<WebVpnSessionStatus> _validateDirectAcademicSessionOverNetwork(
+    String cookieHeader,
+  ) async {
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+    var current = AcademicUrlResolver.homeUri;
+    try {
+      for (var redirectCount = 0; redirectCount < 10; redirectCount++) {
+        final request = await client.getUrl(current).timeout(
+              const Duration(seconds: 5),
+            );
+        request.followRedirects = false;
+        request.headers
+          ..set(HttpHeaders.acceptHeader, 'text/html,application/xhtml+xml')
+          ..set(HttpHeaders.userAgentHeader, ClientUserAgent.mobileBrowser);
+        // The academic session cookie is scoped to jwxt; do not forward it
+        // to the SSO host while inspecting an expired-session redirect.
+        if (current.host == AcademicConstants.host) {
+          request.headers.set(HttpHeaders.cookieHeader, cookieHeader);
+        }
+        final response = await request.close().timeout(
+              const Duration(seconds: 7),
+            );
+        final location = response.headers.value(HttpHeaders.locationHeader);
+        final statusCode = response.statusCode;
+        await response.drain<void>().timeout(const Duration(seconds: 7));
+        if (statusCode >= 300 && statusCode < 400 && location != null) {
+          final next = current.resolve(location);
+          if (!_isAllowedAcademicHost(next.host)) {
+            return WebVpnSessionStatus.unavailable;
+          }
+          current = next;
+          continue;
+        }
+        if (current.host == AcademicConstants.host &&
+            current.path.startsWith('/jwglxt/') &&
+            !current.path.endsWith('/jwglxt/ticketlogin') &&
+            !current.path.endsWith('/jwglxt/xtgl/login_slogin.html')) {
+          return WebVpnSessionStatus.valid;
+        }
+        if (current.host.contains('newsso-shu-edu-cn') ||
+            current.host == 'newsso.shu.edu.cn' ||
+            statusCode == 401 ||
+            statusCode == 403) {
+          return WebVpnSessionStatus.loginRequired;
+        }
+        return WebVpnSessionStatus.unavailable;
+      }
+      return WebVpnSessionStatus.unavailable;
+    } on TimeoutException {
+      return WebVpnSessionStatus.unavailable;
+    } on SocketException {
+      return WebVpnSessionStatus.unavailable;
+    } on HandshakeException {
+      return WebVpnSessionStatus.unavailable;
+    } on HttpException {
+      return WebVpnSessionStatus.unavailable;
+    } on Object {
+      return WebVpnSessionStatus.unavailable;
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  bool _isAllowedAcademicHost(String host) {
+    final normalized = host.toLowerCase();
+    return normalized == 'shu.edu.cn' || normalized.endsWith('.shu.edu.cn');
   }
 
   Future<WebVpnSessionStatus> validateWebVpnSession() async {

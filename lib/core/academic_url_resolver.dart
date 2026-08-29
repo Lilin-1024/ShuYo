@@ -28,14 +28,16 @@ class AcademicUrlResolver {
 
   static bool isTicketLoginUrl(String value) {
     final uri = Uri.tryParse(value);
+    final expectedHost = usesWebVpn ? webVpnHost : AcademicConstants.host;
     return uri != null &&
-        uri.host == webVpnHost &&
+        uri.host == expectedHost &&
         uri.path.endsWith('/jwglxt/ticketlogin');
   }
 
   static bool isPreparedWebVpnAcademicUrl(String value) {
     final uri = Uri.tryParse(value);
-    if (uri == null || uri.host != webVpnHost) {
+    final expectedHost = usesWebVpn ? webVpnHost : AcademicConstants.host;
+    if (uri == null || uri.host != expectedHost) {
       return false;
     }
     final path = uri.path;

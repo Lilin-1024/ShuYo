@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shuyo/core/academic_constants.dart';
 import 'package:shuyo/core/academic_url_resolver.dart';
 import 'package:shuyo/core/forum_url_resolver.dart';
 import 'package:shuyo/data/services/academic_auth_service.dart';
@@ -108,5 +109,31 @@ void main() {
     );
 
     expect(await service.hasWebVpnSession(), isTrue);
+  });
+
+  test('restores and validates a cached direct campus session', () async {
+    ForumUrlResolver.configure(useWebVpn: false);
+    final academic = Uri.parse(AcademicConstants.baseUrl);
+    final restored = <WebViewCookie>[];
+    final service = AcademicAuthService(
+      cookieLoader: (_) async => const [],
+      cookieSetter: (cookie) async => restored.add(cookie),
+      directSessionValidator: (_) async => WebVpnSessionStatus.valid,
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      'academic.auth.cached_cookies.direct',
+      '{"academic":[{"name":"JSESSIONID","value":"direct-session","domain":"${academic.host}","path":"/"}]}',
+    );
+
+    expect(await service.hasAcademicSession(), isTrue);
+    expect(
+      restored.any(
+        (cookie) =>
+            cookie.name == 'JSESSIONID' && cookie.value == 'direct-session',
+      ),
+      isTrue,
+    );
   });
 }

@@ -148,13 +148,13 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         key: const ValueKey('verification'),
         padding: const EdgeInsets.all(24),
         children: [
-          Text('选择验证码接收方式',
+          Text('二步验证',
               style: Theme.of(context)
                   .textTheme
                   .titleLarge
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          const Text('验证码用于确认是你本人登录。'),
+          Text(_methodHint(methods)),
           const SizedBox(height: 24),
           SegmentedButton<AcademicVerificationMethod>(
             segments: [
@@ -174,12 +174,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                 ? null
                 : (value) => _selectVerificationMethod(value.first),
           ),
-          const SizedBox(height: 12),
-          Text(_methodHint(methods),
-              style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13)),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: _busy || _countdown > 0 ? null : _sendCode,
             icon: const Icon(Icons.send_outlined),
