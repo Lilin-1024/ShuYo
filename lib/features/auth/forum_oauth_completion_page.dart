@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
+import '../../core/certificate_policy.dart';
 import '../../core/client_user_agent.dart';
 import '../../core/forum_url_resolver.dart';
 import '../../data/services/discourse_api_client.dart';
@@ -40,10 +42,13 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
   final _authService = ForumAuthService();
   Timer? _sessionPollTimer;
   Timer? _timeoutTimer;
+  Timer? _certificateErrorTimer;
   bool _completed = false;
   bool _checkingSession = false;
   bool _forumReached = false;
+  Uri? _currentUri;
   String? _error;
+  int _certificateErrorGeneration = 0;
   final String _status = '正在建立乐乎论坛会话';
 
   @override
@@ -55,16 +60,29 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
       ..setUserAgent(ClientUserAgent.mobileBrowser)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: _handleNavigation,
+          onPageStarted: (url) {
+            _currentUri = Uri.tryParse(url);
+            _handleNavigation(url);
+          },
           onPageFinished: (url) {
             _handleNavigation(url);
             unawaited(_checkSession());
           },
-          onNavigationRequest: _handleNavigationRequest,
+          onNavigationRequest: (request) {
+            _currentUri = Uri.tryParse(request.url);
+            return _handleNavigationRequest(request);
+          },
+          onSslAuthError: _handleSslAuthError,
           onWebResourceError: (error) {
-            if (error.isForMainFrame != false) {
-              _fail('论坛登录会话建立失败：${error.description}');
+            if (error.isForMainFrame == false) return;
+            final failedUrl = error.url ?? _currentUri?.toString();
+            final failedUri =
+                failedUrl == null ? null : Uri.tryParse(failedUrl);
+            if (CertificatePolicy.allowsUri(failedUri)) {
+              _deferCertificateError(error.description);
+              return;
             }
+            _fail('论坛登录会话建立失败：${error.description}');
           },
         ),
       );
@@ -75,6 +93,7 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
   void dispose() {
     _sessionPollTimer?.cancel();
     _timeoutTimer?.cancel();
+    _certificateErrorTimer?.cancel();
     super.dispose();
   }
 
@@ -172,6 +191,7 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
   void _handleNavigation(String value) {
     final uri = Uri.tryParse(value);
     if (uri == null || _completed) return;
+    _clearCertificateError();
     if (kDebugMode) {
       debugPrint('[FORUM_AUTH_CALLBACK] ${uri.host}${uri.path}');
     }
@@ -199,6 +219,55 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
       _fail('认证页面尝试跳转到非上海大学地址');
     }
     return NavigationDecision.prevent;
+  }
+
+  void _handleSslAuthError(SslAuthError error) {
+    final uri = _sslErrorUri(error) ?? _currentUri;
+    if (kDebugMode) {
+      debugPrint(
+        '[FORUM_AUTH_CALLBACK] ssl-error '
+        'host=${uri?.host ?? 'unknown'} description=${error.platform.description}',
+      );
+    }
+    if (CertificatePolicy.allowsUri(uri)) {
+      _clearCertificateError();
+      if (kDebugMode) {
+        debugPrint('[FORUM_AUTH_CALLBACK] allowing expired forum certificate '
+            '${uri?.host}');
+      }
+      error.proceed();
+      return;
+    }
+    error.cancel();
+  }
+
+  void _deferCertificateError(String description) {
+    _certificateErrorTimer?.cancel();
+    final generation = ++_certificateErrorGeneration;
+    _certificateErrorTimer = Timer(const Duration(seconds: 3), () {
+      if (_completed || !mounted || generation != _certificateErrorGeneration) {
+        return;
+      }
+      _clearCertificateError();
+      _fail('论坛登录会话建立失败：$description');
+    });
+  }
+
+  void _clearCertificateError() {
+    _certificateErrorTimer?.cancel();
+    _certificateErrorTimer = null;
+    _certificateErrorGeneration++;
+  }
+
+  Uri? _sslErrorUri(SslAuthError error) {
+    final platform = error.platform;
+    if (platform is AndroidSslAuthError) {
+      return Uri.tryParse(platform.url);
+    }
+    if (platform is WebKitSslAuthError) {
+      return Uri.parse('https://${platform.host}');
+    }
+    return null;
   }
 
   Future<void> _checkSession() async {

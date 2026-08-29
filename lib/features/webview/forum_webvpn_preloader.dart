@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 import '../../core/certificate_policy.dart';
 import '../../core/client_user_agent.dart';
@@ -155,6 +156,12 @@ class _ForumWebVpnPreloaderState extends State<ForumWebVpnPreloader> {
 
   void _handleSslAuthError(SslAuthError error) {
     final uri = _sslErrorUri(error) ?? _currentUri;
+    if (kDebugMode) {
+      debugPrint(
+        '[LEHU_WEBVIEW FORUM_BG_PREP] ssl-error '
+        'host=${uri?.host ?? 'unknown'} description=${error.platform.description}',
+      );
+    }
     if (CertificatePolicy.allowsUri(uri)) {
       error.proceed();
       return;
@@ -166,6 +173,9 @@ class _ForumWebVpnPreloaderState extends State<ForumWebVpnPreloader> {
     final platform = error.platform;
     if (platform is AndroidSslAuthError) {
       return Uri.tryParse(platform.url);
+    }
+    if (platform is WebKitSslAuthError) {
+      return Uri.parse('https://${platform.host}');
     }
     return null;
   }

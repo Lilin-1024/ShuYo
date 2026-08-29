@@ -173,8 +173,13 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
 }
 
 ForumAccountStatus _forumAccountStatus(ForumRepository repository) {
+  if (!ForumUrlResolver.usesWebVpn && !repository.isOnline) {
+    return ForumAccountStatus.directLoginUnavailable;
+  }
   return switch (repository.connectionState) {
-    ForumConnectionState.firstUse => ForumAccountStatus.signedOut,
+    ForumConnectionState.firstUse => ForumUrlResolver.usesWebVpn
+        ? ForumAccountStatus.signedOut
+        : ForumAccountStatus.directLoginUnavailable,
     ForumConnectionState.cachedOffline =>
       ForumAccountStatus.connectionUnavailable,
     ForumConnectionState.reauthenticationRequired =>

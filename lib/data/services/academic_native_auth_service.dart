@@ -412,7 +412,18 @@ class AcademicNativeAuthService {
     if (response.statusCode < 300 || response.statusCode >= 400) return null;
     final location = response.headers.value(HttpHeaders.locationHeader);
     if (location == null || location.isEmpty) return null;
-    final next = current.resolve(location);
+    var next = current.resolve(location);
+    if (kDebugMode) {
+      debugPrint('[SHU_AUTH] redirect ${current.host}${current.path} '
+          '-> ${next.scheme}://${next.host}${next.path}');
+    }
+    // Some direct campus gateways answer the HTTPS entry with a temporary
+    // HTTP canonical URL. Browsers immediately upgrade it back to HTTPS;
+    // mirror that behavior before the next request while keeping all
+    // authentication traffic encrypted.
+    if (next.scheme == 'http' && _isShuHost(next.host)) {
+      next = next.replace(scheme: 'https');
+    }
     _validateUri(next);
     return next;
   }
@@ -496,11 +507,15 @@ class AcademicNativeAuthService {
 
   void _validateUri(Uri uri) {
     final host = uri.host.toLowerCase();
-    if (uri.scheme != 'https' ||
-        (host != 'shu.edu.cn' && !host.endsWith('.shu.edu.cn'))) {
+    if (uri.scheme != 'https' || !_isShuHost(host)) {
       throw const AcademicNativeAuthException(
           'unsafeRedirect', '认证服务返回了非上海大学的跳转地址');
     }
+  }
+
+  bool _isShuHost(String host) {
+    final normalized = host.toLowerCase();
+    return normalized == 'shu.edu.cn' || normalized.endsWith('.shu.edu.cn');
   }
 
   @visibleForTesting

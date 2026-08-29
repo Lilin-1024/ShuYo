@@ -787,7 +787,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   ForumAccountStatus get _forumAccountStatus {
-    if (!_repo.hasLocalAccount) return ForumAccountStatus.signedOut;
+    if (!_repo.hasLocalAccount) {
+      return ForumUrlResolver.usesWebVpn
+          ? ForumAccountStatus.signedOut
+          : ForumAccountStatus.directLoginUnavailable;
+    }
+    if (!ForumUrlResolver.usesWebVpn && !_repo.isOnline) {
+      return ForumAccountStatus.directLoginUnavailable;
+    }
     if (_checkingForumConnection || _reloadingSession) {
       return ForumAccountStatus.connecting;
     }

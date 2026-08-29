@@ -9,7 +9,8 @@ class CertificatePolicy {
       bool.fromEnvironment('LEHU_ALLOW_INVALID_FORUM_CERT', defaultValue: true);
 
   static bool allowsHost(String host) {
-    return allowInvalidForumCertificate && host == ForumConstants.host;
+    return allowInvalidForumCertificate &&
+        host.toLowerCase() == ForumConstants.host;
   }
 
   static bool allowsUri(Uri? uri) {

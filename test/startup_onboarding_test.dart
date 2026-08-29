@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shuyo/features/onboarding/startup_onboarding.dart';
+import 'package:shuyo/features/auth/native_login_page.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -152,6 +153,31 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('请先登录上大校园账户'), findsNothing);
+  });
+
+  testWidgets('blocks direct forum login with certificate notice',
+      (tester) async {
+    await tester.pumpWidget(
+      app(
+        completed: false,
+        academicLoggedIn: true,
+        forumStatus: ForumAccountStatus.directLoginUnavailable,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂不可登录'), findsOneWidget);
+    await tester.tap(find.text('乐乎账户'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('暂时无法直连登录校园论坛，信息办未续论坛证书'),
+      findsOneWidget,
+    );
+    expect(find.byType(NativeLoginPage), findsNothing);
   });
 
   testWidgets('second and third pages can return to the previous page',
