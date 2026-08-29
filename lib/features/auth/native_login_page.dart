@@ -90,11 +90,21 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
           padding: const EdgeInsets.all(24),
           children: [
             Text(
-                widget.destination == NativeLoginDestination.forum
-                    ? '使用上海大学统一认证登录乐乎论坛'
-                    : '使用上海大学账户来访问各种校园服务',
-                style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              widget.destination == NativeLoginDestination.forum
+                  ? '登录论坛账户'
+                  : '登录校园账户',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '使用上海大学统一认证系统',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 28),
             TextFormField(
               controller: _studentId,
