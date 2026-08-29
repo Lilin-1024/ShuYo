@@ -930,9 +930,9 @@ class _StartupOnboardingState extends State<StartupOnboarding>
           TextSpan(
             text: '继续即表示您已同意我们的',
             children: [
-              _link(context, '使用条款'),
+              _link(context, '使用条款', 'https://shuyo.work/doc/terms.html'),
               const TextSpan(text: '和'),
-              _link(context, '隐私政策'),
+              _link(context, '隐私政策', 'https://shuyo.work/doc/privacy.html'),
             ],
           ),
           textAlign: TextAlign.center,
@@ -943,10 +943,10 @@ class _StartupOnboardingState extends State<StartupOnboarding>
         ),
       );
 
-  InlineSpan _link(BuildContext context, String label) => WidgetSpan(
+  InlineSpan _link(BuildContext context, String label, String url) => WidgetSpan(
         child: GestureDetector(
           onTap: () => launchUrl(
-            Uri.parse('https://example.com/$label'),
+            Uri.parse(url),
             mode: LaunchMode.externalApplication,
           ),
           child: Text(
