@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../data/services/academic_native_auth_service.dart';
 import '../../data/services/verification_delivery_service.dart';
 import 'forum_oauth_completion_page.dart';
-import 'forum_registration_placeholder_page.dart';
 import 'webvpn_oauth_completion_page.dart';
 
 enum NativeLoginDestination { academic, forum }
@@ -297,12 +296,6 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       if (!mounted) return;
       if (result == ForumOAuthCompletionResult.loggedIn) {
         Navigator.of(context).pop(true);
-      } else if (result == ForumOAuthCompletionResult.registrationRequired) {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute(
-            builder: (_) => const ForumRegistrationPlaceholderPage(),
-          ),
-        );
       }
       return;
     }

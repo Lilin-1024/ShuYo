@@ -12,16 +12,14 @@ import '../../core/forum_url_resolver.dart';
 import '../../data/services/discourse_api_client.dart';
 import '../../data/services/forum_auth_service.dart';
 
-enum ForumOAuthCompletionResult { loggedIn, registrationRequired }
+enum ForumOAuthCompletionResult { loggedIn }
 
 @visibleForTesting
 bool isForumRegistrationUri(Uri uri) {
-  if (!ForumUrlResolver.isKnownForumHost(uri.host.toLowerCase())) return false;
-  final path = uri.path.toLowerCase();
-  return path == '/u/account-created' ||
-      path.startsWith('/signup') ||
-      path.startsWith('/register') ||
-      path.contains('/complete-registration');
+  return ForumUrlResolver.usesWebVpn &&
+      uri.scheme == 'https' &&
+      uri.host.toLowerCase() == ForumUrlResolver.webVpnHost &&
+      uri.path == '/login';
 }
 
 class ForumOAuthCompletionPage extends StatefulWidget {
@@ -46,6 +44,7 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
   bool _completed = false;
   bool _checkingSession = false;
   bool _forumReached = false;
+  bool _registrationActive = false;
   Uri? _currentUri;
   String? _error;
   int _certificateErrorGeneration = 0;
@@ -102,63 +101,67 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
     return PopScope(
       canPop: _error != null,
       child: Scaffold(
-        appBar: AppBar(title: const Text('乐乎论坛账户')),
+        appBar: AppBar(
+          title: Text(_registrationActive ? '设置论坛昵称' : '乐乎论坛账户'),
+        ),
         body: Stack(
           children: [
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Opacity(
-                  opacity: 0.01,
-                  child: WebViewWidget(controller: _controller),
+            Positioned.fill(child: _webView()),
+            if (!_registrationActive || _error != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: _error == null
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 24),
+                            const Text(
+                              '正在完成登录',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(_status, textAlign: TextAlign.center),
+                          ],
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 44,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              _error!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(height: 1.5),
+                            ),
+                            const SizedBox(height: 24),
+                            FilledButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('返回'),
+                            ),
+                          ],
+                        ),
                 ),
               ),
-            ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: _error == null
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const CircularProgressIndicator(),
-                          const SizedBox(height: 24),
-                          const Text(
-                            '正在完成登录',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(_status, textAlign: TextAlign.center),
-                        ],
-                      )
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 44,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(height: 1.5),
-                          ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('返回'),
-                          ),
-                        ],
-                      ),
-              ),
-            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _webView() {
+    final webView = WebViewWidget(controller: _controller);
+    if (_registrationActive) return webView;
+    return IgnorePointer(
+      child: Opacity(opacity: 0.01, child: webView),
     );
   }
 
@@ -196,8 +199,9 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
       debugPrint('[FORUM_AUTH_CALLBACK] ${uri.host}${uri.path}');
     }
     if (isForumRegistrationUri(uri)) {
-      _finish(ForumOAuthCompletionResult.registrationRequired);
-      return;
+      if (!_registrationActive && mounted) {
+        setState(() => _registrationActive = true);
+      }
     }
     if (ForumUrlResolver.isKnownForumHost(uri.host.toLowerCase())) {
       _forumReached = true;

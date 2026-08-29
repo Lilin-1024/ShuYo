@@ -4,8 +4,11 @@ import 'package:shuyo/data/services/academic_native_auth_service.dart';
 import 'package:shuyo/features/auth/forum_oauth_completion_page.dart';
 import 'package:shuyo/features/auth/forum_registration_placeholder_page.dart';
 import 'package:shuyo/data/services/forum_auth_service.dart';
+import 'package:shuyo/core/forum_url_resolver.dart';
 
 void main() {
+  setUp(() => ForumUrlResolver.configure(useWebVpn: true));
+  tearDown(() => ForumUrlResolver.configure(useWebVpn: false));
   test('cached forum cookies survive a partial WebView cookie restore', () {
     final merged = ForumAuthService.mergeCookieHeaders(
       'webvpn-token=old; _t=forum-session; _forum_session=discourse',
@@ -58,24 +61,26 @@ void main() {
     });
   });
 
-  test('recognizes direct and WebVPN registration routes', () {
-    expect(
-      isForumRegistrationUri(
-        Uri.parse('https://bbs.shu.edu.cn/u/account-created'),
-      ),
-      isTrue,
-    );
+  test('recognizes only the exact WebVPN registration route', () {
     expect(
       isForumRegistrationUri(
         Uri.parse(
-          'https://https-bbs-shu-edu-cn-443.webvpn.shu.edu.cn/signup',
+          'https://https-bbs-shu-edu-cn-443.webvpn.shu.edu.cn/login',
         ),
       ),
       isTrue,
     );
     expect(
       isForumRegistrationUri(
-        Uri.parse('https://bbs.shu.edu.cn/latest'),
+        Uri.parse('https://bbs.shu.edu.cn/login'),
+      ),
+      isFalse,
+    );
+    expect(
+      isForumRegistrationUri(
+        Uri.parse(
+          'https://https-bbs-shu-edu-cn-443.webvpn.shu.edu.cn/signup',
+        ),
       ),
       isFalse,
     );
