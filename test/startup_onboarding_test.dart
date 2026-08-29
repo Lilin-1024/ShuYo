@@ -12,8 +12,9 @@ void main() {
     bool academicLoggedIn = false,
     ForumAccountStatus forumStatus = ForumAccountStatus.signedOut,
     StartupOnboardingController? controller,
-    Future<void> Function()? onAcademicLogout,
-    Future<void> Function()? onForumLogout,
+    Future<bool> Function()? onAcademicLogout,
+    Future<bool> Function()? onForumLogout,
+    Future<bool?> Function()? notificationPermissionRequester,
   }) {
     return MaterialApp(
       home: StartupOnboarding(
@@ -24,6 +25,7 @@ void main() {
         onForumLoginCompleted: () {},
         onAcademicLogout: onAcademicLogout,
         onForumLogout: onForumLogout,
+        notificationPermissionRequester: notificationPermissionRequester,
         controller: controller ?? StartupOnboardingController(),
         child: const Scaffold(body: Text('主页')),
       ),
@@ -205,6 +207,47 @@ void main() {
     expect(find.text('开启通知权限'), findsOneWidget);
   });
 
+  testWidgets('requests notification permission when continuing page two',
+      (tester) async {
+    var requestCount = 0;
+    await tester.pumpWidget(
+      app(
+        completed: false,
+        notificationPermissionRequester: () async {
+          requestCount++;
+          return true;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+    expect(requestCount, 0);
+
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+    expect(requestCount, 1);
+    expect(find.text('账号管理'), findsOneWidget);
+  });
+
+  testWidgets('shows permission denial above the onboarding panel',
+      (tester) async {
+    await tester.pumpWidget(
+      app(
+        completed: false,
+        notificationPermissionRequester: () async => false,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('通知权限未开启，可稍后在系统设置中开启'), findsOneWidget);
+  });
+
   testWidgets('reopens completed onboarding on the account page',
       (tester) async {
     final controller = StartupOnboardingController();
@@ -302,8 +345,14 @@ void main() {
         academicLoggedIn: true,
         forumStatus: ForumAccountStatus.loggedIn,
         controller: controller,
-        onAcademicLogout: () async => academicLoggedOut = true,
-        onForumLogout: () async => forumLoggedOut = true,
+        onAcademicLogout: () async {
+          academicLoggedOut = true;
+          return true;
+        },
+        onForumLogout: () async {
+          forumLoggedOut = true;
+          return true;
+        },
       ),
     );
 
@@ -320,6 +369,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(academicLoggedOut, isTrue);
     expect(forumLoggedOut, isFalse);
+    expect(find.text('已退出上大校园账户'), findsOneWidget);
 
     await tester.tap(find.text('乐乎账户'));
     await tester.pumpAndSettle();
@@ -327,6 +377,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, '退出'));
     await tester.pumpAndSettle();
     expect(forumLoggedOut, isTrue);
+    expect(find.text('已退出乐乎论坛账户'), findsOneWidget);
   });
 
   testWidgets('defers account notifications triggered during a widget update',

@@ -1928,7 +1928,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _logoutForumAccount() async {
+  Future<bool> _logoutForumAccount() async {
     _cancelForumRecovery();
     setState(() => _reloadingSession = true);
     _syncOnboardingAccountStatus();
@@ -1937,7 +1937,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       await _repo.clearLoginCookies();
       final nextRepository = await ForumRepositoryFactory.load();
       if (!mounted) {
-        return;
+        return false;
       }
       setState(() {
         _repo = nextRepository;
@@ -1951,10 +1951,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       });
       _syncOnboardingAccountStatus();
       unawaited(_initializeForumBadges());
-      _showSnack('已退出乐乎论坛账户');
+      return true;
     } on Object catch (error) {
       if (!mounted) {
-        return;
+        return false;
       }
       setState(() => _reloadingSession = false);
       _syncOnboardingAccountStatus();
@@ -1962,16 +1962,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         title: '论坛账户退出失败',
         message: _friendlyError(error),
       );
+      return false;
     }
   }
 
-  Future<void> _logoutAcademicAccount() async {
+  Future<bool> _logoutAcademicAccount() async {
     _cancelForumRecovery();
     setState(() => _reloadingSession = true);
     try {
       final clearedNames = await AcademicAuthService().clearCookies();
       await ForumAuthService().removeCachedCookieNames(clearedNames);
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() {
         _hasAcademicSession = false;
         _reloadingSession = false;
@@ -1980,15 +1981,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         }
       });
       _syncOnboardingAccountStatus();
-      _showSnack('已退出上大校园账户');
+      return true;
     } on Object catch (error) {
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() => _reloadingSession = false);
       _syncOnboardingAccountStatus();
       await _showErrorDialog(
         title: '校园账户退出失败',
         message: _friendlyError(error),
       );
+      return false;
     }
   }
 

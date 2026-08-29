@@ -22,8 +22,8 @@ class StartupOnboardingController extends ChangeNotifier {
   bool _academicLoggedIn = false;
   ForumAccountStatus _forumStatus = ForumAccountStatus.signedOut;
   VoidCallback? _onForumReconnect;
-  Future<void> Function()? _onAcademicLogout;
-  Future<void> Function()? _onForumLogout;
+  Future<bool> Function()? _onAcademicLogout;
+  Future<bool> Function()? _onForumLogout;
   int _openRequest = 0;
   bool _notificationScheduled = false;
   bool _disposed = false;
@@ -61,16 +61,17 @@ class StartupOnboardingController extends ChangeNotifier {
   void reconnectForum() => _onForumReconnect?.call();
 
   void setAccountLogoutHandlers({
-    Future<void> Function()? onAcademicLogout,
-    Future<void> Function()? onForumLogout,
+    Future<bool> Function()? onAcademicLogout,
+    Future<bool> Function()? onForumLogout,
   }) {
     _onAcademicLogout = onAcademicLogout;
     _onForumLogout = onForumLogout;
   }
 
-  Future<void> logoutAcademic() async => await _onAcademicLogout?.call();
+  Future<bool> logoutAcademic() async =>
+      await _onAcademicLogout?.call() ?? false;
 
-  Future<void> logoutForum() async => await _onForumLogout?.call();
+  Future<bool> logoutForum() async => await _onForumLogout?.call() ?? false;
 
   bool get canLogoutAcademic => _onAcademicLogout != null;
   bool get canLogoutForum => _onForumLogout != null;
@@ -113,6 +114,7 @@ class StartupOnboarding extends StatefulWidget {
     this.onForumLogout,
     required this.controller,
     this.settingsService,
+    this.notificationPermissionRequester,
   });
 
   final Widget child;
@@ -121,10 +123,11 @@ class StartupOnboarding extends StatefulWidget {
   final ForumAccountStatus initialForumStatus;
   final VoidCallback onAcademicLoginCompleted;
   final VoidCallback onForumLoginCompleted;
-  final Future<void> Function()? onAcademicLogout;
-  final Future<void> Function()? onForumLogout;
+  final Future<bool> Function()? onAcademicLogout;
+  final Future<bool> Function()? onForumLogout;
   final StartupOnboardingController controller;
   final ClientSettingsService? settingsService;
+  final Future<bool?> Function()? notificationPermissionRequester;
 
   @override
   State<StartupOnboarding> createState() => _StartupOnboardingState();
@@ -146,6 +149,8 @@ class _StartupOnboardingState extends State<StartupOnboarding>
   late bool _academicLoggedIn = widget.initialAcademicLoggedIn;
   late ForumAccountStatus _forumStatus = widget.initialForumStatus;
   late int _handledOpenRequest;
+  Timer? _panelNoticeTimer;
+  String? _panelNotice;
 
   @override
   void initState() {
@@ -228,7 +233,16 @@ class _StartupOnboardingState extends State<StartupOnboarding>
   }
 
   Future<void> _continue() async {
-    if (_page == 1) await _requestNotifications();
+    if (_page == 1) {
+      final permissionGranted = await (widget.notificationPermissionRequester ??
+          _requestNotifications)();
+      if (!mounted) return;
+      if (permissionGranted == false) {
+        _showPanelNotice('通知权限未开启，可稍后在系统设置中开启');
+      } else if (permissionGranted == null) {
+        _showPanelNotice('通知权限请求失败，可稍后在系统设置中开启');
+      }
+    }
     if (!mounted) return;
     if (_page < 2) {
       await _pageController.nextPage(
@@ -267,7 +281,10 @@ class _StartupOnboardingState extends State<StartupOnboarding>
       message: '退出后课表和校园服务需要重新登录。论坛账户也需在登录校园账户后使用。',
     );
     if (!confirmed || !mounted) return;
-    await callback();
+    final loggedOut = await callback();
+    if (loggedOut && mounted) {
+      _showPanelNotice('已退出上大校园账户');
+    }
   }
 
   Future<void> _openForumLogin() async {
@@ -293,7 +310,10 @@ class _StartupOnboardingState extends State<StartupOnboarding>
       message: '退出后将清除论坛会话和本地账户数据，校园账户不会受影响。',
     );
     if (!confirmed || !mounted) return;
-    await callback();
+    final loggedOut = await callback();
+    if (loggedOut && mounted) {
+      _showPanelNotice('已退出乐乎论坛账户');
+    }
   }
 
   Future<bool> _confirmLogout({
@@ -348,6 +368,16 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     setState(() => _showForumDirectUnavailableHint = true);
   }
 
+  void _showPanelNotice(String message) {
+    _panelNoticeTimer?.cancel();
+    setState(() => _panelNotice = message);
+    _panelNoticeTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && _panelNotice == message) {
+        setState(() => _panelNotice = null);
+      }
+    });
+  }
+
   Future<void> _complete() async {
     if (!_accountManagerMode) {
       await _settingsService.saveStartupOnboardingCompleted(true);
@@ -396,10 +426,11 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     widget.controller.removeListener(_handleControllerChange);
     _panelAnimationController.dispose();
     _pageController.dispose();
+    _panelNoticeTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _requestNotifications() async {
+  Future<bool?> _requestNotifications() async {
     try {
       final plugin = FlutterLocalNotificationsPlugin();
       await plugin.initialize(
@@ -412,16 +443,28 @@ class _StartupOnboardingState extends State<StartupOnboarding>
           ),
         ),
       );
-      await plugin
-          .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
-      await plugin
-          .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
-    } on Object {
-      // 系统服务暂不可用时仍允许用户完成首次引导。
+      final android = plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        final enabled = await android.areNotificationsEnabled();
+        if (enabled == true) return true;
+        return await android.requestNotificationsPermission();
+      }
+
+      final ios = plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (ios != null) {
+        return await ios.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      }
+      return true;
+    } on Object catch (error, stackTrace) {
+      debugPrint('Notification permission request failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      return null;
     }
   }
 
@@ -448,8 +491,53 @@ class _StartupOnboardingState extends State<StartupOnboarding>
               child: _panel(context),
             ),
           ),
+          _panelNoticeOverlay(context),
         ],
       ],
+    );
+  }
+
+  Widget _panelNoticeOverlay(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Positioned(
+      left: 24,
+      right: 24,
+      bottom: MediaQuery.paddingOf(context).bottom + 96,
+      child: IgnorePointer(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: _panelNotice == null
+              ? const SizedBox.shrink()
+              : Material(
+                  key: ValueKey(_panelNotice),
+                  color: colors.inverseSurface,
+                  elevation: 6,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 20,
+                          color: colors.onInverseSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _panelNotice!,
+                            style: TextStyle(color: colors.onInverseSurface),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ),
     );
   }
 
@@ -903,7 +991,7 @@ class _StartupOnboardingState extends State<StartupOnboarding>
             title,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontSize: 28,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w500,
                 ),
           ),
           if (subtitle != null) ...[
@@ -943,7 +1031,8 @@ class _StartupOnboardingState extends State<StartupOnboarding>
         ),
       );
 
-  InlineSpan _link(BuildContext context, String label, String url) => WidgetSpan(
+  InlineSpan _link(BuildContext context, String label, String url) =>
+      WidgetSpan(
         child: GestureDetector(
           onTap: () => launchUrl(
             Uri.parse(url),
@@ -982,7 +1071,7 @@ class _StartupOnboardingState extends State<StartupOnboarding>
                     Text(
                       title,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                         fontSize: 17,
                       ),
                     ),
