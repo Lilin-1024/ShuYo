@@ -25,6 +25,17 @@ bool isForumRegistrationUri(Uri uri) {
   return uri.path == '/login';
 }
 
+@visibleForTesting
+bool isForumRegistrationCompletionUri(Uri uri) {
+  if (!ForumUrlResolver.usesWebVpn ||
+      uri.scheme != 'https' ||
+      uri.host.toLowerCase() != ForumUrlResolver.webVpnHost) {
+    return false;
+  }
+  final path = uri.path.toLowerCase();
+  return path == '/' || path == '/latest' || path == '/latest/';
+}
+
 bool _isForumRegistrationFlowUri(Uri uri) {
   if (!ForumUrlResolver.usesWebVpn ||
       uri.scheme != 'https' ||
@@ -53,6 +64,8 @@ class ForumOAuthCompletionPage extends StatefulWidget {
 }
 
 class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
+  static const _sessionProbeChannel = 'ForumSessionProbe';
+
   late final WebViewController _controller;
   final _authService = ForumAuthService();
   Timer? _sessionPollTimer;
@@ -62,6 +75,10 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
   bool _checkingSession = false;
   bool _forumReached = false;
   bool _registrationActive = false;
+  bool _registrationCompletionReached = false;
+  bool _webViewProbeInFlight = false;
+  bool _finalizingWebViewSession = false;
+  Timer? _webViewProbeTimeout;
   Uri? _currentUri;
   String? _error;
   int _certificateErrorGeneration = 0;
@@ -117,13 +134,14 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
     _sessionPollTimer?.cancel();
     _timeoutTimer?.cancel();
     _certificateErrorTimer?.cancel();
+    _webViewProbeTimeout?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _error != null,
+      canPop: _registrationActive || _error != null,
       child: Scaffold(
         appBar: AppBar(
           title: Text(_registrationActive ? '设置论坛昵称' : '乐乎论坛账户'),
@@ -191,6 +209,10 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
 
   Future<void> _start() async {
     await _configureAndroidWebView();
+    await _controller.addJavaScriptChannel(
+      _sessionProbeChannel,
+      onMessageReceived: _handleSessionProbeMessage,
+    );
     if (!mounted) return;
     if (kDebugMode) {
       debugPrint(
@@ -236,6 +258,15 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
     if (_isForumRegistrationFlowUri(uri)) {
       if (!_registrationActive && mounted) {
         setState(() => _registrationActive = true);
+      }
+    }
+    if (_registrationActive && isForumRegistrationCompletionUri(uri)) {
+      _registrationCompletionReached = true;
+      if (kDebugMode) {
+        debugPrint(
+          '[FORUM_AUTH_CALLBACK] registration-complete-candidate '
+          '${_describeUri(uri)}',
+        );
       }
     }
     if (ForumUrlResolver.isKnownForumHost(uri.host.toLowerCase())) {
@@ -323,6 +354,7 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
       // still using its own session. Ask the active WebView instead so the
       // browser and the registration form share exactly one cookie jar.
       if (_registrationActive) {
+        if (!_registrationCompletionReached) return;
         await _checkWebViewSession();
         return;
       }
@@ -351,65 +383,93 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
   }
 
   Future<void> _checkWebViewSession() async {
-    final result = await _controller.runJavaScriptReturningResult('''
+    if (_webViewProbeInFlight) return;
+    _webViewProbeInFlight = true;
+    _webViewProbeTimeout?.cancel();
+    _webViewProbeTimeout = Timer(const Duration(seconds: 5), () {
+      _webViewProbeInFlight = false;
+    });
+    try {
+      await _controller.runJavaScript('''
 (async function() {
   try {
     const response = await fetch('/session/current.json', {credentials: 'include'});
     const body = await response.text();
-    return JSON.stringify({status: response.status, body: body});
+    let currentUser = false;
+    try {
+      const session = JSON.parse(body);
+      currentUser = !!(session && typeof session.current_user === 'object' && session.current_user !== null);
+    } catch (_) {}
+    $_sessionProbeChannel.postMessage(JSON.stringify({
+      status: response.status,
+      currentUser: currentUser,
+      url: window.location.href
+    }));
   } catch (error) {
-    return JSON.stringify({status: 0, body: ''});
+    $_sessionProbeChannel.postMessage(JSON.stringify({
+      status: 0,
+      currentUser: false,
+      url: window.location.href
+    }));
   }
 })()
 ''');
-    final payload = _decodeJavaScriptResult(result);
-    if (payload == null) return;
-    if (kDebugMode && payload['status'] != 200) {
-      debugPrint(
-        '[FORUM_AUTH_CALLBACK] webview session status=${payload['status']}',
-      );
-    }
-    if (payload['status'] != 200) return;
-    final body = payload['body'];
-    if (body is! String || body.isEmpty) return;
-    try {
-      final session = jsonDecode(body);
+    } on Object catch (error) {
+      _webViewProbeInFlight = false;
       if (kDebugMode) {
-        debugPrint(
-          '[FORUM_AUTH_CALLBACK] webview session '
-          'status=${payload['status']} currentUser=${session is Map && session['current_user'] is Map}',
-        );
+        debugPrint('[FORUM_AUTH_CALLBACK] webview session probe: $error');
       }
-      if (session is Map && session['current_user'] is Map) {
-        await _authService.refreshFromWebView();
-        await _authService.persistLastCookieHeader();
-        _finish(ForumOAuthCompletionResult.loggedIn);
-      }
-    } on Object {
-      // The page may return HTML while the registration flow is transitioning.
     }
   }
 
-  Map<String, dynamic>? _decodeJavaScriptResult(Object? result) {
-    Object? value = result;
-    if (value is String) {
-      try {
-        value = jsonDecode(value);
-      } on Object {
-        return null;
+  void _handleSessionProbeMessage(JavaScriptMessage message) {
+    _webViewProbeInFlight = false;
+    _webViewProbeTimeout?.cancel();
+    _webViewProbeTimeout = null;
+    if (_completed || !_registrationActive || !_registrationCompletionReached) {
+      return;
+    }
+    Map<String, dynamic>? payload;
+    try {
+      final value = jsonDecode(message.message);
+      if (value is Map) {
+        payload = value.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
       }
-      // Android may return a JSON string containing the script's JSON result.
-      if (value is String) {
-        try {
-          value = jsonDecode(value);
-        } on Object {
-          return null;
-        }
+    } on Object catch (error) {
+      if (kDebugMode) {
+        debugPrint(
+            '[FORUM_AUTH_CALLBACK] invalid webview session probe: $error');
+      }
+      return;
+    }
+    if (payload == null) return;
+    final status = payload['status'];
+    final currentUser = payload['currentUser'] == true;
+    if (kDebugMode) {
+      debugPrint(
+        '[FORUM_AUTH_CALLBACK] webview session '
+        'status=$status currentUser=$currentUser '
+        'url=${payload['url'] ?? '-'}',
+      );
+    }
+    if (status != 200 || !currentUser || _finalizingWebViewSession) return;
+    _finalizingWebViewSession = true;
+    unawaited(_completeWebViewSession());
+  }
+
+  Future<void> _completeWebViewSession() async {
+    try {
+      await _authService.refreshFromWebView();
+      await _authService.persistLastCookieHeader();
+      _finish(ForumOAuthCompletionResult.loggedIn);
+    } on Object catch (error) {
+      _finalizingWebViewSession = false;
+      if (kDebugMode) {
+        debugPrint('[FORUM_AUTH_CALLBACK] finalize webview session: $error');
       }
     }
-    return value is Map
-        ? value.map((key, value) => MapEntry(key.toString(), value))
-        : null;
   }
 
   void _finish(ForumOAuthCompletionResult result) {

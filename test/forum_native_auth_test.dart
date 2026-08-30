@@ -86,6 +86,39 @@ void main() {
     );
   });
 
+  test('recognizes registration completion forum routes', () {
+    expect(
+      isForumRegistrationCompletionUri(
+        Uri.parse(
+          'https://https-bbs-shu-edu-cn-443.webvpn.shu.edu.cn/',
+        ),
+      ),
+      isTrue,
+    );
+    expect(
+      isForumRegistrationCompletionUri(
+        Uri.parse(
+          'https://https-bbs-shu-edu-cn-443.webvpn.shu.edu.cn/latest?order=default',
+        ),
+      ),
+      isTrue,
+    );
+    expect(
+      isForumRegistrationCompletionUri(
+        Uri.parse('https://bbs.shu.edu.cn/latest'),
+      ),
+      isFalse,
+    );
+    expect(
+      isForumRegistrationCompletionUri(
+        Uri.parse(
+          'https://https-bbs-shu-edu-cn-443.webvpn.shu.edu.cn/categories',
+        ),
+      ),
+      isFalse,
+    );
+  });
+
   testWidgets('registration placeholder does not submit an API request',
       (tester) async {
     await tester.pumpWidget(
