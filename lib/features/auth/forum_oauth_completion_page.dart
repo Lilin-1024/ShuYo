@@ -61,14 +61,21 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
         NavigationDelegate(
           onPageStarted: (url) {
             _currentUri = Uri.tryParse(url);
-            _handleNavigation(url);
+            _handleNavigation(url, event: 'started');
           },
           onPageFinished: (url) {
-            _handleNavigation(url);
+            _handleNavigation(url, event: 'finished');
             unawaited(_checkSession());
           },
           onNavigationRequest: (request) {
             _currentUri = Uri.tryParse(request.url);
+            if (kDebugMode) {
+              final uri = Uri.tryParse(request.url);
+              debugPrint(
+                '[FORUM_AUTH_CALLBACK] navigation-request '
+                '${uri == null ? request.url : _describeUri(uri)}',
+              );
+            }
             return _handleNavigationRequest(request);
           },
           onSslAuthError: _handleSslAuthError,
@@ -168,6 +175,12 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
   Future<void> _start() async {
     await _configureAndroidWebView();
     if (!mounted) return;
+    if (kDebugMode) {
+      debugPrint(
+        '[FORUM_AUTH_CALLBACK] load-start '
+        '${_describeUri(widget.callbackUri)}',
+      );
+    }
     await _controller.loadRequest(widget.callbackUri);
     _sessionPollTimer = Timer.periodic(
       const Duration(milliseconds: 800),
@@ -191,12 +204,17 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
     }
   }
 
-  void _handleNavigation(String value) {
+  void _handleNavigation(String value, {required String event}) {
     final uri = Uri.tryParse(value);
     if (uri == null || _completed) return;
     _clearCertificateError();
     if (kDebugMode) {
-      debugPrint('[FORUM_AUTH_CALLBACK] ${uri.host}${uri.path}');
+      debugPrint(
+        '[FORUM_AUTH_CALLBACK] event=$event ${_describeUri(uri)} '
+        'queryKeys=${uri.queryParameters.keys.toList()..sort()} '
+        'message=${uri.queryParameters['message'] ?? '-'} '
+        'strategy=${uri.queryParameters['strategy'] ?? '-'}',
+      );
     }
     if (isForumRegistrationUri(uri)) {
       if (!_registrationActive && mounted) {
@@ -209,6 +227,10 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
         _fail('乐乎论坛拒绝了本次登录，请返回后重试');
       }
     }
+  }
+
+  String _describeUri(Uri uri) {
+    return '${uri.scheme}://${uri.host}${uri.path}';
   }
 
   NavigationDecision _handleNavigationRequest(NavigationRequest request) {
@@ -281,6 +303,12 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
       await _authService.refreshFromWebView();
       final apiClient = DiscourseApiClient(authService: _authService);
       final session = await apiClient.getJson('/session/current.json');
+      if (kDebugMode) {
+        debugPrint(
+          '[FORUM_AUTH_CALLBACK] session response '
+          'currentUser=${session['current_user'] is Map}',
+        );
+      }
       if (session['current_user'] is Map) {
         await _authService.persistLastCookieHeader();
         _finish(ForumOAuthCompletionResult.loggedIn);

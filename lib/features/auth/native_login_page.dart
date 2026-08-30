@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/services/academic_native_auth_service.dart';
@@ -294,6 +295,15 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
   }
 
   Future<void> _completeLogin(Uri callbackUri) async {
+    if (kDebugMode && widget.destination == NativeLoginDestination.forum) {
+      debugPrint(
+        '[FORUM_AUTH_CALLBACK] native redirect '
+        '${callbackUri.host}${callbackUri.path} '
+        'queryKeys=${callbackUri.queryParameters.keys.toList()..sort()} '
+        'redirectUri=${_describeRedirectUri(callbackUri.queryParameters['redirect_uri'])} '
+        'stateLength=${callbackUri.queryParameters['state']?.length ?? 0}',
+      );
+    }
     await _authService.installCookiesInWebView();
     if (!mounted) return;
     if (widget.destination == NativeLoginDestination.forum) {
@@ -315,6 +325,13 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       ),
     );
     if (completed == true && mounted) Navigator.of(context).pop(true);
+  }
+
+  String _describeRedirectUri(String? value) {
+    if (value == null || value.isEmpty) return '-';
+    final uri = Uri.tryParse(value);
+    if (uri == null) return '<invalid>';
+    return '${uri.host}${uri.path}';
   }
 
   String _methodHint(Map<AcademicVerificationMethod, String> methods) {

@@ -155,7 +155,7 @@ class ForumAuthService {
           WebViewCookie(
             name: cookie.name,
             value: '',
-            domain: cookie.domain,
+            domain: _normalizeCookieDomain(cookie.domain, domain.host),
             path: cookie.path,
           ),
         );
@@ -260,12 +260,19 @@ class ForumAuthService {
       } on Object {
         continue;
       }
+      if (kDebugMode) {
+        debugPrint(
+          '[LEHU_FORUM_COOKIE] webview-read mode=${mode.name} '
+          'domain=${domain.host} '
+          'cookies=${cookies.map((cookie) => '${cookie.name}@${cookie.domain}[${cookie.path}]#${cookie.value.length}').toList()}',
+        );
+      }
       for (final cookie in cookies) {
         if (cookie.name.isEmpty || cookie.value.isEmpty) continue;
         final stored = _StoredForumCookie(
           name: cookie.name,
           value: cookie.value,
-          domain: cookie.domain.isEmpty ? domain.host : cookie.domain,
+          domain: _normalizeCookieDomain(cookie.domain, domain.host),
           path: cookie.path.isEmpty ? '/' : cookie.path,
           expiresAt: null,
           secure: true,
@@ -314,6 +321,15 @@ class ForumAuthService {
     return matching
         .map((cookie) => '${cookie.name}=${cookie.value}')
         .join('; ');
+  }
+
+  String _normalizeCookieDomain(String value, String fallbackHost) {
+    if (value.isEmpty) return fallbackHost;
+    final parsed = Uri.tryParse(value);
+    if (parsed != null && parsed.host.isNotEmpty) return parsed.host;
+    final withoutScheme = value.replaceFirst(RegExp(r'^https?://'), '');
+    final host = withoutScheme.split('/').first.split(':').first;
+    return host.isEmpty ? fallbackHost : host;
   }
 
   String _storedKey(ForumAccessMode mode) => switch (mode) {
