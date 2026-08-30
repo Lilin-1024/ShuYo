@@ -93,9 +93,20 @@ class AcademicNativeAuthService {
   /// before the OAuth callback is loaded there.
   Future<void> installCookiesInWebView() async {
     final manager = WebViewCookieManager();
+    if (_target == _NativeAuthTarget.academic &&
+        AcademicUrlResolver.usesWebVpn &&
+        defaultTargetPlatform == TargetPlatform.android) {
+      await _resetWebVpnCookieStore(manager);
+    }
+    final domains = <String>{};
+    final expectedByDomain = <String, Set<String>>{};
     for (final stored in _cookies) {
       final cookie = stored.cookie;
       if (cookie.value.isEmpty) continue;
+      domains.add(stored.domain);
+      expectedByDomain
+          .putIfAbsent(stored.domain, () => <String>{})
+          .add(cookie.name);
       await manager.setCookie(
         WebViewCookie(
           name: cookie.name,
@@ -104,6 +115,77 @@ class AcademicNativeAuthService {
           path: stored.path,
         ),
       );
+    }
+
+    // Android's CookieManager.setCookie is fire-and-forget at the platform
+    // level. Give the network service time to commit the cookies, then read
+    // them back before the callback WebView starts navigating. This avoids a
+    // race where the OAuth callback immediately falls back to /auth/login.
+    for (var attempt = 0; attempt < 6; attempt++) {
+      await Future<void>.delayed(
+        attempt == 0
+            ? const Duration(milliseconds: 150)
+            : const Duration(milliseconds: 300),
+      );
+      var allVisible = true;
+      for (final domain in domains) {
+        List<WebViewCookie> visible;
+        try {
+          visible = await manager.getCookies(
+            domain: Uri.parse('https://$domain'),
+          );
+        } on Object {
+          allVisible = false;
+          continue;
+        }
+        final names = visible.map((cookie) => cookie.name).toSet();
+        final expected = expectedByDomain[domain] ?? const <String>{};
+        if (!names.containsAll(expected)) allVisible = false;
+      }
+      if (allVisible || domains.isEmpty) return;
+    }
+  }
+
+  Future<void> _resetWebVpnCookieStore(WebViewCookieManager manager) async {
+    // Android may retain multiple same-name tokens across host/path scopes;
+    // setting an empty value for one URL does not reliably remove all of them.
+    // Snapshot ordinary cookies, clear the platform store atomically, then
+    // restore the snapshot before installing the fresh OAuth cookie.
+    final domains = <Uri>[
+      Uri.parse('https://webvpn.shu.edu.cn'),
+      ForumUrlResolver.baseUri,
+      Uri.parse(AcademicUrlResolver.webVpnBaseUrl),
+      Uri.parse('https://http-jwxt-shu-edu-cn-80.webvpn.shu.edu.cn'),
+      Uri.parse('https://https-newsso-shu-edu-cn-443.webvpn.shu.edu.cn'),
+      Uri.parse('https://oauth.shu.edu.cn'),
+    ];
+    final preserved = <String, WebViewCookie>{};
+    for (final domain in domains) {
+      try {
+        final cookies = await manager.getCookies(domain: domain);
+        for (final cookie in cookies) {
+          if (cookie.name == 'webvpn-token' || cookie.name == 'SHU_OAUTH2') {
+            continue;
+          }
+          final key =
+              '${cookie.name}\u0000${cookie.domain}\u0000${cookie.path}';
+          preserved[key] = cookie;
+        }
+      } on Object {
+        // Continue with the remaining cookie domains.
+      }
+    }
+    try {
+      await manager.clearCookies();
+    } on Object {
+      // A best-effort reset; the callback can still proceed with fresh cookies.
+    }
+    for (final cookie in preserved.values) {
+      try {
+        await manager.setCookie(cookie);
+      } on Object {
+        // Continue restoring the remaining ordinary cookies.
+      }
     }
   }
 
@@ -304,7 +386,6 @@ class AcademicNativeAuthService {
       );
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      _debugJsonError(uri, response.statusCode, json);
       final code = json['message']?.toString() ?? 'http${response.statusCode}';
       throw AcademicNativeAuthException(code, messageForCode(code));
     }
@@ -404,7 +485,6 @@ class AcademicNativeAuthService {
     }
     final response = await request.close();
     _saveCookies(uri, response.cookies);
-    _debugRequest(method, uri, response);
     return response;
   }
 
@@ -413,10 +493,6 @@ class AcademicNativeAuthService {
     final location = response.headers.value(HttpHeaders.locationHeader);
     if (location == null || location.isEmpty) return null;
     var next = current.resolve(location);
-    if (kDebugMode) {
-      debugPrint('[SHU_AUTH] redirect ${current.host}${current.path} '
-          '-> ${next.scheme}://${next.host}${next.path}');
-    }
     // Some direct campus gateways answer the HTTPS entry with a temporary
     // HTTP canonical URL. Browsers immediately upgrade it back to HTTPS;
     // mirror that behavior before the next request while keeping all
@@ -530,29 +606,6 @@ class AcademicNativeAuthService {
         'internalServerError' => '学校认证服务暂时不可用',
         _ => '登录失败，请稍后重试（$code）',
       };
-
-  void _debugRequest(String method, Uri uri, HttpClientResponse response) {
-    if (!kDebugMode) return;
-    final cookieNames = response.cookies.map((cookie) => cookie.name).join(',');
-    debugPrint(
-      '[SHU_AUTH] $method ${uri.host}${uri.path} '
-      'status=${response.statusCode} cookies=[$cookieNames]',
-    );
-  }
-
-  void _debugJsonError(
-    Uri uri,
-    int statusCode,
-    Map<String, dynamic> json,
-  ) {
-    if (!kDebugMode) return;
-    final apiCode = json['code']?.toString() ?? 'none';
-    final message = json['message']?.toString() ?? 'none';
-    debugPrint(
-      '[SHU_AUTH] response-error ${uri.host}${uri.path} '
-      'status=$statusCode apiCode=$apiCode message=$message',
-    );
-  }
 }
 
 class _StoredCookie {

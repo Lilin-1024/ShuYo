@@ -52,7 +52,7 @@ class _FakeAcademicAuthService implements AcademicAuthService {
   Future<void> markLoggedIn() async {}
 
   @override
-  Future<String?> cookieHeader() async => null;
+  Future<String?> cookieHeader({Uri? targetUri}) async => null;
 
   @override
   Future<bool> hasWebVpnSession() async => false;

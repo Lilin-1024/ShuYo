@@ -229,9 +229,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _persistAcademicLoginCookies() async {
     try {
-      await AcademicAuthService().cookieHeader();
-    } on Object catch (error) {
-      debugPrint('[LEHU_WEBVPN] academic-cookie-persist-error: $error');
+      final authService = AcademicAuthService();
+      // A successful login must clear the explicit-logout marker even when
+      // Android's WebView has not exposed the newly-installed cookies yet.
+      // Otherwise the marker can survive the login callback and force every
+      // subsequent session validation to report `loginRequired`.
+      await authService.markLoggedIn();
+      await authService.cookieHeader();
+    } on Object {
+      // Cookie persistence is best effort and must not block the login flow.
     }
   }
 
@@ -932,10 +938,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<bool> _syncScheduleAfterWebVpnLogin() async {
     if (_syncingAcademicSchedule) {
-      debugPrint('[LEHU_WEBVPN] schedule-sync skipped: already loading');
       return false;
     }
-    debugPrint('[LEHU_WEBVPN] schedule-sync start');
     _loadingScheduleSummary = true;
     _syncingAcademicSchedule = true;
     if (mounted) {
@@ -943,7 +947,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
     try {
       final prepared = await _prepareAcademicWebVpnSessionInBackground();
-      debugPrint('[LEHU_WEBVPN] schedule-sync prepared=$prepared');
       if (!prepared) {
         final summary = await _scheduleRepository.homeSummary();
         if (mounted) {
@@ -952,7 +955,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return false;
       }
       await Future<void>.delayed(const Duration(seconds: 1));
-      debugPrint('[LEHU_WEBVPN] schedule-sync refreshSchedule');
       await _scheduleRepository.refreshSchedule();
       final summary = await _scheduleRepository.homeSummary();
       unawaited(_scheduleWidgetService.syncFromCache());
@@ -960,14 +962,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return false;
       }
       setState(() => _scheduleSummaryText = summary.text);
-      await _scheduleNotificationService.syncScheduleReminders(
-        requestPermission: true,
-      );
+      // Reminder permissions are opt-in and must not be requested as part of
+      // the automatic post-login schedule sync.
+      await _scheduleNotificationService.syncScheduleReminders();
       _showSnack('校园账户已登录，课表已同步');
-      debugPrint('[LEHU_WEBVPN] schedule-sync success');
       return true;
-    } on AcademicAuthException catch (error) {
-      debugPrint('[LEHU_WEBVPN] schedule-sync auth-error: $error');
+    } on AcademicAuthException {
       if (mounted) {
         final summary = await _scheduleRepository.homeSummary();
         if (mounted) {
@@ -976,8 +976,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
       _showSnack('校园账户登录未完成，请重试');
       return false;
-    } on Object catch (error) {
-      debugPrint('[LEHU_WEBVPN] schedule-sync error: $error');
+    } on Object {
       if (mounted) {
         final summary = await _scheduleRepository.homeSummary();
         if (mounted) {
@@ -1011,10 +1010,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     try {
       return await completer.future.timeout(
         const Duration(seconds: 75),
-        onTimeout: () {
-          debugPrint('[LEHU_WEBVPN] background academic preload timeout');
-          return false;
-        },
+        onTimeout: () => false,
       );
     } finally {
       if (mounted && identical(_academicWebVpnPreloadCompleter, completer)) {
@@ -1025,7 +1021,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _completeAcademicWebVpnPreload(bool success) {
     final completer = _academicWebVpnPreloadCompleter;
-    debugPrint('[LEHU_WEBVPN] background academic preload complete=$success');
     if (completer != null && !completer.isCompleted) {
       completer.complete(success);
     }
@@ -1054,10 +1049,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     try {
       return await completer.future.timeout(
         const Duration(seconds: 12),
-        onTimeout: () {
-          debugPrint('[LEHU_WEBVPN] background forum preload timeout');
-          return ForumWebVpnPreparationResult.unavailable;
-        },
+        onTimeout: () => ForumWebVpnPreparationResult.unavailable,
       );
     } finally {
       if (mounted && identical(_forumWebVpnPreloadCompleter, completer)) {
@@ -1068,7 +1060,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _completeForumWebVpnPreload(ForumWebVpnPreparationResult result) {
     final completer = _forumWebVpnPreloadCompleter;
-    debugPrint('[LEHU_WEBVPN] background forum preload complete=$result');
     if (completer != null && !completer.isCompleted) {
       completer.complete(result);
     }

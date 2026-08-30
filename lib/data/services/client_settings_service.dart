@@ -50,7 +50,9 @@ class ClientSettingsService {
   Future<ClientNotificationSettings> loadNotificationSettings() async {
     final prefs = await _preferencesLoader();
     return ClientNotificationSettings(
-      scheduleEnabled: prefs.getBool(scheduleNotificationsEnabledKey) ?? true,
+      // Course reminders are opt-in. Permission prompts should only happen
+      // after the user explicitly enables reminders in settings.
+      scheduleEnabled: prefs.getBool(scheduleNotificationsEnabledKey) ?? false,
     );
   }
 

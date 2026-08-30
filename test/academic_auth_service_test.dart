@@ -71,6 +71,48 @@ void main() {
     );
   });
 
+  test('selects the academic-host token for a targeted WebVPN request',
+      () async {
+    final portal = Uri.parse(ForumUrlResolver.webVpnPortalUrl);
+    final academic = Uri.parse(AcademicUrlResolver.webVpnBaseUrl);
+    final service = AcademicAuthService(
+      cookieLoader: (domain) async {
+        if (domain.host == portal.host) {
+          return [
+            WebViewCookie(
+              name: 'webvpn-token',
+              value: 'portal-token',
+              domain: portal.host,
+            ),
+          ];
+        }
+        if (domain.host == academic.host) {
+          return [
+            WebViewCookie(
+              name: 'webvpn-token',
+              value: 'academic-token',
+              domain: academic.host,
+            ),
+            WebViewCookie(
+              name: 'route',
+              value: 'node-a',
+              domain: academic.host,
+            ),
+          ];
+        }
+        return const [];
+      },
+      cookieSetter: (_) async {},
+    );
+
+    final header = await service.cookieHeader(
+      targetUri: Uri.parse('${AcademicUrlResolver.webVpnBaseUrl}/jwglxt/'),
+    );
+    expect(header, contains('webvpn-token=academic-token'));
+    expect(header, isNot(contains('portal-token')));
+    expect(header, contains('route=node-a'));
+  });
+
   test('does not treat a stale portal token as an authenticated session',
       () async {
     final portal = Uri.parse(ForumUrlResolver.webVpnPortalUrl);

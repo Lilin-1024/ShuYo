@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -246,11 +245,7 @@ class AcademicAuthService {
         .map((cookie) => '${cookie.name}=${cookie.value}')
         .join('; ');
     if (header.isEmpty) return WebVpnSessionStatus.loginRequired;
-    final status = await _webVpnSessionValidator(header);
-    if (kDebugMode) {
-      debugPrint('[LEHU_WEBVPN] portal-session validation=${status.name}');
-    }
-    return status;
+    return _webVpnSessionValidator(header);
   }
 
   Future<WebVpnSessionStatus> _validateWebVpnSessionOverNetwork(
@@ -313,25 +308,43 @@ class AcademicAuthService {
         host.contains('newsso-shu-edu-cn');
   }
 
-  Future<String?> cookieHeader() async {
+  /// Returns cookies suitable for the current service.
+  ///
+  /// When [targetUri] is supplied, cookies are filtered using normal browser
+  /// host/path matching. This is important on Android WebView: the WebVPN
+  /// portal and each proxied academic host can contain different values for
+  /// the same `webvpn-token` name. Collapsing all domains by name can select
+  /// the portal token for an academic request and produces a valid HTTP 200
+  /// login page instead of the authenticated response.
+  Future<String?> cookieHeader({Uri? targetUri}) async {
     final webVpn = AcademicUrlResolver.usesWebVpn;
     final cached = await _loadCachedCookies(webVpn: webVpn);
     final live = await _loadLiveCookies(webVpn: webVpn);
     final merged = _mergeCookieGroups(cached, live);
     await _persistCookies(merged, webVpn: webVpn);
 
-    final values = <String, String>{};
-    for (final group in [if (webVpn) _portalGroup, _academicGroup]) {
+    final values = <String, _CookieCandidate>{};
+    final groups = targetUri == null
+        ? [if (webVpn) _portalGroup, _academicGroup]
+        : <String>[_academicGroup];
+    for (final group in groups) {
       for (final cookie in merged[group] ?? const <WebViewCookie>[]) {
         if (cookie.name.isNotEmpty && cookie.value.isNotEmpty) {
-          values[cookie.name] = cookie.value;
+          if (targetUri != null && !_cookieMatches(cookie, targetUri)) {
+            continue;
+          }
+          final candidate = _CookieCandidate(cookie);
+          final previous = values[cookie.name];
+          if (previous == null || candidate.score > previous.score) {
+            values[cookie.name] = candidate;
+          }
         }
       }
     }
     if (values.isEmpty) return null;
     await markLoggedIn();
     return values.entries
-        .map((entry) => '${entry.key}=${entry.value}')
+        .map((entry) => '${entry.key}=${entry.value.cookie.value}')
         .join('; ');
   }
 
@@ -344,30 +357,75 @@ class AcademicAuthService {
         Uri.parse(ForumUrlResolver.webVpnPortalUrl),
       );
     }
-    groups[_academicGroup] = await _cookiesFor(
-      Uri.parse(
-        webVpn ? AcademicUrlResolver.webVpnBaseUrl : AcademicConstants.baseUrl,
-      ),
-    );
+    final academicDomains = webVpn
+        ? <Uri>[
+            // The WebVPN gateway redirects through this legacy HTTP-prefixed
+            // host during ticket login. Android keeps its cookies scoped to
+            // that host instead of exposing them on the HTTPS-prefixed host.
+            Uri.parse(
+              'https://http-jwxt-shu-edu-cn-80.webvpn.shu.edu.cn',
+            ),
+            Uri.parse(AcademicUrlResolver.webVpnBaseUrl),
+            // Some Android WebView versions keep the ticket/session cookie
+            // scoped to /jwglxt rather than /. Querying the exact path is
+            // required for CookieManager.getCookie to return it.
+            Uri.parse('${AcademicUrlResolver.webVpnBaseUrl}/jwglxt/'),
+            AcademicUrlResolver.scheduleIndexUri,
+            // The gateway can redirect through the original host. Keep a
+            // direct-host snapshot as a fallback for Android WebView builds
+            // that scope the backend session cookie there.
+            Uri.parse(AcademicConstants.baseUrl),
+            Uri.parse('${AcademicConstants.baseUrl}/jwglxt/'),
+          ]
+        : <Uri>[Uri.parse(AcademicConstants.baseUrl)];
+    final academicCookies = <WebViewCookie>[];
+    for (final domain in academicDomains) {
+      academicCookies.addAll(await _cookiesFor(domain));
+    }
+    groups[_academicGroup] = academicCookies;
     return groups;
   }
 
   Future<List<WebViewCookie>> _cookiesFor(Uri domain) async {
     try {
-      return (await _cookieLoader(domain))
+      final loaded = (await _cookieLoader(domain))
           .where((cookie) => cookie.name.isNotEmpty && cookie.value.isNotEmpty)
           .map(
             (cookie) => WebViewCookie(
               name: cookie.name,
               value: cookie.value,
-              domain: cookie.domain.isEmpty ? domain.host : cookie.domain,
+              domain: _normalizeCookieDomain(cookie.domain, domain.host),
               path: cookie.path.isEmpty ? '/' : cookie.path,
             ),
           )
           .toList();
+      return loaded;
     } on Object {
       return const [];
     }
+  }
+
+  String _normalizeCookieDomain(String value, String fallbackHost) {
+    if (value.isEmpty) return fallbackHost;
+    final parsed = Uri.tryParse(value);
+    if (parsed != null && parsed.host.isNotEmpty) return parsed.host;
+    final withoutScheme = value.replaceFirst(RegExp(r'^https?://'), '');
+    final host = withoutScheme.split('/').first.split(':').first;
+    return host.isEmpty ? fallbackHost : host;
+  }
+
+  bool _cookieMatches(WebViewCookie cookie, Uri target) {
+    final domain = _normalizeCookieDomain(cookie.domain, target.host);
+    final host = target.host.toLowerCase();
+    final normalizedDomain =
+        domain.toLowerCase().replaceFirst(RegExp(r'^\.'), '');
+    final hostMatches =
+        host == normalizedDomain || host.endsWith('.$normalizedDomain');
+    if (!hostMatches) return false;
+    final path = cookie.path.isEmpty ? '/' : cookie.path;
+    final targetPath = target.path.isEmpty ? '/' : target.path;
+    return targetPath == path ||
+        targetPath.startsWith(path.endsWith('/') ? path : '$path/');
   }
 
   Future<Map<String, List<WebViewCookie>>> _loadCachedCookies({
@@ -467,4 +525,12 @@ class AcademicAuthService {
 
   String _cacheKey(bool webVpn) =>
       webVpn ? _cachedWebVpnCookiesKey : _cachedDirectCookiesKey;
+}
+
+class _CookieCandidate {
+  _CookieCandidate(this.cookie)
+      : score = cookie.domain.length * 1000 + cookie.path.length;
+
+  final WebViewCookie cookie;
+  final int score;
 }

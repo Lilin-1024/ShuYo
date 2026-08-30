@@ -50,7 +50,8 @@ class AcademicScheduleNotificationService {
   Future<AcademicScheduleNotificationSettings> loadSettings() async {
     final prefs = await _preferencesLoader();
     return AcademicScheduleNotificationSettings(
-      enabled: prefs.getBool(_enabledKey) ?? true,
+      // Keep reminders disabled until the user turns them on manually.
+      enabled: prefs.getBool(_enabledKey) ?? false,
       leadMinutes: prefs.getInt(_leadMinutesKey) ?? 20,
     );
   }

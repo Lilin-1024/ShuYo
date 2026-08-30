@@ -261,6 +261,42 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     }
   }
 
+  Future<bool?> _requestNotifications() async {
+    try {
+      final plugin = FlutterLocalNotificationsPlugin();
+      await plugin.initialize(
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          iOS: DarwinInitializationSettings(
+            requestAlertPermission: false,
+            requestBadgePermission: false,
+            requestSoundPermission: false,
+          ),
+        ),
+      );
+      final android = plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      if (android != null) {
+        final enabled = await android.areNotificationsEnabled();
+        if (enabled == true) return true;
+        return await android.requestNotificationsPermission();
+      }
+
+      final ios = plugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
+      if (ios != null) {
+        return await ios.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      }
+      return true;
+    } on Object {
+      return null;
+    }
+  }
+
   Future<void> _openAcademicLogin() async {
     final loggedIn = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const NativeLoginPage()),
@@ -428,44 +464,6 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     _pageController.dispose();
     _panelNoticeTimer?.cancel();
     super.dispose();
-  }
-
-  Future<bool?> _requestNotifications() async {
-    try {
-      final plugin = FlutterLocalNotificationsPlugin();
-      await plugin.initialize(
-        settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-          iOS: DarwinInitializationSettings(
-            requestAlertPermission: false,
-            requestBadgePermission: false,
-            requestSoundPermission: false,
-          ),
-        ),
-      );
-      final android = plugin.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>();
-      if (android != null) {
-        final enabled = await android.areNotificationsEnabled();
-        if (enabled == true) return true;
-        return await android.requestNotificationsPermission();
-      }
-
-      final ios = plugin.resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin>();
-      if (ios != null) {
-        return await ios.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-      }
-      return true;
-    } on Object catch (error, stackTrace) {
-      debugPrint('Notification permission request failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
-      return null;
-    }
   }
 
   @override

@@ -47,6 +47,7 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
   bool _completed = false;
   bool _terminalFailure = false;
   bool _openingAcademicSystem = false;
+  bool _finalizingAcademic = false;
   bool _checkingTicketLogin = false;
   String? _lastNavigationUrl;
   String? _pendingResourceErrorUrl;
@@ -153,6 +154,10 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
   Future<void> _start() async {
     await _configureAndroidWebView();
     if (!mounted) return;
+    // Allow Android's CookieManager network service to finish committing the
+    // cookies installed by AcademicNativeAuthService before the first load.
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
     await _controller.loadRequest(widget.callbackUri);
     _cookiePollTimer = Timer.periodic(
       const Duration(milliseconds: 600),
@@ -182,9 +187,6 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
     _clearTransientResourceErrorAfterNavigation(value);
     _lastNavigationUrl = value;
     if (_terminalFailure) return;
-    if (kDebugMode) {
-      debugPrint('[SHU_AUTH_CALLBACK] ${uri.host}${uri.path}');
-    }
     if (AcademicUrlResolver.usesWebVpn &&
         pageFinished &&
         uri.host == _portalUri.host &&
@@ -192,8 +194,12 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
       unawaited(_openAcademicSystem());
       return;
     }
-    if (_isAcademicReady(uri)) {
-      _succeed();
+    // Android emits onPageStarted before the navigation response has been
+    // committed to the CookieManager. Popping at that point races the
+    // subsequent schedule sync and loses the freshly-created academic
+    // session. Treat the page as ready only after onPageFinished.
+    if (pageFinished && _isAcademicReady(uri)) {
+      unawaited(_finishAcademicLogin());
       return;
     }
     if (pageFinished && AcademicUrlResolver.isTicketLoginUrl(value)) {
@@ -211,12 +217,6 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
         _isAllowedHost(uri.host)) {
       return NavigationDecision.navigate;
     }
-    if (kDebugMode) {
-      debugPrint(
-        '[SHU_AUTH_CALLBACK] blocked-navigation '
-        'mainFrame=${request.isMainFrame} url=${request.url}',
-      );
-    }
     if (request.isMainFrame) {
       _fail('认证页面尝试跳转到非上海大学地址');
     }
@@ -228,13 +228,6 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
       return;
     }
     final failedUrl = error.url ?? _lastNavigationUrl;
-    if (kDebugMode) {
-      debugPrint(
-        '[SHU_AUTH_CALLBACK] web-resource-error '
-        'code=${error.errorCode} type=${error.errorType} url=$failedUrl '
-        'description=${error.description}',
-      );
-    }
     _resourceErrorTimer?.cancel();
     _pendingResourceErrorUrl = failedUrl;
     final generation = ++_resourceErrorGeneration;
@@ -339,10 +332,7 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
       await _controller.loadRequest(
         Uri.parse('${AcademicUrlResolver.webVpnBaseUrl}/'),
       );
-    } on Object catch (error) {
-      if (kDebugMode) {
-        debugPrint('[SHU_AUTH_CALLBACK] academic-load-error $error');
-      }
+    } on Object {
       _fail('WebVPN 已认证，但无法进入教务系统');
     }
   }
@@ -355,6 +345,19 @@ class _WebVpnOAuthCompletionPageState extends State<WebVpnOAuthCompletionPage> {
     if (_completed || !mounted) return;
     _checkingTicketLogin = false;
     await _controller.loadRequest(AcademicUrlResolver.homeUri);
+  }
+
+  Future<void> _finishAcademicLogin() async {
+    if (_finalizingAcademic || _completed || _terminalFailure || !mounted) {
+      return;
+    }
+    _finalizingAcademic = true;
+    // Give Android WebView's network service a short window to commit
+    // Set-Cookie headers from the completed academic page before the Flutter
+    // side starts its HTTP schedule request.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    if (!mounted || _completed || _terminalFailure) return;
+    _succeed();
   }
 
   bool _isAcademicReady(Uri uri) {

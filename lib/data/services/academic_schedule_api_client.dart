@@ -141,7 +141,9 @@ class AcademicScheduleApiClient {
     required String accept,
     bool formRequest = false,
   }) async {
-    final cookie = await _authService.cookieHeader();
+    final cookie = await _authService.cookieHeader(
+      targetUri: _uri(AcademicConstants.scheduleIndexPath),
+    );
     if (cookie == null || cookie.isEmpty) {
       throw const AcademicAuthException('未读取到教务系统 Cookie，请先打开教务系统并确认已登录');
     }
@@ -176,8 +178,9 @@ class AcademicScheduleApiClient {
     final lower = body.toLowerCase();
     if (lower.contains('/oauth2/login') ||
         lower.contains('newsso.shu.edu.cn') ||
-        body.contains('统一认证') ||
-        body.contains('用户登录')) {
+        lower.contains('jwglxt/xtgl/login_slogin') ||
+        lower.contains('name="yhm"') ||
+        lower.contains("name='yhm'")) {
       throw const AcademicAuthException('教务登录已失效，请重新登录');
     }
   }
