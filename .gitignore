@@ -17,3 +17,5 @@ ios/.symlinks/
 
 *.iml
 *.log
+
+/.DS_Store
