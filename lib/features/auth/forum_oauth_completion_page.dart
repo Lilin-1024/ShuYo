@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -16,10 +17,26 @@ enum ForumOAuthCompletionResult { loggedIn }
 
 @visibleForTesting
 bool isForumRegistrationUri(Uri uri) {
-  return ForumUrlResolver.usesWebVpn &&
-      uri.scheme == 'https' &&
-      uri.host.toLowerCase() == ForumUrlResolver.webVpnHost &&
-      uri.path == '/login';
+  if (!ForumUrlResolver.usesWebVpn ||
+      uri.scheme != 'https' ||
+      uri.host.toLowerCase() != ForumUrlResolver.webVpnHost) {
+    return false;
+  }
+  return uri.path == '/login';
+}
+
+bool _isForumRegistrationFlowUri(Uri uri) {
+  if (!ForumUrlResolver.usesWebVpn ||
+      uri.scheme != 'https' ||
+      uri.host.toLowerCase() != ForumUrlResolver.webVpnHost) {
+    return false;
+  }
+  final path = uri.path.toLowerCase();
+  return path == '/login' ||
+      path == '/u/account-created' ||
+      path.startsWith('/signup') ||
+      path.startsWith('/register') ||
+      path.contains('/complete-registration');
 }
 
 class ForumOAuthCompletionPage extends StatefulWidget {
@@ -216,7 +233,7 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
         'strategy=${uri.queryParameters['strategy'] ?? '-'}',
       );
     }
-    if (isForumRegistrationUri(uri)) {
+    if (_isForumRegistrationFlowUri(uri)) {
       if (!_registrationActive && mounted) {
         setState(() => _registrationActive = true);
       }
@@ -300,6 +317,15 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
     if (_completed || _checkingSession || !_forumReached) return;
     _checkingSession = true;
     try {
+      // While the user is completing first-time forum registration, do not
+      // issue native API requests. Those requests can rotate _forum_session
+      // and write it back into the WebView while the registration page is
+      // still using its own session. Ask the active WebView instead so the
+      // browser and the registration form share exactly one cookie jar.
+      if (_registrationActive) {
+        await _checkWebViewSession();
+        return;
+      }
       await _authService.refreshFromWebView();
       final apiClient = DiscourseApiClient(authService: _authService);
       final session = await apiClient.getJson('/session/current.json');
@@ -322,6 +348,68 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
     } finally {
       _checkingSession = false;
     }
+  }
+
+  Future<void> _checkWebViewSession() async {
+    final result = await _controller.runJavaScriptReturningResult('''
+(async function() {
+  try {
+    const response = await fetch('/session/current.json', {credentials: 'include'});
+    const body = await response.text();
+    return JSON.stringify({status: response.status, body: body});
+  } catch (error) {
+    return JSON.stringify({status: 0, body: ''});
+  }
+})()
+''');
+    final payload = _decodeJavaScriptResult(result);
+    if (payload == null) return;
+    if (kDebugMode && payload['status'] != 200) {
+      debugPrint(
+        '[FORUM_AUTH_CALLBACK] webview session status=${payload['status']}',
+      );
+    }
+    if (payload['status'] != 200) return;
+    final body = payload['body'];
+    if (body is! String || body.isEmpty) return;
+    try {
+      final session = jsonDecode(body);
+      if (kDebugMode) {
+        debugPrint(
+          '[FORUM_AUTH_CALLBACK] webview session '
+          'status=${payload['status']} currentUser=${session is Map && session['current_user'] is Map}',
+        );
+      }
+      if (session is Map && session['current_user'] is Map) {
+        await _authService.refreshFromWebView();
+        await _authService.persistLastCookieHeader();
+        _finish(ForumOAuthCompletionResult.loggedIn);
+      }
+    } on Object {
+      // The page may return HTML while the registration flow is transitioning.
+    }
+  }
+
+  Map<String, dynamic>? _decodeJavaScriptResult(Object? result) {
+    Object? value = result;
+    if (value is String) {
+      try {
+        value = jsonDecode(value);
+      } on Object {
+        return null;
+      }
+      // Android may return a JSON string containing the script's JSON result.
+      if (value is String) {
+        try {
+          value = jsonDecode(value);
+        } on Object {
+          return null;
+        }
+      }
+    }
+    return value is Map
+        ? value.map((key, value) => MapEntry(key.toString(), value))
+        : null;
   }
 
   void _finish(ForumOAuthCompletionResult result) {
