@@ -2,6 +2,7 @@ import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 
 import '../../core/forum_url_resolver.dart';
+import '../../core/forum_constants.dart';
 import '../models/forum_poll.dart';
 import 'emoji_text.dart';
 
@@ -89,6 +90,17 @@ class CookedLinkPreview {
   final int? topicId;
   final int? postNumber;
   final String? userUsername;
+
+  bool get isInternalForumRoute {
+    final uri = Uri.tryParse(url);
+    if (uri == null || !ForumUrlResolver.isKnownForumHost(uri.host)) {
+      return false;
+    }
+    return uri.path == '/latest' || uri.path == '/latest/' ||
+        uri.path == '/faq' || uri.path == '/faq/' ||
+        uri.path == '/my/preferences/account' ||
+        uri.path == '/my/preferences/account/';
+  }
 
   bool get isInternalTopic => topicId != null;
   bool get isInternalUser => userUsername != null && userUsername!.isNotEmpty;
@@ -599,6 +611,13 @@ class HtmlText {
           }
           return;
         }
+        final rawHref = node.attributes['href'] ?? '';
+        if (isBlockedLink(rawHref)) {
+          // Keep the anchor's visible text, but deliberately discard its
+          // destination so it cannot be opened from posts or messages.
+          appendChildren(node, style);
+          return;
+        }
         final preview = _linkPreview(node);
         if (preview != null) {
           if (_hasClass(node, 'onebox')) {
@@ -666,6 +685,24 @@ class HtmlText {
 
   static String _absoluteUrl(String url) {
     return ForumUrlResolver.resolve(url);
+  }
+
+  /// Links that the forum renders as informational navigation but which are
+  /// intentionally non-interactive in the app. The visible anchor text is
+  /// still preserved by the HTML parser.
+  static bool isBlockedLink(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return false;
+    final uri = _uriForLink(trimmed);
+    if (uri == null) return false;
+    final host = uri.host.toLowerCase();
+    final path = uri.path == '/' ? '/' : uri.path.replaceFirst(RegExp(r'/$'), '');
+    if ((host == ForumConstants.host || host == ForumUrlResolver.webVpnHost) &&
+        (path == '/about' || path == '/badges')) {
+      return true;
+    }
+    return host == 'blog.discourse.org' &&
+        path == '/2018/06/understanding-discourse-trust-levels';
   }
 
   static List<CookedSegment> _normalizeSegments(List<CookedSegment> segments) {
@@ -758,6 +795,9 @@ class HtmlText {
         sourceAnchor?.attributes['href'] ??
         '';
     final url = _absoluteUrl(rawUrl);
+    if (isBlockedLink(rawUrl)) {
+      return null;
+    }
     if (url.trim().isEmpty) {
       return null;
     }
@@ -785,6 +825,9 @@ class HtmlText {
     final titleAnchor = aside.querySelector('.title a[href*="/t/"]') ??
         aside.querySelector('a[href*="/t/"]');
     final rawUrl = titleAnchor?.attributes['href'] ?? '';
+    if (isBlockedLink(rawUrl)) {
+      return null;
+    }
     final topicId = int.tryParse(aside.attributes['data-topic'] ?? '') ??
         internalTopicIdFromUrl(rawUrl);
     if (topicId == null) {

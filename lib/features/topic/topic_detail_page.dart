@@ -32,6 +32,7 @@ class TopicDetailPage extends StatefulWidget {
     this.onLoginRequired,
     this.onSessionExpired,
     this.onBookmarkChanged,
+    this.onOpenForumRoute,
   });
 
   final ForumRepository repository;
@@ -41,6 +42,7 @@ class TopicDetailPage extends StatefulWidget {
   final Future<void> Function()? onLoginRequired;
   final Future<void> Function()? onSessionExpired;
   final VoidCallback? onBookmarkChanged;
+  final ValueChanged<String>? onOpenForumRoute;
 
   @override
   State<TopicDetailPage> createState() => _TopicDetailPageState();
@@ -384,6 +386,10 @@ class _TopicDetailPageState extends State<TopicDetailPage>
   }
 
   Future<void> _openInternalTopic(CookedLinkPreview preview) async {
+    if (preview.isInternalForumRoute) {
+      widget.onOpenForumRoute?.call(preview.url);
+      return;
+    }
     final topicId = preview.topicId;
     if (topicId == null || !mounted) {
       return;
@@ -408,6 +414,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
           onLoginRequired: widget.onLoginRequired,
           onSessionExpired: widget.onSessionExpired,
           onBookmarkChanged: widget.onBookmarkChanged,
+          onOpenForumRoute: widget.onOpenForumRoute,
         ),
       ),
     );

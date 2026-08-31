@@ -20,6 +20,7 @@ class ForumSearchPage extends StatefulWidget {
     this.onRecoverConnection,
     this.onSessionExpired,
     this.onBookmarkChanged,
+    this.onOpenForumRoute,
   });
 
   final ForumRepository repository;
@@ -27,6 +28,7 @@ class ForumSearchPage extends StatefulWidget {
   final Future<ForumRecoveryResult> Function()? onRecoverConnection;
   final Future<void> Function()? onSessionExpired;
   final VoidCallback? onBookmarkChanged;
+  final ValueChanged<String>? onOpenForumRoute;
 
   @override
   State<ForumSearchPage> createState() => _ForumSearchPageState();
@@ -167,6 +169,7 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
           onLoginRequired: widget.onLoginRequired,
           onSessionExpired: widget.onSessionExpired,
           onBookmarkChanged: widget.onBookmarkChanged,
+          onOpenForumRoute: widget.onOpenForumRoute,
         ),
       ),
     );

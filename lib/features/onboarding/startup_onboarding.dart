@@ -22,15 +22,18 @@ class StartupOnboardingController extends ChangeNotifier {
   bool _academicLoggedIn = false;
   ForumAccountStatus _forumStatus = ForumAccountStatus.signedOut;
   VoidCallback? _onForumReconnect;
+  VoidCallback? _onDismissAccountManager;
   Future<bool> Function()? _onAcademicLogout;
   Future<bool> Function()? _onForumLogout;
   int _openRequest = 0;
+  bool _accountManagerOpen = false;
   bool _notificationScheduled = false;
   bool _disposed = false;
 
   bool get academicLoggedIn => _academicLoggedIn;
   ForumAccountStatus get forumStatus => _forumStatus;
   int get openRequest => _openRequest;
+  bool get accountManagerOpen => _accountManagerOpen;
 
   void openAccountManager({
     required bool academicLoggedIn,
@@ -39,8 +42,21 @@ class StartupOnboardingController extends ChangeNotifier {
     _academicLoggedIn = academicLoggedIn;
     _forumStatus = forumStatus;
     _openRequest++;
+    _accountManagerOpen = true;
     _notifyListenersSafely();
   }
+
+  void setAccountManagerDismissHandler(VoidCallback? handler) {
+    _onDismissAccountManager = handler;
+  }
+
+  bool dismissAccountManager() {
+    if (!_accountManagerOpen || _onDismissAccountManager == null) return false;
+    _onDismissAccountManager!.call();
+    return true;
+  }
+
+  void markAccountManagerClosed() => _accountManagerOpen = false;
 
   void setForumReconnectHandler(VoidCallback? handler) {
     _onForumReconnect = handler;
@@ -176,6 +192,7 @@ class _StartupOnboardingState extends State<StartupOnboarding>
       reverseCurve: Curves.easeIn,
     );
     widget.controller.addListener(_handleControllerChange);
+    widget.controller.setAccountManagerDismissHandler(_dismissFromSystemBack);
     if (_visible) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _panelAnimationController.forward();
@@ -455,10 +472,16 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     if (!_visible) return;
     await _panelAnimationController.reverse();
     if (mounted) setState(() => _visible = false);
+    if (_accountManagerMode) widget.controller.markAccountManagerClosed();
+  }
+
+  void _dismissFromSystemBack() {
+    if (_visible) unawaited(_hidePanel());
   }
 
   @override
   void dispose() {
+    widget.controller.setAccountManagerDismissHandler(null);
     widget.controller.removeListener(_handleControllerChange);
     _panelAnimationController.dispose();
     _pageController.dispose();
@@ -468,10 +491,20 @@ class _StartupOnboardingState extends State<StartupOnboarding>
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        widget.child,
-        if (_visible) ...[
+    return PopScope(
+      // When opened from the home account row this panel is the foremost
+      // surface. Consume the first back gesture/key to dismiss it instead of
+      // allowing the shell underneath to process the back action.
+      canPop: !_accountManagerMode,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _accountManagerMode && _visible) {
+          unawaited(_hidePanel());
+        }
+      },
+      child: Stack(
+        children: [
+          widget.child,
+          if (_visible) ...[
           Positioned.fill(
             child: FadeTransition(
               opacity: _barrierOpacityAnimation,
@@ -490,8 +523,9 @@ class _StartupOnboardingState extends State<StartupOnboarding>
             ),
           ),
           _panelNoticeOverlay(context),
+          ],
         ],
-      ],
+      ),
     );
   }
 

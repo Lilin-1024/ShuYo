@@ -174,7 +174,8 @@ class ForumCookedContent extends StatelessWidget {
       onOpenUser!(username);
       return;
     }
-    if (preview.isInternalTopic && onOpenInternalTopic != null) {
+    if ((preview.isInternalTopic || preview.isInternalForumRoute) &&
+        onOpenInternalTopic != null) {
       onOpenInternalTopic!(preview);
       return;
     }

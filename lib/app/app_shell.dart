@@ -33,6 +33,7 @@ import '../features/auth/native_login_page.dart';
 import '../features/forum/create_topic_page.dart';
 import '../features/forum/forum_filter_bar.dart';
 import '../features/forum/forum_search_page.dart';
+import '../features/forum/forum_faq_page.dart';
 import '../features/home/academic_schedule_page.dart';
 import '../features/home/announcements_page.dart';
 import '../features/home/course_rating_page.dart';
@@ -352,6 +353,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   void _handleRootPop(bool didPop) {
     if (didPop) {
+      return;
+    }
+    if (widget.onboardingController.dismissAccountManager()) {
       return;
     }
     final now = DateTime.now();
@@ -1603,6 +1607,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           onRecoverConnection: _recoverForumConnection,
           onLoginRequired: _login,
           onSessionExpired: _clearExpiredLogin,
+          onOpenForumRoute: _openForumRoute,
           onBookmarkChanged: _refreshProfileActivityCounts,
         ),
       ),
@@ -1610,6 +1615,29 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     if (deleted == true && mounted) {
       await _refreshFeed();
     }
+  }
+
+  void _openForumRoute(String url) {
+    final path = Uri.tryParse(url)?.path;
+    if (path == '/faq' || path == '/faq/') {
+      Navigator.of(context).push<void>(
+        lehuRoute(builder: (_) => const ForumFaqPage()),
+      );
+      return;
+    }
+    final targetTab = path == '/my/preferences/account' ||
+            path == '/my/preferences/account/'
+        ? 3
+        : path == '/latest' || path == '/latest/'
+            ? 1
+            : null;
+    if (targetTab == null || !mounted) {
+      return;
+    }
+    // The link may have been clicked from one or more pushed topic pages.
+    // Return to the shell before selecting the destination tab.
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    setState(() => _tabIndex = targetTab);
   }
 
   void _refreshProfileActivityCounts() {
@@ -1636,6 +1664,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           onLoginRequired: _login,
           onBookmarkChanged: _refreshProfileActivityCounts,
           onSessionExpired: _clearExpiredLogin,
+          onOpenForumRoute: _openForumRoute,
         ),
       ),
     );
