@@ -391,10 +391,18 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _startForumBadgeRefreshTimer(_forumBadgeRefreshInterval);
+      unawaited(_recordForumDailyActivity());
       unawaited(_refreshAfterAppResumed());
       return;
     }
     _forumBadgeRefreshTimer?.cancel();
+  }
+
+  Future<void> _recordForumDailyActivity() async {
+    if (!_repo.hasLocalAccount || !_repo.isOnline) return;
+    await _clientBackendRepository.recordForumDailyActivity(
+      userId: _repo.profile.id,
+    );
   }
 
   void _startForumBadgeRefreshTimer(Duration interval) {
@@ -1625,12 +1633,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       );
       return;
     }
-    final targetTab = path == '/my/preferences/account' ||
-            path == '/my/preferences/account/'
-        ? 3
-        : path == '/latest' || path == '/latest/'
-            ? 1
-            : null;
+    final targetTab =
+        path == '/my/preferences/account' || path == '/my/preferences/account/'
+            ? 3
+            : path == '/latest' || path == '/latest/'
+                ? 1
+                : null;
     if (targetTab == null || !mounted) {
       return;
     }
@@ -1888,6 +1896,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       });
       _syncOnboardingAccountStatus();
       unawaited(_initializeForumBadges());
+      unawaited(_recordForumDailyActivity());
       _showSnack('乐乎论坛已登录');
       return true;
     } on Object catch (error) {

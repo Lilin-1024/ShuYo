@@ -18,6 +18,7 @@ class ClientBackendRepository {
 
   static const _feedbackTicketsKey = 'client.backend.feedback.tickets';
   static const _deviceIdKey = 'client.backend.device.id';
+  static const _presenceDayPrefix = 'client.backend.presence.day.';
   static const _lastPromptedBuildKey = 'client.backend.update.last_prompted';
   static const _updateBaselineInitializedKey =
       'client.backend.update.baseline_initialized';
@@ -205,6 +206,31 @@ class ClientBackendRepository {
     ];
     await _saveFeedbackTickets(nextTickets);
     return ticket;
+  }
+
+  /// Records one activity event per forum account and local calendar day.
+  /// This is deliberately best-effort and never part of the login path.
+  Future<void> recordForumDailyActivity({required int userId}) async {
+    if (userId <= 0) return;
+    final prefs = await _preferencesLoader();
+    final now = DateTime.now().toUtc().add(const Duration(hours: 8));
+    final day =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final key = '$_presenceDayPrefix$userId';
+    if (prefs.getString(key) == day) return;
+
+    try {
+      final installationId = await _deviceId();
+      await _apiClient.recordPresence(
+        userId: userId,
+        installationId: installationId,
+        appVersion: ClientAppInfo.displayVersion,
+        platform: Platform.operatingSystem,
+      );
+      await prefs.setString(key, day);
+    } on Object {
+      // Analytics must never affect authentication or app startup.
+    }
   }
 
   Future<void> _saveFeedbackTickets(

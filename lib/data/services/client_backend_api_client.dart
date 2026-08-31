@@ -94,6 +94,32 @@ class ClientBackendApiClient {
     return ClientFeedbackTicket.fromServerJson(data, lookupToken: token);
   }
 
+  Future<void> recordPresence({
+    required int userId,
+    required String installationId,
+    required String appVersion,
+    required String platform,
+  }) async {
+    final response = await HttpTimeout.request(
+      _httpClient.post(
+        _uri('/api/v1/presence/heartbeat'),
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json; charset=utf-8',
+          'user-agent': ClientUserAgent.mobileBrowser,
+        },
+        body: jsonEncode({
+          'userId': userId,
+          'installationId': installationId,
+          'appVersion': appVersion,
+          'platform': platform,
+        }),
+      ),
+      message: '活跃统计请求超时',
+    );
+    _decode(response);
+  }
+
   JsonMap _decode(http.Response response) {
     if (response.statusCode == 429) {
       throw ClientBackendRateLimitedException(
