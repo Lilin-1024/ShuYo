@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 import '../../core/certificate_policy.dart';
 import '../../core/client_user_agent.dart';
@@ -112,7 +111,12 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
             }
             return _handleNavigationRequest(request);
           },
-          onSslAuthError: _handleSslAuthError,
+          // WKWebView (iOS) must use the system trust store without a
+          // certificate-bypass callback. Android keeps the existing
+          // temporary workaround.
+          onSslAuthError: defaultTargetPlatform == TargetPlatform.android
+              ? _handleSslAuthError
+              : null,
           onWebResourceError: (error) {
             if (error.isForMainFrame == false) return;
             final failedUrl = error.url ?? _currentUri?.toString();
@@ -337,9 +341,6 @@ class _ForumOAuthCompletionPageState extends State<ForumOAuthCompletionPage> {
     final platform = error.platform;
     if (platform is AndroidSslAuthError) {
       return Uri.tryParse(platform.url);
-    }
-    if (platform is WebKitSslAuthError) {
-      return Uri.parse('https://${platform.host}');
     }
     return null;
   }

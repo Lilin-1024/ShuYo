@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
 import '../../core/forum_constants.dart';
 
 enum ForumReachabilityStatus {
@@ -29,11 +31,12 @@ class ForumReachabilityService {
   final Duration timeout;
 
   Future<ForumReachabilityResult> checkDirectBbsReachability() async {
-    final client = HttpClient()
-      ..connectionTimeout = timeout
-      ..badCertificateCallback = (certificate, host, port) {
+    final client = HttpClient()..connectionTimeout = timeout;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      client.badCertificateCallback = (certificate, host, port) {
         return host == ForumConstants.host;
       };
+    }
     try {
       final request = await client
           .getUrl(Uri.parse(ForumConstants.baseUrl))

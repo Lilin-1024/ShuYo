@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/certificate_policy.dart';
 import '../../core/client_user_agent.dart';
@@ -65,10 +65,12 @@ class DiscourseApiClient {
   static const _requestSpacing = Duration(milliseconds: 220);
 
   static http.Client _defaultHttpClient() {
-    final client = HttpClient()
-      ..badCertificateCallback = (certificate, host, port) {
+    final client = HttpClient();
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      client.badCertificateCallback = (certificate, host, port) {
         return CertificatePolicy.allowsHost(host);
       };
+    }
     return IOClient(client);
   }
 

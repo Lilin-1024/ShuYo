@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'forum_constants.dart';
 
 class CertificatePolicy {
@@ -9,7 +11,10 @@ class CertificatePolicy {
       bool.fromEnvironment('LEHU_ALLOW_INVALID_FORUM_CERT', defaultValue: true);
 
   static bool allowsHost(String host) {
-    return allowInvalidForumCertificate &&
+    // iOS/WebKit performs certificate validation in the system security
+    // stack. Keep the temporary invalid-certificate exception Android-only.
+    return defaultTargetPlatform == TargetPlatform.android &&
+        allowInvalidForumCertificate &&
         host.toLowerCase() == ForumConstants.host;
   }
 
