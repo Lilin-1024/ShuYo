@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -630,9 +631,7 @@ class _NetworkSettingsPageState extends State<_NetworkSettingsPage> {
                 title: '自动使用WebVPN代理',
                 value: settings.autoUseWebVpnProxy,
                 enabled: !_saving,
-                onChanged: (value) => _save(
-                  settings.copyWith(autoUseWebVpnProxy: value),
-                ),
+                onChanged: (value) => _handleChanged(settings, value),
               ),
             ],
           );
@@ -645,6 +644,17 @@ class _NetworkSettingsPageState extends State<_NetworkSettingsPage> {
     final settings = await widget.settingsService.loadNetworkSettings();
     _settings = settings;
     return settings;
+  }
+
+  Future<void> _handleChanged(
+    ClientNetworkSettings settings,
+    bool value,
+  ) async {
+    if (defaultTargetPlatform == TargetPlatform.iOS && !value) {
+      _showSnack(context, '暂不支持，待后续版本接入');
+      return;
+    }
+    await _save(settings.copyWith(autoUseWebVpnProxy: value));
   }
 
   Future<void> _save(ClientNetworkSettings settings) async {
