@@ -7,8 +7,8 @@ import '../../data/models/topic_detail.dart';
 import '../../data/services/forum_draft_store.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/advanced_markdown_editor.dart';
 import '../../shared/widgets/composer_attachments.dart';
 
@@ -242,7 +242,7 @@ class _AdvancedReplyComposerPageState extends State<AdvancedReplyComposerPage> {
 
   Future<void> _showPreview() async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => MarkdownPreviewPage(
           appBarTitle: '预览回复',
           heading: widget.detail.title,
@@ -307,7 +307,7 @@ class _ReplyTargetBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,

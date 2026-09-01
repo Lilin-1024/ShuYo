@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-Route<T> lehuRoute<T>({
+Route<T> shuyoRoute<T>({
   required WidgetBuilder builder,
   RouteSettings? settings,
   bool fullscreenDialog = false,
@@ -11,7 +11,7 @@ Route<T> lehuRoute<T>({
     return CupertinoPageRoute<T>(
       settings: settings,
       fullscreenDialog: fullscreenDialog,
-      builder: (context) => _LehuRouteSurface(child: builder(context)),
+      builder: (context) => _ShuYoRouteSurface(child: builder(context)),
     );
   }
   return PageRouteBuilder<T>(
@@ -21,7 +21,7 @@ Route<T> lehuRoute<T>({
     transitionDuration: const Duration(milliseconds: 240),
     reverseTransitionDuration: const Duration(milliseconds: 210),
     pageBuilder: (context, animation, secondaryAnimation) {
-      return _LehuRouteSurface(child: builder(context));
+      return _ShuYoRouteSurface(child: builder(context));
     },
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final begin = fullscreenDialog ? const Offset(0, 1) : const Offset(1, 0);
@@ -35,8 +35,8 @@ Route<T> lehuRoute<T>({
   );
 }
 
-class _LehuRouteSurface extends StatelessWidget {
-  const _LehuRouteSurface({required this.child});
+class _ShuYoRouteSurface extends StatelessWidget {
+  const _ShuYoRouteSurface({required this.child});
 
   final Widget child;
 

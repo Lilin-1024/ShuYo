@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../lehu_text_styles.dart';
+import '../shuyo_text_styles.dart';
 
-class LehuThemeSpec {
-  const LehuThemeSpec({
+class ShuYoThemeSpec {
+  const ShuYoThemeSpec({
     required this.id,
     required this.name,
     required this.colors,
@@ -11,7 +11,7 @@ class LehuThemeSpec {
 
   final String id;
   final String name;
-  final LehuColors colors;
+  final ShuYoColors colors;
 
   List<Color> get previewColors => [
         colors.background,
@@ -42,7 +42,7 @@ class LehuThemeSpec {
       colorScheme: scheme,
       scaffoldBackgroundColor: colors.background,
       extensions: [colors],
-      textTheme: LehuTextStyles.theme.apply(
+      textTheme: ShuYoTextStyles.theme.apply(
         bodyColor: colors.textPrimary,
         displayColor: colors.textPrimary,
       ),
@@ -56,8 +56,8 @@ class LehuThemeSpec {
         foregroundColor: colors.textPrimary,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: LehuTextStyles.headerTitle(color: colors.textPrimary),
-        toolbarTextStyle: LehuTextStyles.label(color: colors.textPrimary),
+        titleTextStyle: ShuYoTextStyles.headerTitle(color: colors.textPrimary),
+        toolbarTextStyle: ShuYoTextStyles.label(color: colors.textPrimary),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: colors.background,
@@ -95,10 +95,10 @@ class LehuThemeSpec {
       dialogTheme: DialogThemeData(
         backgroundColor: colors.surface,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: LehuTextStyles.sectionTitle(
+        titleTextStyle: ShuYoTextStyles.sectionTitle(
           color: colors.textPrimary,
         ),
-        contentTextStyle: LehuTextStyles.bodyCompact(
+        contentTextStyle: ShuYoTextStyles.bodyCompact(
           color: colors.textSecondary,
         ),
       ),
@@ -111,8 +111,8 @@ class LehuThemeSpec {
 }
 
 @immutable
-class LehuColors extends ThemeExtension<LehuColors> {
-  const LehuColors({
+class ShuYoColors extends ThemeExtension<ShuYoColors> {
+  const ShuYoColors({
     required this.brightness,
     required this.background,
     required this.surface,
@@ -193,7 +193,7 @@ class LehuColors extends ThemeExtension<LehuColors> {
   final List<Color> schedulePalette;
 
   @override
-  LehuColors copyWith({
+  ShuYoColors copyWith({
     Brightness? brightness,
     Color? background,
     Color? surface,
@@ -233,7 +233,7 @@ class LehuColors extends ThemeExtension<LehuColors> {
     Color? scheduleCourseMetaText,
     List<Color>? schedulePalette,
   }) {
-    return LehuColors(
+    return ShuYoColors(
       brightness: brightness ?? this.brightness,
       background: background ?? this.background,
       surface: surface ?? this.surface,
@@ -277,11 +277,11 @@ class LehuColors extends ThemeExtension<LehuColors> {
   }
 
   @override
-  LehuColors lerp(ThemeExtension<LehuColors>? other, double t) {
-    if (other is! LehuColors) {
+  ShuYoColors lerp(ThemeExtension<ShuYoColors>? other, double t) {
+    if (other is! ShuYoColors) {
       return this;
     }
-    return LehuColors(
+    return ShuYoColors(
       brightness: t < 0.5 ? brightness : other.brightness,
       background: Color.lerp(background, other.background, t)!,
       surface: Color.lerp(surface, other.surface, t)!,
@@ -341,18 +341,18 @@ class LehuColors extends ThemeExtension<LehuColors> {
   }
 }
 
-class LehuThemes {
-  const LehuThemes._();
+class ShuYoThemes {
+  const ShuYoThemes._();
 
   static const defaultId = 'paper_light';
   static const systemDarkId = 'default_dark';
   static const systemLightId = defaultId;
 
-  static const all = <LehuThemeSpec>[
-    LehuThemeSpec(
+  static const all = <ShuYoThemeSpec>[
+    ShuYoThemeSpec(
       id: systemDarkId,
       name: '深色',
-      colors: LehuColors(
+      colors: ShuYoColors(
         brightness: Brightness.dark,
         background: Color(0xFF0D0D0D),
         surface: Color(0xFF151719),
@@ -400,10 +400,10 @@ class LehuThemes {
         ],
       ),
     ),
-    LehuThemeSpec(
+    ShuYoThemeSpec(
       id: defaultId,
       name: '纸白',
-      colors: LehuColors(
+      colors: ShuYoColors(
         brightness: Brightness.light,
         background: Color(0xFFF7F7F4),
         surface: Color(0xFFFFFFFF),
@@ -451,10 +451,10 @@ class LehuThemes {
         ],
       ),
     ),
-    LehuThemeSpec(
+    ShuYoThemeSpec(
       id: 'ink_teal',
       name: '墨青',
-      colors: LehuColors(
+      colors: ShuYoColors(
         brightness: Brightness.dark,
         background: Color(0xFF071210),
         surface: Color(0xFF101C19),
@@ -502,10 +502,10 @@ class LehuThemes {
         ],
       ),
     ),
-    LehuThemeSpec(
+    ShuYoThemeSpec(
       id: 'graphite_coral',
       name: '石墨珊瑚',
-      colors: LehuColors(
+      colors: ShuYoColors(
         brightness: Brightness.dark,
         background: Color(0xFF101010),
         surface: Color(0xFF181818),
@@ -553,10 +553,10 @@ class LehuThemes {
         ],
       ),
     ),
-    LehuThemeSpec(
+    ShuYoThemeSpec(
       id: 'morning_coral',
       name: '晨白珊瑚',
-      colors: LehuColors(
+      colors: ShuYoColors(
         brightness: Brightness.light,
         background: Color(0xFFFCF8F5),
         surface: Color(0xFFFFFFFF),
@@ -606,7 +606,7 @@ class LehuThemes {
     ),
   ];
 
-  static LehuThemeSpec byId(String? id) {
+  static ShuYoThemeSpec byId(String? id) {
     for (final theme in all) {
       if (theme.id == id) {
         return theme;
@@ -625,9 +625,9 @@ class LehuThemes {
   }
 }
 
-extension LehuThemeContext on BuildContext {
-  LehuColors get lehuColors {
-    return Theme.of(this).extension<LehuColors>() ??
-        LehuThemes.byId(LehuThemes.defaultId).colors;
+extension ShuYoThemeContext on BuildContext {
+  ShuYoColors get shuyoColors {
+    return Theme.of(this).extension<ShuYoColors>() ??
+        ShuYoThemes.byId(ShuYoThemes.defaultId).colors;
   }
 }

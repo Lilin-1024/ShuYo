@@ -10,8 +10,8 @@ import '../../data/repositories/forum_repository.dart';
 import '../../data/services/forum_draft_store.dart';
 import '../../data/services/forum_title_rules.dart';
 import '../../data/services/local_image_picker.dart';
-import '../../shared/theme/lehu_theme.dart';
-import '../../shared/navigation/lehu_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
+import '../../shared/navigation/shuyo_route.dart';
 import '../../shared/widgets/advanced_markdown_editor.dart';
 import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
@@ -262,7 +262,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
     final focused = _rawFocusNode.hasFocus || _showEmojiPanel;
     final borderColor = focused
         ? Theme.of(context).colorScheme.primary
-        : context.lehuColors.borderStrong;
+        : context.shuyoColors.borderStrong;
     final enabled = !_submitting && !_uploading;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
@@ -538,7 +538,7 @@ class _CreateTopicPageState extends State<CreateTopicPage> {
   Future<void> _showPreview() async {
     final categoryName = _selectedCategoryName();
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => MarkdownPreviewPage(
           appBarTitle: '预览主题',
           heading: _titleController.text.trim().isEmpty

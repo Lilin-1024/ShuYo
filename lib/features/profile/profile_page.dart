@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../data/models/forum_activity.dart';
 import '../../data/models/user_profile.dart';
 import '../../shared/compact_number.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import 'profile_header.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -131,7 +131,7 @@ class _ActivitySummaryContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -174,7 +174,7 @@ class _ActivityStatButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Expanded(
       child: InkWell(
         onTap: onTap == null ? null : () => onTap!(kind),
@@ -185,7 +185,7 @@ class _ActivityStatButton extends StatelessWidget {
             children: [
               Text(
                 kind.title,
-                style: LehuTextStyles.chip(
+                style: ShuYoTextStyles.chip(
                   color: colors.textTertiary,
                   size: 12.5,
                   weight: FontWeight.w500,
@@ -196,7 +196,7 @@ class _ActivityStatButton extends StatelessWidget {
                 value,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: LehuTextStyles.title(
+                style: ShuYoTextStyles.title(
                   color: colors.textPrimary,
                   size: 16.5,
                   weight: FontWeight.w600,
@@ -218,7 +218,7 @@ class _StatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final stats = [
       _StatItem('访问天数', showValues ? '${summary.daysVisited}' : '-'),
       _StatItem('浏览主题', showValues ? '${summary.topicsEntered}' : '-'),
@@ -246,7 +246,7 @@ class _StatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return SizedBox(
       height: 48,
       child: Row(

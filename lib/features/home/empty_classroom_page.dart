@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../data/models/classroom.dart';
 import '../../data/repositories/classroom_repository.dart';
 import '../../data/services/classroom_api_client.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class EmptyClassroomPage extends StatefulWidget {
@@ -406,7 +406,7 @@ class _SearchControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final campusBuildings = options.buildings
         .where((building) =>
             selectedCampus == null || building.campusName == selectedCampus)
@@ -580,7 +580,7 @@ class _ClassroomResultList extends StatelessWidget {
   Widget build(BuildContext context) {
     final normalizedKeyword = keyword.trim();
     final matches = result.courseMatches(normalizedKeyword);
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -589,7 +589,7 @@ class _ClassroomResultList extends StatelessWidget {
         Text(
           '${result.scopeLabel} · ${_dateLabel(result.date)} · '
           '${result.startSection}-${result.endSection}节',
-          style: LehuTextStyles.title(
+          style: ShuYoTextStyles.title(
             color: colors.textPrimary,
             size: 16.5,
             weight: FontWeight.w600,
@@ -641,7 +641,7 @@ class _BuildingAvailableRooms extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final availableFloors = result.floors
         .where((floor) => floor.availableRooms.isNotEmpty)
         .toList(growable: false);
@@ -656,7 +656,7 @@ class _BuildingAvailableRooms extends StatelessWidget {
           if (showBuildingName) ...[
             Text(
               '${result.building.name} · ${result.availableCount}间',
-              style: LehuTextStyles.title(
+              style: ShuYoTextStyles.title(
                 color: colors.textPrimary,
                 size: 15.5,
                 weight: FontWeight.w600,
@@ -686,10 +686,10 @@ class _CourseMatches extends StatelessWidget {
     if (matches.isEmpty) {
       return Text(
         '未找到课程位置',
-        style: TextStyle(color: context.lehuColors.textTertiary),
+        style: TextStyle(color: context.shuyoColors.textTertiary),
       );
     }
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -744,7 +744,7 @@ class _FloorAvailableRooms extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: Column(
@@ -805,7 +805,7 @@ class _RoomChip extends StatelessWidget {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        final colors = context.lehuColors;
+        final colors = context.shuyoColors;
         return SafeArea(
           top: false,
           bottom: false,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../lehu_text_styles.dart';
-import '../theme/lehu_theme.dart';
+import '../shuyo_text_styles.dart';
+import '../theme/shuyo_theme.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -19,7 +19,7 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -30,13 +30,13 @@ class EmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               title,
-              style: LehuTextStyles.sectionTitle(color: colors.textPrimary),
+              style: ShuYoTextStyles.sectionTitle(color: colors.textPrimary),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: LehuTextStyles.bodyCompact(
+              style: ShuYoTextStyles.bodyCompact(
                 color: colors.textSecondary,
                 height: 1.4,
               ),

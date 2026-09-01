@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class LehuTextStyles {
-  const LehuTextStyles._();
+class ShuYoTextStyles {
+  const ShuYoTextStyles._();
 
   static const TextTheme theme = TextTheme(
     displayLarge: TextStyle(

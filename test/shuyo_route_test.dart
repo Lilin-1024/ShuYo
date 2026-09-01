@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shuyo/shared/navigation/lehu_route.dart';
+import 'package:shuyo/shared/navigation/shuyo_route.dart';
 
 void main() {
   tearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -9,7 +9,7 @@ void main() {
   test('uses the native iOS route with swipe-back support', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
 
-    final route = lehuRoute<void>(builder: (_) => const SizedBox());
+    final route = shuyoRoute<void>(builder: (_) => const SizedBox());
 
     expect(route, isA<CupertinoPageRoute<void>>());
   });
@@ -17,7 +17,7 @@ void main() {
   test('keeps the existing custom route on Android', () {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
 
-    final route = lehuRoute<void>(builder: (_) => const SizedBox());
+    final route = shuyoRoute<void>(builder: (_) => const SizedBox());
 
     expect(route, isA<PageRouteBuilder<void>>());
   });

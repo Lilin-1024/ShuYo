@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/forum_network_image.dart';
 
@@ -30,7 +30,7 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final header = SizedBox(
       height: 176,
       child: Stack(
@@ -79,7 +79,7 @@ class ProfileHeader extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: LehuTextStyles.title(
+                        style: ShuYoTextStyles.title(
                           color: colors.textPrimary,
                           size: 19,
                           height: 1.22,
@@ -122,7 +122,7 @@ class _ProfileBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     if (url.isEmpty) {
       return DecoratedBox(
         decoration: BoxDecoration(

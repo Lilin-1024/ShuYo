@@ -19,7 +19,7 @@ GEMOJI_SOURCE_URL = (
     f"{GEMOJI_COMMIT}/db/emoji.json"
 )
 UNICODE_SOURCE = (
-    Path(tempfile.gettempdir()) / f"lehu-emoji-test-{UNICODE_VERSION}.txt"
+    Path(tempfile.gettempdir()) / f"shuyo-emoji-test-{UNICODE_VERSION}.txt"
 )
 GEMOJI_SOURCE = Path(tempfile.gettempdir()) / f"gemoji-{GEMOJI_COMMIT}.json"
 OUTPUT = ROOT / "lib" / "data" / "services" / "emoji_aliases.dart"
@@ -227,7 +227,7 @@ def write_dart(aliases: dict[str, str]) -> None:
         f"// Unicode source: {UNICODE_SOURCE_URL}",
         f"// gemoji source commit: {GEMOJI_COMMIT}",
         "// Unicode terms: https://www.unicode.org/terms_of_use.html",
-        "// gemoji license: MIT (see lehu_client/THIRD_PARTY_NOTICES.md)",
+        "// gemoji license: MIT (see THIRD_PARTY_NOTICES.md)",
         "// Do not edit entries manually; update the generator/source data instead.",
         "",
         "const emojiUnicodeAliases = <String, String>{",

@@ -7,8 +7,8 @@ import '../../data/models/category.dart';
 import '../../data/models/discourse_user.dart';
 import '../../data/models/topic.dart';
 import '../../data/services/html_text.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/forum_network_image.dart';
@@ -108,7 +108,7 @@ class _TopicListPageState extends State<TopicListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     if (_warmingInitialPreviews) {
       return const _TopicListLoading();
     }
@@ -270,7 +270,7 @@ class _LoadMoreFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final errorMessage = this.errorMessage;
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 18),
       child: Center(
@@ -346,7 +346,7 @@ class _TopicListRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metaText = _topicTimeText(topic);
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -372,7 +372,7 @@ class _TopicListRow extends StatelessWidget {
                           user?.username ?? '未知用户',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: LehuTextStyles.title(
+                          style: ShuYoTextStyles.title(
                             color: colors.listAuthor,
                             size: 14.5,
                             weight: FontWeight.w500,
@@ -399,7 +399,7 @@ class _TopicListRow extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               topic.title,
-              style: LehuTextStyles.title(
+              style: ShuYoTextStyles.title(
                 color: colors.textPrimary,
                 size: 16.5,
                 height: 1.24,
@@ -457,7 +457,7 @@ class _PreviewContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -639,7 +639,7 @@ class _ImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       height: height,
       alignment: Alignment.center,
@@ -660,7 +660,7 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _parseColor(category?.color);
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -687,7 +687,7 @@ class _Metric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Row(
       children: [
         Icon(icon, size: 16, color: colors.textMuted),

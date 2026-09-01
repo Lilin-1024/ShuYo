@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/forum_activity.dart';
 import '../../data/repositories/forum_repository.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../topic/topic_detail_page.dart';
 
@@ -86,7 +86,7 @@ class _ForumActivityPageState extends State<ForumActivityPage> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: items.length,
               separatorBuilder: (_, __) =>
-                  Divider(height: 1, color: context.lehuColors.border),
+                  Divider(height: 1, color: context.shuyoColors.border),
               itemBuilder: (context, index) {
                 final item = items[index];
                 return _ActivityRow(
@@ -133,7 +133,7 @@ class _ForumActivityPageState extends State<ForumActivityPage> {
 
   Future<void> _openTopic(ForumActivityItem item) async {
     final deleted = await Navigator.of(context).push<bool>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
           onRecoverConnection: widget.onRecoverConnection,
@@ -170,7 +170,7 @@ class _ActivityRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final meta = _metaParts();
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -185,7 +185,7 @@ class _ActivityRow extends StatelessWidget {
                     item.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: LehuTextStyles.title(
+                    style: ShuYoTextStyles.title(
                       color: colors.textPrimary,
                       size: 15.5,
                       height: 1.25,

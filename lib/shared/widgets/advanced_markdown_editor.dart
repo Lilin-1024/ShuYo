@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/forum_url_resolver.dart';
 import '../../data/models/composer.dart';
-import '../lehu_text_styles.dart';
-import '../theme/lehu_theme.dart';
+import '../shuyo_text_styles.dart';
+import '../theme/shuyo_theme.dart';
 import 'forum_cooked_content.dart';
 
 class AdvancedMarkdownEditor extends StatelessWidget {
@@ -36,7 +36,7 @@ class AdvancedMarkdownEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: colors.borderStrong),
@@ -446,7 +446,7 @@ class MarkdownPreviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final hasHeading = (heading ?? '').isNotEmpty;
     final hasMeta = (meta ?? '').isNotEmpty;
     return Scaffold(
@@ -465,7 +465,7 @@ class MarkdownPreviewPage extends StatelessWidget {
                   if (hasHeading)
                     Text(
                       heading!,
-                      style: LehuTextStyles.title(
+                      style: ShuYoTextStyles.title(
                         color: colors.textPrimary,
                         size: 20.5,
                         height: 1.2,
@@ -559,7 +559,7 @@ class _PollChoiceRow<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -636,7 +636,7 @@ class _PollMarkdownDialogState extends State<_PollMarkdownDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return AlertDialog(
       title: const Text('插入投票'),
       content: SizedBox(

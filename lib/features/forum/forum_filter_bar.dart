@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/category.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/theme/shuyo_theme.dart';
 
 class ForumFilterBar extends StatelessWidget {
   const ForumFilterBar({
@@ -77,7 +77,7 @@ class _FilterChipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: onTap,

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shuyo/app/lehu_app.dart';
-import 'package:shuyo/shared/theme/lehu_theme.dart';
+import 'package:shuyo/app/shuyo_app.dart';
+import 'package:shuyo/shared/theme/shuyo_theme.dart';
 
 void main() {
   testWidgets('app shows startup icon state', (tester) async {
-    await tester.pumpWidget(const LehuApp());
+    await tester.pumpWidget(const ShuYoApp());
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
     final image = tester.widget<Image>(find.byType(Image));
@@ -18,7 +18,7 @@ void main() {
   testWidgets('app uses the initial dark theme for startup loading',
       (tester) async {
     await tester.pumpWidget(
-      const LehuApp(initialThemeId: LehuThemes.systemDarkId),
+      const ShuYoApp(initialThemeId: ShuYoThemes.systemDarkId),
     );
 
     final image = tester.widget<Image>(find.byType(Image));

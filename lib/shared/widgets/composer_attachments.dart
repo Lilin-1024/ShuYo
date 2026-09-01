@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/forum_url_resolver.dart';
 import '../../data/models/composer.dart';
-import '../theme/lehu_theme.dart';
+import '../theme/shuyo_theme.dart';
 import 'forum_network_image.dart';
 
 String composeRawWithImages(String text, List<UploadedImage> images) {
@@ -85,7 +85,7 @@ class _AttachmentPreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return SizedBox(
       width: 74,
       height: 74,
@@ -146,7 +146,7 @@ class _AttachmentImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Center(
       child: Icon(
         Icons.image_outlined,

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/services/emoji_recent_store.dart';
 import '../../data/services/emoji_text.dart';
-import '../theme/lehu_theme.dart';
+import '../theme/shuyo_theme.dart';
 
 class InlineEmojiPanel extends StatefulWidget {
   const InlineEmojiPanel({
@@ -48,7 +48,7 @@ class _InlineEmojiPanelState extends State<InlineEmojiPanel>
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final recentEntries = EmojiText.entriesForShortcodes(_recentShortcodes);
     final categories = [
       EmojiCategory('常用', recentEntries),
@@ -230,7 +230,7 @@ class _InlineEmojiGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
-      final colors = context.lehuColors;
+      final colors = context.shuyoColors;
       return Center(
         child: Text(
           '最近使用过的 Emoji 会显示在这里',

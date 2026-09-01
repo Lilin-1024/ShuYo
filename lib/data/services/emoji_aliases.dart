@@ -2,7 +2,7 @@
 // Unicode source: https://www.unicode.org/Public/17.0.0/emoji/emoji-test.txt
 // gemoji source commit: 0eca75db9301421efc8710baf7a7576793ae452a
 // Unicode terms: https://www.unicode.org/terms_of_use.html
-// gemoji license: MIT (see lehu_client/THIRD_PARTY_NOTICES.md)
+// gemoji license: MIT (see THIRD_PARTY_NOTICES.md)
 // Do not edit entries manually; update the generator/source data instead.
 
 const emojiUnicodeAliases = <String, String>{

@@ -2,18 +2,18 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import 'app/lehu_app.dart';
-import 'core/lehu_http_overrides.dart';
+import 'app/shuyo_app.dart';
+import 'core/shuyo_http_overrides.dart';
 import 'data/services/app_data_migration_service.dart';
 import 'data/services/client_settings_service.dart';
-import 'shared/theme/lehu_theme.dart';
+import 'shared/theme/shuyo_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  HttpOverrides.global = LehuHttpOverrides();
+  HttpOverrides.global = ShuYoHttpOverrides();
   final initialThemeSettings = await _loadInitialThemeSettings();
   runApp(
-    LehuApp(
+    ShuYoApp(
       initialThemeId: initialThemeSettings.themeId,
       initialFollowSystemTheme: initialThemeSettings.followSystemTheme,
     ),
@@ -27,14 +27,14 @@ Future<_InitialThemeSettings> _loadInitialThemeSettings() async {
     await AppDataMigrationService().migrateIfNeeded();
     final settingsService = ClientSettingsService();
     return _InitialThemeSettings(
-      themeId: LehuThemes.byId(await settingsService.loadThemeId()).id,
+      themeId: ShuYoThemes.byId(await settingsService.loadThemeId()).id,
       followSystemTheme: await settingsService.loadFollowSystemTheme(),
     );
   } on Object {
     // Keep startup recoverable if a platform preference or migration service
-    // is temporarily unavailable. LehuApp will still surface startup errors.
+    // is temporarily unavailable. ShuYoApp will still surface startup errors.
     return const _InitialThemeSettings(
-      themeId: LehuThemes.defaultId,
+      themeId: ShuYoThemes.defaultId,
       followSystemTheme: false,
     );
   }

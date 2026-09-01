@@ -7,8 +7,8 @@ import '../../data/repositories/academic_schedule_repository.dart';
 import '../../data/services/academic_schedule_api_client.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../data/services/academic_schedule_widget_service.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 
 const _scheduleCellInset = 2.5;
@@ -317,7 +317,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        final colors = context.lehuColors;
+        final colors = context.shuyoColors;
         final color = _courseColor(context, session.courseName);
         final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
         return SafeArea(
@@ -507,7 +507,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
-        final colors = context.lehuColors;
+        final colors = context.shuyoColors;
         return AlertDialog(
           title: const Text('确认删除'),
           content: Text(
@@ -568,7 +568,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
-        final colors = context.lehuColors;
+        final colors = context.shuyoColors;
         return SafeArea(
           top: false,
           bottom: false,
@@ -881,7 +881,7 @@ class _NotificationSettingsSheetState
     final minuteOptions =
         <int>{5, 10, 15, 20, 30, 45, 60, _leadMinutes}.toList()..sort();
     final mediaQuery = MediaQuery.of(context);
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final bottomInset = mediaQuery.viewInsets.bottom > 0
         ? mediaQuery.viewInsets.bottom
         : mediaQuery.viewPadding.bottom;
@@ -1036,7 +1036,7 @@ class _ManualCourseSheetState extends State<_ManualCourseSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final mediaQuery = MediaQuery.of(context);
     final bottomInset = mediaQuery.viewInsets.bottom > 0
         ? mediaQuery.viewInsets.bottom
@@ -1341,7 +1341,7 @@ class _WeekSwitcher extends StatelessWidget {
             child: Text(
               isVacation ? '假期中' : '第 $week 周',
               textAlign: TextAlign.center,
-              style: LehuTextStyles.title(
+              style: ShuYoTextStyles.title(
                 size: 16.5,
                 weight: FontWeight.w600,
               ),
@@ -1545,7 +1545,7 @@ class _EmptyScheduleCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.all(_scheduleCellInset),
       child: GestureDetector(
@@ -1581,7 +1581,7 @@ class _DayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -1610,7 +1610,7 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Column(
@@ -1651,7 +1651,7 @@ class _CourseBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Material(
       color: colors.scheduleCourseFill,
       borderRadius: BorderRadius.circular(_scheduleCourseRadius),
@@ -1704,7 +1704,7 @@ class _DetailLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -1727,7 +1727,7 @@ class _UntimedCourseList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final courseText = courses
         .map(_formatUntimedCourse)
         .where((text) => text.isNotEmpty)
@@ -1798,7 +1798,7 @@ String _weekdayName(int weekday) {
 }
 
 Color _courseColor(BuildContext context, String seed) {
-  final colors = context.lehuColors.schedulePalette;
+  final colors = context.shuyoColors.schedulePalette;
   var hash = 0;
   for (final unit in seed.codeUnits) {
     hash = (hash + unit) & 0x7fffffff;

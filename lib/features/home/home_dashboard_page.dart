@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/user_profile.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/theme/shuyo_theme.dart';
 
 class HomeDashboardPage extends StatelessWidget {
   const HomeDashboardPage({
@@ -156,7 +156,7 @@ class _CampusNetworkWarningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 12, 10),
       decoration: BoxDecoration(
@@ -237,7 +237,7 @@ class _HomeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -269,7 +269,7 @@ class _HomeRow extends StatelessWidget {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: LehuTextStyles.title(
+                    style: ShuYoTextStyles.title(
                       color: colors.textPrimary,
                       size: 16,
                       weight: FontWeight.w600,

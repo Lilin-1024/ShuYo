@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/models/course_rating.dart';
 import '../../data/repositories/course_rating_repository.dart';
 import '../../data/services/course_rating_api_client.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/info_confirm_dialog.dart';
 
@@ -116,7 +116,7 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
 
   void _openCourse(CourseRatingCourse course) {
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => CourseRatingCourseTeachersPage(
           repository: widget.repository,
           course: course,
@@ -127,7 +127,7 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
 
   void _openTeacher(CourseRatingTeacher teacher) {
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => CourseRatingTeacherCoursesPage(
           repository: widget.repository,
           teacher: teacher,
@@ -255,7 +255,7 @@ class _CourseRatingCourseTeachersPageState
 
   void _openDetail(CourseRatingCourse course, CourseRatingTeacher teacher) {
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => CourseRatingDetailPage(
           repository: widget.repository,
           course: course,
@@ -326,7 +326,7 @@ class _CourseRatingTeacherCoursesPageState
             );
           }
           final data = snapshot.data!;
-          final colors = context.lehuColors;
+          final colors = context.shuyoColors;
           return RefreshIndicator(
             onRefresh: _refresh,
             child: ListView(
@@ -388,7 +388,7 @@ class _CourseRatingTeacherCoursesPageState
 
   void _openDetail(CourseRatingCourse course, CourseRatingTeacher teacher) {
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => CourseRatingDetailPage(
           repository: widget.repository,
           course: course,
@@ -591,7 +591,7 @@ class _CourseRatingSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colors.border)),
@@ -640,7 +640,7 @@ class _CourseRatingSearchResultList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     if (result.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -660,7 +660,7 @@ class _CourseRatingSearchResultList extends StatelessWidget {
       children: [
         Text(
           '搜索：$query',
-          style: LehuTextStyles.title(
+          style: ShuYoTextStyles.title(
             color: colors.textPrimary,
             size: 16.5,
             weight: FontWeight.w600,
@@ -696,13 +696,13 @@ class _CourseHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           course.name,
-          style: LehuTextStyles.title(
+          style: ShuYoTextStyles.title(
             color: colors.textPrimary,
             size: 19,
             weight: FontWeight.w600,
@@ -728,7 +728,7 @@ class _RatingDetailHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radar = detail.radar;
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -829,7 +829,7 @@ class _RatingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: BoxDecoration(
@@ -903,7 +903,7 @@ class _PlainTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -959,7 +959,7 @@ class _ScorePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
@@ -985,7 +985,7 @@ class _SoftLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
@@ -1012,7 +1012,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          color: context.lehuColors.textPrimary,
+          color: context.shuyoColors.textPrimary,
           fontSize: 15.5,
           fontWeight: FontWeight.w600,
         ),

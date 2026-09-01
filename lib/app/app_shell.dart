@@ -51,8 +51,8 @@ import '../features/settings/client_settings_page.dart';
 import '../features/topic/topic_detail_page.dart';
 import '../features/webview/academic_webvpn_preloader.dart';
 import '../features/webview/forum_webvpn_preloader.dart';
-import '../shared/navigation/lehu_route.dart';
-import '../shared/theme/lehu_theme.dart';
+import '../shared/navigation/shuyo_route.dart';
+import '../shared/theme/shuyo_theme.dart';
 import '../shared/widgets/client_update_prompt.dart';
 import '../shared/widgets/info_confirm_dialog.dart';
 import '../shared/widgets/app_header.dart';
@@ -1608,7 +1608,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     final deleted = await Navigator.of(context).push<bool>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => TopicDetailPage(
           repository: _repo,
           topic: topic,
@@ -1629,7 +1629,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     final path = Uri.tryParse(url)?.path;
     if (path == '/faq' || path == '/faq/') {
       Navigator.of(context).push<void>(
-        lehuRoute(builder: (_) => const ForumFaqPage()),
+        shuyoRoute(builder: (_) => const ForumFaqPage()),
       );
       return;
     }
@@ -1665,7 +1665,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => ForumSearchPage(
           repository: _repo,
           onRecoverConnection: _recoverForumConnection,
@@ -1689,7 +1689,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => UserProfilePage(
           repository: _repo,
           username: username,
@@ -1705,7 +1705,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     final changed = await Navigator.of(context).push<bool>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => ProfileSettingsPage(repository: _repo),
       ),
     );
@@ -1730,7 +1730,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => ForumActivityPage(
           repository: _repo,
           kind: kind,
@@ -1750,7 +1750,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<void> _openClientSettings() async {
     final previousAutoProxy = _autoUseWebVpnProxy;
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => ClientSettingsPage(
           settingsService: _clientSettingsService,
           scheduleNotificationService: _scheduleNotificationService,
@@ -1798,7 +1798,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       return;
     }
     final result = await Navigator.of(context).push<CreatedTopicResult>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => CreateTopicPage(
           repository: _repo,
           categories: _repo.categories,
@@ -1837,7 +1837,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
     unawaited(_markNotificationBadgeSeen());
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => NotificationsPage(
           repository: _repo,
           onRecoverConnection: _recoverForumConnection,
@@ -1867,7 +1867,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       }
     }
     final loggedIn = await Navigator.of(context).push<bool>(
-      lehuRoute(builder: (context) => const NativeLoginPage.forum()),
+      shuyoRoute(builder: (context) => const NativeLoginPage.forum()),
     );
     if (loggedIn == true && mounted) {
       await _reloadForumAfterLogin();
@@ -2071,7 +2071,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openAcademicSystem() async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => AcademicSchedulePage(
           repository: _scheduleRepository,
           notificationService: _scheduleNotificationService,
@@ -2089,7 +2089,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openAnnouncements() async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => AnnouncementsPage(
           repository: _announcementRepository,
         ),
@@ -2104,7 +2104,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openEmptyClassroom() async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => EmptyClassroomPage(
           repository: _classroomRepository,
         ),
@@ -2132,7 +2132,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _openCourseRatings() async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => CourseRatingPage(
           repository: _courseRatingRepository,
         ),
@@ -2308,7 +2308,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
     if (!mounted) return;
     final loggedIn = await Navigator.of(context).push<bool>(
-      lehuRoute(builder: (context) => const NativeLoginPage()),
+      shuyoRoute(builder: (context) => const NativeLoginPage()),
     );
     if (loggedIn != true || !mounted) return;
     setState(() => _hasAcademicSession = true);
@@ -2431,7 +2431,7 @@ class _TabBadgeIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     if (count <= 0) {
       return Icon(icon);
     }

@@ -6,8 +6,8 @@ import '../../data/models/forum_notification.dart';
 import '../../data/models/topic.dart';
 import '../../data/models/topic_detail.dart';
 import '../../data/repositories/forum_repository.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -133,7 +133,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
     return FutureBuilder<List<ForumNotification>>(
       future: _future,
       builder: (context, snapshot) {
-        final colors = context.lehuColors;
+        final colors = context.shuyoColors;
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 3));
         }
@@ -358,7 +358,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
     }
     final title = item.topicTitle.isNotEmpty ? item.topicTitle : item.title;
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
           onRecoverConnection: widget.onRecoverConnection,
@@ -394,7 +394,7 @@ class _NotificationListHostState extends State<_NotificationListHost> {
       return;
     }
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => UserProfilePage(
           repository: widget.repository,
           username: trimmed,
@@ -570,7 +570,7 @@ class _NotificationGroupTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final latest = group.latest;
     return ListTile(
       leading: _NotificationLeading(
@@ -635,7 +635,7 @@ class _AvatarStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return SizedBox(
       width: 48,
       height: 42,
@@ -688,7 +688,7 @@ class _NotificationTrailing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final time = TimeFormat.compact(group.latest.createdAt);
     if (group.count <= 1) {
       return Text(
@@ -736,7 +736,7 @@ class _NotificationGroupSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.72;
     final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
     return Container(
@@ -812,7 +812,7 @@ class _LikeDetailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final username = _NotificationGroup._actorName(item);
     return ListTile(
       leading: _NotificationAvatar(item: item, size: 38),
@@ -847,7 +847,7 @@ class _NotificationDetailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final username = _NotificationGroup._actorName(item);
     return ListTile(
       leading: GestureDetector(

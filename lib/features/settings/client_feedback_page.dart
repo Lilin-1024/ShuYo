@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/models/client_backend.dart';
 import '../../data/repositories/client_backend_repository.dart';
 import '../../shared/compact_number.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/empty_state.dart';
 
@@ -78,7 +78,7 @@ class _ClientFeedbackPageState extends State<ClientFeedbackPage> {
           }
 
           final tickets = snapshot.data ?? const <ClientFeedbackTicket>[];
-          final colors = context.lehuColors;
+          final colors = context.shuyoColors;
           return RefreshIndicator(
             onRefresh: () => _refresh(force: true),
             child: ListView(
@@ -96,7 +96,7 @@ class _ClientFeedbackPageState extends State<ClientFeedbackPage> {
                 const SizedBox(height: 18),
                 Text(
                   '我的反馈',
-                  style: LehuTextStyles.sectionTitle(
+                  style: ShuYoTextStyles.sectionTitle(
                     color: colors.textPrimary,
                   ),
                 ),
@@ -180,7 +180,7 @@ class _ClientFeedbackPageState extends State<ClientFeedbackPage> {
 
   Future<void> _openDetail(ClientFeedbackTicket ticket) async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => ClientFeedbackDetailPage(
           repository: widget.repository,
           ticket: ticket,
@@ -259,7 +259,7 @@ class _ClientFeedbackDetailPageState extends State<ClientFeedbackDetailPage> {
           }
 
           final ticket = snapshot.data!;
-          final colors = context.lehuColors;
+          final colors = context.shuyoColors;
           return RefreshIndicator(
             onRefresh: _refresh,
             child: ListView(
@@ -277,7 +277,7 @@ class _ClientFeedbackDetailPageState extends State<ClientFeedbackDetailPage> {
                           Expanded(
                             child: Text(
                               ticket.title,
-                              style: LehuTextStyles.title(
+                              style: ShuYoTextStyles.title(
                                 color: colors.textPrimary,
                                 size: 16,
                                 height: 1.24,
@@ -396,7 +396,7 @@ class _ComposerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -411,7 +411,7 @@ class _ComposerCard extends StatelessWidget {
           children: [
             Text(
               '提交反馈',
-              style: LehuTextStyles.sectionTitle(color: colors.textPrimary),
+              style: ShuYoTextStyles.sectionTitle(color: colors.textPrimary),
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -482,7 +482,7 @@ class _TicketTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       decoration: BoxDecoration(
         color: colors.surfaceAlt,
@@ -497,7 +497,7 @@ class _TicketTile extends StatelessWidget {
             ticket.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: LehuTextStyles.title(
+            style: ShuYoTextStyles.title(
               color: colors.textPrimary,
               size: 15.5,
               height: 1.24,
@@ -548,7 +548,7 @@ class _ReplyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -592,7 +592,7 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -605,7 +605,7 @@ class _Section extends StatelessWidget {
         children: [
           Text(
             title,
-            style: LehuTextStyles.sectionTitle(color: colors.textPrimary),
+            style: ShuYoTextStyles.sectionTitle(color: colors.textPrimary),
           ),
           const SizedBox(height: 12),
           child,
@@ -626,7 +626,7 @@ class _MetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -661,7 +661,7 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final color = switch (status) {
       'closed' => colors.danger,
       'replied' => colors.success,
@@ -692,7 +692,7 @@ class _SmallBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

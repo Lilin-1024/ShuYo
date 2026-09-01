@@ -5,9 +5,9 @@ import '../../data/models/topic.dart';
 import '../../data/repositories/forum_repository.dart';
 import '../../features/profile/user_profile_page.dart';
 import '../../features/topic/topic_detail_page.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -161,7 +161,7 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
 
   Future<void> _openTopic(TopicListItem topic) async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
           onRecoverConnection: widget.onRecoverConnection,
@@ -177,7 +177,7 @@ class _ForumSearchPageState extends State<ForumSearchPage> {
 
   Future<void> _openUser(String username) async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => UserProfilePage(
           repository: widget.repository,
           username: username,
@@ -202,7 +202,7 @@ class _SearchOptions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
       decoration: BoxDecoration(
@@ -264,7 +264,7 @@ class _OptionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       borderRadius: BorderRadius.circular(999),
       onTap: selected ? null : onTap,
@@ -317,7 +317,7 @@ class _PostResults extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: rows.length,
       separatorBuilder: (context, index) =>
-          Divider(height: 1, color: context.lehuColors.border),
+          Divider(height: 1, color: context.shuyoColors.border),
       itemBuilder: (context, index) {
         final row = rows[index];
         final post = row.post;
@@ -373,7 +373,7 @@ class _UserResults extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       itemCount: result.users.length,
       separatorBuilder: (context, index) =>
-          Divider(height: 1, color: context.lehuColors.border),
+          Divider(height: 1, color: context.shuyoColors.border),
       itemBuilder: (context, index) {
         final user = result.users[index];
         return ListTile(
@@ -381,13 +381,13 @@ class _UserResults extends StatelessWidget {
           title: Text(
             user.username,
             style: TextStyle(
-              color: context.lehuColors.detailAuthor,
+              color: context.shuyoColors.detailAuthor,
               fontWeight: FontWeight.w500,
             ),
           ),
           subtitle: Text(
             'ID ${user.id}',
-            style: TextStyle(color: context.lehuColors.textMuted),
+            style: TextStyle(color: context.shuyoColors.textMuted),
           ),
           onTap: () => onOpenUser(user.username),
         );
@@ -411,14 +411,14 @@ class _SearchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return ListTile(
       onTap: onTap,
       title: Text(
         title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: LehuTextStyles.title(
+        style: ShuYoTextStyles.title(
           color: colors.textPrimary,
           size: 15.5,
           weight: FontWeight.w500,

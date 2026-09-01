@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/models/announcement.dart';
 import '../../data/repositories/announcement_repository.dart';
 import '../../data/services/announcement_api_client.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/empty_state.dart';
 
 class AnnouncementsPage extends StatefulWidget {
@@ -75,7 +75,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
                 );
               },
               separatorBuilder: (context, index) {
-                return Divider(height: 1, color: context.lehuColors.border);
+                return Divider(height: 1, color: context.shuyoColors.border);
               },
               itemCount: items.length,
             ),
@@ -95,7 +95,7 @@ class _AnnouncementsPageState extends State<AnnouncementsPage> {
 
   void _openDetail(AnnouncementListItem item) {
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => AnnouncementDetailPage(
           repository: widget.repository,
           item: item,
@@ -157,13 +157,13 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
             );
           }
           final detail = snapshot.data!;
-          final colors = context.lehuColors;
+          final colors = context.shuyoColors;
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
             children: [
               Text(
                 detail.title,
-                style: LehuTextStyles.title(
+                style: ShuYoTextStyles.title(
                   color: colors.textPrimary,
                   size: 20,
                   height: 1.22,
@@ -197,7 +197,7 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
             block.value,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              final colors = context.lehuColors;
+              final colors = context.shuyoColors;
               return Container(
                 height: 120,
                 alignment: Alignment.center,
@@ -219,7 +219,7 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
         style: TextStyle(
           fontSize: 16,
           height: 1.7,
-          color: context.lehuColors.textPrimary,
+          color: context.shuyoColors.textPrimary,
         ),
       ),
     );
@@ -237,7 +237,7 @@ class _AnnouncementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -250,7 +250,7 @@ class _AnnouncementTile extends StatelessWidget {
                 children: [
                   Text(
                     item.title,
-                    style: LehuTextStyles.title(
+                    style: ShuYoTextStyles.title(
                       color: colors.textPrimary,
                       size: 16,
                       height: 1.26,
@@ -309,7 +309,7 @@ class _AnnouncementMetadata extends StatelessWidget {
     }
     return Text(
       parts.join(' · '),
-      style: TextStyle(color: context.lehuColors.textTertiary, fontSize: 13),
+      style: TextStyle(color: context.shuyoColors.textTertiary, fontSize: 13),
     );
   }
 }

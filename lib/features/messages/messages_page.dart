@@ -17,9 +17,9 @@ import '../../data/services/forum_draft_store.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/local_image_picker.dart';
 import '../../data/services/payload_factory.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/composer_attachments.dart';
@@ -222,7 +222,7 @@ class _MessagesPageState extends State<MessagesPage> {
               padding: const EdgeInsets.only(bottom: 16),
               itemCount: groups.length,
               separatorBuilder: (context, index) {
-                return Divider(height: 1, color: context.lehuColors.border);
+                return Divider(height: 1, color: context.shuyoColors.border);
               },
               itemBuilder: (context, index) => _MessageRowSizeReporter(
                 onSizeChanged: index == 0 ? _setMessageRowExtent : null,
@@ -259,7 +259,7 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Widget _buildGroupItem(_PrivateConversationGroup group) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final selected = _isGroupSelected(group);
     final archived = _showArchived;
     final tile = ListTile(
@@ -269,7 +269,7 @@ class _MessagesPageState extends State<MessagesPage> {
         group.displayName,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: LehuTextStyles.title(
+        style: ShuYoTextStyles.title(
           color: colors.textPrimary,
           size: 15.5,
           weight: FontWeight.w500,
@@ -328,7 +328,7 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Widget _selectionBar() {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final archived = _showArchived;
     return Container(
       height: 52,
@@ -689,7 +689,7 @@ class _MessagesPageState extends State<MessagesPage> {
       );
     } else {
       await Navigator.of(context).push<void>(
-        lehuRoute(
+        shuyoRoute(
           builder: (context) => _MessageTopicSelectionPage(
             repository: widget.repository,
             onRecoverConnection: widget.onRecoverConnection,
@@ -712,7 +712,7 @@ class _MessagesPageState extends State<MessagesPage> {
     String? counterpartUsername,
   ) {
     return Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => _MessageDetailPage(
           repository: widget.repository,
           onRecoverConnection: widget.onRecoverConnection,
@@ -764,7 +764,7 @@ class _MessageTopicSelectionPageState
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final hasSelection = _selectedTopicIds.isNotEmpty;
     return Scaffold(
       backgroundColor: colors.background,
@@ -798,7 +798,7 @@ class _MessageTopicSelectionPageState
   }
 
   Widget _buildTopicItem(TopicListItem topic) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final selected = _selectedTopicIds.contains(topic.id);
     final tile = ListTile(
       selected: selected,
@@ -807,7 +807,7 @@ class _MessageTopicSelectionPageState
         topic.title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: LehuTextStyles.title(
+        style: ShuYoTextStyles.title(
           color: colors.textPrimary,
           size: 15.5,
           weight: FontWeight.w500,
@@ -831,7 +831,7 @@ class _MessageTopicSelectionPageState
           return;
         }
         Navigator.of(context).push<void>(
-          lehuRoute(
+          shuyoRoute(
             builder: (context) => _MessageDetailPage(
               repository: widget.repository,
               onRecoverConnection: widget.onRecoverConnection,
@@ -984,7 +984,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
@@ -1303,7 +1303,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
 
   void _openImagePreview(List<String> urls, int initialIndex) {
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         fullscreenDialog: true,
         builder: (context) => FullscreenImagePage(
           urls: urls,
@@ -1320,7 +1320,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       return;
     }
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
           topic: TopicListItem(
@@ -1345,7 +1345,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       return;
     }
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => UserProfilePage(
           repository: widget.repository,
           username: trimmed,
@@ -1360,7 +1360,7 @@ class _MessageDetailPageState extends State<_MessageDetailPage> {
       return;
     }
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => UserProfilePage(
           repository: widget.repository,
           username: username,
@@ -1389,7 +1389,7 @@ class _MessageDetailHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       height: 62,
       padding: const EdgeInsets.only(right: 12),
@@ -1418,7 +1418,7 @@ class _MessageDetailHeader extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: LehuTextStyles.title(
+                      style: ShuYoTextStyles.title(
                         color: colors.textPrimary,
                         size: 15.5,
                         weight: FontWeight.w500,
@@ -1540,7 +1540,7 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mine = post.yours;
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final bubbleColor = mine ? colors.selectedFill : colors.surfaceAlt;
     final primaryText = mine ? colors.onSelectedFill : colors.textPrimary;
     final secondaryText = mine
@@ -1732,7 +1732,7 @@ class _MessageReplyBarState extends State<_MessageReplyBar> {
     }
     final emojiHeight = _emojiPanelHeightFor(keyboardBottom);
     _completeKeyboardHandoffIfReady(keyboardBottom);
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
 
     return SafeArea(
       top: false,
@@ -2079,7 +2079,7 @@ class _TopicPreviewLine extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: context.lehuColors.textSecondary,
+            color: context.shuyoColors.textSecondary,
             fontSize: 14.5,
           ),
         );
@@ -2194,7 +2194,7 @@ class _ArchiveDismissBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       color: colors.accent,
       alignment: Alignment.centerRight,
@@ -2309,7 +2309,7 @@ class _ArchivePullToSwitchState extends State<_ArchivePullToSwitch>
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final settleFactor = 1 - _settleController.value;
     final displayedPullDistance = _settleController.isAnimating
         ? _settlePullDistance * settleFactor

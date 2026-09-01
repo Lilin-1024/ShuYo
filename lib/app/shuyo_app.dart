@@ -8,10 +8,10 @@ import '../data/services/app_data_migration_service.dart';
 import '../data/services/client_settings_service.dart';
 import 'app_shell.dart';
 import '../features/onboarding/startup_onboarding.dart';
-import '../shared/theme/lehu_theme.dart';
+import '../shared/theme/shuyo_theme.dart';
 
-class LehuApp extends StatefulWidget {
-  const LehuApp({
+class ShuYoApp extends StatefulWidget {
+  const ShuYoApp({
     super.key,
     this.initialThemeId,
     this.initialFollowSystemTheme = false,
@@ -21,15 +21,15 @@ class LehuApp extends StatefulWidget {
   final bool initialFollowSystemTheme;
 
   @override
-  State<LehuApp> createState() => _LehuAppState();
+  State<ShuYoApp> createState() => _ShuYoAppState();
 }
 
-class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
+class _ShuYoAppState extends State<ShuYoApp> with WidgetsBindingObserver {
   final _settingsService = ClientSettingsService();
   final _dataMigrationService = AppDataMigrationService();
   final _onboardingController = StartupOnboardingController();
   late final Future<_StartupData> _startupFuture;
-  String _manualThemeId = LehuThemes.defaultId;
+  String _manualThemeId = ShuYoThemes.defaultId;
   bool _followSystemTheme = false;
   int _academicLoginSignal = 0;
   int _forumLoginSignal = 0;
@@ -39,7 +39,7 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    _manualThemeId = LehuThemes.byId(widget.initialThemeId).id;
+    _manualThemeId = ShuYoThemes.byId(widget.initialThemeId).id;
     _followSystemTheme = widget.initialFollowSystemTheme;
     WidgetsBinding.instance.addObserver(this);
     _startupFuture = _loadStartup();
@@ -113,11 +113,11 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
     );
   }
 
-  LehuThemeSpec get _effectiveTheme {
+  ShuYoThemeSpec get _effectiveTheme {
     final themeId = _followSystemTheme
-        ? LehuThemes.systemThemeIdFor(_systemBrightness)
+        ? ShuYoThemes.systemThemeIdFor(_systemBrightness)
         : _manualThemeId;
-    return LehuThemes.byId(themeId);
+    return ShuYoThemes.byId(themeId);
   }
 
   Future<_StartupData> _loadStartup() async {
@@ -156,13 +156,13 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
       return;
     }
     setState(() {
-      _manualThemeId = LehuThemes.byId(themeId).id;
+      _manualThemeId = ShuYoThemes.byId(themeId).id;
       _followSystemTheme = followSystemTheme;
     });
   }
 
   Future<void> _changeTheme(String themeId) async {
-    final theme = LehuThemes.byId(themeId);
+    final theme = ShuYoThemes.byId(themeId);
     await _settingsService.saveThemeId(theme.id);
     await _settingsService.saveFollowSystemTheme(false);
     if (mounted) {
@@ -227,7 +227,7 @@ class _StartupData {
 class _StartupLoading extends StatelessWidget {
   const _StartupLoading({required this.theme});
 
-  final LehuThemeSpec theme;
+  final ShuYoThemeSpec theme;
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +246,7 @@ class _StartupLoading extends StatelessWidget {
   }
 
   String get _iconAsset {
-    if (theme.id == LehuThemes.defaultId) {
+    if (theme.id == ShuYoThemes.defaultId) {
       return 'assets/images/icon_clear_blue.png';
     }
     if (theme.colors.brightness == Brightness.light) {
@@ -263,7 +263,7 @@ class _StartupError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Scaffold(
       body: SafeArea(
         child: Padding(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/lehu_theme.dart';
+import '../theme/shuyo_theme.dart';
 import 'forum_network_image.dart';
 
 class ForumAvatar extends StatelessWidget {
@@ -43,7 +43,7 @@ class _AvatarFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return ClipOval(
       child: Container(
         width: size,

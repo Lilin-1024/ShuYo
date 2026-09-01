@@ -7,9 +7,9 @@ import '../../data/repositories/client_backend_repository.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../data/services/app_store_version_service.dart';
 import '../../data/services/client_settings_service.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/client_update_prompt.dart';
 import '../../shared/widgets/empty_state.dart';
 import 'client_feedback_page.dart';
@@ -49,7 +49,7 @@ class ClientSettingsPage extends StatelessWidget {
           _SettingsRow(
             title: '通知设置',
             onTap: () => Navigator.of(context).push<void>(
-              lehuRoute(
+              shuyoRoute(
                 builder: (context) => _NotificationSettingsPage(
                   settingsService: settingsService,
                   scheduleNotificationService: scheduleNotificationService,
@@ -60,7 +60,7 @@ class ClientSettingsPage extends StatelessWidget {
           _SettingsRow(
             title: 'WebVPN代理',
             onTap: () => Navigator.of(context).push<void>(
-              lehuRoute(
+              shuyoRoute(
                 builder: (context) => _NetworkSettingsPage(
                   settingsService: settingsService,
                 ),
@@ -70,7 +70,7 @@ class ClientSettingsPage extends StatelessWidget {
           _SettingsRow(
             title: '主题切换',
             onTap: () => Navigator.of(context).push<void>(
-              lehuRoute(
+              shuyoRoute(
                 builder: (context) => _ThemeSettingsPage(
                   selectedThemeId: selectedThemeId,
                   followSystemTheme: followSystemTheme,
@@ -83,7 +83,7 @@ class ClientSettingsPage extends StatelessWidget {
           _SettingsRow(
             title: '问题与反馈',
             onTap: () => Navigator.of(context).push<void>(
-              lehuRoute(
+              shuyoRoute(
                 builder: (context) => ClientFeedbackPage(
                   repository: backendRepository,
                 ),
@@ -93,7 +93,7 @@ class ClientSettingsPage extends StatelessWidget {
           _SettingsRow(
             title: '关于ShuYo',
             onTap: () => Navigator.of(context).push<void>(
-              lehuRoute(
+              shuyoRoute(
                 builder: (context) => const _AboutClientPage(),
               ),
             ),
@@ -274,7 +274,7 @@ class _AboutClientPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Scaffold(
       appBar: AppBar(title: const Text('关于ShuYo')),
       body: ListView(
@@ -282,12 +282,12 @@ class _AboutClientPage extends StatelessWidget {
         children: [
           Text(
             '关于ShuYo',
-            style: LehuTextStyles.pageTitle(color: colors.textPrimary),
+            style: ShuYoTextStyles.pageTitle(color: colors.textPrimary),
           ),
           const SizedBox(height: 6),
           Text(
             '版本 ${ClientAppInfo.version}',
-            style: LehuTextStyles.meta(color: colors.textMuted),
+            style: ShuYoTextStyles.meta(color: colors.textMuted),
           ),
           const SizedBox(height: 22),
           _AboutSection(
@@ -312,7 +312,7 @@ class _AboutSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 22),
       child: Column(
@@ -320,12 +320,12 @@ class _AboutSection extends StatelessWidget {
         children: [
           Text(
             title,
-            style: LehuTextStyles.sectionTitle(color: colors.textPrimary),
+            style: ShuYoTextStyles.sectionTitle(color: colors.textPrimary),
           ),
           const SizedBox(height: 8),
           Text(
             body,
-            style: LehuTextStyles.body(
+            style: ShuYoTextStyles.body(
               color: colors.textSecondary,
               height: 1.55,
             ),
@@ -381,11 +381,11 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Scaffold(
       appBar: AppBar(title: const Text('主题切换')),
       body: ListView.separated(
-        itemCount: LehuThemes.all.length + 1,
+        itemCount: ShuYoThemes.all.length + 1,
         separatorBuilder: (context, index) => Divider(color: colors.border),
         itemBuilder: (context, index) {
           if (index == 0) {
@@ -396,7 +396,7 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
               onChanged: _toggleFollowSystemTheme,
             );
           }
-          final theme = LehuThemes.all[index - 1];
+          final theme = ShuYoThemes.all[index - 1];
           final selected = theme.id == _selectedThemeId;
           return ListTile(
             selected: selected,
@@ -419,7 +419,7 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
     );
   }
 
-  Future<void> _selectTheme(LehuThemeSpec theme) async {
+  Future<void> _selectTheme(ShuYoThemeSpec theme) async {
     if ((!_followSystemTheme && _selectedThemeId == theme.id) ||
         _savingThemeId != null ||
         _savingFollowSystemTheme) {
@@ -461,7 +461,7 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
       if (mounted && enabled) {
         final brightness = MediaQuery.platformBrightnessOf(context);
         setState(() {
-          _selectedThemeId = LehuThemes.systemThemeIdFor(brightness);
+          _selectedThemeId = ShuYoThemes.systemThemeIdFor(brightness);
         });
       }
     } on Object catch (error) {
@@ -488,13 +488,13 @@ class _ThemeSwatches extends StatelessWidget {
     required this.saving,
   });
 
-  final LehuThemeSpec theme;
+  final ShuYoThemeSpec theme;
   final bool selected;
   final bool saving;
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return SizedBox(
       width: 126,
       child: Row(
@@ -805,7 +805,7 @@ class _SettingsSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return SwitchListTile(
       title: Text(
         title,

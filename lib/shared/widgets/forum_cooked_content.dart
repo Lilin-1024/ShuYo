@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../data/models/forum_poll.dart';
 import '../../data/services/html_text.dart';
-import '../theme/lehu_theme.dart';
+import '../theme/shuyo_theme.dart';
 import 'avatar.dart';
 import 'forum_inline_image_layout.dart';
 import 'forum_network_image.dart';
@@ -262,7 +262,7 @@ String _pollOptionMetricText(
   return '${option.votes}人';
 }
 
-List<Color> _pollPalette(LehuColors colors) {
+List<Color> _pollPalette(ShuYoColors colors) {
   return [
     colors.accent,
     colors.accentAlt,
@@ -294,7 +294,7 @@ class _CookedTextBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return switch (segment.textBlockKind) {
       CookedTextBlockKind.heading => _richText(
           context,
@@ -397,7 +397,7 @@ class _CookedTextBlock extends StatelessWidget {
   }
 
   List<InlineSpan> _spans(BuildContext context, TextStyle baseStyle) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final runs =
         segment.runs.isEmpty ? [CookedTextRun(segment.value)] : segment.runs;
     return [
@@ -408,7 +408,7 @@ class _CookedTextBlock extends StatelessWidget {
   InlineSpan _spanForRun(
     CookedTextRun run,
     TextStyle baseStyle,
-    LehuColors colors,
+    ShuYoColors colors,
   ) {
     final style = baseStyle.copyWith(
       color: run.isLink ? colors.accent : baseStyle.color,
@@ -600,7 +600,7 @@ class _NetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return ColoredBox(
       color: colors.surfaceMuted,
       child: ForumNetworkImage(
@@ -660,7 +660,7 @@ class _ForumPollCardState extends State<_ForumPollCard> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final poll = widget.poll;
     final title = poll.title?.trim();
     return Material(
@@ -786,7 +786,7 @@ class _PollDetailSheetState extends State<_PollDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final poll = widget.poll;
     final title = poll.title?.trim();
     final canVote = poll.isOpen && widget.onVote != null && !_isBusy;
@@ -1068,7 +1068,7 @@ class _PollOptionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final denominator = poll.resultDenominator;
     final percent = denominator <= 0 ? 0.0 : option.votes / denominator;
     final optionText = _optionText(option);
@@ -1150,7 +1150,7 @@ class _PollPieResult extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -1255,7 +1255,7 @@ class _PollStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -1285,7 +1285,7 @@ class _PollResultToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final showingCount = value == _PollResultDisplay.count;
     return Tooltip(
       message: showingCount ? '显示人数' : '显示百分比',
@@ -1323,7 +1323,7 @@ class _PollVoterGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.only(top: 10),
       child: Column(
@@ -1374,7 +1374,7 @@ class _InlineLink extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     if (preview.isInternalUser) {
       return InkWell(
         borderRadius: BorderRadius.circular(5),
@@ -1437,7 +1437,7 @@ class _OneboxCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final thumbnailUrl = preview.thumbnailUrl;
     return InkWell(
       borderRadius: BorderRadius.circular(8),
@@ -1523,7 +1523,7 @@ class _SourceLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final iconUrl = preview.siteIconUrl;
     return Row(
       children: [

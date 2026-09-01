@@ -16,8 +16,8 @@ import '../../data/services/discourse_api_client.dart';
 import '../../data/services/html_text.dart';
 import '../../data/services/payload_factory.dart';
 import '../../features/profile/user_profile_page.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/app_header.dart';
 import '../../shared/widgets/empty_state.dart';
 import 'topic_page.dart';
@@ -395,7 +395,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
       return;
     }
     final deleted = await Navigator.of(context).push<bool>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
           topic: TopicListItem(
@@ -851,7 +851,7 @@ class _TopicDetailPageState extends State<TopicDetailPage>
       return;
     }
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => UserProfilePage(
           repository: widget.repository,
           username: username,
@@ -1032,7 +1032,7 @@ class _ReportReasonSheetState extends State<_ReportReasonSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
@@ -1143,7 +1143,7 @@ class _ReportReasonTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final activeColor = Theme.of(context).colorScheme.primary;
     return ListTile(
       dense: true,
@@ -1206,7 +1206,7 @@ class _TopicMoreSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return SafeArea(
       top: false,
       child: Container(
@@ -1307,7 +1307,7 @@ class _TopicActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onTap != null;
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: onTap,

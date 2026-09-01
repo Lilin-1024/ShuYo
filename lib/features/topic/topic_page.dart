@@ -21,9 +21,9 @@ import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/forum_cooked_content.dart';
 import '../../shared/widgets/forum_network_image.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/fullscreen_image_page.dart';
 import '../../shared/widgets/inline_emoji_panel.dart';
@@ -1080,7 +1080,7 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
 
   void _openImagePreview(List<String> urls, int initialIndex) {
     Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         fullscreenDialog: true,
         builder: (context) => FullscreenImagePage(
           urls: urls,
@@ -1111,7 +1111,7 @@ class _TopicHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -1119,7 +1119,7 @@ class _TopicHeader extends StatelessWidget {
         children: [
           Text(
             detail.title,
-            style: LehuTextStyles.title(
+            style: ShuYoTextStyles.title(
               color: colors.textPrimary,
               size: 20.5,
               height: 1.2,
@@ -1144,7 +1144,7 @@ class _ReadPositionToast extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final dark = Theme.of(context).brightness == Brightness.dark;
     final background = dark
         ? colors.surfaceAlt.withValues(alpha: 0.82)
@@ -1192,7 +1192,7 @@ class _TargetPostLoadingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return ColoredBox(
       color: colors.background,
       child: const Center(
@@ -1370,7 +1370,7 @@ class _NestedReplies extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       margin: const EdgeInsets.only(left: 34, bottom: 8),
       padding: const EdgeInsets.only(left: 10),
@@ -1469,7 +1469,7 @@ class _PostView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final textSize = compact ? 15.0 : 16.0;
     final timeText = TimeFormat.compact(
       post.createdAt,
@@ -1607,7 +1607,7 @@ class _PostView extends StatelessWidget {
 
   Widget _buildCompact(
     BuildContext context,
-    LehuColors colors,
+    ShuYoColors colors,
     double textSize,
     String timeText,
   ) {
@@ -1758,7 +1758,7 @@ class _PostView extends StatelessWidget {
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.58),
       builder: (context) {
-        final colors = context.lehuColors;
+        final colors = context.shuyoColors;
         return SafeArea(
           top: false,
           child: Container(
@@ -1853,7 +1853,7 @@ class _PostActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final enabled = action.onTap != null;
     final color = action.destructive && enabled
         ? Theme.of(context).colorScheme.error
@@ -1888,7 +1888,7 @@ class _InlineLikeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final activeColor = Theme.of(context).colorScheme.primary;
     final color = liked ? activeColor : colors.textMuted;
     return InkWell(
@@ -2080,7 +2080,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
   Widget build(BuildContext context) {
     final canType = _canType;
     final expanded = _expanded;
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
       decoration: BoxDecoration(
@@ -2538,7 +2538,7 @@ class _TopicReplyBarState extends State<_ReplyBar> {
     final draftKey = _draftKeyFor(replyToPostNumber);
     final result =
         await Navigator.of(context).push<AdvancedReplyComposerResult>(
-      lehuRoute(
+      shuyoRoute(
         fullscreenDialog: true,
         builder: (context) => AdvancedReplyComposerPage(
           detail: widget.detail,
@@ -2770,7 +2770,7 @@ class _MentionSuggestionsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final child = query.isEmpty
         ? _MentionHint(text: '输入用户名搜索')
         : searching
@@ -2819,7 +2819,7 @@ class _MentionSuggestionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -2852,7 +2852,7 @@ class _MentionSearching extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       child: Row(
@@ -2879,7 +2879,7 @@ class _MentionHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Align(
@@ -2906,7 +2906,7 @@ class _ComposerFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final borderColor = focused
         ? Theme.of(context).colorScheme.primary
-        : context.lehuColors.borderStrong;
+        : context.shuyoColors.borderStrong;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
       curve: Curves.easeOutCubic,
@@ -2943,7 +2943,7 @@ class _ReplyComposerModeMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color =
-        IconTheme.of(context).color ?? context.lehuColors.textSecondary;
+        IconTheme.of(context).color ?? context.shuyoColors.textSecondary;
     return PopupMenuButton<_ReplyComposerMode>(
       tooltip: '选择编辑模式',
       enabled: enabled,
@@ -3046,7 +3046,7 @@ class _AttachmentPreviewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return SizedBox(
       width: 74,
       height: 74,
@@ -3107,7 +3107,7 @@ class _AttachmentImageFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return Center(
       child: Icon(
         Icons.image_outlined,

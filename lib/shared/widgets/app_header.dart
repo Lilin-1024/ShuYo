@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../lehu_text_styles.dart';
-import '../theme/lehu_theme.dart';
+import '../shuyo_text_styles.dart';
+import '../theme/shuyo_theme.dart';
 
 class AppHeader extends StatelessWidget {
   const AppHeader({
@@ -53,7 +53,7 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return SizedBox(
       height: 56,
       child: Row(
@@ -84,7 +84,7 @@ class AppHeader extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: LehuTextStyles.headerTitle(color: colors.textPrimary),
+                  style: ShuYoTextStyles.headerTitle(color: colors.textPrimary),
                 ),
               ),
             ),
@@ -153,7 +153,7 @@ class _NotificationIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     if (count <= 0) {
       return const Icon(Icons.notifications_none);
     }
@@ -176,7 +176,7 @@ class _NotificationIcon extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: LehuTextStyles.chip(
+              style: ShuYoTextStyles.chip(
                 color: colors.onDanger,
                 size: 10,
                 weight: FontWeight.w600,

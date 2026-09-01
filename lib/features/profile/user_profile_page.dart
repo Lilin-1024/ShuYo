@@ -10,9 +10,9 @@ import '../../data/repositories/forum_repository.dart';
 import '../../data/services/forum_draft_store.dart';
 import '../../data/services/forum_title_rules.dart';
 import '../../data/services/local_image_picker.dart';
-import '../../shared/lehu_text_styles.dart';
-import '../../shared/navigation/lehu_route.dart';
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/shuyo_text_styles.dart';
+import '../../shared/navigation/shuyo_route.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/time_format.dart';
 import '../../shared/widgets/composer_attachments.dart';
 import '../../shared/widgets/empty_state.dart';
@@ -123,7 +123,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.lehuColors.surface,
+      backgroundColor: context.shuyoColors.surface,
       showDragHandle: true,
       builder: (context) {
         return _PrivateMessageSheet(
@@ -136,7 +136,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   Future<void> _openCreatedTopics(UserProfile profile) async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => _UserCreatedTopicsPage(
           repository: widget.repository,
           username: profile.username,
@@ -172,7 +172,7 @@ class _ProfileContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final profile = bundle.profile;
     final summary = bundle.summary;
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
@@ -232,7 +232,7 @@ class _ProfileStatList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final stats = [
       _StatItem('发帖', '${summary.topicCount}', onTap: onOpenTopics),
       _StatItem('回复', '${summary.postCount}'),
@@ -321,7 +321,7 @@ class _UserCreatedTopicsPageState extends State<_UserCreatedTopicsPage> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: items.length,
               separatorBuilder: (context, index) =>
-                  Divider(height: 1, color: context.lehuColors.border),
+                  Divider(height: 1, color: context.shuyoColors.border),
               itemBuilder: (context, index) {
                 final item = items[index];
                 return _CreatedTopicRow(
@@ -349,7 +349,7 @@ class _UserCreatedTopicsPageState extends State<_UserCreatedTopicsPage> {
 
   Future<void> _openTopic(ForumActivityItem item) async {
     await Navigator.of(context).push<void>(
-      lehuRoute(
+      shuyoRoute(
         builder: (context) => TopicDetailPage(
           repository: widget.repository,
           onRecoverConnection: widget.onRecoverConnection,
@@ -373,7 +373,7 @@ class _CreatedTopicRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final meta = <String>[
       if (categoryName != null && categoryName!.isNotEmpty) categoryName!,
       '${item.views} 浏览',
@@ -393,7 +393,7 @@ class _CreatedTopicRow extends StatelessWidget {
                     item.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: LehuTextStyles.title(
+                    style: ShuYoTextStyles.title(
                       color: colors.textPrimary,
                       size: 15.5,
                       height: 1.25,
@@ -843,7 +843,7 @@ class _ProfileStatRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final child = SizedBox(
       height: 48,
       child: Row(

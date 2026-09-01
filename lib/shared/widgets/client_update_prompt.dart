@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/client_app_info.dart';
 import '../../data/models/client_backend.dart';
 import '../../data/services/app_store_version_service.dart';
-import '../theme/lehu_theme.dart';
+import '../theme/shuyo_theme.dart';
 
 Future<bool> showClientUpdatePrompt(
   BuildContext context, {
@@ -13,7 +13,7 @@ Future<bool> showClientUpdatePrompt(
     context: context,
     barrierDismissible: false,
     builder: (dialogContext) {
-      final colors = dialogContext.lehuColors;
+      final colors = dialogContext.shuyoColors;
       return AlertDialog(
         title: Text(update.updateTitle),
         content: SingleChildScrollView(

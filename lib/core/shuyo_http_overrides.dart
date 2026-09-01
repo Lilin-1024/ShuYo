@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'certificate_policy.dart';
 
-class LehuHttpOverrides extends HttpOverrides {
+class ShuYoHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
     final client = super.createHttpClient(context);

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../shared/theme/lehu_theme.dart';
+import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/app_header.dart';
 
 class ForumFaqPage extends StatelessWidget {
@@ -57,7 +57,7 @@ class ForumFaqPage extends StatelessWidget {
   }
 
   static Widget _section(BuildContext context, String title, List<String> paragraphs, {List<String> bullets = const [], String? tail, bool emphasizeTail = false}) {
-    final colors = context.lehuColors;
+    final colors = context.shuyoColors;
     final children = <Widget>[Text(title, style: TextStyle(color: colors.textPrimary, fontSize: 21, fontWeight: FontWeight.w700)), const SizedBox(height: 10)];
     for (final p in paragraphs) {
       children.add(Padding(padding: const EdgeInsets.only(bottom: 10), child: Text(p, style: TextStyle(color: colors.textPrimary, fontSize: 16, height: 1.55))));
