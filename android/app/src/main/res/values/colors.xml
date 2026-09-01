@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="launch_background">#F7F7F4</color>
     <color name="widget_background">#F7F7F4</color>
     <color name="widget_row_background">#FFFFFFFF</color>
     <color name="widget_row_active_background">#E6F2FE</color>

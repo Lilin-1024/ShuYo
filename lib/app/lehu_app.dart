@@ -11,7 +11,14 @@ import '../features/onboarding/startup_onboarding.dart';
 import '../shared/theme/lehu_theme.dart';
 
 class LehuApp extends StatefulWidget {
-  const LehuApp({super.key});
+  const LehuApp({
+    super.key,
+    this.initialThemeId,
+    this.initialFollowSystemTheme = false,
+  });
+
+  final String? initialThemeId;
+  final bool initialFollowSystemTheme;
 
   @override
   State<LehuApp> createState() => _LehuAppState();
@@ -32,6 +39,8 @@ class _LehuAppState extends State<LehuApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    _manualThemeId = LehuThemes.byId(widget.initialThemeId).id;
+    _followSystemTheme = widget.initialFollowSystemTheme;
     WidgetsBinding.instance.addObserver(this);
     _startupFuture = _loadStartup();
     _loadTheme();
