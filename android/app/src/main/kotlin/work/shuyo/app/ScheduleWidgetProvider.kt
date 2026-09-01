@@ -72,7 +72,7 @@ abstract class ScheduleWidgetBaseProvider(
         val now = LocalDateTime.now()
         val today = now.toLocalDate()
         val activeWeek = schedule.activeWeek(today)
-        val isVacation = activeWeek > schedule.maxWeek
+        val isVacation = activeWeek < 1 || activeWeek > schedule.maxWeek
         val todayCourses = if (isVacation) {
             emptyList()
         } else {
@@ -276,10 +276,10 @@ private data class WidgetSchedule(
     fun activeWeek(today: LocalDate): Int {
         val vacationWeek = maxWeek + 1
         val anchor = parseDate(anchorMonday)
-            ?: return currentWeek.coerceIn(1, vacationWeek)
+            ?: return currentWeek.coerceIn(0, vacationWeek)
         val todayMonday = today.minusDays((today.dayOfWeek.value - 1).toLong())
         val weekOffset = ChronoUnit.WEEKS.between(anchor, todayMonday).toInt()
-        return (currentWeek + weekOffset).coerceIn(1, vacationWeek.coerceAtLeast(2))
+        return (currentWeek + weekOffset).coerceIn(0, vacationWeek.coerceAtLeast(2))
     }
 
     companion object {
@@ -307,7 +307,7 @@ private data class WidgetSchedule(
                 WidgetSchedule(
                     term = json.optString("term", ""),
                     maxWeek = json.optInt("maxWeek", 1).coerceAtLeast(1),
-                    currentWeek = json.optInt("currentWeek", 1).coerceAtLeast(1),
+                    currentWeek = json.optInt("currentWeek", 1).coerceAtLeast(0),
                     anchorMonday = json.optString("anchorMonday", ""),
                     courses = sessions
                 )

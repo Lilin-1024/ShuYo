@@ -173,7 +173,7 @@ class AcademicScheduleWidgetService {
   }) {
     final todayMonday = AcademicScheduleRepository.startOfWeek(now);
     final offset = todayMonday.difference(state.anchorMonday).inDays ~/ 7;
-    return (state.currentWeek + offset).clamp(1, schedule.vacationWeek);
+    return (state.currentWeek + offset).clamp(0, schedule.vacationWeek);
   }
 
   static bool get _supportsAndroidWidget {

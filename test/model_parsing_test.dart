@@ -1253,6 +1253,9 @@ void main() {
 
     expect(schedule.maxWeek, 15);
     expect(schedule.vacationWeek, 16);
+    expect(schedule.isVacationWeek(0), isTrue);
+    expect(schedule.sessionsForWeek(0), isEmpty);
+    expect(schedule.untimedForWeek(0), isEmpty);
     expect(schedule.sessionsForWeek(schedule.vacationWeek), isEmpty);
     expect(schedule.untimedForWeek(schedule.vacationWeek), isEmpty);
     expect(schedule.sessions.single.sections, [5, 6]);
@@ -1325,6 +1328,17 @@ void main() {
     );
     expect(vacationSnapshot['activeWeek'], schedule.vacationWeek);
     expect(vacationSnapshot['summary'], '假期中');
+
+    final preVacationSnapshot = AcademicScheduleWidgetService.buildSnapshot(
+      schedule: schedule,
+      weekState: ScheduleWeekState(
+        currentWeek: 1,
+        anchorMonday: DateTime(2026, 7, 13),
+      ),
+      now: DateTime(2026, 7, 6, 12),
+    );
+    expect(preVacationSnapshot['activeWeek'], 0);
+    expect(preVacationSnapshot['summary'], '假期中');
   });
 
   test('marks manual academic schedule sessions', () {

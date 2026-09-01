@@ -257,7 +257,8 @@ class AcademicSchedule {
 
   int get vacationWeek => maxWeek + 1;
 
-  bool isVacationWeek(int week) => week >= vacationWeek;
+  // Week 0 represents the vacation before the first teaching week.
+  bool isVacationWeek(int week) => week < 1 || week >= vacationWeek;
 
   List<CourseSession> sessionsForWeek(int week) {
     if (isVacationWeek(week)) {

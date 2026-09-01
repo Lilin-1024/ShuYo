@@ -49,8 +49,12 @@ class AcademicScheduleRepository {
   }
 
   Future<AcademicSchedule> refreshSchedule() async {
+    final hadCachedSchedule = await loadCachedSchedule() != null;
     final schedule = await _apiClient.fetchCurrentSchedule();
     await saveCachedSchedule(schedule);
+    if (!hadCachedSchedule) {
+      await setCurrentWeek(1);
+    }
     return schedule;
   }
 
@@ -93,7 +97,7 @@ class AcademicScheduleRepository {
   }) {
     final todayMonday = startOfWeek(now ?? DateTime.now());
     final offset = todayMonday.difference(state.anchorMonday).inDays ~/ 7;
-    return (state.currentWeek + offset).clamp(1, schedule.vacationWeek);
+    return (state.currentWeek + offset).clamp(0, schedule.vacationWeek);
   }
 
   DateTime dateForWeekday({

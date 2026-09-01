@@ -103,7 +103,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
             schedule: schedule,
             weekState: weekState,
             displayedWeek: _displayedWeek,
-            onPreviousWeek: _displayedWeek <= 1
+            onPreviousWeek: _displayedWeek <= 0
                 ? null
                 : () => setState(() {
                       _displayedWeek--;
