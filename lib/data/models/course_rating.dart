@@ -137,6 +137,87 @@ class CourseRatingSearchResult {
   }
 }
 
+class CourseRatingLatestItem {
+  const CourseRatingLatestItem({
+    required this.id,
+    required this.courseId,
+    required this.teacherId,
+    required this.user,
+    required this.score,
+    required this.content,
+    required this.createdAt,
+    required this.upvotes,
+    required this.courseCode,
+    required this.courseName,
+    required this.teacherName,
+  });
+
+  final int id;
+  final int courseId;
+  final int teacherId;
+  final CourseRatingUser user;
+  final int score;
+  final String content;
+  final DateTime? createdAt;
+  final int upvotes;
+  final String courseCode;
+  final String courseName;
+  final String teacherName;
+
+  JsonMap toJson() => {
+        'id': id,
+        'courseId': courseId,
+        'teacherId': teacherId,
+        'user': user.toJson(),
+        'score': score,
+        'content': content,
+        'createdAt': createdAt?.millisecondsSinceEpoch,
+        'upvotes': upvotes,
+        'courseCode': courseCode,
+        'courseName': courseName,
+        'teacherName': teacherName,
+      };
+
+  factory CourseRatingLatestItem.fromJson(JsonMap json) {
+    final user = json['user'];
+    return CourseRatingLatestItem(
+      id: intValue(json['ID'] ?? json['id']),
+      courseId: intValue(json['CourseID'] ?? json['courseId'] ?? json['course_id']),
+      teacherId: intValue(json['TeacherID'] ?? json['teacherId'] ?? json['teacher_id']),
+      user: user is JsonMap
+          ? CourseRatingUser.fromJson(user)
+          : const CourseRatingUser(id: 0, username: '匿名'),
+      score: intValue(json['Score'] ?? json['score'], -1),
+      content: stringValue(json['Content'] ?? json['content']).trim(),
+      createdAt: _dateFromTimestamp(json['CreatedAt'] ?? json['createdAt']),
+      upvotes: intValue(json['Upvotes'] ?? json['upvotes']),
+      courseCode: stringValue(json['course_code'] ?? json['courseCode']).trim(),
+      courseName: stringValue(json['course_name'] ?? json['courseName']).trim(),
+      teacherName: stringValue(json['teacher_name'] ?? json['teacherName']).trim(),
+    );
+  }
+}
+
+class CourseRatingLatestResult {
+  const CourseRatingLatestResult({required this.ratings});
+
+  final List<CourseRatingLatestItem> ratings;
+
+  JsonMap toJson() => {
+        'ratings': ratings.map((rating) => rating.toJson()).toList(),
+      };
+
+  factory CourseRatingLatestResult.fromJson(JsonMap json) {
+    return CourseRatingLatestResult(
+      ratings: (json['ratings'] as List? ?? const [])
+          .whereType<JsonMap>()
+          .map(CourseRatingLatestItem.fromJson)
+          .where((rating) => rating.courseName.isNotEmpty || rating.content.isNotEmpty)
+          .toList(growable: false),
+    );
+  }
+}
+
 class CourseRatingCourseTeachers {
   const CourseRatingCourseTeachers({
     required this.course,

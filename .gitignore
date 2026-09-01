@@ -19,3 +19,5 @@ ios/.symlinks/
 *.log
 
 /.DS_Store
+/.demo
+/assets/demo

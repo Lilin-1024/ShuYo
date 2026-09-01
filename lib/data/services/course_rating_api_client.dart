@@ -47,6 +47,11 @@ class CourseRatingApiClient {
     return parseSearchResult(json);
   }
 
+  Future<CourseRatingLatestResult> fetchLatest() async {
+    final json = await _getJson(Uri.parse('$baseUrl/api/latest'));
+    return parseLatestResult(json);
+  }
+
   Future<CourseRatingCourseTeachers> fetchCourseTeachers(
     CourseRatingCourse course,
   ) async {
@@ -81,6 +86,10 @@ class CourseRatingApiClient {
 
   static CourseRatingSearchResult parseSearchResult(JsonMap json) {
     return CourseRatingSearchResult.fromJson(json);
+  }
+
+  static CourseRatingLatestResult parseLatestResult(JsonMap json) {
+    return CourseRatingLatestResult.fromJson(json);
   }
 
   static CourseRatingCourseTeachers parseCourseTeachers(JsonMap json) {

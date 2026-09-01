@@ -13,6 +13,7 @@ class CourseRatingRepository {
     this.searchCacheDuration = const Duration(hours: 12),
     this.relationCacheDuration = const Duration(hours: 12),
     this.detailCacheDuration = const Duration(minutes: 30),
+    this.latestCacheDuration = const Duration(minutes: 10),
   })  : _apiClient = apiClient ?? CourseRatingApiClient(),
         _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance;
 
@@ -23,8 +24,19 @@ class CourseRatingRepository {
   final Duration searchCacheDuration;
   final Duration relationCacheDuration;
   final Duration detailCacheDuration;
+  final Duration latestCacheDuration;
 
   final _memoryCache = <String, _CachedJson>{};
+
+  Future<CourseRatingLatestResult> fetchLatest({bool forceRefresh = false}) {
+    return _loadCached(
+      key: 'latest',
+      duration: latestCacheDuration,
+      forceRefresh: forceRefresh,
+      parser: CourseRatingLatestResult.fromJson,
+      loader: _apiClient.fetchLatest,
+    );
+  }
 
   Future<CourseRatingSearchResult> search(
     String keyword, {
@@ -130,6 +142,9 @@ class CourseRatingRepository {
 
   JsonMap _toJson<T>(T value) {
     if (value is CourseRatingSearchResult) {
+      return value.toJson();
+    }
+    if (value is CourseRatingLatestResult) {
       return value.toJson();
     }
     if (value is CourseRatingCourseTeachers) {

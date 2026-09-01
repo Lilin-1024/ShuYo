@@ -24,7 +24,14 @@ class CourseRatingPage extends StatefulWidget {
 class _CourseRatingPageState extends State<CourseRatingPage> {
   final _controller = TextEditingController();
   Future<CourseRatingSearchResult>? _searchFuture;
+  late Future<CourseRatingLatestResult> _latestFuture;
   String _activeQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _latestFuture = widget.repository.fetchLatest();
+  }
 
   @override
   void dispose() {
@@ -60,10 +67,36 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
   Widget _resultBody() {
     final future = _searchFuture;
     if (future == null) {
-      return const EmptyState(
-        icon: Icons.rate_review_outlined,
-        title: '搜索课程或教师',
-        message: '输入课程名、课程号或教师名后查看评价。',
+      return FutureBuilder<CourseRatingLatestResult>(
+        future: _latestFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done &&
+              !snapshot.hasData) {
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
+          }
+          if (snapshot.hasError && !snapshot.hasData) {
+            return EmptyState(
+              icon: Icons.error_outline,
+              title: '最新评价加载失败',
+              message: _friendlyError(snapshot.error!),
+              action: TextButton.icon(
+                onPressed: () => _refreshLatest(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('重试'),
+              ),
+            );
+          }
+          final latest =
+              snapshot.data?.ratings ?? const <CourseRatingLatestItem>[];
+          return RefreshIndicator(
+            onRefresh: _refreshLatest,
+            child: _LatestRatingList(
+              ratings: latest.take(20).toList(growable: false),
+              onTap: _openLatest,
+            ),
+          );
+        },
       );
     }
     return FutureBuilder<CourseRatingSearchResult>(
@@ -98,6 +131,12 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
     );
   }
 
+  Future<void> _refreshLatest() async {
+    final future = widget.repository.fetchLatest(forceRefresh: true);
+    setState(() => _latestFuture = future);
+    await future.then<void>((_) {}, onError: (_) {});
+  }
+
   Future<void> _submitSearch({bool forceRefresh = false}) async {
     final query = widget.repository.normalizeKeyword(_controller.text);
     if (query.length < 2) {
@@ -115,6 +154,7 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
   }
 
   void _openCourse(CourseRatingCourse course) {
+    FocusScope.of(context).unfocus();
     Navigator.of(context).push<void>(
       shuyoRoute(
         builder: (context) => CourseRatingCourseTeachersPage(
@@ -126,10 +166,34 @@ class _CourseRatingPageState extends State<CourseRatingPage> {
   }
 
   void _openTeacher(CourseRatingTeacher teacher) {
+    FocusScope.of(context).unfocus();
     Navigator.of(context).push<void>(
       shuyoRoute(
         builder: (context) => CourseRatingTeacherCoursesPage(
           repository: widget.repository,
+          teacher: teacher,
+        ),
+      ),
+    );
+  }
+
+  void _openLatest(CourseRatingLatestItem item) {
+    FocusScope.of(context).unfocus();
+    final course = CourseRatingCourse(
+      id: item.courseId,
+      name: item.courseName,
+      courseCode: item.courseCode,
+      // /api/latest 返回的课程号可能是多个代码拼成的完整查询值。
+      // 详情页接口需要保留这整个值，而不是只取第一个课程号。
+      courseCodes: const [],
+    );
+    final teacher =
+        CourseRatingTeacher(id: item.teacherId, name: item.teacherName);
+    Navigator.of(context).push<void>(
+      shuyoRoute(
+        builder: (context) => CourseRatingDetailPage(
+          repository: widget.repository,
+          course: course,
           teacher: teacher,
         ),
       ),
@@ -603,6 +667,7 @@ class _CourseRatingSearchBar extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 decoration: const InputDecoration(
                   hintText: '课程名、课程号或教师名',
                   prefixIcon: Icon(Icons.search),
@@ -618,6 +683,93 @@ class _CourseRatingSearchBar extends StatelessWidget {
               onPressed: onSearch,
               child: const Text('搜索'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LatestRatingList extends StatelessWidget {
+  const _LatestRatingList({required this.ratings, required this.onTap});
+
+  final List<CourseRatingLatestItem> ratings;
+  final ValueChanged<CourseRatingLatestItem> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ratings.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 88),
+          EmptyState(
+            icon: Icons.rate_review_outlined,
+            title: '暂无最新评价',
+            message: '暂时没有可展示的课程评价。',
+          ),
+        ],
+      );
+    }
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+      children: [
+        const _SectionHeader('最新评价'),
+        for (final rating in ratings)
+          _LatestRatingTile(rating: rating, onTap: () => onTap(rating)),
+      ],
+    );
+  }
+}
+
+class _LatestRatingTile extends StatelessWidget {
+  const _LatestRatingTile({required this.rating, required this.onTap});
+
+  final CourseRatingLatestItem rating;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.shuyoColors;
+    final username = rating.user.username.isEmpty ? '匿名' : rating.user.username;
+    final code = rating.courseCode.isEmpty ? '' : ' · ${rating.courseCode}';
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: colors.border))),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${rating.courseName}$code',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        color: colors.textPrimary, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (rating.score >= 1) _SoftLabel('${rating.score}/10'),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${rating.teacherName} · $username · ${_dateText(rating.createdAt)}',
+              style: TextStyle(color: colors.textTertiary, fontSize: 12.5),
+            ),
+            if (rating.content.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(rating.content,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: colors.textPrimary, height: 1.4)),
+            ],
           ],
         ),
       ),
