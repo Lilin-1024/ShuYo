@@ -126,6 +126,7 @@ class StartupOnboarding extends StatefulWidget {
     required this.initialForumStatus,
     required this.onAcademicLoginCompleted,
     required this.onForumLoginCompleted,
+    this.onDemoLogin,
     this.onAcademicLogout,
     this.onForumLogout,
     required this.controller,
@@ -139,6 +140,7 @@ class StartupOnboarding extends StatefulWidget {
   final ForumAccountStatus initialForumStatus;
   final VoidCallback onAcademicLoginCompleted;
   final VoidCallback onForumLoginCompleted;
+  final Future<void> Function()? onDemoLogin;
   final Future<bool> Function()? onAcademicLogout;
   final Future<bool> Function()? onForumLogout;
   final StartupOnboardingController controller;
@@ -315,10 +317,14 @@ class _StartupOnboardingState extends State<StartupOnboarding>
   }
 
   Future<void> _openAcademicLogin() async {
-    final loggedIn = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context).push<NativeLoginResult>(
       MaterialPageRoute(builder: (_) => const NativeLoginPage()),
     );
-    if (loggedIn != true || !mounted) return;
+    if (result == NativeLoginResult.demo) {
+      await _enterDemoMode();
+      return;
+    }
+    if (result != NativeLoginResult.authenticated || !mounted) return;
     setState(() {
       _academicLoggedIn = true;
       _showForumCampusAccountHint = false;
@@ -348,12 +354,28 @@ class _StartupOnboardingState extends State<StartupOnboarding>
     if (_showForumCampusAccountHint) {
       setState(() => _showForumCampusAccountHint = false);
     }
-    final loggedIn = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context).push<NativeLoginResult>(
       MaterialPageRoute(builder: (_) => const NativeLoginPage.forum()),
     );
-    if (loggedIn != true || !mounted) return;
+    if (result == NativeLoginResult.demo) {
+      await _enterDemoMode();
+      return;
+    }
+    if (result != NativeLoginResult.authenticated || !mounted) return;
     setState(() => _forumStatus = ForumAccountStatus.connecting);
     widget.onForumLoginCompleted();
+  }
+
+  Future<void> _enterDemoMode() async {
+    if (!mounted) return;
+    setState(() {
+      _academicLoggedIn = true;
+      _forumStatus = ForumAccountStatus.loggedIn;
+      _showForumCampusAccountHint = false;
+    });
+    await widget.onDemoLogin?.call();
+    if (!mounted) return;
+    await _complete();
   }
 
   Future<void> _logoutForum() async {
@@ -505,24 +527,24 @@ class _StartupOnboardingState extends State<StartupOnboarding>
         children: [
           widget.child,
           if (_visible) ...[
-          Positioned.fill(
-            child: FadeTransition(
-              opacity: _barrierOpacityAnimation,
-              child: ModalBarrier(
-                color: Colors.black.withValues(alpha: .32),
-                dismissible: true,
-                onDismiss: () => unawaited(_hidePanel()),
+            Positioned.fill(
+              child: FadeTransition(
+                opacity: _barrierOpacityAnimation,
+                child: ModalBarrier(
+                  color: Colors.black.withValues(alpha: .32),
+                  dismissible: true,
+                  onDismiss: () => unawaited(_hidePanel()),
+                ),
               ),
             ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SlideTransition(
-              position: _panelSlideAnimation,
-              child: _panel(context),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SlideTransition(
+                position: _panelSlideAnimation,
+                child: _panel(context),
+              ),
             ),
-          ),
-          _panelNoticeOverlay(context),
+            _panelNoticeOverlay(context),
           ],
         ],
       ),

@@ -41,3 +41,9 @@ flutter:
     - assets/fixtures/api/user/user-profile.json
     - assets/fixtures/api/user/user-summary.json
     - assets/fixtures/network/
+    - assets/demo/README.md
+    - assets/demo/academic/
+    - assets/demo/announcements/
+    - assets/demo/classroom/
+    - assets/demo/course_ratings/
+    - assets/demo/forum/

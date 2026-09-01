@@ -26,6 +26,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.onOpenWebVpnProxy,
     required this.todayCourseContent,
     required this.announcementContent,
+    this.isDemo = false,
   });
 
   final UserProfile profile;
@@ -47,12 +48,31 @@ class HomeDashboardPage extends StatelessWidget {
   final VoidCallback onOpenWebVpnProxy;
   final String todayCourseContent;
   final String announcementContent;
+  final bool isDemo;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       children: [
+        if (isDemo) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: context.shuyoColors.surfaceAlt,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: context.shuyoColors.border),
+            ),
+            child: Text(
+              '演示模式 · 本地静态数据，操作不会上传',
+              style: TextStyle(
+                color: context.shuyoColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
         if (showForumNetworkWarning) ...[
           _CampusNetworkWarningCard(onOpenWebVpnProxy: onOpenWebVpnProxy),
           const SizedBox(height: 10),

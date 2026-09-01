@@ -11,9 +11,11 @@ class EmptyClassroomPage extends StatefulWidget {
   const EmptyClassroomPage({
     super.key,
     required this.repository,
+    this.initialDate,
   });
 
   final ClassroomRepository repository;
+  final DateTime? initialDate;
 
   @override
   State<EmptyClassroomPage> createState() => _EmptyClassroomPageState();
@@ -26,7 +28,7 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
   ClassroomBuilding? _selectedBuilding;
   ClassroomSectionRange? _selectedRange;
   String? _selectedCampus;
-  DateTime _selectedDate = DateTime.now();
+  late DateTime _selectedDate = widget.initialDate ?? DateTime.now();
   bool _refreshingOptions = false;
   String _keyword = '';
 

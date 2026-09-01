@@ -27,6 +27,8 @@ class ClientSettingsPage extends StatelessWidget {
     this.isOnline = false,
     this.loadForumCacheSize,
     this.onClearForumCache,
+    this.isDemo = false,
+    this.onExitDemo,
   });
 
   final ClientSettingsService settingsService;
@@ -39,6 +41,8 @@ class ClientSettingsPage extends StatelessWidget {
   final bool isOnline;
   final Future<int> Function()? loadForumCacheSize;
   final Future<int> Function()? onClearForumCache;
+  final bool isDemo;
+  final Future<void> Function()? onExitDemo;
 
   @override
   Widget build(BuildContext context) {
@@ -57,16 +61,17 @@ class ClientSettingsPage extends StatelessWidget {
               ),
             ),
           ),
-          _SettingsRow(
-            title: 'WebVPN代理',
-            onTap: () => Navigator.of(context).push<void>(
-              shuyoRoute(
-                builder: (context) => _NetworkSettingsPage(
-                  settingsService: settingsService,
+          if (!isDemo)
+            _SettingsRow(
+              title: 'WebVPN代理',
+              onTap: () => Navigator.of(context).push<void>(
+                shuyoRoute(
+                  builder: (context) => _NetworkSettingsPage(
+                    settingsService: settingsService,
+                  ),
                 ),
               ),
             ),
-          ),
           _SettingsRow(
             title: '主题切换',
             onTap: () => Navigator.of(context).push<void>(
@@ -80,16 +85,17 @@ class ClientSettingsPage extends StatelessWidget {
               ),
             ),
           ),
-          _SettingsRow(
-            title: '问题与反馈',
-            onTap: () => Navigator.of(context).push<void>(
-              shuyoRoute(
-                builder: (context) => ClientFeedbackPage(
-                  repository: backendRepository,
+          if (!isDemo)
+            _SettingsRow(
+              title: '问题与反馈',
+              onTap: () => Navigator.of(context).push<void>(
+                shuyoRoute(
+                  builder: (context) => ClientFeedbackPage(
+                    repository: backendRepository,
+                  ),
                 ),
               ),
             ),
-          ),
           _SettingsRow(
             title: '关于ShuYo',
             onTap: () => Navigator.of(context).push<void>(
@@ -98,10 +104,16 @@ class ClientSettingsPage extends StatelessWidget {
               ),
             ),
           ),
-          _SettingsRow(
-            title: '检查更新',
-            onTap: () => _checkForUpdate(context),
-          ),
+          if (!isDemo)
+            _SettingsRow(
+              title: '检查更新',
+              onTap: () => _checkForUpdate(context),
+            ),
+          if (isDemo && onExitDemo != null)
+            _SettingsRow(
+              title: '退出演示',
+              onTap: () => _exitDemo(context),
+            ),
           const SizedBox(height: 14),
           _ForumCacheRow(
             loadSize: loadForumCacheSize,
@@ -110,6 +122,31 @@ class ClientSettingsPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _exitDemo(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('退出演示模式？'),
+            content: const Text('退出后将返回正常登录流程，并清除本地演示数据。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('取消'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('退出演示'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (confirmed) {
+      await onExitDemo?.call();
+      if (context.mounted) Navigator.of(context).pop();
+    }
   }
 
   Future<void> _checkForUpdate(BuildContext context) async {

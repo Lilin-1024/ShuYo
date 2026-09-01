@@ -1,0 +1,27 @@
+{
+  "user": {
+    "id": 1000001,
+    "username": "admin",
+    "avatar_template": "",
+    "trust_level": 1,
+    "email": "",
+    "secondary_emails": [],
+    "unconfirmed_emails": [],
+    "can_send_private_messages": true,
+    "can_send_private_message_to_user": true,
+    "can_edit": true,
+    "can_edit_username": false,
+    "can_edit_email": false,
+    "can_edit_name": false,
+    "admin": false,
+    "moderator": false,
+    "bio_excerpt": "ShuYo App Store 演示账户",
+    "bio_raw": "ShuYo App Store 演示账户",
+    "user_option": {
+      "hide_profile": false,
+      "timezone": "Asia/Shanghai",
+      "default_calendar": "none_selected"
+    },
+    "created_at": "2026-01-01T00:00:00.000Z"
+  }
+}

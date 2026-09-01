@@ -10,6 +10,8 @@ import '../core/academic_url_resolver.dart';
 import '../core/client_app_info.dart';
 import '../core/client_update_policy.dart';
 import '../core/forum_url_resolver.dart';
+import '../data/demo/demo_data_bundle.dart';
+import '../data/demo/demo_repositories.dart';
 import '../data/models/forum_activity.dart';
 import '../data/models/forum_notification.dart';
 import '../data/models/topic.dart';
@@ -72,6 +74,9 @@ class AppShell extends StatefulWidget {
     required this.forumLoginSignal,
     required this.initialHasAcademicSession,
     required this.onboardingController,
+    this.isDemo = false,
+    this.demoData,
+    this.onExitDemo,
   });
 
   final ForumRepository repository;
@@ -85,6 +90,9 @@ class AppShell extends StatefulWidget {
   final int forumLoginSignal;
   final bool initialHasAcademicSession;
   final StartupOnboardingController onboardingController;
+  final bool isDemo;
+  final DemoDataBundle? demoData;
+  final Future<void> Function()? onExitDemo;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -164,7 +172,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _repo = widget.repository;
     _autoUseWebVpnProxy = widget.initialAutoUseWebVpnProxy;
     _hasAcademicSession = widget.initialHasAcademicSession;
-    _scheduleRepository = AcademicScheduleRepository();
+    final demoData = widget.demoData;
+    _scheduleRepository = widget.isDemo && demoData != null
+        ? DemoAcademicScheduleRepository(demoData.schedule)
+        : AcademicScheduleRepository();
     _scheduleNotificationService = AcademicScheduleNotificationService(
       repository: _scheduleRepository,
     );
@@ -174,9 +185,21 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _clientSettingsService = ClientSettingsService();
     _clientBackendRepository = ClientBackendRepository();
     _forumReachabilityService = const ForumReachabilityService();
-    _announcementRepository = AnnouncementRepository();
-    _classroomRepository = ClassroomRepository();
-    _courseRatingRepository = CourseRatingRepository();
+    _announcementRepository = widget.isDemo && demoData != null
+        ? DemoAnnouncementRepository(
+            items: demoData.announcements,
+            details: demoData.announcementDetails,
+          )
+        : AnnouncementRepository();
+    _classroomRepository = widget.isDemo && demoData != null
+        ? DemoClassroomRepository(
+            options: demoData.classroomOptions,
+            schedule: demoData.classroomSchedule,
+          )
+        : ClassroomRepository();
+    _courseRatingRepository = widget.isDemo && demoData != null
+        ? DemoCourseRatingRepository(demoData.courseRatings)
+        : CourseRatingRepository();
     widget.onboardingController.setForumReconnectHandler(
       () => unawaited(_relogin()),
     );
@@ -187,27 +210,29 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _resetFeedFuture();
     unawaited(_initializeForumBadges());
     unawaited(_refreshScheduleSummaryQuietly());
-    unawaited(_loadNetworkSettings());
-    unawaited(_refreshForumReachabilityQuietly(force: true));
-    if (_repo.hasLocalAccount && !_repo.isOnline) {
-      _isInitialForumConnectionCheck = true;
-      unawaited(_recoverForumConnection());
-    }
     unawaited(_loadAnnouncementSummaryFromCache());
-    unawaited(_refreshAnnouncementSummaryQuietly());
-    _scheduleSummaryTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) => _refreshScheduleSummaryQuietly(),
-    );
-    _announcementSummaryTimer = Timer.periodic(
-      AnnouncementRepository.defaultAutoRefreshInterval,
-      (_) => _refreshAnnouncementSummaryQuietly(),
-    );
-    _startForumBadgeRefreshTimer(_forumBadgeRefreshInterval);
-    unawaited(_scheduleNotificationService.syncScheduleReminders());
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_checkClientBackendPrompts());
-    });
+    if (!widget.isDemo) {
+      unawaited(_loadNetworkSettings());
+      unawaited(_refreshForumReachabilityQuietly(force: true));
+      if (_repo.hasLocalAccount && !_repo.isOnline) {
+        _isInitialForumConnectionCheck = true;
+        unawaited(_recoverForumConnection());
+      }
+      unawaited(_refreshAnnouncementSummaryQuietly());
+      _scheduleSummaryTimer = Timer.periodic(
+        const Duration(minutes: 1),
+        (_) => _refreshScheduleSummaryQuietly(),
+      );
+      _announcementSummaryTimer = Timer.periodic(
+        AnnouncementRepository.defaultAutoRefreshInterval,
+        (_) => _refreshAnnouncementSummaryQuietly(),
+      );
+      _startForumBadgeRefreshTimer(_forumBadgeRefreshInterval);
+      unawaited(_scheduleNotificationService.syncScheduleReminders());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_checkClientBackendPrompts());
+      });
+    }
   }
 
   @override
@@ -222,6 +247,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _finishAcademicLogin() async {
+    if (widget.isDemo) {
+      return;
+    }
     if (mounted) setState(() => _hasAcademicSession = true);
     _syncOnboardingAccountStatus();
     await _persistAcademicLoginCookies();
@@ -247,7 +275,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     ForumImageCache.configureCurrentAccount(
       _repo.hasLocalAccount ? _repo.profile.username : null,
     );
-    ForumImageCache.setNetworkEnabled(_repo.isOnline);
+    ForumImageCache.setNetworkEnabled(!widget.isDemo && _repo.isOnline);
     final canOpenClientSettings = _tabIndex == 0 || _tabIndex == 3;
     final isForumTab = _tabIndex == 1 && _repo.isOnline;
 
@@ -389,6 +417,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (widget.isDemo) {
+      _forumBadgeRefreshTimer?.cancel();
+      return;
+    }
     if (state == AppLifecycleState.resumed) {
       _startForumBadgeRefreshTimer(_forumBadgeRefreshInterval);
       unawaited(_recordForumDailyActivity());
@@ -399,6 +431,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _recordForumDailyActivity() async {
+    if (widget.isDemo) return;
     if (!_repo.hasLocalAccount || !_repo.isOnline) return;
     await _clientBackendRepository.recordForumDailyActivity(
       userId: _repo.profile.id,
@@ -794,10 +827,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       todayCourseContent:
           _syncingAcademicSchedule ? '课表获取中...' : _scheduleSummaryText,
       announcementContent: _announcementSummaryText,
+      isDemo: widget.isDemo,
     );
   }
 
   void _openAccountManager() {
+    if (widget.isDemo) {
+      _showSnack('请在设置中退出演示模式');
+      return;
+    }
     widget.onboardingController.openAccountManager(
       academicLoggedIn: _hasAcademicSession,
       forumStatus: _forumAccountStatus,
@@ -869,6 +907,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _refreshForumReachabilityQuietly({bool force = false}) async {
+    if (widget.isDemo) {
+      return;
+    }
     if (_checkingForumReachability) {
       return;
     }
@@ -949,6 +990,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<bool> _syncScheduleAfterWebVpnLogin() async {
+    if (widget.isDemo) {
+      return false;
+    }
     if (_syncingAcademicSchedule) {
       return false;
     }
@@ -1282,6 +1326,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<ForumRecoveryResult> _recoverForumConnection({
     bool forceValidation = false,
   }) {
+    if (widget.isDemo) {
+      return Future.value(
+        ForumRecoveryResult(
+            status: ForumRecoveryStatus.restored, repository: _repo),
+      );
+    }
     final pending = _forumRecoveryFuture;
     if (pending != null) {
       return pending;
@@ -1762,6 +1812,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           isOnline: _repo.isOnline,
           loadForumCacheSize: _repo.forumCacheStorageSize,
           onClearForumCache: _clearForumCache,
+          isDemo: widget.isDemo,
+          onExitDemo: widget.onExitDemo,
         ),
       ),
     );
@@ -1850,6 +1902,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _login() async {
+    if (widget.isDemo) {
+      return;
+    }
     if (_reloadingSession) return;
     var academicReauthenticated = false;
     if (ForumUrlResolver.usesWebVpn && !_hasAcademicSession) {
@@ -1866,10 +1921,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return;
       }
     }
-    final loggedIn = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context).push<NativeLoginResult>(
       shuyoRoute(builder: (context) => const NativeLoginPage.forum()),
     );
-    if (loggedIn == true && mounted) {
+    if (result == NativeLoginResult.authenticated && mounted) {
       await _reloadForumAfterLogin();
     }
   }
@@ -1917,6 +1972,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _relogin() async {
+    if (widget.isDemo) {
+      _showSnack('演示模式无需重新登录');
+      return;
+    }
     if (_reloadingSession) {
       return;
     }
@@ -2107,12 +2166,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       shuyoRoute(
         builder: (context) => EmptyClassroomPage(
           repository: _classroomRepository,
+          initialDate: widget.isDemo ? DateTime(2026, 9, 1) : null,
         ),
       ),
     );
   }
 
   Future<void> _openWebVpnProxy() async {
+    if (widget.isDemo) {
+      _showSnack('演示模式无需配置 WebVPN');
+      return;
+    }
     try {
       await _setAutoUseWebVpnProxy(true);
     } on Object catch (error) {
@@ -2141,6 +2205,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _checkClientBackendPrompts() async {
+    if (widget.isDemo) {
+      return;
+    }
     if (_checkingClientBackendPrompts) {
       return;
     }
@@ -2302,15 +2369,18 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<void> _openAcademicLogin() async {
+    if (widget.isDemo) {
+      return;
+    }
     if (_syncingAcademicSchedule) {
       _showScheduleSyncingSnack();
       return;
     }
     if (!mounted) return;
-    final loggedIn = await Navigator.of(context).push<bool>(
+    final result = await Navigator.of(context).push<NativeLoginResult>(
       shuyoRoute(builder: (context) => const NativeLoginPage()),
     );
-    if (loggedIn != true || !mounted) return;
+    if (result != NativeLoginResult.authenticated || !mounted) return;
     setState(() => _hasAcademicSession = true);
     _syncOnboardingAccountStatus();
     await _persistAcademicLoginCookies();

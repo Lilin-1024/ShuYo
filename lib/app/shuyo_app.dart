@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../core/client_app_info.dart';
 import '../core/forum_url_resolver.dart';
+import '../data/demo/demo_data_bundle.dart';
+import '../data/demo/demo_forum_repository.dart';
+import '../data/demo/demo_session.dart';
 import '../data/repositories/forum_repository.dart';
 import '../data/services/academic_auth_service.dart';
 import '../data/services/app_data_migration_service.dart';
@@ -28,9 +31,12 @@ class _ShuYoAppState extends State<ShuYoApp> with WidgetsBindingObserver {
   final _settingsService = ClientSettingsService();
   final _dataMigrationService = AppDataMigrationService();
   final _onboardingController = StartupOnboardingController();
-  late final Future<_StartupData> _startupFuture;
+  late Future<_StartupData> _startupFuture;
   String _manualThemeId = ShuYoThemes.defaultId;
   bool _followSystemTheme = false;
+  bool _demoMode = false;
+  DemoDataBundle? _demoData;
+  ForumRepository? _demoRepository;
   int _academicLoginSignal = 0;
   int _forumLoginSignal = 0;
   Brightness _systemBrightness =
@@ -83,29 +89,41 @@ class _ShuYoAppState extends State<ShuYoApp> with WidgetsBindingObserver {
             return _StartupLoading(theme: theme);
           }
           final data = snapshot.data!;
+          final demo =
+              _demoMode && _demoData != null && _demoRepository != null;
+          final repository = demo ? _demoRepository! : data.repository;
           return StartupOnboarding(
-            initiallyCompleted: data.onboardingCompleted,
-            initialAcademicLoggedIn: data.hasAcademicSession,
-            initialForumStatus: _forumAccountStatus(data.repository),
+            initiallyCompleted: demo || data.onboardingCompleted,
+            initialAcademicLoggedIn: demo || data.hasAcademicSession,
+            initialForumStatus: demo
+                ? ForumAccountStatus.loggedIn
+                : _forumAccountStatus(repository),
             onAcademicLoginCompleted: () {
               setState(() => _academicLoginSignal++);
             },
             onForumLoginCompleted: () {
               setState(() => _forumLoginSignal++);
             },
+            onDemoLogin: _activateDemoMode,
             controller: _onboardingController,
             child: AppShell(
-              repository: data.repository,
-              reloadRepository: ForumRepositoryFactory.loadOnline,
-              initialAutoUseWebVpnProxy: data.autoUseWebVpnProxy,
+              repository: repository,
+              key: ValueKey('app-shell-${demo ? 'demo' : 'normal'}'),
+              reloadRepository: demo
+                  ? () async => repository
+                  : ForumRepositoryFactory.loadOnline,
+              initialAutoUseWebVpnProxy: demo ? false : data.autoUseWebVpnProxy,
               selectedThemeId: theme.id,
               followSystemTheme: _followSystemTheme,
               onThemeChanged: _changeTheme,
               onFollowSystemThemeChanged: _changeFollowSystemTheme,
               academicLoginSignal: _academicLoginSignal,
               forumLoginSignal: _forumLoginSignal,
-              initialHasAcademicSession: data.hasAcademicSession,
+              initialHasAcademicSession: demo || data.hasAcademicSession,
+              isDemo: demo,
+              demoData: _demoData,
               onboardingController: _onboardingController,
+              onExitDemo: demo ? _exitDemoMode : null,
             ),
           );
         },
@@ -121,9 +139,15 @@ class _ShuYoAppState extends State<ShuYoApp> with WidgetsBindingObserver {
   }
 
   Future<_StartupData> _loadStartup() async {
+    if (await DemoSession.isEnabled()) {
+      return _loadDemoStartup();
+    }
     // This must run before any repository/auth service reads local state.  The
     // migration intentionally resets this major release to a fresh install.
     await _dataMigrationService.migrateIfNeeded();
+    if (await DemoSession.isEnabled()) {
+      return _loadDemoStartup();
+    }
     await ClientAppInfo.load();
     final networkSettings = await _settingsService.loadNetworkSettings();
     ForumUrlResolver.configure(
@@ -138,7 +162,49 @@ class _ShuYoAppState extends State<ShuYoApp> with WidgetsBindingObserver {
       autoUseWebVpnProxy: networkSettings.autoUseWebVpnProxy,
       hasAcademicSession: hasAcademicSession,
       onboardingCompleted: onboardingCompleted,
+      demoMode: false,
     );
+  }
+
+  Future<_StartupData> _loadDemoStartup() async {
+    final demoData = await DemoDataBundle.load();
+    final demoRepository = await DemoForumRepository.load();
+    _demoMode = true;
+    _demoData = demoData;
+    _demoRepository = demoRepository;
+    return _StartupData(
+      repository: demoRepository,
+      autoUseWebVpnProxy: false,
+      hasAcademicSession: true,
+      onboardingCompleted: true,
+      demoMode: true,
+    );
+  }
+
+  Future<void> _activateDemoMode() async {
+    final demoData = await DemoDataBundle.load();
+    final demoRepository = await DemoForumRepository.load();
+    if (!mounted) return;
+    setState(() {
+      _demoMode = true;
+      _demoData = demoData;
+      _demoRepository = demoRepository;
+    });
+  }
+
+  Future<void> _exitDemoMode() async {
+    await DemoSession.disable();
+    await _settingsService.saveStartupOnboardingCompleted(false);
+    if (!mounted) return;
+    setState(() {
+      _demoMode = false;
+      _demoData = null;
+      _demoRepository = null;
+      // A demo-started app's original startup snapshot contains the demo
+      // repository. Reload it after disabling demo so the normal chain gets a
+      // real repository and fresh authentication state.
+      _startupFuture = _loadStartup();
+    });
   }
 
   Future<void> _loadTheme() async {
@@ -216,12 +282,14 @@ class _StartupData {
     required this.autoUseWebVpnProxy,
     required this.hasAcademicSession,
     required this.onboardingCompleted,
+    required this.demoMode,
   });
 
   final ForumRepository repository;
   final bool autoUseWebVpnProxy;
   final bool hasAcademicSession;
   final bool onboardingCompleted;
+  final bool demoMode;
 }
 
 class _StartupLoading extends StatelessWidget {

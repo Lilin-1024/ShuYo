@@ -687,9 +687,10 @@ class _TopicPageState extends State<TopicPage> with WidgetsBindingObserver {
       final overlapBottom =
           postBottom < viewportBottom ? postBottom : viewportBottom;
       final visiblePixels = overlapBottom - overlapTop;
-      final requiredPixels = postBox.size.height < _readingTimingMinVisiblePixels
-          ? postBox.size.height
-          : _readingTimingMinVisiblePixels;
+      final requiredPixels =
+          postBox.size.height < _readingTimingMinVisiblePixels
+              ? postBox.size.height
+              : _readingTimingMinVisiblePixels;
       if (visiblePixels >= requiredPixels) {
         visible.add(entry.key);
       }

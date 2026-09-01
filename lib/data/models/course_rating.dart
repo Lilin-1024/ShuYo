@@ -182,8 +182,10 @@ class CourseRatingLatestItem {
     final user = json['user'];
     return CourseRatingLatestItem(
       id: intValue(json['ID'] ?? json['id']),
-      courseId: intValue(json['CourseID'] ?? json['courseId'] ?? json['course_id']),
-      teacherId: intValue(json['TeacherID'] ?? json['teacherId'] ?? json['teacher_id']),
+      courseId:
+          intValue(json['CourseID'] ?? json['courseId'] ?? json['course_id']),
+      teacherId: intValue(
+          json['TeacherID'] ?? json['teacherId'] ?? json['teacher_id']),
       user: user is JsonMap
           ? CourseRatingUser.fromJson(user)
           : const CourseRatingUser(id: 0, username: '匿名'),
@@ -193,7 +195,8 @@ class CourseRatingLatestItem {
       upvotes: intValue(json['Upvotes'] ?? json['upvotes']),
       courseCode: stringValue(json['course_code'] ?? json['courseCode']).trim(),
       courseName: stringValue(json['course_name'] ?? json['courseName']).trim(),
-      teacherName: stringValue(json['teacher_name'] ?? json['teacherName']).trim(),
+      teacherName:
+          stringValue(json['teacher_name'] ?? json['teacherName']).trim(),
     );
   }
 }
@@ -212,7 +215,8 @@ class CourseRatingLatestResult {
       ratings: (json['ratings'] as List? ?? const [])
           .whereType<JsonMap>()
           .map(CourseRatingLatestItem.fromJson)
-          .where((rating) => rating.courseName.isNotEmpty || rating.content.isNotEmpty)
+          .where((rating) =>
+              rating.courseName.isNotEmpty || rating.content.isNotEmpty)
           .toList(growable: false),
     );
   }

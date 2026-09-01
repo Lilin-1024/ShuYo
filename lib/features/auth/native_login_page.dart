@@ -5,10 +5,13 @@ import 'package:flutter/material.dart';
 
 import '../../data/services/academic_native_auth_service.dart';
 import '../../data/services/verification_delivery_service.dart';
+import '../../data/demo/demo_session.dart';
 import 'forum_oauth_completion_page.dart';
 import 'webvpn_oauth_completion_page.dart';
 
 enum NativeLoginDestination { academic, forum }
+
+enum NativeLoginResult { authenticated, demo }
 
 class NativeLoginPage extends StatefulWidget {
   const NativeLoginPage({
@@ -110,11 +113,11 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
             TextFormField(
               controller: _studentId,
               enabled: !_busy,
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.text,
               autofillHints: const [AutofillHints.username],
               textInputAction: TextInputAction.next,
               decoration: const InputDecoration(
-                  labelText: '学号', prefixIcon: Icon(Icons.badge_outlined)),
+                  labelText: '用户名/学号', prefixIcon: Icon(Icons.badge_outlined)),
               validator: (value) =>
                   value?.trim().isEmpty == true ? '请输入学号' : null,
             ),
@@ -224,6 +227,20 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     if (_busy || _credentialsKey.currentState?.validate() != true) return;
     setState(() => _busy = true);
     try {
+      if (DemoSession.matchesCredentials(_studentId.text, _password.text)) {
+        // The in-memory route must still work if persistence is unavailable
+        // (for example, in a restricted review environment). The app state is
+        // switched by the caller; persistence only keeps Demo active after a
+        // restart.
+        try {
+          await DemoSession.enable();
+        } on Object {
+          // Continue into the local demo even when preferences cannot be
+          // written.
+        }
+        if (mounted) Navigator.of(context).pop(NativeLoginResult.demo);
+        return;
+      }
       final result = await _authService.login(
           username: _studentId.text.trim(), password: _password.text);
       _password.clear();
@@ -315,7 +332,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       );
       if (!mounted) return;
       if (result == ForumOAuthCompletionResult.loggedIn) {
-        Navigator.of(context).pop(true);
+        Navigator.of(context).pop(NativeLoginResult.authenticated);
       }
       return;
     }
@@ -324,7 +341,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         builder: (_) => WebVpnOAuthCompletionPage(callbackUri: callbackUri),
       ),
     );
-    if (completed == true && mounted) Navigator.of(context).pop(true);
+    if (completed == true && mounted) {
+      Navigator.of(context).pop(NativeLoginResult.authenticated);
+    }
   }
 
   String _describeRedirectUri(String? value) {

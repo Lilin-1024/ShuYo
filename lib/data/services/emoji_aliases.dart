@@ -853,7 +853,8 @@ const emojiUnicodeAliases = <String, String>{
   'clock_face_two_thirty': '\u{1F55D}',
   'clockwise_downwards_and_upwards_open_circle_arrows': '\u{1F503}',
   'clockwise_rightwards_and_leftwards_open_circle_arrows': '\u{1F501}',
-  'clockwise_rightwards_and_leftwards_open_circle_arrows_with_circled_one_overlay': '\u{1F502}',
+  'clockwise_rightwards_and_leftwards_open_circle_arrows_with_circled_one_overlay':
+      '\u{1F502}',
   'clockwise_vertical_arrows': '\u{1F503}',
   'closed_book': '\u{1F4D5}',
   'closed_lock_with_key': '\u{1F510}',
@@ -981,180 +982,343 @@ const emojiUnicodeAliases = <String, String>{
   'couple_with_heart:t6': '\u{1F491}\u{1F3FF}',
   'couple_with_heart_dark_skin_tone': '\u{1F491}\u{1F3FF}',
   'couple_with_heart_light_skin_tone': '\u{1F491}\u{1F3FB}',
-  'couple_with_heart_man_man': '\u{1F468}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}',
-  'couple_with_heart_man_man_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_man_man_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_man_man_dark_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_dark_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_man_man_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_man_man_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_man_man_light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_light_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_light_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_man_man_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_medium-dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_man_man_medium-dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_man_man_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_medium-dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_man_man_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_medium-light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_man_man_medium-light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_man_man_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_medium-light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_man_man_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_medium_dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_man_man_medium_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_man_man_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_medium_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_man_man_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_medium_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_man_man_medium_light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_man_man_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_medium_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_man_man_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_man_man_medium_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_man_man_medium_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_man_man_medium_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_medium_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_man_man_medium_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_man_man_medium_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man':
+      '\u{1F468}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}',
+  'couple_with_heart_man_man_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_man_man_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_man_man_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_man_man_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_man_man_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_man_man_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_light_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_light_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_man_man_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_man_man_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_man_man_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_man_man_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_man_man_medium-light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_man_man_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_man_man_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_man_man_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_man_man_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_man_man_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_man_man_medium_light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_man_man_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_man_man_medium_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_man_man_medium_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_man_man_medium_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_man_man_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_man_man_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_man_man_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
   'couple_with_heart_medium-dark_skin_tone': '\u{1F491}\u{1F3FE}',
   'couple_with_heart_medium-light_skin_tone': '\u{1F491}\u{1F3FC}',
   'couple_with_heart_medium_dark_skin_tone': '\u{1F491}\u{1F3FE}',
   'couple_with_heart_medium_light_skin_tone': '\u{1F491}\u{1F3FC}',
   'couple_with_heart_medium_skin_tone': '\u{1F491}\u{1F3FD}',
-  'couple_with_heart_person_person_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'couple_with_heart_person_person_dark_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'couple_with_heart_person_person_dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'couple_with_heart_person_person_dark_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'couple_with_heart_person_person_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'couple_with_heart_person_person_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'couple_with_heart_person_person_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'couple_with_heart_person_person_light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'couple_with_heart_person_person_light_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'couple_with_heart_person_person_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'couple_with_heart_person_person_light_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'couple_with_heart_person_person_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'couple_with_heart_person_person_medium-dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'couple_with_heart_person_person_medium-dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'couple_with_heart_person_person_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'couple_with_heart_person_person_medium-dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'couple_with_heart_person_person_medium-light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'couple_with_heart_person_person_medium-light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'couple_with_heart_person_person_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'couple_with_heart_person_person_medium-light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'couple_with_heart_person_person_medium_dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'couple_with_heart_person_person_medium_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'couple_with_heart_person_person_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'couple_with_heart_person_person_medium_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'couple_with_heart_person_person_medium_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'couple_with_heart_person_person_medium_light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'couple_with_heart_person_person_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'couple_with_heart_person_person_medium_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'couple_with_heart_person_person_medium_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'couple_with_heart_person_person_medium_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'couple_with_heart_person_person_medium_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'couple_with_heart_person_person_medium_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'couple_with_heart_person_person_medium_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'couple_with_heart_person_person_medium_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'couple_with_heart_woman_man': '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}',
-  'couple_with_heart_woman_man_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_woman_man_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_woman_man_dark_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_dark_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_woman_man_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_woman_man_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_woman_man_light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_light_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_light_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_woman_man_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_medium-dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_woman_man_medium-dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_woman_man_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_medium-dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_woman_man_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_medium-light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_woman_man_medium-light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_woman_man_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_medium-light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_woman_man_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_medium_dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_woman_man_medium_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_woman_man_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_medium_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_woman_man_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_medium_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_woman_man_medium_light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_woman_man_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_medium_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_woman_man_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
-  'couple_with_heart_woman_man_medium_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
-  'couple_with_heart_woman_man_medium_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
-  'couple_with_heart_woman_man_medium_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_medium_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_man_medium_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
-  'couple_with_heart_woman_man_medium_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
-  'couple_with_heart_woman_woman': '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}',
-  'couple_with_heart_woman_woman_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
-  'couple_with_heart_woman_woman_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
-  'couple_with_heart_woman_woman_dark_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_dark_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
-  'couple_with_heart_woman_woman_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
-  'couple_with_heart_woman_woman_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
-  'couple_with_heart_woman_woman_light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_light_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_light_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
-  'couple_with_heart_woman_woman_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_medium-dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
-  'couple_with_heart_woman_woman_medium-dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
-  'couple_with_heart_woman_woman_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_medium-dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
-  'couple_with_heart_woman_woman_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_medium-light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
-  'couple_with_heart_woman_woman_medium-light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
-  'couple_with_heart_woman_woman_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_medium-light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
-  'couple_with_heart_woman_woman_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_medium_dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
-  'couple_with_heart_woman_woman_medium_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
-  'couple_with_heart_woman_woman_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_medium_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
-  'couple_with_heart_woman_woman_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_medium_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
-  'couple_with_heart_woman_woman_medium_light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
-  'couple_with_heart_woman_woman_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_medium_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
-  'couple_with_heart_woman_woman_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
-  'couple_with_heart_woman_woman_medium_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
-  'couple_with_heart_woman_woman_medium_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
-  'couple_with_heart_woman_woman_medium_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_medium_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
-  'couple_with_heart_woman_woman_medium_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
-  'couple_with_heart_woman_woman_medium_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_person_person_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'couple_with_heart_person_person_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'couple_with_heart_person_person_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'couple_with_heart_person_person_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'couple_with_heart_person_person_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'couple_with_heart_person_person_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'couple_with_heart_person_person_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'couple_with_heart_person_person_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'couple_with_heart_person_person_light_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'couple_with_heart_person_person_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'couple_with_heart_person_person_light_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'couple_with_heart_person_person_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'couple_with_heart_person_person_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'couple_with_heart_person_person_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'couple_with_heart_person_person_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'couple_with_heart_person_person_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'couple_with_heart_person_person_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'couple_with_heart_person_person_medium-light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'couple_with_heart_person_person_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'couple_with_heart_person_person_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'couple_with_heart_person_person_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'couple_with_heart_person_person_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'couple_with_heart_person_person_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'couple_with_heart_person_person_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'couple_with_heart_person_person_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'couple_with_heart_person_person_medium_light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'couple_with_heart_person_person_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'couple_with_heart_person_person_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'couple_with_heart_person_person_medium_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'couple_with_heart_person_person_medium_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'couple_with_heart_person_person_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'couple_with_heart_person_person_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'couple_with_heart_person_person_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'couple_with_heart_person_person_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'couple_with_heart_woman_man':
+      '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}',
+  'couple_with_heart_woman_man_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_woman_man_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_woman_man_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_woman_man_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_woman_man_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_woman_man_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_light_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_light_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_woman_man_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_woman_man_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_woman_man_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_woman_man_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_woman_man_medium-light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_woman_man_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_woman_man_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_woman_man_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_woman_man_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_woman_man_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_woman_man_medium_light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_woman_man_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_woman_man_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FD}',
+  'couple_with_heart_woman_man_medium_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FF}',
+  'couple_with_heart_woman_man_medium_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FB}',
+  'couple_with_heart_woman_man_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_man_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FE}',
+  'couple_with_heart_woman_man_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F468}\u{1F3FC}',
+  'couple_with_heart_woman_woman':
+      '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}',
+  'couple_with_heart_woman_woman_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
+  'couple_with_heart_woman_woman_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
+  'couple_with_heart_woman_woman_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
+  'couple_with_heart_woman_woman_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
+  'couple_with_heart_woman_woman_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
+  'couple_with_heart_woman_woman_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_light_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_light_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
+  'couple_with_heart_woman_woman_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
+  'couple_with_heart_woman_woman_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
+  'couple_with_heart_woman_woman_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
+  'couple_with_heart_woman_woman_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
+  'couple_with_heart_woman_woman_medium-light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
+  'couple_with_heart_woman_woman_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
+  'couple_with_heart_woman_woman_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
+  'couple_with_heart_woman_woman_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
+  'couple_with_heart_woman_woman_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
+  'couple_with_heart_woman_woman_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
+  'couple_with_heart_woman_woman_medium_light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
+  'couple_with_heart_woman_woman_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
+  'couple_with_heart_woman_woman_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FD}',
+  'couple_with_heart_woman_woman_medium_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FF}',
+  'couple_with_heart_woman_woman_medium_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FB}',
+  'couple_with_heart_woman_woman_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
+  'couple_with_heart_woman_woman_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FE}',
+  'couple_with_heart_woman_woman_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F469}\u{1F3FC}',
   'couplekiss': '\u{1F48F}',
   'couplekiss:t2': '\u{1F48F}\u{1F3FB}',
   'couplekiss:t3': '\u{1F48F}\u{1F3FC}',
   'couplekiss:t4': '\u{1F48F}\u{1F3FD}',
   'couplekiss:t5': '\u{1F48F}\u{1F3FE}',
   'couplekiss:t6': '\u{1F48F}\u{1F3FF}',
-  'couplekiss_man_man': '\u{1F468}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}',
-  'couplekiss_man_woman': '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}',
-  'couplekiss_woman_woman': '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}',
+  'couplekiss_man_man':
+      '\u{1F468}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}',
+  'couplekiss_man_woman':
+      '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}',
+  'couplekiss_woman_woman':
+      '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}',
   'cow': '\u{1F42E}',
   'cow2': '\u{1F404}',
   'cow_face': '\u{1F42E}',
@@ -1263,10 +1427,14 @@ const emojiUnicodeAliases = <String, String>{
   'deaf_man:t6': '\u{1F9CF}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'deaf_man_dark_skin_tone': '\u{1F9CF}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'deaf_man_light_skin_tone': '\u{1F9CF}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'deaf_man_medium-dark_skin_tone': '\u{1F9CF}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'deaf_man_medium-light_skin_tone': '\u{1F9CF}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'deaf_man_medium_dark_skin_tone': '\u{1F9CF}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'deaf_man_medium_light_skin_tone': '\u{1F9CF}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'deaf_man_medium-dark_skin_tone':
+      '\u{1F9CF}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'deaf_man_medium-light_skin_tone':
+      '\u{1F9CF}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'deaf_man_medium_dark_skin_tone':
+      '\u{1F9CF}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'deaf_man_medium_light_skin_tone':
+      '\u{1F9CF}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'deaf_man_medium_skin_tone': '\u{1F9CF}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'deaf_person': '\u{1F9CF}',
   'deaf_person:t2': '\u{1F9CF}\u{1F3FB}',
@@ -1289,10 +1457,14 @@ const emojiUnicodeAliases = <String, String>{
   'deaf_woman:t6': '\u{1F9CF}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'deaf_woman_dark_skin_tone': '\u{1F9CF}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'deaf_woman_light_skin_tone': '\u{1F9CF}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'deaf_woman_medium-dark_skin_tone': '\u{1F9CF}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'deaf_woman_medium-light_skin_tone': '\u{1F9CF}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'deaf_woman_medium_dark_skin_tone': '\u{1F9CF}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'deaf_woman_medium_light_skin_tone': '\u{1F9CF}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'deaf_woman_medium-dark_skin_tone':
+      '\u{1F9CF}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'deaf_woman_medium-light_skin_tone':
+      '\u{1F9CF}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'deaf_woman_medium_dark_skin_tone':
+      '\u{1F9CF}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'deaf_woman_medium_light_skin_tone':
+      '\u{1F9CF}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'deaf_woman_medium_skin_tone': '\u{1F9CF}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'deciduous_tree': '\u{1F333}',
   'deer': '\u{1F98C}',
@@ -1603,9 +1775,11 @@ const emojiUnicodeAliases = <String, String>{
   'factory_worker_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F3ED}',
   'factory_worker_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F3ED}',
   'factory_worker_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F3ED}',
-  'factory_worker_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F3ED}',
+  'factory_worker_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F3ED}',
   'factory_worker_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F3ED}',
-  'factory_worker_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F3ED}',
+  'factory_worker_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F3ED}',
   'factory_worker_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F3ED}',
   'fairy': '\u{1F9DA}',
   'fairy:t2': '\u{1F9DA}\u{1F3FB}',
@@ -1637,7 +1811,8 @@ const emojiUnicodeAliases = <String, String>{
   'fallen_leaf': '\u{1F342}',
   'family': '\u{1F46A}',
   'family_adult_adult_child': '\u{1F9D1}\u{200D}\u{1F9D1}\u{200D}\u{1F9D2}',
-  'family_adult_adult_child_child': '\u{1F9D1}\u{200D}\u{1F9D1}\u{200D}\u{1F9D2}\u{200D}\u{1F9D2}',
+  'family_adult_adult_child_child':
+      '\u{1F9D1}\u{200D}\u{1F9D1}\u{200D}\u{1F9D2}\u{200D}\u{1F9D2}',
   'family_adult_child': '\u{1F9D1}\u{200D}\u{1F9D2}',
   'family_adult_child_child': '\u{1F9D1}\u{200D}\u{1F9D2}\u{200D}\u{1F9D2}',
   'family_man_boy': '\u{1F468}\u{200D}\u{1F466}',
@@ -1646,25 +1821,34 @@ const emojiUnicodeAliases = <String, String>{
   'family_man_girl_boy': '\u{1F468}\u{200D}\u{1F467}\u{200D}\u{1F466}',
   'family_man_girl_girl': '\u{1F468}\u{200D}\u{1F467}\u{200D}\u{1F467}',
   'family_man_man_boy': '\u{1F468}\u{200D}\u{1F468}\u{200D}\u{1F466}',
-  'family_man_man_boy_boy': '\u{1F468}\u{200D}\u{1F468}\u{200D}\u{1F466}\u{200D}\u{1F466}',
+  'family_man_man_boy_boy':
+      '\u{1F468}\u{200D}\u{1F468}\u{200D}\u{1F466}\u{200D}\u{1F466}',
   'family_man_man_girl': '\u{1F468}\u{200D}\u{1F468}\u{200D}\u{1F467}',
-  'family_man_man_girl_boy': '\u{1F468}\u{200D}\u{1F468}\u{200D}\u{1F467}\u{200D}\u{1F466}',
-  'family_man_man_girl_girl': '\u{1F468}\u{200D}\u{1F468}\u{200D}\u{1F467}\u{200D}\u{1F467}',
+  'family_man_man_girl_boy':
+      '\u{1F468}\u{200D}\u{1F468}\u{200D}\u{1F467}\u{200D}\u{1F466}',
+  'family_man_man_girl_girl':
+      '\u{1F468}\u{200D}\u{1F468}\u{200D}\u{1F467}\u{200D}\u{1F467}',
   'family_man_woman_boy': '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F466}',
-  'family_man_woman_boy_boy': '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F466}\u{200D}\u{1F466}',
+  'family_man_woman_boy_boy':
+      '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F466}\u{200D}\u{1F466}',
   'family_man_woman_girl': '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}',
-  'family_man_woman_girl_boy': '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F466}',
-  'family_man_woman_girl_girl': '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F467}',
+  'family_man_woman_girl_boy':
+      '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F466}',
+  'family_man_woman_girl_girl':
+      '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F467}',
   'family_woman_boy': '\u{1F469}\u{200D}\u{1F466}',
   'family_woman_boy_boy': '\u{1F469}\u{200D}\u{1F466}\u{200D}\u{1F466}',
   'family_woman_girl': '\u{1F469}\u{200D}\u{1F467}',
   'family_woman_girl_boy': '\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F466}',
   'family_woman_girl_girl': '\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F467}',
   'family_woman_woman_boy': '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F466}',
-  'family_woman_woman_boy_boy': '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F466}\u{200D}\u{1F466}',
+  'family_woman_woman_boy_boy':
+      '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F466}\u{200D}\u{1F466}',
   'family_woman_woman_girl': '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F467}',
-  'family_woman_woman_girl_boy': '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F466}',
-  'family_woman_woman_girl_girl': '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F467}',
+  'family_woman_woman_girl_boy':
+      '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F466}',
+  'family_woman_woman_girl_girl':
+      '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F467}',
   'farmer': '\u{1F9D1}\u{200D}\u{1F33E}',
   'farmer:t2': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F33E}',
   'farmer:t3': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F33E}',
@@ -1856,7 +2040,8 @@ const emojiUnicodeAliases = <String, String>{
   'flag_ecuador': '\u{1F1EA}\u{1F1E8}',
   'flag_egypt': '\u{1F1EA}\u{1F1EC}',
   'flag_el_salvador': '\u{1F1F8}\u{1F1FB}',
-  'flag_england': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
+  'flag_england':
+      '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}',
   'flag_equatorial_guinea': '\u{1F1EC}\u{1F1F6}',
   'flag_eritrea': '\u{1F1EA}\u{1F1F7}',
   'flag_estonia': '\u{1F1EA}\u{1F1EA}',
@@ -1982,7 +2167,8 @@ const emojiUnicodeAliases = <String, String>{
   'flag_sao_tome_and_principe': '\u{1F1F8}\u{1F1F9}',
   'flag_sark': '\u{1F1E8}\u{1F1F6}',
   'flag_saudi_arabia': '\u{1F1F8}\u{1F1E6}',
-  'flag_scotland': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
+  'flag_scotland':
+      '\u{1F3F4}\u{E0067}\u{E0062}\u{E0073}\u{E0063}\u{E0074}\u{E007F}',
   'flag_senegal': '\u{1F1F8}\u{1F1F3}',
   'flag_serbia': '\u{1F1F7}\u{1F1F8}',
   'flag_seychelles': '\u{1F1F8}\u{1F1E8}',
@@ -2042,7 +2228,8 @@ const emojiUnicodeAliases = <String, String>{
   'flag_vatican_city': '\u{1F1FB}\u{1F1E6}',
   'flag_venezuela': '\u{1F1FB}\u{1F1EA}',
   'flag_vietnam': '\u{1F1FB}\u{1F1F3}',
-  'flag_wales': '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}',
+  'flag_wales':
+      '\u{1F3F4}\u{E0067}\u{E0062}\u{E0077}\u{E006C}\u{E0073}\u{E007F}',
   'flag_wallis_and_futuna': '\u{1F1FC}\u{1F1EB}',
   'flag_western_sahara': '\u{1F1EA}\u{1F1ED}',
   'flag_yemen': '\u{1F1FE}\u{1F1EA}',
@@ -2372,13 +2559,20 @@ const emojiUnicodeAliases = <String, String>{
   'hand_with_index_finger_and_thumb_crossed:t4': '\u{1FAF0}\u{1F3FD}',
   'hand_with_index_finger_and_thumb_crossed:t5': '\u{1FAF0}\u{1F3FE}',
   'hand_with_index_finger_and_thumb_crossed:t6': '\u{1FAF0}\u{1F3FF}',
-  'hand_with_index_finger_and_thumb_crossed_dark_skin_tone': '\u{1FAF0}\u{1F3FF}',
-  'hand_with_index_finger_and_thumb_crossed_light_skin_tone': '\u{1FAF0}\u{1F3FB}',
-  'hand_with_index_finger_and_thumb_crossed_medium-dark_skin_tone': '\u{1FAF0}\u{1F3FE}',
-  'hand_with_index_finger_and_thumb_crossed_medium-light_skin_tone': '\u{1FAF0}\u{1F3FC}',
-  'hand_with_index_finger_and_thumb_crossed_medium_dark_skin_tone': '\u{1FAF0}\u{1F3FE}',
-  'hand_with_index_finger_and_thumb_crossed_medium_light_skin_tone': '\u{1FAF0}\u{1F3FC}',
-  'hand_with_index_finger_and_thumb_crossed_medium_skin_tone': '\u{1FAF0}\u{1F3FD}',
+  'hand_with_index_finger_and_thumb_crossed_dark_skin_tone':
+      '\u{1FAF0}\u{1F3FF}',
+  'hand_with_index_finger_and_thumb_crossed_light_skin_tone':
+      '\u{1FAF0}\u{1F3FB}',
+  'hand_with_index_finger_and_thumb_crossed_medium-dark_skin_tone':
+      '\u{1FAF0}\u{1F3FE}',
+  'hand_with_index_finger_and_thumb_crossed_medium-light_skin_tone':
+      '\u{1FAF0}\u{1F3FC}',
+  'hand_with_index_finger_and_thumb_crossed_medium_dark_skin_tone':
+      '\u{1FAF0}\u{1F3FE}',
+  'hand_with_index_finger_and_thumb_crossed_medium_light_skin_tone':
+      '\u{1FAF0}\u{1F3FC}',
+  'hand_with_index_finger_and_thumb_crossed_medium_skin_tone':
+      '\u{1FAF0}\u{1F3FD}',
   'handbag': '\u{1F45C}',
   'handball': '\u{1F93E}',
   'handball_person': '\u{1F93E}',
@@ -2394,46 +2588,80 @@ const emojiUnicodeAliases = <String, String>{
   'handshake:t5': '\u{1F91D}\u{1F3FE}',
   'handshake:t6': '\u{1F91D}\u{1F3FF}',
   'handshake_dark_skin_tone': '\u{1F91D}\u{1F3FF}',
-  'handshake_dark_skin_tone_light_skin_tone': '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FB}',
-  'handshake_dark_skin_tone_medium-dark_skin_tone': '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FE}',
-  'handshake_dark_skin_tone_medium-light_skin_tone': '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FC}',
-  'handshake_dark_skin_tone_medium_dark_skin_tone': '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FE}',
-  'handshake_dark_skin_tone_medium_light_skin_tone': '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FC}',
-  'handshake_dark_skin_tone_medium_skin_tone': '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FD}',
+  'handshake_dark_skin_tone_light_skin_tone':
+      '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FB}',
+  'handshake_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FE}',
+  'handshake_dark_skin_tone_medium-light_skin_tone':
+      '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FC}',
+  'handshake_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FE}',
+  'handshake_dark_skin_tone_medium_light_skin_tone':
+      '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FC}',
+  'handshake_dark_skin_tone_medium_skin_tone':
+      '\u{1FAF1}\u{1F3FF}\u{200D}\u{1FAF2}\u{1F3FD}',
   'handshake_light_skin_tone': '\u{1F91D}\u{1F3FB}',
-  'handshake_light_skin_tone_dark_skin_tone': '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FF}',
-  'handshake_light_skin_tone_medium-dark_skin_tone': '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FE}',
-  'handshake_light_skin_tone_medium-light_skin_tone': '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FC}',
-  'handshake_light_skin_tone_medium_dark_skin_tone': '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FE}',
-  'handshake_light_skin_tone_medium_light_skin_tone': '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FC}',
-  'handshake_light_skin_tone_medium_skin_tone': '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FD}',
+  'handshake_light_skin_tone_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FF}',
+  'handshake_light_skin_tone_medium-dark_skin_tone':
+      '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FE}',
+  'handshake_light_skin_tone_medium-light_skin_tone':
+      '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FC}',
+  'handshake_light_skin_tone_medium_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FE}',
+  'handshake_light_skin_tone_medium_light_skin_tone':
+      '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FC}',
+  'handshake_light_skin_tone_medium_skin_tone':
+      '\u{1FAF1}\u{1F3FB}\u{200D}\u{1FAF2}\u{1F3FD}',
   'handshake_medium-dark_skin_tone': '\u{1F91D}\u{1F3FE}',
-  'handshake_medium-dark_skin_tone_dark_skin_tone': '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FF}',
-  'handshake_medium-dark_skin_tone_light_skin_tone': '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FB}',
-  'handshake_medium-dark_skin_tone_medium-light_skin_tone': '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FC}',
-  'handshake_medium-dark_skin_tone_medium_skin_tone': '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FD}',
+  'handshake_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FF}',
+  'handshake_medium-dark_skin_tone_light_skin_tone':
+      '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FB}',
+  'handshake_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FC}',
+  'handshake_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FD}',
   'handshake_medium-light_skin_tone': '\u{1F91D}\u{1F3FC}',
-  'handshake_medium-light_skin_tone_dark_skin_tone': '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FF}',
-  'handshake_medium-light_skin_tone_light_skin_tone': '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FB}',
-  'handshake_medium-light_skin_tone_medium-dark_skin_tone': '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FE}',
-  'handshake_medium-light_skin_tone_medium_skin_tone': '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FD}',
+  'handshake_medium-light_skin_tone_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FF}',
+  'handshake_medium-light_skin_tone_light_skin_tone':
+      '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FB}',
+  'handshake_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FE}',
+  'handshake_medium-light_skin_tone_medium_skin_tone':
+      '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FD}',
   'handshake_medium_dark_skin_tone': '\u{1F91D}\u{1F3FE}',
-  'handshake_medium_dark_skin_tone_dark_skin_tone': '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FF}',
-  'handshake_medium_dark_skin_tone_light_skin_tone': '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FB}',
-  'handshake_medium_dark_skin_tone_medium_light_skin_tone': '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FC}',
-  'handshake_medium_dark_skin_tone_medium_skin_tone': '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FD}',
+  'handshake_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FF}',
+  'handshake_medium_dark_skin_tone_light_skin_tone':
+      '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FB}',
+  'handshake_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FC}',
+  'handshake_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1FAF1}\u{1F3FE}\u{200D}\u{1FAF2}\u{1F3FD}',
   'handshake_medium_light_skin_tone': '\u{1F91D}\u{1F3FC}',
-  'handshake_medium_light_skin_tone_dark_skin_tone': '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FF}',
-  'handshake_medium_light_skin_tone_light_skin_tone': '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FB}',
-  'handshake_medium_light_skin_tone_medium_dark_skin_tone': '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FE}',
-  'handshake_medium_light_skin_tone_medium_skin_tone': '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FD}',
+  'handshake_medium_light_skin_tone_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FF}',
+  'handshake_medium_light_skin_tone_light_skin_tone':
+      '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FB}',
+  'handshake_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FE}',
+  'handshake_medium_light_skin_tone_medium_skin_tone':
+      '\u{1FAF1}\u{1F3FC}\u{200D}\u{1FAF2}\u{1F3FD}',
   'handshake_medium_skin_tone': '\u{1F91D}\u{1F3FD}',
-  'handshake_medium_skin_tone_dark_skin_tone': '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FF}',
-  'handshake_medium_skin_tone_light_skin_tone': '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FB}',
-  'handshake_medium_skin_tone_medium-dark_skin_tone': '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FE}',
-  'handshake_medium_skin_tone_medium-light_skin_tone': '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FC}',
-  'handshake_medium_skin_tone_medium_dark_skin_tone': '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FE}',
-  'handshake_medium_skin_tone_medium_light_skin_tone': '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FC}',
+  'handshake_medium_skin_tone_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FF}',
+  'handshake_medium_skin_tone_light_skin_tone':
+      '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FB}',
+  'handshake_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FE}',
+  'handshake_medium_skin_tone_medium-light_skin_tone':
+      '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FC}',
+  'handshake_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FE}',
+  'handshake_medium_skin_tone_medium_light_skin_tone':
+      '\u{1FAF1}\u{1F3FD}\u{200D}\u{1FAF2}\u{1F3FC}',
   'hankey': '\u{1F4A9}',
   'happy_person_raising_one_hand': '\u{1F64B}',
   'harp': '\u{1FA89}',
@@ -2453,11 +2681,16 @@ const emojiUnicodeAliases = <String, String>{
   'health_worker:t6': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2695}\u{FE0F}',
   'health_worker_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2695}\u{FE0F}',
   'health_worker_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2695}\u{FE0F}',
-  'health_worker_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
-  'health_worker_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
-  'health_worker_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
-  'health_worker_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
-  'health_worker_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2695}\u{FE0F}',
+  'health_worker_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
+  'health_worker_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
+  'health_worker_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
+  'health_worker_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
+  'health_worker_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2695}\u{FE0F}',
   'hear-no-evil_monkey': '\u{1F649}',
   'hear_no_evil': '\u{1F649}',
   'hear_no_evil_monkey': '\u{1F649}',
@@ -2750,172 +2983,332 @@ const emojiUnicodeAliases = <String, String>{
   'kiss': '\u{1F48B}',
   'kiss_dark_skin_tone': '\u{1F48F}\u{1F3FF}',
   'kiss_light_skin_tone': '\u{1F48F}\u{1F3FB}',
-  'kiss_man_man': '\u{1F468}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}',
-  'kiss_man_man_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_man_man_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_man_man_dark_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_dark_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_man_man_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_man_man_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_man_man_light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_light_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_light_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_man_man_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_medium-dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_man_man_medium-dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_man_man_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_medium-dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_man_man_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_medium-light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_man_man_medium-light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_man_man_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_medium-light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_man_man_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_medium_dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_man_man_medium_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_man_man_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_medium_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_man_man_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_medium_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_man_man_medium_light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_man_man_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_medium_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_man_man_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_man_man_medium_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_man_man_medium_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_man_man_medium_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_medium_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_man_man_medium_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_man_man_medium_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man':
+      '\u{1F468}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}',
+  'kiss_man_man_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_man_man_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_man_man_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_man_man_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_man_man_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_man_man_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_light_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_light_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_man_man_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_man_man_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_man_man_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_man_man_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_man_man_medium-light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_man_man_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_man_man_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_man_man_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_man_man_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_man_man_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_man_man_medium_light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_man_man_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_man_man_medium_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_man_man_medium_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_man_man_medium_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_man_man_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_man_man_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_man_man_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
   'kiss_mark': '\u{1F48B}',
   'kiss_medium-dark_skin_tone': '\u{1F48F}\u{1F3FE}',
   'kiss_medium-light_skin_tone': '\u{1F48F}\u{1F3FC}',
   'kiss_medium_dark_skin_tone': '\u{1F48F}\u{1F3FE}',
   'kiss_medium_light_skin_tone': '\u{1F48F}\u{1F3FC}',
   'kiss_medium_skin_tone': '\u{1F48F}\u{1F3FD}',
-  'kiss_person_person_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'kiss_person_person_dark_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'kiss_person_person_dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'kiss_person_person_dark_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'kiss_person_person_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'kiss_person_person_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'kiss_person_person_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'kiss_person_person_light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'kiss_person_person_light_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'kiss_person_person_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'kiss_person_person_light_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'kiss_person_person_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'kiss_person_person_medium-dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'kiss_person_person_medium-dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'kiss_person_person_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'kiss_person_person_medium-dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'kiss_person_person_medium-light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'kiss_person_person_medium-light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'kiss_person_person_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'kiss_person_person_medium-light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'kiss_person_person_medium_dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'kiss_person_person_medium_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'kiss_person_person_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'kiss_person_person_medium_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'kiss_person_person_medium_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'kiss_person_person_medium_light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'kiss_person_person_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'kiss_person_person_medium_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'kiss_person_person_medium_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'kiss_person_person_medium_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'kiss_person_person_medium_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'kiss_person_person_medium_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'kiss_person_person_medium_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'kiss_person_person_medium_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'kiss_woman_man': '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}',
-  'kiss_woman_man_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_woman_man_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_woman_man_dark_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_dark_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_woman_man_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_woman_man_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_woman_man_light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_light_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_light_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_woman_man_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_medium-dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_woman_man_medium-dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_woman_man_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_medium-dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_woman_man_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_medium-light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_woman_man_medium-light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_woman_man_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_medium-light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_woman_man_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_medium_dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_woman_man_medium_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_woman_man_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_medium_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_woman_man_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_medium_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_woman_man_medium_light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_woman_man_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_medium_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_woman_man_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
-  'kiss_woman_man_medium_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
-  'kiss_woman_man_medium_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
-  'kiss_woman_man_medium_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_medium_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_man_medium_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
-  'kiss_woman_man_medium_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
-  'kiss_woman_woman': '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}',
-  'kiss_woman_woman_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
-  'kiss_woman_woman_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
-  'kiss_woman_woman_dark_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_dark_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
-  'kiss_woman_woman_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
-  'kiss_woman_woman_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
-  'kiss_woman_woman_light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_light_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_light_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
-  'kiss_woman_woman_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_medium-dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
-  'kiss_woman_woman_medium-dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
-  'kiss_woman_woman_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_medium-dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
-  'kiss_woman_woman_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_medium-light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
-  'kiss_woman_woman_medium-light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
-  'kiss_woman_woman_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_medium-light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
-  'kiss_woman_woman_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_medium_dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
-  'kiss_woman_woman_medium_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
-  'kiss_woman_woman_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_medium_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
-  'kiss_woman_woman_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_medium_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
-  'kiss_woman_woman_medium_light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
-  'kiss_woman_woman_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_medium_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
-  'kiss_woman_woman_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
-  'kiss_woman_woman_medium_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
-  'kiss_woman_woman_medium_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
-  'kiss_woman_woman_medium_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_medium_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
-  'kiss_woman_woman_medium_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
-  'kiss_woman_woman_medium_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_person_person_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'kiss_person_person_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'kiss_person_person_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'kiss_person_person_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'kiss_person_person_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'kiss_person_person_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'kiss_person_person_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'kiss_person_person_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'kiss_person_person_light_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'kiss_person_person_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'kiss_person_person_light_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'kiss_person_person_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'kiss_person_person_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'kiss_person_person_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'kiss_person_person_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'kiss_person_person_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'kiss_person_person_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'kiss_person_person_medium-light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'kiss_person_person_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'kiss_person_person_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'kiss_person_person_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'kiss_person_person_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'kiss_person_person_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'kiss_person_person_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'kiss_person_person_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'kiss_person_person_medium_light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'kiss_person_person_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'kiss_person_person_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'kiss_person_person_medium_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'kiss_person_person_medium_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'kiss_person_person_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'kiss_person_person_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'kiss_person_person_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'kiss_person_person_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'kiss_woman_man':
+      '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}',
+  'kiss_woman_man_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_woman_man_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_woman_man_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_woman_man_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_woman_man_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_woman_man_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_light_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_light_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_woman_man_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_woman_man_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_woman_man_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_woman_man_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_woman_man_medium-light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_woman_man_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_woman_man_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_woman_man_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_woman_man_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_woman_man_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_woman_man_medium_light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_woman_man_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_woman_man_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FD}',
+  'kiss_woman_man_medium_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FF}',
+  'kiss_woman_man_medium_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FB}',
+  'kiss_woman_man_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_man_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FE}',
+  'kiss_woman_man_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F468}\u{1F3FC}',
+  'kiss_woman_woman':
+      '\u{1F469}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}',
+  'kiss_woman_woman_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
+  'kiss_woman_woman_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
+  'kiss_woman_woman_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
+  'kiss_woman_woman_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
+  'kiss_woman_woman_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
+  'kiss_woman_woman_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_light_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_light_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
+  'kiss_woman_woman_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
+  'kiss_woman_woman_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
+  'kiss_woman_woman_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
+  'kiss_woman_woman_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
+  'kiss_woman_woman_medium-light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
+  'kiss_woman_woman_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
+  'kiss_woman_woman_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
+  'kiss_woman_woman_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
+  'kiss_woman_woman_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
+  'kiss_woman_woman_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
+  'kiss_woman_woman_medium_light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
+  'kiss_woman_woman_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
+  'kiss_woman_woman_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FD}',
+  'kiss_woman_woman_medium_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FF}',
+  'kiss_woman_woman_medium_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FB}',
+  'kiss_woman_woman_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
+  'kiss_woman_woman_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FE}',
+  'kiss_woman_woman_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2764}\u{FE0F}\u{200D}\u{1F48B}\u{200D}\u{1F469}\u{1F3FC}',
   'kissing': '\u{1F617}',
   'kissing_cat': '\u{1F63D}',
   'kissing_cat_face_with_closed_eyes': '\u{1F63D}',
@@ -3262,27 +3655,42 @@ const emojiUnicodeAliases = <String, String>{
   'man_biking': '\u{1F6B4}\u{200D}\u{2642}\u{FE0F}',
   'man_biking_dark_skin_tone': '\u{1F6B4}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_biking_light_skin_tone': '\u{1F6B4}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_biking_medium-dark_skin_tone': '\u{1F6B4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_biking_medium-light_skin_tone': '\u{1F6B4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_biking_medium_dark_skin_tone': '\u{1F6B4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_biking_medium_light_skin_tone': '\u{1F6B4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_biking_medium-dark_skin_tone':
+      '\u{1F6B4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_biking_medium-light_skin_tone':
+      '\u{1F6B4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_biking_medium_dark_skin_tone':
+      '\u{1F6B4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_biking_medium_light_skin_tone':
+      '\u{1F6B4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_biking_medium_skin_tone': '\u{1F6B4}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_blond_hair': '\u{1F471}\u{200D}\u{2642}\u{FE0F}',
   'man_bouncing_ball': '\u{26F9}\u{FE0F}\u{200D}\u{2642}\u{FE0F}',
-  'man_bouncing_ball_dark_skin_tone': '\u{26F9}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_bouncing_ball_light_skin_tone': '\u{26F9}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_bouncing_ball_medium-dark_skin_tone': '\u{26F9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_bouncing_ball_medium-light_skin_tone': '\u{26F9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_bouncing_ball_medium_dark_skin_tone': '\u{26F9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_bouncing_ball_medium_light_skin_tone': '\u{26F9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_bouncing_ball_medium_skin_tone': '\u{26F9}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_bouncing_ball_dark_skin_tone':
+      '\u{26F9}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_bouncing_ball_light_skin_tone':
+      '\u{26F9}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_bouncing_ball_medium-dark_skin_tone':
+      '\u{26F9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_bouncing_ball_medium-light_skin_tone':
+      '\u{26F9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_bouncing_ball_medium_dark_skin_tone':
+      '\u{26F9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_bouncing_ball_medium_light_skin_tone':
+      '\u{26F9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_bouncing_ball_medium_skin_tone':
+      '\u{26F9}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_bowing': '\u{1F647}\u{200D}\u{2642}\u{FE0F}',
   'man_bowing_dark_skin_tone': '\u{1F647}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_bowing_light_skin_tone': '\u{1F647}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_bowing_medium-dark_skin_tone': '\u{1F647}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_bowing_medium-light_skin_tone': '\u{1F647}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_bowing_medium_dark_skin_tone': '\u{1F647}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_bowing_medium_light_skin_tone': '\u{1F647}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_bowing_medium-dark_skin_tone':
+      '\u{1F647}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_bowing_medium-light_skin_tone':
+      '\u{1F647}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_bowing_medium_dark_skin_tone':
+      '\u{1F647}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_bowing_medium_light_skin_tone':
+      '\u{1F647}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_bowing_medium_skin_tone': '\u{1F647}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_cartwheeling': '\u{1F938}\u{200D}\u{2642}\u{FE0F}',
   'man_cartwheeling:t2': '\u{1F938}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
@@ -3290,29 +3698,47 @@ const emojiUnicodeAliases = <String, String>{
   'man_cartwheeling:t4': '\u{1F938}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_cartwheeling:t5': '\u{1F938}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
   'man_cartwheeling:t6': '\u{1F938}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_cartwheeling_dark_skin_tone': '\u{1F938}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_cartwheeling_light_skin_tone': '\u{1F938}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_cartwheeling_medium-dark_skin_tone': '\u{1F938}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_cartwheeling_medium-light_skin_tone': '\u{1F938}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_cartwheeling_medium_dark_skin_tone': '\u{1F938}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_cartwheeling_medium_light_skin_tone': '\u{1F938}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_cartwheeling_medium_skin_tone': '\u{1F938}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_cartwheeling_dark_skin_tone':
+      '\u{1F938}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_cartwheeling_light_skin_tone':
+      '\u{1F938}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_cartwheeling_medium-dark_skin_tone':
+      '\u{1F938}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_cartwheeling_medium-light_skin_tone':
+      '\u{1F938}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_cartwheeling_medium_dark_skin_tone':
+      '\u{1F938}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_cartwheeling_medium_light_skin_tone':
+      '\u{1F938}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_cartwheeling_medium_skin_tone':
+      '\u{1F938}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_climbing': '\u{1F9D7}\u{200D}\u{2642}\u{FE0F}',
   'man_climbing_dark_skin_tone': '\u{1F9D7}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_climbing_light_skin_tone': '\u{1F9D7}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_climbing_medium-dark_skin_tone': '\u{1F9D7}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_climbing_medium-light_skin_tone': '\u{1F9D7}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_climbing_medium_dark_skin_tone': '\u{1F9D7}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_climbing_medium_light_skin_tone': '\u{1F9D7}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_climbing_medium-dark_skin_tone':
+      '\u{1F9D7}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_climbing_medium-light_skin_tone':
+      '\u{1F9D7}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_climbing_medium_dark_skin_tone':
+      '\u{1F9D7}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_climbing_medium_light_skin_tone':
+      '\u{1F9D7}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_climbing_medium_skin_tone': '\u{1F9D7}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_construction_worker': '\u{1F477}\u{200D}\u{2642}\u{FE0F}',
-  'man_construction_worker_dark_skin_tone': '\u{1F477}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_construction_worker_light_skin_tone': '\u{1F477}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_construction_worker_medium-dark_skin_tone': '\u{1F477}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_construction_worker_medium-light_skin_tone': '\u{1F477}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_construction_worker_medium_dark_skin_tone': '\u{1F477}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_construction_worker_medium_light_skin_tone': '\u{1F477}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_construction_worker_medium_skin_tone': '\u{1F477}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_construction_worker_dark_skin_tone':
+      '\u{1F477}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_construction_worker_light_skin_tone':
+      '\u{1F477}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_construction_worker_medium-dark_skin_tone':
+      '\u{1F477}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_construction_worker_medium-light_skin_tone':
+      '\u{1F477}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_construction_worker_medium_dark_skin_tone':
+      '\u{1F477}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_construction_worker_medium_light_skin_tone':
+      '\u{1F477}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_construction_worker_medium_skin_tone':
+      '\u{1F477}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_cook': '\u{1F468}\u{200D}\u{1F373}',
   'man_cook:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F373}',
   'man_cook:t3': '\u{1F468}\u{1F3FC}\u{200D}\u{1F373}',
@@ -3350,18 +3776,25 @@ const emojiUnicodeAliases = <String, String>{
   'man_detective': '\u{1F575}\u{FE0F}\u{200D}\u{2642}\u{FE0F}',
   'man_detective_dark_skin_tone': '\u{1F575}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_detective_light_skin_tone': '\u{1F575}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_detective_medium-dark_skin_tone': '\u{1F575}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_detective_medium-light_skin_tone': '\u{1F575}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_detective_medium_dark_skin_tone': '\u{1F575}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_detective_medium_light_skin_tone': '\u{1F575}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_detective_medium_skin_tone': '\u{1F575}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_detective_medium-dark_skin_tone':
+      '\u{1F575}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_detective_medium-light_skin_tone':
+      '\u{1F575}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_detective_medium_dark_skin_tone':
+      '\u{1F575}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_detective_medium_light_skin_tone':
+      '\u{1F575}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_detective_medium_skin_tone':
+      '\u{1F575}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_elf': '\u{1F9DD}\u{200D}\u{2642}\u{FE0F}',
   'man_elf_dark_skin_tone': '\u{1F9DD}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_elf_light_skin_tone': '\u{1F9DD}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
   'man_elf_medium-dark_skin_tone': '\u{1F9DD}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_elf_medium-light_skin_tone': '\u{1F9DD}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_elf_medium-light_skin_tone':
+      '\u{1F9DD}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_elf_medium_dark_skin_tone': '\u{1F9DD}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_elf_medium_light_skin_tone': '\u{1F9DD}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_elf_medium_light_skin_tone':
+      '\u{1F9DD}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_elf_medium_skin_tone': '\u{1F9DD}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_facepalming': '\u{1F926}\u{200D}\u{2642}\u{FE0F}',
   'man_facepalming:t2': '\u{1F926}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
@@ -3369,13 +3802,20 @@ const emojiUnicodeAliases = <String, String>{
   'man_facepalming:t4': '\u{1F926}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_facepalming:t5': '\u{1F926}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
   'man_facepalming:t6': '\u{1F926}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_facepalming_dark_skin_tone': '\u{1F926}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_facepalming_light_skin_tone': '\u{1F926}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_facepalming_medium-dark_skin_tone': '\u{1F926}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_facepalming_medium-light_skin_tone': '\u{1F926}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_facepalming_medium_dark_skin_tone': '\u{1F926}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_facepalming_medium_light_skin_tone': '\u{1F926}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_facepalming_medium_skin_tone': '\u{1F926}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_facepalming_dark_skin_tone':
+      '\u{1F926}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_facepalming_light_skin_tone':
+      '\u{1F926}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_facepalming_medium-dark_skin_tone':
+      '\u{1F926}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_facepalming_medium-light_skin_tone':
+      '\u{1F926}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_facepalming_medium_dark_skin_tone':
+      '\u{1F926}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_facepalming_medium_light_skin_tone':
+      '\u{1F926}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_facepalming_medium_skin_tone':
+      '\u{1F926}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_factory_worker': '\u{1F468}\u{200D}\u{1F3ED}',
   'man_factory_worker:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F3ED}',
   'man_factory_worker:t3': '\u{1F468}\u{1F3FC}\u{200D}\u{1F3ED}',
@@ -3384,18 +3824,26 @@ const emojiUnicodeAliases = <String, String>{
   'man_factory_worker:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{1F3ED}',
   'man_factory_worker_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F3ED}',
   'man_factory_worker_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F3ED}',
-  'man_factory_worker_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F3ED}',
-  'man_factory_worker_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F3ED}',
-  'man_factory_worker_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F3ED}',
-  'man_factory_worker_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F3ED}',
+  'man_factory_worker_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F3ED}',
+  'man_factory_worker_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F3ED}',
+  'man_factory_worker_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F3ED}',
+  'man_factory_worker_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F3ED}',
   'man_factory_worker_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F3ED}',
   'man_fairy': '\u{1F9DA}\u{200D}\u{2642}\u{FE0F}',
   'man_fairy_dark_skin_tone': '\u{1F9DA}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_fairy_light_skin_tone': '\u{1F9DA}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_fairy_medium-dark_skin_tone': '\u{1F9DA}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_fairy_medium-light_skin_tone': '\u{1F9DA}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_fairy_medium_dark_skin_tone': '\u{1F9DA}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_fairy_medium_light_skin_tone': '\u{1F9DA}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_fairy_medium-dark_skin_tone':
+      '\u{1F9DA}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_fairy_medium-light_skin_tone':
+      '\u{1F9DA}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_fairy_medium_dark_skin_tone':
+      '\u{1F9DA}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_fairy_medium_light_skin_tone':
+      '\u{1F9DA}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_fairy_medium_skin_tone': '\u{1F9DA}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_farmer': '\u{1F468}\u{200D}\u{1F33E}',
   'man_farmer:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F33E}',
@@ -3418,10 +3866,14 @@ const emojiUnicodeAliases = <String, String>{
   'man_feeding_baby:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{1F37C}',
   'man_feeding_baby_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F37C}',
   'man_feeding_baby_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F37C}',
-  'man_feeding_baby_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F37C}',
-  'man_feeding_baby_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F37C}',
-  'man_feeding_baby_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F37C}',
-  'man_feeding_baby_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F37C}',
+  'man_feeding_baby_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F37C}',
+  'man_feeding_baby_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F37C}',
+  'man_feeding_baby_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F37C}',
+  'man_feeding_baby_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F37C}',
   'man_feeding_baby_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F37C}',
   'man_firefighter': '\u{1F468}\u{200D}\u{1F692}',
   'man_firefighter:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F692}',
@@ -3431,67 +3883,111 @@ const emojiUnicodeAliases = <String, String>{
   'man_firefighter:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{1F692}',
   'man_firefighter_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F692}',
   'man_firefighter_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F692}',
-  'man_firefighter_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F692}',
-  'man_firefighter_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F692}',
-  'man_firefighter_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F692}',
-  'man_firefighter_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F692}',
+  'man_firefighter_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F692}',
+  'man_firefighter_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F692}',
+  'man_firefighter_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F692}',
+  'man_firefighter_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F692}',
   'man_firefighter_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F692}',
   'man_frowning': '\u{1F64D}\u{200D}\u{2642}\u{FE0F}',
   'man_frowning_dark_skin_tone': '\u{1F64D}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_frowning_light_skin_tone': '\u{1F64D}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_frowning_medium-dark_skin_tone': '\u{1F64D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_frowning_medium-light_skin_tone': '\u{1F64D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_frowning_medium_dark_skin_tone': '\u{1F64D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_frowning_medium_light_skin_tone': '\u{1F64D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_frowning_medium-dark_skin_tone':
+      '\u{1F64D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_frowning_medium-light_skin_tone':
+      '\u{1F64D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_frowning_medium_dark_skin_tone':
+      '\u{1F64D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_frowning_medium_light_skin_tone':
+      '\u{1F64D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_frowning_medium_skin_tone': '\u{1F64D}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_genie': '\u{1F9DE}\u{200D}\u{2642}\u{FE0F}',
   'man_gesturing_no': '\u{1F645}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_no_dark_skin_tone': '\u{1F645}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_no_light_skin_tone': '\u{1F645}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_no_medium-dark_skin_tone': '\u{1F645}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_no_medium-light_skin_tone': '\u{1F645}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_no_medium_dark_skin_tone': '\u{1F645}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_no_medium_light_skin_tone': '\u{1F645}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_no_medium_skin_tone': '\u{1F645}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_no_dark_skin_tone':
+      '\u{1F645}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_no_light_skin_tone':
+      '\u{1F645}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_no_medium-dark_skin_tone':
+      '\u{1F645}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_no_medium-light_skin_tone':
+      '\u{1F645}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_no_medium_dark_skin_tone':
+      '\u{1F645}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_no_medium_light_skin_tone':
+      '\u{1F645}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_no_medium_skin_tone':
+      '\u{1F645}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_gesturing_ok': '\u{1F646}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_ok_dark_skin_tone': '\u{1F646}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_ok_light_skin_tone': '\u{1F646}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_ok_medium-dark_skin_tone': '\u{1F646}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_ok_medium-light_skin_tone': '\u{1F646}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_ok_medium_dark_skin_tone': '\u{1F646}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_ok_medium_light_skin_tone': '\u{1F646}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_gesturing_ok_medium_skin_tone': '\u{1F646}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_ok_dark_skin_tone':
+      '\u{1F646}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_ok_light_skin_tone':
+      '\u{1F646}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_ok_medium-dark_skin_tone':
+      '\u{1F646}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_ok_medium-light_skin_tone':
+      '\u{1F646}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_ok_medium_dark_skin_tone':
+      '\u{1F646}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_ok_medium_light_skin_tone':
+      '\u{1F646}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_gesturing_ok_medium_skin_tone':
+      '\u{1F646}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_getting_haircut': '\u{1F487}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_haircut_dark_skin_tone': '\u{1F487}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_haircut_light_skin_tone': '\u{1F487}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_haircut_medium-dark_skin_tone': '\u{1F487}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_haircut_medium-light_skin_tone': '\u{1F487}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_haircut_medium_dark_skin_tone': '\u{1F487}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_haircut_medium_light_skin_tone': '\u{1F487}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_haircut_medium_skin_tone': '\u{1F487}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_haircut_dark_skin_tone':
+      '\u{1F487}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_haircut_light_skin_tone':
+      '\u{1F487}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_haircut_medium-dark_skin_tone':
+      '\u{1F487}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_haircut_medium-light_skin_tone':
+      '\u{1F487}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_haircut_medium_dark_skin_tone':
+      '\u{1F487}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_haircut_medium_light_skin_tone':
+      '\u{1F487}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_haircut_medium_skin_tone':
+      '\u{1F487}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_getting_massage': '\u{1F486}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_massage_dark_skin_tone': '\u{1F486}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_massage_light_skin_tone': '\u{1F486}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_massage_medium-dark_skin_tone': '\u{1F486}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_massage_medium-light_skin_tone': '\u{1F486}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_massage_medium_dark_skin_tone': '\u{1F486}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_massage_medium_light_skin_tone': '\u{1F486}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_getting_massage_medium_skin_tone': '\u{1F486}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_massage_dark_skin_tone':
+      '\u{1F486}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_massage_light_skin_tone':
+      '\u{1F486}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_massage_medium-dark_skin_tone':
+      '\u{1F486}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_massage_medium-light_skin_tone':
+      '\u{1F486}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_massage_medium_dark_skin_tone':
+      '\u{1F486}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_massage_medium_light_skin_tone':
+      '\u{1F486}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_getting_massage_medium_skin_tone':
+      '\u{1F486}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_golfing': '\u{1F3CC}\u{FE0F}\u{200D}\u{2642}\u{FE0F}',
   'man_golfing_dark_skin_tone': '\u{1F3CC}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_golfing_light_skin_tone': '\u{1F3CC}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_golfing_medium-dark_skin_tone': '\u{1F3CC}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_golfing_medium-light_skin_tone': '\u{1F3CC}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_golfing_medium_dark_skin_tone': '\u{1F3CC}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_golfing_medium_light_skin_tone': '\u{1F3CC}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_golfing_medium-dark_skin_tone':
+      '\u{1F3CC}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_golfing_medium-light_skin_tone':
+      '\u{1F3CC}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_golfing_medium_dark_skin_tone':
+      '\u{1F3CC}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_golfing_medium_light_skin_tone':
+      '\u{1F3CC}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_golfing_medium_skin_tone': '\u{1F3CC}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_guard': '\u{1F482}\u{200D}\u{2642}\u{FE0F}',
   'man_guard_dark_skin_tone': '\u{1F482}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_guard_light_skin_tone': '\u{1F482}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_guard_medium-dark_skin_tone': '\u{1F482}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_guard_medium-light_skin_tone': '\u{1F482}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_guard_medium_dark_skin_tone': '\u{1F482}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_guard_medium_light_skin_tone': '\u{1F482}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_guard_medium-dark_skin_tone':
+      '\u{1F482}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_guard_medium-light_skin_tone':
+      '\u{1F482}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_guard_medium_dark_skin_tone':
+      '\u{1F482}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_guard_medium_light_skin_tone':
+      '\u{1F482}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_guard_medium_skin_tone': '\u{1F482}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_health_worker': '\u{1F468}\u{200D}\u{2695}\u{FE0F}',
   'man_health_worker:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{2695}\u{FE0F}',
@@ -3499,72 +3995,123 @@ const emojiUnicodeAliases = <String, String>{
   'man_health_worker:t4': '\u{1F468}\u{1F3FD}\u{200D}\u{2695}\u{FE0F}',
   'man_health_worker:t5': '\u{1F468}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
   'man_health_worker:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{2695}\u{FE0F}',
-  'man_health_worker_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2695}\u{FE0F}',
-  'man_health_worker_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2695}\u{FE0F}',
-  'man_health_worker_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
-  'man_health_worker_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
-  'man_health_worker_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
-  'man_health_worker_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
-  'man_health_worker_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2695}\u{FE0F}',
+  'man_health_worker_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{2695}\u{FE0F}',
+  'man_health_worker_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{2695}\u{FE0F}',
+  'man_health_worker_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
+  'man_health_worker_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
+  'man_health_worker_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
+  'man_health_worker_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
+  'man_health_worker_medium_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{2695}\u{FE0F}',
   'man_in_business_suit_levitating': '\u{1F574}\u{FE0F}',
   'man_in_lotus_position': '\u{1F9D8}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_lotus_position_dark_skin_tone': '\u{1F9D8}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_lotus_position_light_skin_tone': '\u{1F9D8}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_lotus_position_medium-dark_skin_tone': '\u{1F9D8}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_lotus_position_medium-light_skin_tone': '\u{1F9D8}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_lotus_position_medium_dark_skin_tone': '\u{1F9D8}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_lotus_position_medium_light_skin_tone': '\u{1F9D8}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_lotus_position_medium_skin_tone': '\u{1F9D8}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_lotus_position_dark_skin_tone':
+      '\u{1F9D8}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_lotus_position_light_skin_tone':
+      '\u{1F9D8}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_lotus_position_medium-dark_skin_tone':
+      '\u{1F9D8}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_lotus_position_medium-light_skin_tone':
+      '\u{1F9D8}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_lotus_position_medium_dark_skin_tone':
+      '\u{1F9D8}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_lotus_position_medium_light_skin_tone':
+      '\u{1F9D8}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_lotus_position_medium_skin_tone':
+      '\u{1F9D8}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_in_manual_wheelchair': '\u{1F468}\u{200D}\u{1F9BD}',
   'man_in_manual_wheelchair:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BD}',
   'man_in_manual_wheelchair:t3': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}',
   'man_in_manual_wheelchair:t4': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BD}',
   'man_in_manual_wheelchair:t5': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}',
   'man_in_manual_wheelchair:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BD}',
-  'man_in_manual_wheelchair_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BD}',
-  'man_in_manual_wheelchair_facing_right': '\u{1F468}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_manual_wheelchair_facing_right_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_manual_wheelchair_facing_right_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_manual_wheelchair_facing_right_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_manual_wheelchair_facing_right_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_manual_wheelchair_facing_right_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_manual_wheelchair_facing_right_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_manual_wheelchair_facing_right_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_manual_wheelchair_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BD}',
-  'man_in_manual_wheelchair_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}',
-  'man_in_manual_wheelchair_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}',
-  'man_in_manual_wheelchair_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}',
-  'man_in_manual_wheelchair_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}',
-  'man_in_manual_wheelchair_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BD}',
+  'man_in_manual_wheelchair_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BD}',
+  'man_in_manual_wheelchair_facing_right':
+      '\u{1F468}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_manual_wheelchair_facing_right_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_manual_wheelchair_facing_right_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_manual_wheelchair_facing_right_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_manual_wheelchair_facing_right_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_manual_wheelchair_facing_right_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_manual_wheelchair_facing_right_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_manual_wheelchair_facing_right_medium_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_manual_wheelchair_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BD}',
+  'man_in_manual_wheelchair_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}',
+  'man_in_manual_wheelchair_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}',
+  'man_in_manual_wheelchair_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BD}',
+  'man_in_manual_wheelchair_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BD}',
+  'man_in_manual_wheelchair_medium_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BD}',
   'man_in_motorized_wheelchair': '\u{1F468}\u{200D}\u{1F9BC}',
   'man_in_motorized_wheelchair:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BC}',
   'man_in_motorized_wheelchair:t3': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}',
   'man_in_motorized_wheelchair:t4': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BC}',
   'man_in_motorized_wheelchair:t5': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}',
   'man_in_motorized_wheelchair:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BC}',
-  'man_in_motorized_wheelchair_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BC}',
-  'man_in_motorized_wheelchair_facing_right': '\u{1F468}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_motorized_wheelchair_facing_right_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_motorized_wheelchair_facing_right_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_motorized_wheelchair_facing_right_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_motorized_wheelchair_facing_right_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_motorized_wheelchair_facing_right_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_motorized_wheelchair_facing_right_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_motorized_wheelchair_facing_right_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'man_in_motorized_wheelchair_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BC}',
-  'man_in_motorized_wheelchair_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}',
-  'man_in_motorized_wheelchair_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}',
-  'man_in_motorized_wheelchair_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}',
-  'man_in_motorized_wheelchair_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}',
-  'man_in_motorized_wheelchair_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BC}',
+  'man_in_motorized_wheelchair_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BC}',
+  'man_in_motorized_wheelchair_facing_right':
+      '\u{1F468}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_motorized_wheelchair_facing_right_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_motorized_wheelchair_facing_right_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_motorized_wheelchair_facing_right_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_motorized_wheelchair_facing_right_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_motorized_wheelchair_facing_right_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_motorized_wheelchair_facing_right_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_motorized_wheelchair_facing_right_medium_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'man_in_motorized_wheelchair_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F9BC}',
+  'man_in_motorized_wheelchair_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}',
+  'man_in_motorized_wheelchair_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}',
+  'man_in_motorized_wheelchair_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9BC}',
+  'man_in_motorized_wheelchair_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9BC}',
+  'man_in_motorized_wheelchair_medium_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F9BC}',
   'man_in_steamy_room': '\u{1F9D6}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_steamy_room_dark_skin_tone': '\u{1F9D6}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_steamy_room_light_skin_tone': '\u{1F9D6}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_steamy_room_medium-dark_skin_tone': '\u{1F9D6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_steamy_room_medium-light_skin_tone': '\u{1F9D6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_steamy_room_medium_dark_skin_tone': '\u{1F9D6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_steamy_room_medium_light_skin_tone': '\u{1F9D6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_steamy_room_medium_skin_tone': '\u{1F9D6}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_steamy_room_dark_skin_tone':
+      '\u{1F9D6}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_steamy_room_light_skin_tone':
+      '\u{1F9D6}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_steamy_room_medium-dark_skin_tone':
+      '\u{1F9D6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_steamy_room_medium-light_skin_tone':
+      '\u{1F9D6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_steamy_room_medium_dark_skin_tone':
+      '\u{1F9D6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_steamy_room_medium_light_skin_tone':
+      '\u{1F9D6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_steamy_room_medium_skin_tone':
+      '\u{1F9D6}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_in_tuxedo': '\u{1F935}\u{200D}\u{2642}\u{FE0F}',
   'man_in_tuxedo:t2': '\u{1F935}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
   'man_in_tuxedo:t3': '\u{1F935}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
@@ -3573,11 +4120,16 @@ const emojiUnicodeAliases = <String, String>{
   'man_in_tuxedo:t6': '\u{1F935}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_in_tuxedo_dark_skin_tone': '\u{1F935}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_in_tuxedo_light_skin_tone': '\u{1F935}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_tuxedo_medium-dark_skin_tone': '\u{1F935}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_tuxedo_medium-light_skin_tone': '\u{1F935}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_tuxedo_medium_dark_skin_tone': '\u{1F935}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_tuxedo_medium_light_skin_tone': '\u{1F935}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_in_tuxedo_medium_skin_tone': '\u{1F935}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_tuxedo_medium-dark_skin_tone':
+      '\u{1F935}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_tuxedo_medium-light_skin_tone':
+      '\u{1F935}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_tuxedo_medium_dark_skin_tone':
+      '\u{1F935}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_tuxedo_medium_light_skin_tone':
+      '\u{1F935}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_in_tuxedo_medium_skin_tone':
+      '\u{1F935}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_judge': '\u{1F468}\u{200D}\u{2696}\u{FE0F}',
   'man_judge:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{2696}\u{FE0F}',
   'man_judge:t3': '\u{1F468}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
@@ -3586,10 +4138,14 @@ const emojiUnicodeAliases = <String, String>{
   'man_judge:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{2696}\u{FE0F}',
   'man_judge_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2696}\u{FE0F}',
   'man_judge_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2696}\u{FE0F}',
-  'man_judge_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2696}\u{FE0F}',
-  'man_judge_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
-  'man_judge_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2696}\u{FE0F}',
-  'man_judge_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
+  'man_judge_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2696}\u{FE0F}',
+  'man_judge_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
+  'man_judge_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2696}\u{FE0F}',
+  'man_judge_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
   'man_judge_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2696}\u{FE0F}',
   'man_juggling': '\u{1F939}\u{200D}\u{2642}\u{FE0F}',
   'man_juggling:t2': '\u{1F939}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
@@ -3599,49 +4155,77 @@ const emojiUnicodeAliases = <String, String>{
   'man_juggling:t6': '\u{1F939}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_juggling_dark_skin_tone': '\u{1F939}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_juggling_light_skin_tone': '\u{1F939}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_juggling_medium-dark_skin_tone': '\u{1F939}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_juggling_medium-light_skin_tone': '\u{1F939}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_juggling_medium_dark_skin_tone': '\u{1F939}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_juggling_medium_light_skin_tone': '\u{1F939}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_juggling_medium-dark_skin_tone':
+      '\u{1F939}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_juggling_medium-light_skin_tone':
+      '\u{1F939}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_juggling_medium_dark_skin_tone':
+      '\u{1F939}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_juggling_medium_light_skin_tone':
+      '\u{1F939}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_juggling_medium_skin_tone': '\u{1F939}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_kneeling': '\u{1F9CE}\u{200D}\u{2642}\u{FE0F}',
   'man_kneeling_dark_skin_tone': '\u{1F9CE}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_kneeling_facing_right': '\u{1F9CE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_kneeling_facing_right_dark_skin_tone': '\u{1F9CE}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_kneeling_facing_right_light_skin_tone': '\u{1F9CE}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_kneeling_facing_right_medium-dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_kneeling_facing_right_medium-light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_kneeling_facing_right_medium_dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_kneeling_facing_right_medium_light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_kneeling_facing_right_medium_skin_tone': '\u{1F9CE}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_kneeling_facing_right':
+      '\u{1F9CE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_kneeling_facing_right_dark_skin_tone':
+      '\u{1F9CE}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_kneeling_facing_right_light_skin_tone':
+      '\u{1F9CE}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_kneeling_facing_right_medium-dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_kneeling_facing_right_medium-light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_kneeling_facing_right_medium_dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_kneeling_facing_right_medium_light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_kneeling_facing_right_medium_skin_tone':
+      '\u{1F9CE}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
   'man_kneeling_light_skin_tone': '\u{1F9CE}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_kneeling_medium-dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_kneeling_medium-light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_kneeling_medium_dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_kneeling_medium_light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_kneeling_medium-dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_kneeling_medium-light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_kneeling_medium_dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_kneeling_medium_light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_kneeling_medium_skin_tone': '\u{1F9CE}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_lifting_weights': '\u{1F3CB}\u{FE0F}\u{200D}\u{2642}\u{FE0F}',
-  'man_lifting_weights_dark_skin_tone': '\u{1F3CB}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_lifting_weights_light_skin_tone': '\u{1F3CB}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_lifting_weights_medium-dark_skin_tone': '\u{1F3CB}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_lifting_weights_medium-light_skin_tone': '\u{1F3CB}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_lifting_weights_medium_dark_skin_tone': '\u{1F3CB}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_lifting_weights_medium_light_skin_tone': '\u{1F3CB}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_lifting_weights_medium_skin_tone': '\u{1F3CB}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_lifting_weights_dark_skin_tone':
+      '\u{1F3CB}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_lifting_weights_light_skin_tone':
+      '\u{1F3CB}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_lifting_weights_medium-dark_skin_tone':
+      '\u{1F3CB}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_lifting_weights_medium-light_skin_tone':
+      '\u{1F3CB}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_lifting_weights_medium_dark_skin_tone':
+      '\u{1F3CB}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_lifting_weights_medium_light_skin_tone':
+      '\u{1F3CB}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_lifting_weights_medium_skin_tone':
+      '\u{1F3CB}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_light_skin_tone': '\u{1F468}\u{1F3FB}',
   'man_light_skin_tone_bald': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9B2}',
   'man_light_skin_tone_beard': '\u{1F9D4}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_light_skin_tone_blond_hair': '\u{1F471}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_light_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
   'man_light_skin_tone_curly_hair': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9B1}',
   'man_light_skin_tone_red_hair': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9B0}',
   'man_light_skin_tone_white_hair': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9B3}',
   'man_mage': '\u{1F9D9}\u{200D}\u{2642}\u{FE0F}',
   'man_mage_dark_skin_tone': '\u{1F9D9}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_mage_light_skin_tone': '\u{1F9D9}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_mage_medium-dark_skin_tone': '\u{1F9D9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_mage_medium-light_skin_tone': '\u{1F9D9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_mage_medium_dark_skin_tone': '\u{1F9D9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_mage_medium_light_skin_tone': '\u{1F9D9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_mage_medium-dark_skin_tone':
+      '\u{1F9D9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_mage_medium-light_skin_tone':
+      '\u{1F9D9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_mage_medium_dark_skin_tone':
+      '\u{1F9D9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_mage_medium_light_skin_tone':
+      '\u{1F9D9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_mage_medium_skin_tone': '\u{1F9D9}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_mechanic': '\u{1F468}\u{200D}\u{1F527}',
   'man_mechanic:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F527}',
@@ -3658,47 +4242,67 @@ const emojiUnicodeAliases = <String, String>{
   'man_mechanic_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F527}',
   'man_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}',
   'man_medium-dark_skin_tone_bald': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9B2}',
-  'man_medium-dark_skin_tone_beard': '\u{1F9D4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_medium-dark_skin_tone_blond_hair': '\u{1F471}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium-dark_skin_tone_beard':
+      '\u{1F9D4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium-dark_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
   'man_medium-dark_skin_tone_curly_hair': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9B1}',
   'man_medium-dark_skin_tone_red_hair': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9B0}',
   'man_medium-dark_skin_tone_white_hair': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9B3}',
   'man_medium-light_skin_tone': '\u{1F468}\u{1F3FC}',
   'man_medium-light_skin_tone_bald': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B2}',
-  'man_medium-light_skin_tone_beard': '\u{1F9D4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_medium-light_skin_tone_blond_hair': '\u{1F471}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_medium-light_skin_tone_curly_hair': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B1}',
+  'man_medium-light_skin_tone_beard':
+      '\u{1F9D4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium-light_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium-light_skin_tone_curly_hair':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B1}',
   'man_medium-light_skin_tone_red_hair': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B0}',
-  'man_medium-light_skin_tone_white_hair': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B3}',
+  'man_medium-light_skin_tone_white_hair':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B3}',
   'man_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}',
   'man_medium_dark_skin_tone_bald': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9B2}',
-  'man_medium_dark_skin_tone_beard': '\u{1F9D4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_medium_dark_skin_tone_blond_hair': '\u{1F471}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium_dark_skin_tone_beard':
+      '\u{1F9D4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium_dark_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
   'man_medium_dark_skin_tone_curly_hair': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9B1}',
   'man_medium_dark_skin_tone_red_hair': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9B0}',
   'man_medium_dark_skin_tone_white_hair': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9B3}',
   'man_medium_light_skin_tone': '\u{1F468}\u{1F3FC}',
   'man_medium_light_skin_tone_bald': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B2}',
-  'man_medium_light_skin_tone_beard': '\u{1F9D4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_medium_light_skin_tone_blond_hair': '\u{1F471}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_medium_light_skin_tone_curly_hair': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B1}',
+  'man_medium_light_skin_tone_beard':
+      '\u{1F9D4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium_light_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium_light_skin_tone_curly_hair':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B1}',
   'man_medium_light_skin_tone_red_hair': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B0}',
-  'man_medium_light_skin_tone_white_hair': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B3}',
+  'man_medium_light_skin_tone_white_hair':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9B3}',
   'man_medium_skin_tone': '\u{1F468}\u{1F3FD}',
   'man_medium_skin_tone_bald': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9B2}',
   'man_medium_skin_tone_beard': '\u{1F9D4}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
-  'man_medium_skin_tone_blond_hair': '\u{1F471}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_medium_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_medium_skin_tone_curly_hair': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9B1}',
   'man_medium_skin_tone_red_hair': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9B0}',
   'man_medium_skin_tone_white_hair': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9B3}',
   'man_mountain_biking': '\u{1F6B5}\u{200D}\u{2642}\u{FE0F}',
-  'man_mountain_biking_dark_skin_tone': '\u{1F6B5}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_mountain_biking_light_skin_tone': '\u{1F6B5}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_mountain_biking_medium-dark_skin_tone': '\u{1F6B5}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_mountain_biking_medium-light_skin_tone': '\u{1F6B5}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_mountain_biking_medium_dark_skin_tone': '\u{1F6B5}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_mountain_biking_medium_light_skin_tone': '\u{1F6B5}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_mountain_biking_medium_skin_tone': '\u{1F6B5}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_mountain_biking_dark_skin_tone':
+      '\u{1F6B5}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_mountain_biking_light_skin_tone':
+      '\u{1F6B5}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_mountain_biking_medium-dark_skin_tone':
+      '\u{1F6B5}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_mountain_biking_medium-light_skin_tone':
+      '\u{1F6B5}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_mountain_biking_medium_dark_skin_tone':
+      '\u{1F6B5}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_mountain_biking_medium_light_skin_tone':
+      '\u{1F6B5}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_mountain_biking_medium_skin_tone':
+      '\u{1F6B5}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_office_worker': '\u{1F468}\u{200D}\u{1F4BC}',
   'man_office_worker:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F4BC}',
   'man_office_worker:t3': '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BC}',
@@ -3707,10 +4311,14 @@ const emojiUnicodeAliases = <String, String>{
   'man_office_worker:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{1F4BC}',
   'man_office_worker_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F4BC}',
   'man_office_worker_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F4BC}',
-  'man_office_worker_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F4BC}',
-  'man_office_worker_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BC}',
-  'man_office_worker_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F4BC}',
-  'man_office_worker_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BC}',
+  'man_office_worker_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F4BC}',
+  'man_office_worker_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BC}',
+  'man_office_worker_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F4BC}',
+  'man_office_worker_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BC}',
   'man_office_worker_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F4BC}',
   'man_pilot': '\u{1F468}\u{200D}\u{2708}\u{FE0F}',
   'man_pilot:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{2708}\u{FE0F}',
@@ -3720,10 +4328,14 @@ const emojiUnicodeAliases = <String, String>{
   'man_pilot:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{2708}\u{FE0F}',
   'man_pilot_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{2708}\u{FE0F}',
   'man_pilot_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{2708}\u{FE0F}',
-  'man_pilot_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2708}\u{FE0F}',
-  'man_pilot_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2708}\u{FE0F}',
-  'man_pilot_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{2708}\u{FE0F}',
-  'man_pilot_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{2708}\u{FE0F}',
+  'man_pilot_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2708}\u{FE0F}',
+  'man_pilot_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2708}\u{FE0F}',
+  'man_pilot_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{2708}\u{FE0F}',
+  'man_pilot_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{2708}\u{FE0F}',
   'man_pilot_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{2708}\u{FE0F}',
   'man_playing_handball': '\u{1F93E}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_handball:t2': '\u{1F93E}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
@@ -3731,74 +4343,125 @@ const emojiUnicodeAliases = <String, String>{
   'man_playing_handball:t4': '\u{1F93E}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_handball:t5': '\u{1F93E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_handball:t6': '\u{1F93E}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_handball_dark_skin_tone': '\u{1F93E}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_handball_light_skin_tone': '\u{1F93E}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_handball_medium-dark_skin_tone': '\u{1F93E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_handball_medium-light_skin_tone': '\u{1F93E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_handball_medium_dark_skin_tone': '\u{1F93E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_handball_medium_light_skin_tone': '\u{1F93E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_handball_medium_skin_tone': '\u{1F93E}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_handball_dark_skin_tone':
+      '\u{1F93E}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_handball_light_skin_tone':
+      '\u{1F93E}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_handball_medium-dark_skin_tone':
+      '\u{1F93E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_handball_medium-light_skin_tone':
+      '\u{1F93E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_handball_medium_dark_skin_tone':
+      '\u{1F93E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_handball_medium_light_skin_tone':
+      '\u{1F93E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_handball_medium_skin_tone':
+      '\u{1F93E}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_water_polo': '\u{1F93D}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_water_polo:t2': '\u{1F93D}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_water_polo:t3': '\u{1F93D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_water_polo:t4': '\u{1F93D}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_water_polo:t5': '\u{1F93D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
   'man_playing_water_polo:t6': '\u{1F93D}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_water_polo_dark_skin_tone': '\u{1F93D}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_water_polo_light_skin_tone': '\u{1F93D}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_water_polo_medium-dark_skin_tone': '\u{1F93D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_water_polo_medium-light_skin_tone': '\u{1F93D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_water_polo_medium_dark_skin_tone': '\u{1F93D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_water_polo_medium_light_skin_tone': '\u{1F93D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_playing_water_polo_medium_skin_tone': '\u{1F93D}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_water_polo_dark_skin_tone':
+      '\u{1F93D}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_water_polo_light_skin_tone':
+      '\u{1F93D}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_water_polo_medium-dark_skin_tone':
+      '\u{1F93D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_water_polo_medium-light_skin_tone':
+      '\u{1F93D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_water_polo_medium_dark_skin_tone':
+      '\u{1F93D}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_water_polo_medium_light_skin_tone':
+      '\u{1F93D}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_playing_water_polo_medium_skin_tone':
+      '\u{1F93D}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_police_officer': '\u{1F46E}\u{200D}\u{2642}\u{FE0F}',
-  'man_police_officer_dark_skin_tone': '\u{1F46E}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_police_officer_light_skin_tone': '\u{1F46E}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_police_officer_medium-dark_skin_tone': '\u{1F46E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_police_officer_medium-light_skin_tone': '\u{1F46E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_police_officer_medium_dark_skin_tone': '\u{1F46E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_police_officer_medium_light_skin_tone': '\u{1F46E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_police_officer_medium_skin_tone': '\u{1F46E}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_police_officer_dark_skin_tone':
+      '\u{1F46E}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_police_officer_light_skin_tone':
+      '\u{1F46E}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_police_officer_medium-dark_skin_tone':
+      '\u{1F46E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_police_officer_medium-light_skin_tone':
+      '\u{1F46E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_police_officer_medium_dark_skin_tone':
+      '\u{1F46E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_police_officer_medium_light_skin_tone':
+      '\u{1F46E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_police_officer_medium_skin_tone':
+      '\u{1F46E}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_pouting': '\u{1F64E}\u{200D}\u{2642}\u{FE0F}',
   'man_pouting_dark_skin_tone': '\u{1F64E}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_pouting_light_skin_tone': '\u{1F64E}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_pouting_medium-dark_skin_tone': '\u{1F64E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_pouting_medium-light_skin_tone': '\u{1F64E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_pouting_medium_dark_skin_tone': '\u{1F64E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_pouting_medium_light_skin_tone': '\u{1F64E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_pouting_medium-dark_skin_tone':
+      '\u{1F64E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_pouting_medium-light_skin_tone':
+      '\u{1F64E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_pouting_medium_dark_skin_tone':
+      '\u{1F64E}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_pouting_medium_light_skin_tone':
+      '\u{1F64E}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_pouting_medium_skin_tone': '\u{1F64E}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_raising_hand': '\u{1F64B}\u{200D}\u{2642}\u{FE0F}',
-  'man_raising_hand_dark_skin_tone': '\u{1F64B}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_raising_hand_light_skin_tone': '\u{1F64B}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_raising_hand_medium-dark_skin_tone': '\u{1F64B}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_raising_hand_medium-light_skin_tone': '\u{1F64B}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_raising_hand_medium_dark_skin_tone': '\u{1F64B}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_raising_hand_medium_light_skin_tone': '\u{1F64B}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_raising_hand_medium_skin_tone': '\u{1F64B}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_raising_hand_dark_skin_tone':
+      '\u{1F64B}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_raising_hand_light_skin_tone':
+      '\u{1F64B}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_raising_hand_medium-dark_skin_tone':
+      '\u{1F64B}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_raising_hand_medium-light_skin_tone':
+      '\u{1F64B}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_raising_hand_medium_dark_skin_tone':
+      '\u{1F64B}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_raising_hand_medium_light_skin_tone':
+      '\u{1F64B}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_raising_hand_medium_skin_tone':
+      '\u{1F64B}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_red_hair': '\u{1F468}\u{200D}\u{1F9B0}',
   'man_rowing_boat': '\u{1F6A3}\u{200D}\u{2642}\u{FE0F}',
-  'man_rowing_boat_dark_skin_tone': '\u{1F6A3}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_rowing_boat_light_skin_tone': '\u{1F6A3}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_rowing_boat_medium-dark_skin_tone': '\u{1F6A3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_rowing_boat_medium-light_skin_tone': '\u{1F6A3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_rowing_boat_medium_dark_skin_tone': '\u{1F6A3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_rowing_boat_medium_light_skin_tone': '\u{1F6A3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_rowing_boat_medium_skin_tone': '\u{1F6A3}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_rowing_boat_dark_skin_tone':
+      '\u{1F6A3}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_rowing_boat_light_skin_tone':
+      '\u{1F6A3}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_rowing_boat_medium-dark_skin_tone':
+      '\u{1F6A3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_rowing_boat_medium-light_skin_tone':
+      '\u{1F6A3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_rowing_boat_medium_dark_skin_tone':
+      '\u{1F6A3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_rowing_boat_medium_light_skin_tone':
+      '\u{1F6A3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_rowing_boat_medium_skin_tone':
+      '\u{1F6A3}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_running': '\u{1F3C3}\u{200D}\u{2642}\u{FE0F}',
   'man_running_dark_skin_tone': '\u{1F3C3}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_running_facing_right': '\u{1F3C3}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_running_facing_right_dark_skin_tone': '\u{1F3C3}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_running_facing_right_light_skin_tone': '\u{1F3C3}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_running_facing_right_medium-dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_running_facing_right_medium-light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_running_facing_right_medium_dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_running_facing_right_medium_light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_running_facing_right_medium_skin_tone': '\u{1F3C3}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_running_facing_right':
+      '\u{1F3C3}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_running_facing_right_dark_skin_tone':
+      '\u{1F3C3}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_running_facing_right_light_skin_tone':
+      '\u{1F3C3}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_running_facing_right_medium-dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_running_facing_right_medium-light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_running_facing_right_medium_dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_running_facing_right_medium_light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_running_facing_right_medium_skin_tone':
+      '\u{1F3C3}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
   'man_running_light_skin_tone': '\u{1F3C3}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_running_medium-dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_running_medium-light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_running_medium_dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_running_medium_light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_running_medium-dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_running_medium-light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_running_medium_dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_running_medium_light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_running_medium_skin_tone': '\u{1F3C3}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_scientist': '\u{1F468}\u{200D}\u{1F52C}',
   'man_scientist:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F52C}',
@@ -3821,11 +4484,16 @@ const emojiUnicodeAliases = <String, String>{
   'man_shrugging:t6': '\u{1F937}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_shrugging_dark_skin_tone': '\u{1F937}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_shrugging_light_skin_tone': '\u{1F937}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_shrugging_medium-dark_skin_tone': '\u{1F937}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_shrugging_medium-light_skin_tone': '\u{1F937}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_shrugging_medium_dark_skin_tone': '\u{1F937}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_shrugging_medium_light_skin_tone': '\u{1F937}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_shrugging_medium_skin_tone': '\u{1F937}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_shrugging_medium-dark_skin_tone':
+      '\u{1F937}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_shrugging_medium-light_skin_tone':
+      '\u{1F937}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_shrugging_medium_dark_skin_tone':
+      '\u{1F937}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_shrugging_medium_light_skin_tone':
+      '\u{1F937}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_shrugging_medium_skin_tone':
+      '\u{1F937}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_singer': '\u{1F468}\u{200D}\u{1F3A4}',
   'man_singer:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F3A4}',
   'man_singer:t3': '\u{1F468}\u{1F3FC}\u{200D}\u{1F3A4}',
@@ -3842,10 +4510,14 @@ const emojiUnicodeAliases = <String, String>{
   'man_standing': '\u{1F9CD}\u{200D}\u{2642}\u{FE0F}',
   'man_standing_dark_skin_tone': '\u{1F9CD}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_standing_light_skin_tone': '\u{1F9CD}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_standing_medium-dark_skin_tone': '\u{1F9CD}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_standing_medium-light_skin_tone': '\u{1F9CD}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_standing_medium_dark_skin_tone': '\u{1F9CD}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_standing_medium_light_skin_tone': '\u{1F9CD}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_standing_medium-dark_skin_tone':
+      '\u{1F9CD}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_standing_medium-light_skin_tone':
+      '\u{1F9CD}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_standing_medium_dark_skin_tone':
+      '\u{1F9CD}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_standing_medium_light_skin_tone':
+      '\u{1F9CD}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_standing_medium_skin_tone': '\u{1F9CD}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_student': '\u{1F468}\u{200D}\u{1F393}',
   'man_student:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F393}',
@@ -3863,34 +4535,54 @@ const emojiUnicodeAliases = <String, String>{
   'man_superhero': '\u{1F9B8}\u{200D}\u{2642}\u{FE0F}',
   'man_superhero_dark_skin_tone': '\u{1F9B8}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_superhero_light_skin_tone': '\u{1F9B8}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_superhero_medium-dark_skin_tone': '\u{1F9B8}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_superhero_medium-light_skin_tone': '\u{1F9B8}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_superhero_medium_dark_skin_tone': '\u{1F9B8}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_superhero_medium_light_skin_tone': '\u{1F9B8}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_superhero_medium_skin_tone': '\u{1F9B8}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_superhero_medium-dark_skin_tone':
+      '\u{1F9B8}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_superhero_medium-light_skin_tone':
+      '\u{1F9B8}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_superhero_medium_dark_skin_tone':
+      '\u{1F9B8}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_superhero_medium_light_skin_tone':
+      '\u{1F9B8}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_superhero_medium_skin_tone':
+      '\u{1F9B8}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_supervillain': '\u{1F9B9}\u{200D}\u{2642}\u{FE0F}',
-  'man_supervillain_dark_skin_tone': '\u{1F9B9}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_supervillain_light_skin_tone': '\u{1F9B9}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_supervillain_medium-dark_skin_tone': '\u{1F9B9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_supervillain_medium-light_skin_tone': '\u{1F9B9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_supervillain_medium_dark_skin_tone': '\u{1F9B9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_supervillain_medium_light_skin_tone': '\u{1F9B9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_supervillain_medium_skin_tone': '\u{1F9B9}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_supervillain_dark_skin_tone':
+      '\u{1F9B9}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_supervillain_light_skin_tone':
+      '\u{1F9B9}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_supervillain_medium-dark_skin_tone':
+      '\u{1F9B9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_supervillain_medium-light_skin_tone':
+      '\u{1F9B9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_supervillain_medium_dark_skin_tone':
+      '\u{1F9B9}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_supervillain_medium_light_skin_tone':
+      '\u{1F9B9}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_supervillain_medium_skin_tone':
+      '\u{1F9B9}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_surfing': '\u{1F3C4}\u{200D}\u{2642}\u{FE0F}',
   'man_surfing_dark_skin_tone': '\u{1F3C4}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_surfing_light_skin_tone': '\u{1F3C4}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_surfing_medium-dark_skin_tone': '\u{1F3C4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_surfing_medium-light_skin_tone': '\u{1F3C4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_surfing_medium_dark_skin_tone': '\u{1F3C4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_surfing_medium_light_skin_tone': '\u{1F3C4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_surfing_medium-dark_skin_tone':
+      '\u{1F3C4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_surfing_medium-light_skin_tone':
+      '\u{1F3C4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_surfing_medium_dark_skin_tone':
+      '\u{1F3C4}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_surfing_medium_light_skin_tone':
+      '\u{1F3C4}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_surfing_medium_skin_tone': '\u{1F3C4}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_swimming': '\u{1F3CA}\u{200D}\u{2642}\u{FE0F}',
   'man_swimming_dark_skin_tone': '\u{1F3CA}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_swimming_light_skin_tone': '\u{1F3CA}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_swimming_medium-dark_skin_tone': '\u{1F3CA}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_swimming_medium-light_skin_tone': '\u{1F3CA}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_swimming_medium_dark_skin_tone': '\u{1F3CA}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_swimming_medium_light_skin_tone': '\u{1F3CA}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_swimming_medium-dark_skin_tone':
+      '\u{1F3CA}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_swimming_medium-light_skin_tone':
+      '\u{1F3CA}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_swimming_medium_dark_skin_tone':
+      '\u{1F3CA}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_swimming_medium_light_skin_tone':
+      '\u{1F3CA}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_swimming_medium_skin_tone': '\u{1F3CA}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_teacher': '\u{1F468}\u{200D}\u{1F3EB}',
   'man_teacher:t2': '\u{1F468}\u{1F3FB}\u{200D}\u{1F3EB}',
@@ -3913,51 +4605,85 @@ const emojiUnicodeAliases = <String, String>{
   'man_technologist:t6': '\u{1F468}\u{1F3FF}\u{200D}\u{1F4BB}',
   'man_technologist_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F4BB}',
   'man_technologist_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F4BB}',
-  'man_technologist_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F4BB}',
-  'man_technologist_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BB}',
-  'man_technologist_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F4BB}',
-  'man_technologist_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BB}',
+  'man_technologist_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F4BB}',
+  'man_technologist_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BB}',
+  'man_technologist_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F4BB}',
+  'man_technologist_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F4BB}',
   'man_technologist_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F4BB}',
   'man_tipping_hand': '\u{1F481}\u{200D}\u{2642}\u{FE0F}',
-  'man_tipping_hand_dark_skin_tone': '\u{1F481}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_tipping_hand_light_skin_tone': '\u{1F481}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_tipping_hand_medium-dark_skin_tone': '\u{1F481}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_tipping_hand_medium-light_skin_tone': '\u{1F481}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_tipping_hand_medium_dark_skin_tone': '\u{1F481}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_tipping_hand_medium_light_skin_tone': '\u{1F481}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_tipping_hand_medium_skin_tone': '\u{1F481}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_tipping_hand_dark_skin_tone':
+      '\u{1F481}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_tipping_hand_light_skin_tone':
+      '\u{1F481}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_tipping_hand_medium-dark_skin_tone':
+      '\u{1F481}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_tipping_hand_medium-light_skin_tone':
+      '\u{1F481}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_tipping_hand_medium_dark_skin_tone':
+      '\u{1F481}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_tipping_hand_medium_light_skin_tone':
+      '\u{1F481}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_tipping_hand_medium_skin_tone':
+      '\u{1F481}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_vampire': '\u{1F9DB}\u{200D}\u{2642}\u{FE0F}',
   'man_vampire_dark_skin_tone': '\u{1F9DB}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_vampire_light_skin_tone': '\u{1F9DB}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_vampire_medium-dark_skin_tone': '\u{1F9DB}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_vampire_medium-light_skin_tone': '\u{1F9DB}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_vampire_medium_dark_skin_tone': '\u{1F9DB}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_vampire_medium_light_skin_tone': '\u{1F9DB}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_vampire_medium-dark_skin_tone':
+      '\u{1F9DB}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_vampire_medium-light_skin_tone':
+      '\u{1F9DB}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_vampire_medium_dark_skin_tone':
+      '\u{1F9DB}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_vampire_medium_light_skin_tone':
+      '\u{1F9DB}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_vampire_medium_skin_tone': '\u{1F9DB}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_walking': '\u{1F6B6}\u{200D}\u{2642}\u{FE0F}',
   'man_walking_dark_skin_tone': '\u{1F6B6}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_walking_facing_right': '\u{1F6B6}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_walking_facing_right_dark_skin_tone': '\u{1F6B6}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_walking_facing_right_light_skin_tone': '\u{1F6B6}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_walking_facing_right_medium-dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_walking_facing_right_medium-light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_walking_facing_right_medium_dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_walking_facing_right_medium_light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'man_walking_facing_right_medium_skin_tone': '\u{1F6B6}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_walking_facing_right':
+      '\u{1F6B6}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_walking_facing_right_dark_skin_tone':
+      '\u{1F6B6}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_walking_facing_right_light_skin_tone':
+      '\u{1F6B6}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_walking_facing_right_medium-dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_walking_facing_right_medium-light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_walking_facing_right_medium_dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_walking_facing_right_medium_light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'man_walking_facing_right_medium_skin_tone':
+      '\u{1F6B6}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
   'man_walking_light_skin_tone': '\u{1F6B6}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_walking_medium-dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_walking_medium-light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_walking_medium_dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_walking_medium_light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_walking_medium-dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_walking_medium-light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_walking_medium_dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_walking_medium_light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
   'man_walking_medium_skin_tone': '\u{1F6B6}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_wearing_turban': '\u{1F473}\u{200D}\u{2642}\u{FE0F}',
-  'man_wearing_turban_dark_skin_tone': '\u{1F473}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'man_wearing_turban_light_skin_tone': '\u{1F473}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_wearing_turban_medium-dark_skin_tone': '\u{1F473}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_wearing_turban_medium-light_skin_tone': '\u{1F473}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_wearing_turban_medium_dark_skin_tone': '\u{1F473}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_wearing_turban_medium_light_skin_tone': '\u{1F473}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_wearing_turban_medium_skin_tone': '\u{1F473}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_wearing_turban_dark_skin_tone':
+      '\u{1F473}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'man_wearing_turban_light_skin_tone':
+      '\u{1F473}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'man_wearing_turban_medium-dark_skin_tone':
+      '\u{1F473}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_wearing_turban_medium-light_skin_tone':
+      '\u{1F473}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_wearing_turban_medium_dark_skin_tone':
+      '\u{1F473}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_wearing_turban_medium_light_skin_tone':
+      '\u{1F473}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_wearing_turban_medium_skin_tone':
+      '\u{1F473}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_white_hair': '\u{1F468}\u{200D}\u{1F9B3}',
   'man_with_gua_pi_mao': '\u{1F472}',
   'man_with_gua_pi_mao:t2': '\u{1F472}\u{1F3FB}',
@@ -3985,26 +4711,43 @@ const emojiUnicodeAliases = <String, String>{
   'man_with_veil:t6': '\u{1F470}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_with_veil_dark_skin_tone': '\u{1F470}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
   'man_with_veil_light_skin_tone': '\u{1F470}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'man_with_veil_medium-dark_skin_tone': '\u{1F470}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_with_veil_medium-light_skin_tone': '\u{1F470}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_with_veil_medium_dark_skin_tone': '\u{1F470}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'man_with_veil_medium_light_skin_tone': '\u{1F470}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'man_with_veil_medium_skin_tone': '\u{1F470}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'man_with_veil_medium-dark_skin_tone':
+      '\u{1F470}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_with_veil_medium-light_skin_tone':
+      '\u{1F470}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_with_veil_medium_dark_skin_tone':
+      '\u{1F470}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'man_with_veil_medium_light_skin_tone':
+      '\u{1F470}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'man_with_veil_medium_skin_tone':
+      '\u{1F470}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
   'man_with_white_cane': '\u{1F468}\u{200D}\u{1F9AF}',
   'man_with_white_cane_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F9AF}',
-  'man_with_white_cane_facing_right': '\u{1F468}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'man_with_white_cane_facing_right_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'man_with_white_cane_facing_right_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'man_with_white_cane_facing_right_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'man_with_white_cane_facing_right_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'man_with_white_cane_facing_right_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'man_with_white_cane_facing_right_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'man_with_white_cane_facing_right_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'man_with_white_cane_facing_right':
+      '\u{1F468}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'man_with_white_cane_facing_right_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'man_with_white_cane_facing_right_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'man_with_white_cane_facing_right_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'man_with_white_cane_facing_right_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'man_with_white_cane_facing_right_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'man_with_white_cane_facing_right_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'man_with_white_cane_facing_right_medium_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
   'man_with_white_cane_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F9AF}',
-  'man_with_white_cane_medium-dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9AF}',
-  'man_with_white_cane_medium-light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9AF}',
-  'man_with_white_cane_medium_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F9AF}',
-  'man_with_white_cane_medium_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F9AF}',
+  'man_with_white_cane_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9AF}',
+  'man_with_white_cane_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9AF}',
+  'man_with_white_cane_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F9AF}',
+  'man_with_white_cane_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F9AF}',
   'man_with_white_cane_medium_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F9AF}',
   'man_zombie': '\u{1F9DF}\u{200D}\u{2642}\u{FE0F}',
   'mandarin': '\u{1F34A}',
@@ -4078,130 +4821,244 @@ const emojiUnicodeAliases = <String, String>{
   'memo': '\u{1F4DD}',
   'men_holding_hands': '\u{1F46C}',
   'men_holding_hands_dark_skin_tone': '\u{1F46C}\u{1F3FF}',
-  'men_holding_hands_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_holding_hands_dark_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_holding_hands_dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_holding_hands_dark_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_holding_hands_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_holding_hands_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_holding_hands_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_holding_hands_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_holding_hands_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_holding_hands_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_holding_hands_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_holding_hands_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'men_holding_hands_light_skin_tone': '\u{1F46C}\u{1F3FB}',
-  'men_holding_hands_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_holding_hands_light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_holding_hands_light_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_holding_hands_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_holding_hands_light_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_holding_hands_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_holding_hands_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_holding_hands_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_holding_hands_light_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_holding_hands_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_holding_hands_light_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_holding_hands_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'men_holding_hands_medium-dark_skin_tone': '\u{1F46C}\u{1F3FE}',
-  'men_holding_hands_medium-dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_holding_hands_medium-dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_holding_hands_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_holding_hands_medium-dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_holding_hands_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_holding_hands_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_holding_hands_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_holding_hands_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'men_holding_hands_medium-light_skin_tone': '\u{1F46C}\u{1F3FC}',
-  'men_holding_hands_medium-light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_holding_hands_medium-light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_holding_hands_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_holding_hands_medium-light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_holding_hands_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_holding_hands_medium-light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_holding_hands_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_holding_hands_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'men_holding_hands_medium_dark_skin_tone': '\u{1F46C}\u{1F3FE}',
-  'men_holding_hands_medium_dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_holding_hands_medium_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_holding_hands_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_holding_hands_medium_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_holding_hands_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_holding_hands_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_holding_hands_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_holding_hands_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'men_holding_hands_medium_light_skin_tone': '\u{1F46C}\u{1F3FC}',
-  'men_holding_hands_medium_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_holding_hands_medium_light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_holding_hands_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_holding_hands_medium_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_holding_hands_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_holding_hands_medium_light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_holding_hands_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_holding_hands_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'men_holding_hands_medium_skin_tone': '\u{1F46C}\u{1F3FD}',
-  'men_holding_hands_medium_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_holding_hands_medium_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_holding_hands_medium_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_holding_hands_medium_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_holding_hands_medium_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_holding_hands_medium_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_holding_hands_medium_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_holding_hands_medium_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_holding_hands_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_holding_hands_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_holding_hands_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_holding_hands_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
   'men_with_bunny_ears': '\u{1F46F}\u{200D}\u{2642}\u{FE0F}',
-  'men_with_bunny_ears_dark_skin_tone': '\u{1F46F}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'men_with_bunny_ears_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_with_bunny_ears_dark_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_with_bunny_ears_dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_with_bunny_ears_dark_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_with_bunny_ears_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_with_bunny_ears_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_with_bunny_ears_light_skin_tone': '\u{1F46F}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'men_with_bunny_ears_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_with_bunny_ears_light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_with_bunny_ears_light_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_with_bunny_ears_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_with_bunny_ears_light_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_with_bunny_ears_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_with_bunny_ears_medium-dark_skin_tone': '\u{1F46F}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'men_with_bunny_ears_medium-dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_with_bunny_ears_medium-dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_with_bunny_ears_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_with_bunny_ears_medium-dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_with_bunny_ears_medium-light_skin_tone': '\u{1F46F}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'men_with_bunny_ears_medium-light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_with_bunny_ears_medium-light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_with_bunny_ears_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_with_bunny_ears_medium-light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_with_bunny_ears_medium_dark_skin_tone': '\u{1F46F}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'men_with_bunny_ears_medium_dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_with_bunny_ears_medium_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_with_bunny_ears_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_with_bunny_ears_medium_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_with_bunny_ears_medium_light_skin_tone': '\u{1F46F}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'men_with_bunny_ears_medium_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_with_bunny_ears_medium_light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_with_bunny_ears_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_with_bunny_ears_medium_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_with_bunny_ears_medium_skin_tone': '\u{1F46F}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
-  'men_with_bunny_ears_medium_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_with_bunny_ears_medium_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_with_bunny_ears_medium_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_with_bunny_ears_medium_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_with_bunny_ears_medium_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_with_bunny_ears_medium_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_with_bunny_ears_dark_skin_tone':
+      '\u{1F46F}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
+  'men_with_bunny_ears_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_with_bunny_ears_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_with_bunny_ears_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_with_bunny_ears_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_with_bunny_ears_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_with_bunny_ears_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_with_bunny_ears_light_skin_tone':
+      '\u{1F46F}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
+  'men_with_bunny_ears_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_with_bunny_ears_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_with_bunny_ears_light_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_with_bunny_ears_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_with_bunny_ears_light_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_with_bunny_ears_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_with_bunny_ears_medium-dark_skin_tone':
+      '\u{1F46F}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'men_with_bunny_ears_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_with_bunny_ears_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_with_bunny_ears_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_with_bunny_ears_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_with_bunny_ears_medium-light_skin_tone':
+      '\u{1F46F}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'men_with_bunny_ears_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_with_bunny_ears_medium-light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_with_bunny_ears_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_with_bunny_ears_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_with_bunny_ears_medium_dark_skin_tone':
+      '\u{1F46F}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'men_with_bunny_ears_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_with_bunny_ears_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_with_bunny_ears_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_with_bunny_ears_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_with_bunny_ears_medium_light_skin_tone':
+      '\u{1F46F}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'men_with_bunny_ears_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_with_bunny_ears_medium_light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_with_bunny_ears_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_with_bunny_ears_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_with_bunny_ears_medium_skin_tone':
+      '\u{1F46F}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'men_with_bunny_ears_medium_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_with_bunny_ears_medium_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_with_bunny_ears_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_with_bunny_ears_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_with_bunny_ears_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_with_bunny_ears_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F468}\u{1F3FC}',
   'men_wrestling': '\u{1F93C}\u{200D}\u{2642}\u{FE0F}',
   'men_wrestling_dark_skin_tone': '\u{1F93C}\u{1F3FF}\u{200D}\u{2642}\u{FE0F}',
-  'men_wrestling_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_wrestling_dark_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_wrestling_dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_wrestling_dark_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_wrestling_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_wrestling_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_wrestling_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_wrestling_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_wrestling_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_wrestling_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_wrestling_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_wrestling_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
   'men_wrestling_light_skin_tone': '\u{1F93C}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
-  'men_wrestling_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_wrestling_light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_wrestling_light_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_wrestling_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_wrestling_light_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_wrestling_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_wrestling_medium-dark_skin_tone': '\u{1F93C}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'men_wrestling_medium-dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_wrestling_medium-dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_wrestling_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_wrestling_medium-dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_wrestling_medium-light_skin_tone': '\u{1F93C}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'men_wrestling_medium-light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_wrestling_medium-light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_wrestling_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_wrestling_medium-light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_wrestling_medium_dark_skin_tone': '\u{1F93C}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
-  'men_wrestling_medium_dark_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_wrestling_medium_dark_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_wrestling_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_wrestling_medium_dark_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_wrestling_medium_light_skin_tone': '\u{1F93C}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
-  'men_wrestling_medium_light_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_wrestling_medium_light_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_wrestling_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_wrestling_medium_light_skin_tone_medium_skin_tone': '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
-  'men_wrestling_medium_skin_tone': '\u{1F93C}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
-  'men_wrestling_medium_skin_tone_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
-  'men_wrestling_medium_skin_tone_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
-  'men_wrestling_medium_skin_tone_medium-dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_wrestling_medium_skin_tone_medium-light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
-  'men_wrestling_medium_skin_tone_medium_dark_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
-  'men_wrestling_medium_skin_tone_medium_light_skin_tone': '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_wrestling_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_wrestling_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_wrestling_light_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_wrestling_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_wrestling_light_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_wrestling_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_wrestling_medium-dark_skin_tone':
+      '\u{1F93C}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'men_wrestling_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_wrestling_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_wrestling_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_wrestling_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_wrestling_medium-light_skin_tone':
+      '\u{1F93C}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'men_wrestling_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_wrestling_medium-light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_wrestling_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_wrestling_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_wrestling_medium_dark_skin_tone':
+      '\u{1F93C}\u{1F3FE}\u{200D}\u{2642}\u{FE0F}',
+  'men_wrestling_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_wrestling_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_wrestling_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_wrestling_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_wrestling_medium_light_skin_tone':
+      '\u{1F93C}\u{1F3FC}\u{200D}\u{2642}\u{FE0F}',
+  'men_wrestling_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_wrestling_medium_light_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_wrestling_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_wrestling_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F468}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FD}',
+  'men_wrestling_medium_skin_tone':
+      '\u{1F93C}\u{1F3FD}\u{200D}\u{2642}\u{FE0F}',
+  'men_wrestling_medium_skin_tone_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FF}',
+  'men_wrestling_medium_skin_tone_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FB}',
+  'men_wrestling_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_wrestling_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
+  'men_wrestling_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FE}',
+  'men_wrestling_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F468}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F468}\u{1F3FC}',
   'mending_heart': '\u{2764}\u{FE0F}\u{200D}\u{1FA79}',
   'menorah': '\u{1F54E}',
   'menorah_with_nine_branches': '\u{1F54E}',
@@ -4217,9 +5074,11 @@ const emojiUnicodeAliases = <String, String>{
   'mermaid_dark_skin_tone': '\u{1F9DC}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'mermaid_light_skin_tone': '\u{1F9DC}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
   'mermaid_medium-dark_skin_tone': '\u{1F9DC}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'mermaid_medium-light_skin_tone': '\u{1F9DC}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'mermaid_medium-light_skin_tone':
+      '\u{1F9DC}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'mermaid_medium_dark_skin_tone': '\u{1F9DC}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'mermaid_medium_light_skin_tone': '\u{1F9DC}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'mermaid_medium_light_skin_tone':
+      '\u{1F9DC}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'mermaid_medium_skin_tone': '\u{1F9DC}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'merman': '\u{1F9DC}\u{200D}\u{2642}\u{FE0F}',
   'merman:t2': '\u{1F9DC}\u{1F3FB}\u{200D}\u{2642}\u{FE0F}',
@@ -4806,132 +5665,241 @@ const emojiUnicodeAliases = <String, String>{
   'pensive': '\u{1F614}',
   'pensive_face': '\u{1F614}',
   'people_holding_hands': '\u{1F9D1}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}',
-  'people_holding_hands_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_holding_hands_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_holding_hands_dark_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_dark_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'people_holding_hands_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_holding_hands_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_holding_hands_light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_light_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_light_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'people_holding_hands_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_medium-dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_holding_hands_medium-dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_holding_hands_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_medium-dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'people_holding_hands_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_medium-light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_holding_hands_medium-light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_holding_hands_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_medium-light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'people_holding_hands_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_medium_dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_holding_hands_medium_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_holding_hands_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_medium_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'people_holding_hands_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_medium_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_holding_hands_medium_light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_holding_hands_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_medium_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'people_holding_hands_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
-  'people_holding_hands_medium_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_holding_hands_medium_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_holding_hands_medium_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_medium_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_holding_hands_medium_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_holding_hands_medium_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_holding_hands_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_holding_hands_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_holding_hands_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_holding_hands_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_holding_hands_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_light_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_light_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_holding_hands_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_holding_hands_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_holding_hands_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_holding_hands_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_holding_hands_medium-light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_holding_hands_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_holding_hands_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_holding_hands_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_holding_hands_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_holding_hands_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_holding_hands_medium_light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_holding_hands_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_holding_hands_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_holding_hands_medium_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_holding_hands_medium_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_holding_hands_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_holding_hands_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_holding_hands_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F9D1}\u{1F3FC}',
   'people_hugging': '\u{1FAC2}',
   'people_with_bunny_ears': '\u{1F46F}',
   'people_with_bunny_ears_dark_skin_tone': '\u{1F46F}\u{1F3FF}',
-  'people_with_bunny_ears_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_with_bunny_ears_dark_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_with_bunny_ears_dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_with_bunny_ears_dark_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_with_bunny_ears_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_with_bunny_ears_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_with_bunny_ears_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_with_bunny_ears_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_with_bunny_ears_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_with_bunny_ears_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_with_bunny_ears_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_with_bunny_ears_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_with_bunny_ears_light_skin_tone': '\u{1F46F}\u{1F3FB}',
-  'people_with_bunny_ears_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_with_bunny_ears_light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_with_bunny_ears_light_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_with_bunny_ears_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_with_bunny_ears_light_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_with_bunny_ears_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_with_bunny_ears_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_with_bunny_ears_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_with_bunny_ears_light_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_with_bunny_ears_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_with_bunny_ears_light_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_with_bunny_ears_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_with_bunny_ears_medium-dark_skin_tone': '\u{1F46F}\u{1F3FE}',
-  'people_with_bunny_ears_medium-dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_with_bunny_ears_medium-dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_with_bunny_ears_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_with_bunny_ears_medium-dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_with_bunny_ears_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_with_bunny_ears_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_with_bunny_ears_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_with_bunny_ears_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_with_bunny_ears_medium-light_skin_tone': '\u{1F46F}\u{1F3FC}',
-  'people_with_bunny_ears_medium-light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_with_bunny_ears_medium-light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_with_bunny_ears_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_with_bunny_ears_medium-light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_with_bunny_ears_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_with_bunny_ears_medium-light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_with_bunny_ears_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_with_bunny_ears_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_with_bunny_ears_medium_dark_skin_tone': '\u{1F46F}\u{1F3FE}',
-  'people_with_bunny_ears_medium_dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_with_bunny_ears_medium_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_with_bunny_ears_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_with_bunny_ears_medium_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_with_bunny_ears_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_with_bunny_ears_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_with_bunny_ears_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_with_bunny_ears_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_with_bunny_ears_medium_light_skin_tone': '\u{1F46F}\u{1F3FC}',
-  'people_with_bunny_ears_medium_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_with_bunny_ears_medium_light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_with_bunny_ears_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_with_bunny_ears_medium_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_with_bunny_ears_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_with_bunny_ears_medium_light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_with_bunny_ears_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_with_bunny_ears_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_with_bunny_ears_medium_skin_tone': '\u{1F46F}\u{1F3FD}',
-  'people_with_bunny_ears_medium_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_with_bunny_ears_medium_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_with_bunny_ears_medium_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_with_bunny_ears_medium_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_with_bunny_ears_medium_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_with_bunny_ears_medium_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_with_bunny_ears_medium_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_with_bunny_ears_medium_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_with_bunny_ears_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_with_bunny_ears_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_with_bunny_ears_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_with_bunny_ears_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}',
   'people_wrestling': '\u{1F93C}',
   'people_wrestling_dark_skin_tone': '\u{1F93C}\u{1F3FF}',
-  'people_wrestling_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_wrestling_dark_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_wrestling_dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_wrestling_dark_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_wrestling_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_wrestling_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_wrestling_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_wrestling_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_wrestling_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_wrestling_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_wrestling_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_wrestling_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_wrestling_light_skin_tone': '\u{1F93C}\u{1F3FB}',
-  'people_wrestling_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_wrestling_light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_wrestling_light_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_wrestling_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_wrestling_light_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_wrestling_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_wrestling_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_wrestling_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_wrestling_light_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_wrestling_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_wrestling_light_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_wrestling_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_wrestling_medium-dark_skin_tone': '\u{1F93C}\u{1F3FE}',
-  'people_wrestling_medium-dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_wrestling_medium-dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_wrestling_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_wrestling_medium-dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_wrestling_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_wrestling_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_wrestling_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_wrestling_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_wrestling_medium-light_skin_tone': '\u{1F93C}\u{1F3FC}',
-  'people_wrestling_medium-light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_wrestling_medium-light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_wrestling_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_wrestling_medium-light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_wrestling_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_wrestling_medium-light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_wrestling_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_wrestling_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_wrestling_medium_dark_skin_tone': '\u{1F93C}\u{1F3FE}',
-  'people_wrestling_medium_dark_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_wrestling_medium_dark_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_wrestling_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_wrestling_medium_dark_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_wrestling_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_wrestling_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_wrestling_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_wrestling_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_wrestling_medium_light_skin_tone': '\u{1F93C}\u{1F3FC}',
-  'people_wrestling_medium_light_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_wrestling_medium_light_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_wrestling_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_wrestling_medium_light_skin_tone_medium_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
+  'people_wrestling_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_wrestling_medium_light_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_wrestling_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_wrestling_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FD}',
   'people_wrestling_medium_skin_tone': '\u{1F93C}\u{1F3FD}',
-  'people_wrestling_medium_skin_tone_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
-  'people_wrestling_medium_skin_tone_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
-  'people_wrestling_medium_skin_tone_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_wrestling_medium_skin_tone_medium-light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
-  'people_wrestling_medium_skin_tone_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
-  'people_wrestling_medium_skin_tone_medium_light_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_wrestling_medium_skin_tone_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FF}',
+  'people_wrestling_medium_skin_tone_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FB}',
+  'people_wrestling_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_wrestling_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
+  'people_wrestling_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FE}',
+  'people_wrestling_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F9D1}\u{1F3FC}',
   'performing_arts': '\u{1F3AD}',
   'permanent_paper_sign': '\u{267E}\u{FE0F}',
   'persevere': '\u{1F623}',
@@ -5016,10 +5984,14 @@ const emojiUnicodeAliases = <String, String>{
   'person_feeding_baby:t6': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F37C}',
   'person_feeding_baby_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F37C}',
   'person_feeding_baby_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F37C}',
-  'person_feeding_baby_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F37C}',
-  'person_feeding_baby_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F37C}',
-  'person_feeding_baby_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F37C}',
-  'person_feeding_baby_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F37C}',
+  'person_feeding_baby_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F37C}',
+  'person_feeding_baby_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F37C}',
+  'person_feeding_baby_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F37C}',
+  'person_feeding_baby_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F37C}',
   'person_feeding_baby_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F37C}',
   'person_fencing': '\u{1F93A}',
   'person_frowning': '\u{1F64D}',
@@ -5092,42 +6064,72 @@ const emojiUnicodeAliases = <String, String>{
   'person_in_manual_wheelchair:t4': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BD}',
   'person_in_manual_wheelchair:t5': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}',
   'person_in_manual_wheelchair:t6': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BD}',
-  'person_in_manual_wheelchair_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BD}',
-  'person_in_manual_wheelchair_facing_right': '\u{1F9D1}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_manual_wheelchair_facing_right_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_manual_wheelchair_facing_right_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_manual_wheelchair_facing_right_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_manual_wheelchair_facing_right_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_manual_wheelchair_facing_right_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_manual_wheelchair_facing_right_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_manual_wheelchair_facing_right_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_manual_wheelchair_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BD}',
-  'person_in_manual_wheelchair_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}',
-  'person_in_manual_wheelchair_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BD}',
-  'person_in_manual_wheelchair_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}',
-  'person_in_manual_wheelchair_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BD}',
-  'person_in_manual_wheelchair_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BD}',
+  'person_in_manual_wheelchair_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BD}',
+  'person_in_manual_wheelchair_facing_right':
+      '\u{1F9D1}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_manual_wheelchair_facing_right_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_manual_wheelchair_facing_right_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_manual_wheelchair_facing_right_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_manual_wheelchair_facing_right_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_manual_wheelchair_facing_right_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_manual_wheelchair_facing_right_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_manual_wheelchair_facing_right_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_manual_wheelchair_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BD}',
+  'person_in_manual_wheelchair_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}',
+  'person_in_manual_wheelchair_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BD}',
+  'person_in_manual_wheelchair_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BD}',
+  'person_in_manual_wheelchair_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BD}',
+  'person_in_manual_wheelchair_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BD}',
   'person_in_motorized_wheelchair': '\u{1F9D1}\u{200D}\u{1F9BC}',
   'person_in_motorized_wheelchair:t2': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BC}',
   'person_in_motorized_wheelchair:t3': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}',
   'person_in_motorized_wheelchair:t4': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BC}',
   'person_in_motorized_wheelchair:t5': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}',
   'person_in_motorized_wheelchair:t6': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BC}',
-  'person_in_motorized_wheelchair_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BC}',
-  'person_in_motorized_wheelchair_facing_right': '\u{1F9D1}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_motorized_wheelchair_facing_right_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_motorized_wheelchair_facing_right_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_motorized_wheelchair_facing_right_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_motorized_wheelchair_facing_right_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_motorized_wheelchair_facing_right_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_motorized_wheelchair_facing_right_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_motorized_wheelchair_facing_right_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_in_motorized_wheelchair_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BC}',
-  'person_in_motorized_wheelchair_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}',
-  'person_in_motorized_wheelchair_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}',
-  'person_in_motorized_wheelchair_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}',
-  'person_in_motorized_wheelchair_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}',
-  'person_in_motorized_wheelchair_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BC}',
+  'person_in_motorized_wheelchair_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BC}',
+  'person_in_motorized_wheelchair_facing_right':
+      '\u{1F9D1}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_motorized_wheelchair_facing_right_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_motorized_wheelchair_facing_right_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_motorized_wheelchair_facing_right_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_motorized_wheelchair_facing_right_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_motorized_wheelchair_facing_right_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_motorized_wheelchair_facing_right_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_motorized_wheelchair_facing_right_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_in_motorized_wheelchair_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9BC}',
+  'person_in_motorized_wheelchair_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}',
+  'person_in_motorized_wheelchair_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}',
+  'person_in_motorized_wheelchair_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9BC}',
+  'person_in_motorized_wheelchair_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9BC}',
+  'person_in_motorized_wheelchair_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9BC}',
   'person_in_steamy_room': '\u{1F9D6}',
   'person_in_steamy_room_dark_skin_tone': '\u{1F9D6}\u{1F3FF}',
   'person_in_steamy_room_light_skin_tone': '\u{1F9D6}\u{1F3FB}',
@@ -5168,13 +6170,20 @@ const emojiUnicodeAliases = <String, String>{
   'person_kneeling': '\u{1F9CE}',
   'person_kneeling_dark_skin_tone': '\u{1F9CE}\u{1F3FF}',
   'person_kneeling_facing_right': '\u{1F9CE}\u{200D}\u{27A1}\u{FE0F}',
-  'person_kneeling_facing_right_dark_skin_tone': '\u{1F9CE}\u{1F3FF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_kneeling_facing_right_light_skin_tone': '\u{1F9CE}\u{1F3FB}\u{200D}\u{27A1}\u{FE0F}',
-  'person_kneeling_facing_right_medium-dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
-  'person_kneeling_facing_right_medium-light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_kneeling_facing_right_medium_dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
-  'person_kneeling_facing_right_medium_light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_kneeling_facing_right_medium_skin_tone': '\u{1F9CE}\u{1F3FD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_kneeling_facing_right_dark_skin_tone':
+      '\u{1F9CE}\u{1F3FF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_kneeling_facing_right_light_skin_tone':
+      '\u{1F9CE}\u{1F3FB}\u{200D}\u{27A1}\u{FE0F}',
+  'person_kneeling_facing_right_medium-dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
+  'person_kneeling_facing_right_medium-light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_kneeling_facing_right_medium_dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
+  'person_kneeling_facing_right_medium_light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_kneeling_facing_right_medium_skin_tone':
+      '\u{1F9CE}\u{1F3FD}\u{200D}\u{27A1}\u{FE0F}',
   'person_kneeling_light_skin_tone': '\u{1F9CE}\u{1F3FB}',
   'person_kneeling_medium-dark_skin_tone': '\u{1F9CE}\u{1F3FE}',
   'person_kneeling_medium-light_skin_tone': '\u{1F9CE}\u{1F3FC}',
@@ -5200,30 +6209,42 @@ const emojiUnicodeAliases = <String, String>{
   'person_medium-dark_skin_tone_bald': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B2}',
   'person_medium-dark_skin_tone_beard': '\u{1F9D4}\u{1F3FE}',
   'person_medium-dark_skin_tone_blond_hair': '\u{1F471}\u{1F3FE}',
-  'person_medium-dark_skin_tone_curly_hair': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B1}',
-  'person_medium-dark_skin_tone_red_hair': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B0}',
-  'person_medium-dark_skin_tone_white_hair': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B3}',
+  'person_medium-dark_skin_tone_curly_hair':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B1}',
+  'person_medium-dark_skin_tone_red_hair':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B0}',
+  'person_medium-dark_skin_tone_white_hair':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B3}',
   'person_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}',
   'person_medium-light_skin_tone_bald': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B2}',
   'person_medium-light_skin_tone_beard': '\u{1F9D4}\u{1F3FC}',
   'person_medium-light_skin_tone_blond_hair': '\u{1F471}\u{1F3FC}',
-  'person_medium-light_skin_tone_curly_hair': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B1}',
-  'person_medium-light_skin_tone_red_hair': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B0}',
-  'person_medium-light_skin_tone_white_hair': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B3}',
+  'person_medium-light_skin_tone_curly_hair':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B1}',
+  'person_medium-light_skin_tone_red_hair':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B0}',
+  'person_medium-light_skin_tone_white_hair':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B3}',
   'person_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}',
   'person_medium_dark_skin_tone_bald': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B2}',
   'person_medium_dark_skin_tone_beard': '\u{1F9D4}\u{1F3FE}',
   'person_medium_dark_skin_tone_blond_hair': '\u{1F471}\u{1F3FE}',
-  'person_medium_dark_skin_tone_curly_hair': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B1}',
-  'person_medium_dark_skin_tone_red_hair': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B0}',
-  'person_medium_dark_skin_tone_white_hair': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B3}',
+  'person_medium_dark_skin_tone_curly_hair':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B1}',
+  'person_medium_dark_skin_tone_red_hair':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B0}',
+  'person_medium_dark_skin_tone_white_hair':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9B3}',
   'person_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}',
   'person_medium_light_skin_tone_bald': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B2}',
   'person_medium_light_skin_tone_beard': '\u{1F9D4}\u{1F3FC}',
   'person_medium_light_skin_tone_blond_hair': '\u{1F471}\u{1F3FC}',
-  'person_medium_light_skin_tone_curly_hair': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B1}',
-  'person_medium_light_skin_tone_red_hair': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B0}',
-  'person_medium_light_skin_tone_white_hair': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B3}',
+  'person_medium_light_skin_tone_curly_hair':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B1}',
+  'person_medium_light_skin_tone_red_hair':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B0}',
+  'person_medium_light_skin_tone_white_hair':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9B3}',
   'person_medium_skin_tone': '\u{1F9D1}\u{1F3FD}',
   'person_medium_skin_tone_bald': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9B2}',
   'person_medium_skin_tone_beard': '\u{1F9D4}\u{1F3FD}',
@@ -5289,13 +6310,20 @@ const emojiUnicodeAliases = <String, String>{
   'person_running': '\u{1F3C3}',
   'person_running_dark_skin_tone': '\u{1F3C3}\u{1F3FF}',
   'person_running_facing_right': '\u{1F3C3}\u{200D}\u{27A1}\u{FE0F}',
-  'person_running_facing_right_dark_skin_tone': '\u{1F3C3}\u{1F3FF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_running_facing_right_light_skin_tone': '\u{1F3C3}\u{1F3FB}\u{200D}\u{27A1}\u{FE0F}',
-  'person_running_facing_right_medium-dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
-  'person_running_facing_right_medium-light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_running_facing_right_medium_dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
-  'person_running_facing_right_medium_light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_running_facing_right_medium_skin_tone': '\u{1F3C3}\u{1F3FD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_running_facing_right_dark_skin_tone':
+      '\u{1F3C3}\u{1F3FF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_running_facing_right_light_skin_tone':
+      '\u{1F3C3}\u{1F3FB}\u{200D}\u{27A1}\u{FE0F}',
+  'person_running_facing_right_medium-dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
+  'person_running_facing_right_medium-light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_running_facing_right_medium_dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
+  'person_running_facing_right_medium_light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_running_facing_right_medium_skin_tone':
+      '\u{1F3C3}\u{1F3FD}\u{200D}\u{27A1}\u{FE0F}',
   'person_running_light_skin_tone': '\u{1F3C3}\u{1F3FB}',
   'person_running_medium-dark_skin_tone': '\u{1F3C3}\u{1F3FE}',
   'person_running_medium-light_skin_tone': '\u{1F3C3}\u{1F3FC}',
@@ -5353,13 +6381,20 @@ const emojiUnicodeAliases = <String, String>{
   'person_walking': '\u{1F6B6}',
   'person_walking_dark_skin_tone': '\u{1F6B6}\u{1F3FF}',
   'person_walking_facing_right': '\u{1F6B6}\u{200D}\u{27A1}\u{FE0F}',
-  'person_walking_facing_right_dark_skin_tone': '\u{1F6B6}\u{1F3FF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_walking_facing_right_light_skin_tone': '\u{1F6B6}\u{1F3FB}\u{200D}\u{27A1}\u{FE0F}',
-  'person_walking_facing_right_medium-dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
-  'person_walking_facing_right_medium-light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_walking_facing_right_medium_dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
-  'person_walking_facing_right_medium_light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
-  'person_walking_facing_right_medium_skin_tone': '\u{1F6B6}\u{1F3FD}\u{200D}\u{27A1}\u{FE0F}',
+  'person_walking_facing_right_dark_skin_tone':
+      '\u{1F6B6}\u{1F3FF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_walking_facing_right_light_skin_tone':
+      '\u{1F6B6}\u{1F3FB}\u{200D}\u{27A1}\u{FE0F}',
+  'person_walking_facing_right_medium-dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
+  'person_walking_facing_right_medium-light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_walking_facing_right_medium_dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{27A1}\u{FE0F}',
+  'person_walking_facing_right_medium_light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{27A1}\u{FE0F}',
+  'person_walking_facing_right_medium_skin_tone':
+      '\u{1F6B6}\u{1F3FD}\u{200D}\u{27A1}\u{FE0F}',
   'person_walking_light_skin_tone': '\u{1F6B6}\u{1F3FB}',
   'person_walking_medium-dark_skin_tone': '\u{1F6B6}\u{1F3FE}',
   'person_walking_medium-light_skin_tone': '\u{1F6B6}\u{1F3FC}',
@@ -5432,21 +6467,36 @@ const emojiUnicodeAliases = <String, String>{
   'person_with_veil_medium_light_skin_tone': '\u{1F470}\u{1F3FC}',
   'person_with_veil_medium_skin_tone': '\u{1F470}\u{1F3FD}',
   'person_with_white_cane': '\u{1F9D1}\u{200D}\u{1F9AF}',
-  'person_with_white_cane_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9AF}',
-  'person_with_white_cane_facing_right': '\u{1F9D1}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_with_white_cane_facing_right_dark_skin_tone': '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_with_white_cane_facing_right_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_with_white_cane_facing_right_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_with_white_cane_facing_right_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_with_white_cane_facing_right_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_with_white_cane_facing_right_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_with_white_cane_facing_right_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'person_with_white_cane_light_skin_tone': '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9AF}',
-  'person_with_white_cane_medium-dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9AF}',
-  'person_with_white_cane_medium-light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9AF}',
-  'person_with_white_cane_medium_dark_skin_tone': '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9AF}',
-  'person_with_white_cane_medium_light_skin_tone': '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9AF}',
-  'person_with_white_cane_medium_skin_tone': '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9AF}',
+  'person_with_white_cane_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9AF}',
+  'person_with_white_cane_facing_right':
+      '\u{1F9D1}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_with_white_cane_facing_right_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FF}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_with_white_cane_facing_right_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_with_white_cane_facing_right_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_with_white_cane_facing_right_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_with_white_cane_facing_right_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_with_white_cane_facing_right_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_with_white_cane_facing_right_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'person_with_white_cane_light_skin_tone':
+      '\u{1F9D1}\u{1F3FB}\u{200D}\u{1F9AF}',
+  'person_with_white_cane_medium-dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9AF}',
+  'person_with_white_cane_medium-light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9AF}',
+  'person_with_white_cane_medium_dark_skin_tone':
+      '\u{1F9D1}\u{1F3FE}\u{200D}\u{1F9AF}',
+  'person_with_white_cane_medium_light_skin_tone':
+      '\u{1F9D1}\u{1F3FC}\u{200D}\u{1F9AF}',
+  'person_with_white_cane_medium_skin_tone':
+      '\u{1F9D1}\u{1F3FD}\u{200D}\u{1F9AF}',
   'personal_computer': '\u{1F4BB}',
   'peru': '\u{1F1F5}\u{1F1EA}',
   'petri_dish': '\u{1F9EB}',
@@ -7101,46 +8151,80 @@ const emojiUnicodeAliases = <String, String>{
   'woman:t6': '\u{1F469}\u{1F3FF}',
   'woman_and_man_holding_hands': '\u{1F46B}',
   'woman_and_man_holding_hands_dark_skin_tone': '\u{1F46B}\u{1F3FF}',
-  'woman_and_man_holding_hands_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'woman_and_man_holding_hands_dark_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'woman_and_man_holding_hands_dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'woman_and_man_holding_hands_dark_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'woman_and_man_holding_hands_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'woman_and_man_holding_hands_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'woman_and_man_holding_hands_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'woman_and_man_holding_hands_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'woman_and_man_holding_hands_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'woman_and_man_holding_hands_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'woman_and_man_holding_hands_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'woman_and_man_holding_hands_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'woman_and_man_holding_hands_light_skin_tone': '\u{1F46B}\u{1F3FB}',
-  'woman_and_man_holding_hands_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'woman_and_man_holding_hands_light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'woman_and_man_holding_hands_light_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'woman_and_man_holding_hands_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'woman_and_man_holding_hands_light_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'woman_and_man_holding_hands_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'woman_and_man_holding_hands_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'woman_and_man_holding_hands_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'woman_and_man_holding_hands_light_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'woman_and_man_holding_hands_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'woman_and_man_holding_hands_light_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'woman_and_man_holding_hands_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'woman_and_man_holding_hands_medium-dark_skin_tone': '\u{1F46B}\u{1F3FE}',
-  'woman_and_man_holding_hands_medium-dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'woman_and_man_holding_hands_medium-dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'woman_and_man_holding_hands_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'woman_and_man_holding_hands_medium-dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'woman_and_man_holding_hands_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'woman_and_man_holding_hands_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'woman_and_man_holding_hands_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'woman_and_man_holding_hands_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'woman_and_man_holding_hands_medium-light_skin_tone': '\u{1F46B}\u{1F3FC}',
-  'woman_and_man_holding_hands_medium-light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'woman_and_man_holding_hands_medium-light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'woman_and_man_holding_hands_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'woman_and_man_holding_hands_medium-light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'woman_and_man_holding_hands_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'woman_and_man_holding_hands_medium-light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'woman_and_man_holding_hands_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'woman_and_man_holding_hands_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'woman_and_man_holding_hands_medium_dark_skin_tone': '\u{1F46B}\u{1F3FE}',
-  'woman_and_man_holding_hands_medium_dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'woman_and_man_holding_hands_medium_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'woman_and_man_holding_hands_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'woman_and_man_holding_hands_medium_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'woman_and_man_holding_hands_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'woman_and_man_holding_hands_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'woman_and_man_holding_hands_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'woman_and_man_holding_hands_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'woman_and_man_holding_hands_medium_light_skin_tone': '\u{1F46B}\u{1F3FC}',
-  'woman_and_man_holding_hands_medium_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'woman_and_man_holding_hands_medium_light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'woman_and_man_holding_hands_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'woman_and_man_holding_hands_medium_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
+  'woman_and_man_holding_hands_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'woman_and_man_holding_hands_medium_light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'woman_and_man_holding_hands_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'woman_and_man_holding_hands_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FD}',
   'woman_and_man_holding_hands_medium_skin_tone': '\u{1F46B}\u{1F3FD}',
-  'woman_and_man_holding_hands_medium_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
-  'woman_and_man_holding_hands_medium_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
-  'woman_and_man_holding_hands_medium_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'woman_and_man_holding_hands_medium_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
-  'woman_and_man_holding_hands_medium_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
-  'woman_and_man_holding_hands_medium_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'woman_and_man_holding_hands_medium_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FF}',
+  'woman_and_man_holding_hands_medium_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FB}',
+  'woman_and_man_holding_hands_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'woman_and_man_holding_hands_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
+  'woman_and_man_holding_hands_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FE}',
+  'woman_and_man_holding_hands_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F468}\u{1F3FC}',
   'woman_artist': '\u{1F469}\u{200D}\u{1F3A8}',
   'woman_artist:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F3A8}',
   'woman_artist:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F3A8}',
@@ -7162,10 +8246,14 @@ const emojiUnicodeAliases = <String, String>{
   'woman_astronaut:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F680}',
   'woman_astronaut_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F680}',
   'woman_astronaut_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F680}',
-  'woman_astronaut_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F680}',
-  'woman_astronaut_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F680}',
-  'woman_astronaut_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F680}',
-  'woman_astronaut_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F680}',
+  'woman_astronaut_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F680}',
+  'woman_astronaut_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F680}',
+  'woman_astronaut_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F680}',
+  'woman_astronaut_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F680}',
   'woman_astronaut_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F680}',
   'woman_bald': '\u{1F469}\u{200D}\u{1F9B2}',
   'woman_beard': '\u{1F9D4}\u{200D}\u{2640}\u{FE0F}',
@@ -7177,27 +8265,42 @@ const emojiUnicodeAliases = <String, String>{
   'woman_biking': '\u{1F6B4}\u{200D}\u{2640}\u{FE0F}',
   'woman_biking_dark_skin_tone': '\u{1F6B4}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_biking_light_skin_tone': '\u{1F6B4}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_biking_medium-dark_skin_tone': '\u{1F6B4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_biking_medium-light_skin_tone': '\u{1F6B4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_biking_medium_dark_skin_tone': '\u{1F6B4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_biking_medium_light_skin_tone': '\u{1F6B4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_biking_medium-dark_skin_tone':
+      '\u{1F6B4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_biking_medium-light_skin_tone':
+      '\u{1F6B4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_biking_medium_dark_skin_tone':
+      '\u{1F6B4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_biking_medium_light_skin_tone':
+      '\u{1F6B4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'woman_biking_medium_skin_tone': '\u{1F6B4}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_blond_hair': '\u{1F471}\u{200D}\u{2640}\u{FE0F}',
   'woman_bouncing_ball': '\u{26F9}\u{FE0F}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bouncing_ball_dark_skin_tone': '\u{26F9}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bouncing_ball_light_skin_tone': '\u{26F9}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bouncing_ball_medium-dark_skin_tone': '\u{26F9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bouncing_ball_medium-light_skin_tone': '\u{26F9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bouncing_ball_medium_dark_skin_tone': '\u{26F9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bouncing_ball_medium_light_skin_tone': '\u{26F9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bouncing_ball_medium_skin_tone': '\u{26F9}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bouncing_ball_dark_skin_tone':
+      '\u{26F9}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bouncing_ball_light_skin_tone':
+      '\u{26F9}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bouncing_ball_medium-dark_skin_tone':
+      '\u{26F9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bouncing_ball_medium-light_skin_tone':
+      '\u{26F9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bouncing_ball_medium_dark_skin_tone':
+      '\u{26F9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bouncing_ball_medium_light_skin_tone':
+      '\u{26F9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bouncing_ball_medium_skin_tone':
+      '\u{26F9}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_bowing': '\u{1F647}\u{200D}\u{2640}\u{FE0F}',
   'woman_bowing_dark_skin_tone': '\u{1F647}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_bowing_light_skin_tone': '\u{1F647}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bowing_medium-dark_skin_tone': '\u{1F647}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bowing_medium-light_skin_tone': '\u{1F647}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bowing_medium_dark_skin_tone': '\u{1F647}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_bowing_medium_light_skin_tone': '\u{1F647}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bowing_medium-dark_skin_tone':
+      '\u{1F647}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bowing_medium-light_skin_tone':
+      '\u{1F647}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bowing_medium_dark_skin_tone':
+      '\u{1F647}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_bowing_medium_light_skin_tone':
+      '\u{1F647}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'woman_bowing_medium_skin_tone': '\u{1F647}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_cartwheeling': '\u{1F938}\u{200D}\u{2640}\u{FE0F}',
   'woman_cartwheeling:t2': '\u{1F938}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
@@ -7205,29 +8308,49 @@ const emojiUnicodeAliases = <String, String>{
   'woman_cartwheeling:t4': '\u{1F938}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_cartwheeling:t5': '\u{1F938}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
   'woman_cartwheeling:t6': '\u{1F938}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_cartwheeling_dark_skin_tone': '\u{1F938}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_cartwheeling_light_skin_tone': '\u{1F938}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_cartwheeling_medium-dark_skin_tone': '\u{1F938}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_cartwheeling_medium-light_skin_tone': '\u{1F938}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_cartwheeling_medium_dark_skin_tone': '\u{1F938}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_cartwheeling_medium_light_skin_tone': '\u{1F938}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_cartwheeling_medium_skin_tone': '\u{1F938}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_cartwheeling_dark_skin_tone':
+      '\u{1F938}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_cartwheeling_light_skin_tone':
+      '\u{1F938}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_cartwheeling_medium-dark_skin_tone':
+      '\u{1F938}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_cartwheeling_medium-light_skin_tone':
+      '\u{1F938}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_cartwheeling_medium_dark_skin_tone':
+      '\u{1F938}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_cartwheeling_medium_light_skin_tone':
+      '\u{1F938}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_cartwheeling_medium_skin_tone':
+      '\u{1F938}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_climbing': '\u{1F9D7}\u{200D}\u{2640}\u{FE0F}',
   'woman_climbing_dark_skin_tone': '\u{1F9D7}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_climbing_light_skin_tone': '\u{1F9D7}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_climbing_medium-dark_skin_tone': '\u{1F9D7}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_climbing_medium-light_skin_tone': '\u{1F9D7}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_climbing_medium_dark_skin_tone': '\u{1F9D7}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_climbing_medium_light_skin_tone': '\u{1F9D7}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_climbing_medium_skin_tone': '\u{1F9D7}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_climbing_light_skin_tone':
+      '\u{1F9D7}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_climbing_medium-dark_skin_tone':
+      '\u{1F9D7}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_climbing_medium-light_skin_tone':
+      '\u{1F9D7}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_climbing_medium_dark_skin_tone':
+      '\u{1F9D7}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_climbing_medium_light_skin_tone':
+      '\u{1F9D7}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_climbing_medium_skin_tone':
+      '\u{1F9D7}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_construction_worker': '\u{1F477}\u{200D}\u{2640}\u{FE0F}',
-  'woman_construction_worker_dark_skin_tone': '\u{1F477}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_construction_worker_light_skin_tone': '\u{1F477}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_construction_worker_medium-dark_skin_tone': '\u{1F477}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_construction_worker_medium-light_skin_tone': '\u{1F477}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_construction_worker_medium_dark_skin_tone': '\u{1F477}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_construction_worker_medium_light_skin_tone': '\u{1F477}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_construction_worker_medium_skin_tone': '\u{1F477}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_construction_worker_dark_skin_tone':
+      '\u{1F477}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_construction_worker_light_skin_tone':
+      '\u{1F477}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_construction_worker_medium-dark_skin_tone':
+      '\u{1F477}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_construction_worker_medium-light_skin_tone':
+      '\u{1F477}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_construction_worker_medium_dark_skin_tone':
+      '\u{1F477}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_construction_worker_medium_light_skin_tone':
+      '\u{1F477}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_construction_worker_medium_skin_tone':
+      '\u{1F477}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_cook': '\u{1F469}\u{200D}\u{1F373}',
   'woman_cook:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F373}',
   'woman_cook:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F373}',
@@ -7258,25 +8381,37 @@ const emojiUnicodeAliases = <String, String>{
   'woman_dark_skin_tone': '\u{1F469}\u{1F3FF}',
   'woman_dark_skin_tone_bald': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9B2}',
   'woman_dark_skin_tone_beard': '\u{1F9D4}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_dark_skin_tone_blond_hair': '\u{1F471}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_dark_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_dark_skin_tone_curly_hair': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9B1}',
   'woman_dark_skin_tone_red_hair': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9B0}',
   'woman_dark_skin_tone_white_hair': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9B3}',
   'woman_detective': '\u{1F575}\u{FE0F}\u{200D}\u{2640}\u{FE0F}',
-  'woman_detective_dark_skin_tone': '\u{1F575}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_detective_light_skin_tone': '\u{1F575}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_detective_medium-dark_skin_tone': '\u{1F575}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_detective_medium-light_skin_tone': '\u{1F575}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_detective_medium_dark_skin_tone': '\u{1F575}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_detective_medium_light_skin_tone': '\u{1F575}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_detective_medium_skin_tone': '\u{1F575}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_detective_dark_skin_tone':
+      '\u{1F575}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_detective_light_skin_tone':
+      '\u{1F575}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_detective_medium-dark_skin_tone':
+      '\u{1F575}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_detective_medium-light_skin_tone':
+      '\u{1F575}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_detective_medium_dark_skin_tone':
+      '\u{1F575}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_detective_medium_light_skin_tone':
+      '\u{1F575}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_detective_medium_skin_tone':
+      '\u{1F575}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_elf': '\u{1F9DD}\u{200D}\u{2640}\u{FE0F}',
   'woman_elf_dark_skin_tone': '\u{1F9DD}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_elf_light_skin_tone': '\u{1F9DD}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_elf_medium-dark_skin_tone': '\u{1F9DD}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_elf_medium-light_skin_tone': '\u{1F9DD}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_elf_medium_dark_skin_tone': '\u{1F9DD}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_elf_medium_light_skin_tone': '\u{1F9DD}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_elf_medium-dark_skin_tone':
+      '\u{1F9DD}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_elf_medium-light_skin_tone':
+      '\u{1F9DD}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_elf_medium_dark_skin_tone':
+      '\u{1F9DD}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_elf_medium_light_skin_tone':
+      '\u{1F9DD}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'woman_elf_medium_skin_tone': '\u{1F9DD}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_facepalming': '\u{1F926}\u{200D}\u{2640}\u{FE0F}',
   'woman_facepalming:t2': '\u{1F926}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
@@ -7284,13 +8419,20 @@ const emojiUnicodeAliases = <String, String>{
   'woman_facepalming:t4': '\u{1F926}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_facepalming:t5': '\u{1F926}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
   'woman_facepalming:t6': '\u{1F926}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_facepalming_dark_skin_tone': '\u{1F926}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_facepalming_light_skin_tone': '\u{1F926}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_facepalming_medium-dark_skin_tone': '\u{1F926}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_facepalming_medium-light_skin_tone': '\u{1F926}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_facepalming_medium_dark_skin_tone': '\u{1F926}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_facepalming_medium_light_skin_tone': '\u{1F926}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_facepalming_medium_skin_tone': '\u{1F926}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_facepalming_dark_skin_tone':
+      '\u{1F926}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_facepalming_light_skin_tone':
+      '\u{1F926}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_facepalming_medium-dark_skin_tone':
+      '\u{1F926}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_facepalming_medium-light_skin_tone':
+      '\u{1F926}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_facepalming_medium_dark_skin_tone':
+      '\u{1F926}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_facepalming_medium_light_skin_tone':
+      '\u{1F926}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_facepalming_medium_skin_tone':
+      '\u{1F926}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_factory_worker': '\u{1F469}\u{200D}\u{1F3ED}',
   'woman_factory_worker:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F3ED}',
   'woman_factory_worker:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F3ED}',
@@ -7299,18 +8441,27 @@ const emojiUnicodeAliases = <String, String>{
   'woman_factory_worker:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F3ED}',
   'woman_factory_worker_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F3ED}',
   'woman_factory_worker_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F3ED}',
-  'woman_factory_worker_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F3ED}',
-  'woman_factory_worker_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F3ED}',
-  'woman_factory_worker_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F3ED}',
-  'woman_factory_worker_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F3ED}',
-  'woman_factory_worker_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F3ED}',
+  'woman_factory_worker_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F3ED}',
+  'woman_factory_worker_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F3ED}',
+  'woman_factory_worker_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F3ED}',
+  'woman_factory_worker_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F3ED}',
+  'woman_factory_worker_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F3ED}',
   'woman_fairy': '\u{1F9DA}\u{200D}\u{2640}\u{FE0F}',
   'woman_fairy_dark_skin_tone': '\u{1F9DA}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_fairy_light_skin_tone': '\u{1F9DA}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_fairy_medium-dark_skin_tone': '\u{1F9DA}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_fairy_medium-light_skin_tone': '\u{1F9DA}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_fairy_medium_dark_skin_tone': '\u{1F9DA}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_fairy_medium_light_skin_tone': '\u{1F9DA}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_fairy_medium-dark_skin_tone':
+      '\u{1F9DA}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_fairy_medium-light_skin_tone':
+      '\u{1F9DA}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_fairy_medium_dark_skin_tone':
+      '\u{1F9DA}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_fairy_medium_light_skin_tone':
+      '\u{1F9DA}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'woman_fairy_medium_skin_tone': '\u{1F9DA}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_farmer': '\u{1F469}\u{200D}\u{1F33E}',
   'woman_farmer:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F33E}',
@@ -7333,10 +8484,14 @@ const emojiUnicodeAliases = <String, String>{
   'woman_feeding_baby:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F37C}',
   'woman_feeding_baby_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F37C}',
   'woman_feeding_baby_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F37C}',
-  'woman_feeding_baby_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F37C}',
-  'woman_feeding_baby_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F37C}',
-  'woman_feeding_baby_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F37C}',
-  'woman_feeding_baby_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F37C}',
+  'woman_feeding_baby_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F37C}',
+  'woman_feeding_baby_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F37C}',
+  'woman_feeding_baby_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F37C}',
+  'woman_feeding_baby_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F37C}',
   'woman_feeding_baby_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F37C}',
   'woman_firefighter': '\u{1F469}\u{200D}\u{1F692}',
   'woman_firefighter:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F692}',
@@ -7346,67 +8501,114 @@ const emojiUnicodeAliases = <String, String>{
   'woman_firefighter:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F692}',
   'woman_firefighter_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F692}',
   'woman_firefighter_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F692}',
-  'woman_firefighter_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F692}',
-  'woman_firefighter_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F692}',
-  'woman_firefighter_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F692}',
-  'woman_firefighter_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F692}',
+  'woman_firefighter_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F692}',
+  'woman_firefighter_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F692}',
+  'woman_firefighter_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F692}',
+  'woman_firefighter_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F692}',
   'woman_firefighter_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F692}',
   'woman_frowning': '\u{1F64D}\u{200D}\u{2640}\u{FE0F}',
   'woman_frowning_dark_skin_tone': '\u{1F64D}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_frowning_light_skin_tone': '\u{1F64D}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_frowning_medium-dark_skin_tone': '\u{1F64D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_frowning_medium-light_skin_tone': '\u{1F64D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_frowning_medium_dark_skin_tone': '\u{1F64D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_frowning_medium_light_skin_tone': '\u{1F64D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_frowning_medium_skin_tone': '\u{1F64D}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_frowning_light_skin_tone':
+      '\u{1F64D}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_frowning_medium-dark_skin_tone':
+      '\u{1F64D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_frowning_medium-light_skin_tone':
+      '\u{1F64D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_frowning_medium_dark_skin_tone':
+      '\u{1F64D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_frowning_medium_light_skin_tone':
+      '\u{1F64D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_frowning_medium_skin_tone':
+      '\u{1F64D}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_genie': '\u{1F9DE}\u{200D}\u{2640}\u{FE0F}',
   'woman_gesturing_no': '\u{1F645}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_no_dark_skin_tone': '\u{1F645}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_no_light_skin_tone': '\u{1F645}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_no_medium-dark_skin_tone': '\u{1F645}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_no_medium-light_skin_tone': '\u{1F645}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_no_medium_dark_skin_tone': '\u{1F645}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_no_medium_light_skin_tone': '\u{1F645}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_no_medium_skin_tone': '\u{1F645}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_no_dark_skin_tone':
+      '\u{1F645}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_no_light_skin_tone':
+      '\u{1F645}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_no_medium-dark_skin_tone':
+      '\u{1F645}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_no_medium-light_skin_tone':
+      '\u{1F645}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_no_medium_dark_skin_tone':
+      '\u{1F645}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_no_medium_light_skin_tone':
+      '\u{1F645}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_no_medium_skin_tone':
+      '\u{1F645}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_gesturing_ok': '\u{1F646}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_ok_dark_skin_tone': '\u{1F646}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_ok_light_skin_tone': '\u{1F646}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_ok_medium-dark_skin_tone': '\u{1F646}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_ok_medium-light_skin_tone': '\u{1F646}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_ok_medium_dark_skin_tone': '\u{1F646}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_ok_medium_light_skin_tone': '\u{1F646}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_gesturing_ok_medium_skin_tone': '\u{1F646}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_ok_dark_skin_tone':
+      '\u{1F646}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_ok_light_skin_tone':
+      '\u{1F646}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_ok_medium-dark_skin_tone':
+      '\u{1F646}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_ok_medium-light_skin_tone':
+      '\u{1F646}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_ok_medium_dark_skin_tone':
+      '\u{1F646}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_ok_medium_light_skin_tone':
+      '\u{1F646}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_gesturing_ok_medium_skin_tone':
+      '\u{1F646}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_getting_haircut': '\u{1F487}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_haircut_dark_skin_tone': '\u{1F487}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_haircut_light_skin_tone': '\u{1F487}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_haircut_medium-dark_skin_tone': '\u{1F487}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_haircut_medium-light_skin_tone': '\u{1F487}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_haircut_medium_dark_skin_tone': '\u{1F487}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_haircut_medium_light_skin_tone': '\u{1F487}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_haircut_medium_skin_tone': '\u{1F487}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_haircut_dark_skin_tone':
+      '\u{1F487}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_haircut_light_skin_tone':
+      '\u{1F487}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_haircut_medium-dark_skin_tone':
+      '\u{1F487}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_haircut_medium-light_skin_tone':
+      '\u{1F487}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_haircut_medium_dark_skin_tone':
+      '\u{1F487}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_haircut_medium_light_skin_tone':
+      '\u{1F487}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_haircut_medium_skin_tone':
+      '\u{1F487}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_getting_massage': '\u{1F486}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_massage_dark_skin_tone': '\u{1F486}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_massage_light_skin_tone': '\u{1F486}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_massage_medium-dark_skin_tone': '\u{1F486}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_massage_medium-light_skin_tone': '\u{1F486}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_massage_medium_dark_skin_tone': '\u{1F486}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_massage_medium_light_skin_tone': '\u{1F486}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_getting_massage_medium_skin_tone': '\u{1F486}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_massage_dark_skin_tone':
+      '\u{1F486}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_massage_light_skin_tone':
+      '\u{1F486}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_massage_medium-dark_skin_tone':
+      '\u{1F486}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_massage_medium-light_skin_tone':
+      '\u{1F486}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_massage_medium_dark_skin_tone':
+      '\u{1F486}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_massage_medium_light_skin_tone':
+      '\u{1F486}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_getting_massage_medium_skin_tone':
+      '\u{1F486}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_golfing': '\u{1F3CC}\u{FE0F}\u{200D}\u{2640}\u{FE0F}',
   'woman_golfing_dark_skin_tone': '\u{1F3CC}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_golfing_light_skin_tone': '\u{1F3CC}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_golfing_medium-dark_skin_tone': '\u{1F3CC}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_golfing_medium-light_skin_tone': '\u{1F3CC}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_golfing_medium_dark_skin_tone': '\u{1F3CC}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_golfing_medium_light_skin_tone': '\u{1F3CC}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_golfing_medium_skin_tone': '\u{1F3CC}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_golfing_medium-dark_skin_tone':
+      '\u{1F3CC}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_golfing_medium-light_skin_tone':
+      '\u{1F3CC}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_golfing_medium_dark_skin_tone':
+      '\u{1F3CC}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_golfing_medium_light_skin_tone':
+      '\u{1F3CC}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_golfing_medium_skin_tone':
+      '\u{1F3CC}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_guard': '\u{1F482}\u{200D}\u{2640}\u{FE0F}',
   'woman_guard_dark_skin_tone': '\u{1F482}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_guard_light_skin_tone': '\u{1F482}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_guard_medium-dark_skin_tone': '\u{1F482}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_guard_medium-light_skin_tone': '\u{1F482}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_guard_medium_dark_skin_tone': '\u{1F482}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_guard_medium_light_skin_tone': '\u{1F482}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_guard_medium-dark_skin_tone':
+      '\u{1F482}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_guard_medium-light_skin_tone':
+      '\u{1F482}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_guard_medium_dark_skin_tone':
+      '\u{1F482}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_guard_medium_light_skin_tone':
+      '\u{1F482}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'woman_guard_medium_skin_tone': '\u{1F482}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_health_worker': '\u{1F469}\u{200D}\u{2695}\u{FE0F}',
   'woman_health_worker:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{2695}\u{FE0F}',
@@ -7414,84 +8616,142 @@ const emojiUnicodeAliases = <String, String>{
   'woman_health_worker:t4': '\u{1F469}\u{1F3FD}\u{200D}\u{2695}\u{FE0F}',
   'woman_health_worker:t5': '\u{1F469}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
   'woman_health_worker:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{2695}\u{FE0F}',
-  'woman_health_worker_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2695}\u{FE0F}',
-  'woman_health_worker_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2695}\u{FE0F}',
-  'woman_health_worker_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
-  'woman_health_worker_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
-  'woman_health_worker_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
-  'woman_health_worker_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
-  'woman_health_worker_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2695}\u{FE0F}',
+  'woman_health_worker_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{2695}\u{FE0F}',
+  'woman_health_worker_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{2695}\u{FE0F}',
+  'woman_health_worker_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
+  'woman_health_worker_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
+  'woman_health_worker_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2695}\u{FE0F}',
+  'woman_health_worker_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2695}\u{FE0F}',
+  'woman_health_worker_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{2695}\u{FE0F}',
   'woman_in_lotus_position': '\u{1F9D8}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_lotus_position_dark_skin_tone': '\u{1F9D8}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_lotus_position_light_skin_tone': '\u{1F9D8}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_lotus_position_medium-dark_skin_tone': '\u{1F9D8}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_lotus_position_medium-light_skin_tone': '\u{1F9D8}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_lotus_position_medium_dark_skin_tone': '\u{1F9D8}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_lotus_position_medium_light_skin_tone': '\u{1F9D8}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_lotus_position_medium_skin_tone': '\u{1F9D8}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_lotus_position_dark_skin_tone':
+      '\u{1F9D8}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_lotus_position_light_skin_tone':
+      '\u{1F9D8}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_lotus_position_medium-dark_skin_tone':
+      '\u{1F9D8}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_lotus_position_medium-light_skin_tone':
+      '\u{1F9D8}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_lotus_position_medium_dark_skin_tone':
+      '\u{1F9D8}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_lotus_position_medium_light_skin_tone':
+      '\u{1F9D8}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_lotus_position_medium_skin_tone':
+      '\u{1F9D8}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_in_manual_wheelchair': '\u{1F469}\u{200D}\u{1F9BD}',
   'woman_in_manual_wheelchair:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BD}',
   'woman_in_manual_wheelchair:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}',
   'woman_in_manual_wheelchair:t4': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BD}',
   'woman_in_manual_wheelchair:t5': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}',
   'woman_in_manual_wheelchair:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BD}',
-  'woman_in_manual_wheelchair_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BD}',
-  'woman_in_manual_wheelchair_facing_right': '\u{1F469}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_manual_wheelchair_facing_right_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_manual_wheelchair_facing_right_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_manual_wheelchair_facing_right_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_manual_wheelchair_facing_right_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_manual_wheelchair_facing_right_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_manual_wheelchair_facing_right_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_manual_wheelchair_facing_right_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_manual_wheelchair_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BD}',
-  'woman_in_manual_wheelchair_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}',
-  'woman_in_manual_wheelchair_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}',
-  'woman_in_manual_wheelchair_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}',
-  'woman_in_manual_wheelchair_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}',
-  'woman_in_manual_wheelchair_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BD}',
+  'woman_in_manual_wheelchair_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BD}',
+  'woman_in_manual_wheelchair_facing_right':
+      '\u{1F469}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_manual_wheelchair_facing_right_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_manual_wheelchair_facing_right_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_manual_wheelchair_facing_right_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_manual_wheelchair_facing_right_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_manual_wheelchair_facing_right_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_manual_wheelchair_facing_right_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_manual_wheelchair_facing_right_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BD}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_manual_wheelchair_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BD}',
+  'woman_in_manual_wheelchair_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}',
+  'woman_in_manual_wheelchair_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}',
+  'woman_in_manual_wheelchair_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BD}',
+  'woman_in_manual_wheelchair_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BD}',
+  'woman_in_manual_wheelchair_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BD}',
   'woman_in_motorized_wheelchair': '\u{1F469}\u{200D}\u{1F9BC}',
   'woman_in_motorized_wheelchair:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BC}',
   'woman_in_motorized_wheelchair:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}',
   'woman_in_motorized_wheelchair:t4': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BC}',
   'woman_in_motorized_wheelchair:t5': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}',
   'woman_in_motorized_wheelchair:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BC}',
-  'woman_in_motorized_wheelchair_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BC}',
-  'woman_in_motorized_wheelchair_facing_right': '\u{1F469}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_motorized_wheelchair_facing_right_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_motorized_wheelchair_facing_right_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_motorized_wheelchair_facing_right_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_motorized_wheelchair_facing_right_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_motorized_wheelchair_facing_right_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_motorized_wheelchair_facing_right_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_motorized_wheelchair_facing_right_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_in_motorized_wheelchair_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BC}',
-  'woman_in_motorized_wheelchair_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}',
-  'woman_in_motorized_wheelchair_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}',
-  'woman_in_motorized_wheelchair_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}',
-  'woman_in_motorized_wheelchair_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}',
-  'woman_in_motorized_wheelchair_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BC}',
+  'woman_in_motorized_wheelchair_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BC}',
+  'woman_in_motorized_wheelchair_facing_right':
+      '\u{1F469}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_motorized_wheelchair_facing_right_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_motorized_wheelchair_facing_right_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_motorized_wheelchair_facing_right_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_motorized_wheelchair_facing_right_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_motorized_wheelchair_facing_right_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_motorized_wheelchair_facing_right_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_motorized_wheelchair_facing_right_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BC}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_in_motorized_wheelchair_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F9BC}',
+  'woman_in_motorized_wheelchair_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}',
+  'woman_in_motorized_wheelchair_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}',
+  'woman_in_motorized_wheelchair_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9BC}',
+  'woman_in_motorized_wheelchair_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9BC}',
+  'woman_in_motorized_wheelchair_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F9BC}',
   'woman_in_steamy_room': '\u{1F9D6}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_steamy_room_dark_skin_tone': '\u{1F9D6}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_steamy_room_light_skin_tone': '\u{1F9D6}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_steamy_room_medium-dark_skin_tone': '\u{1F9D6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_steamy_room_medium-light_skin_tone': '\u{1F9D6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_steamy_room_medium_dark_skin_tone': '\u{1F9D6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_steamy_room_medium_light_skin_tone': '\u{1F9D6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_steamy_room_medium_skin_tone': '\u{1F9D6}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_steamy_room_dark_skin_tone':
+      '\u{1F9D6}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_steamy_room_light_skin_tone':
+      '\u{1F9D6}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_steamy_room_medium-dark_skin_tone':
+      '\u{1F9D6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_steamy_room_medium-light_skin_tone':
+      '\u{1F9D6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_steamy_room_medium_dark_skin_tone':
+      '\u{1F9D6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_steamy_room_medium_light_skin_tone':
+      '\u{1F9D6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_steamy_room_medium_skin_tone':
+      '\u{1F9D6}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_in_tuxedo': '\u{1F935}\u{200D}\u{2640}\u{FE0F}',
   'woman_in_tuxedo:t2': '\u{1F935}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
   'woman_in_tuxedo:t3': '\u{1F935}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'woman_in_tuxedo:t4': '\u{1F935}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_in_tuxedo:t5': '\u{1F935}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
   'woman_in_tuxedo:t6': '\u{1F935}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_tuxedo_dark_skin_tone': '\u{1F935}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_tuxedo_light_skin_tone': '\u{1F935}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_tuxedo_medium-dark_skin_tone': '\u{1F935}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_tuxedo_medium-light_skin_tone': '\u{1F935}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_tuxedo_medium_dark_skin_tone': '\u{1F935}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_tuxedo_medium_light_skin_tone': '\u{1F935}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_in_tuxedo_medium_skin_tone': '\u{1F935}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_tuxedo_dark_skin_tone':
+      '\u{1F935}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_tuxedo_light_skin_tone':
+      '\u{1F935}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_tuxedo_medium-dark_skin_tone':
+      '\u{1F935}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_tuxedo_medium-light_skin_tone':
+      '\u{1F935}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_tuxedo_medium_dark_skin_tone':
+      '\u{1F935}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_tuxedo_medium_light_skin_tone':
+      '\u{1F935}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_in_tuxedo_medium_skin_tone':
+      '\u{1F935}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_judge': '\u{1F469}\u{200D}\u{2696}\u{FE0F}',
   'woman_judge:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{2696}\u{FE0F}',
   'woman_judge:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
@@ -7500,10 +8760,14 @@ const emojiUnicodeAliases = <String, String>{
   'woman_judge:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{2696}\u{FE0F}',
   'woman_judge_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2696}\u{FE0F}',
   'woman_judge_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2696}\u{FE0F}',
-  'woman_judge_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2696}\u{FE0F}',
-  'woman_judge_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
-  'woman_judge_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2696}\u{FE0F}',
-  'woman_judge_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
+  'woman_judge_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2696}\u{FE0F}',
+  'woman_judge_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
+  'woman_judge_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2696}\u{FE0F}',
+  'woman_judge_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2696}\u{FE0F}',
   'woman_judge_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2696}\u{FE0F}',
   'woman_juggling': '\u{1F939}\u{200D}\u{2640}\u{FE0F}',
   'woman_juggling:t2': '\u{1F939}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
@@ -7512,50 +8776,82 @@ const emojiUnicodeAliases = <String, String>{
   'woman_juggling:t5': '\u{1F939}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
   'woman_juggling:t6': '\u{1F939}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_juggling_dark_skin_tone': '\u{1F939}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_juggling_light_skin_tone': '\u{1F939}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_juggling_medium-dark_skin_tone': '\u{1F939}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_juggling_medium-light_skin_tone': '\u{1F939}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_juggling_medium_dark_skin_tone': '\u{1F939}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_juggling_medium_light_skin_tone': '\u{1F939}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_juggling_medium_skin_tone': '\u{1F939}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_juggling_light_skin_tone':
+      '\u{1F939}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_juggling_medium-dark_skin_tone':
+      '\u{1F939}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_juggling_medium-light_skin_tone':
+      '\u{1F939}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_juggling_medium_dark_skin_tone':
+      '\u{1F939}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_juggling_medium_light_skin_tone':
+      '\u{1F939}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_juggling_medium_skin_tone':
+      '\u{1F939}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_kneeling': '\u{1F9CE}\u{200D}\u{2640}\u{FE0F}',
   'woman_kneeling_dark_skin_tone': '\u{1F9CE}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_kneeling_facing_right': '\u{1F9CE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_kneeling_facing_right_dark_skin_tone': '\u{1F9CE}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_kneeling_facing_right_light_skin_tone': '\u{1F9CE}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_kneeling_facing_right_medium-dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_kneeling_facing_right_medium-light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_kneeling_facing_right_medium_dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_kneeling_facing_right_medium_light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_kneeling_facing_right_medium_skin_tone': '\u{1F9CE}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_kneeling_light_skin_tone': '\u{1F9CE}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_kneeling_medium-dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_kneeling_medium-light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_kneeling_medium_dark_skin_tone': '\u{1F9CE}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_kneeling_medium_light_skin_tone': '\u{1F9CE}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_kneeling_medium_skin_tone': '\u{1F9CE}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_kneeling_facing_right':
+      '\u{1F9CE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_kneeling_facing_right_dark_skin_tone':
+      '\u{1F9CE}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_kneeling_facing_right_light_skin_tone':
+      '\u{1F9CE}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_kneeling_facing_right_medium-dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_kneeling_facing_right_medium-light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_kneeling_facing_right_medium_dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_kneeling_facing_right_medium_light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_kneeling_facing_right_medium_skin_tone':
+      '\u{1F9CE}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_kneeling_light_skin_tone':
+      '\u{1F9CE}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_kneeling_medium-dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_kneeling_medium-light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_kneeling_medium_dark_skin_tone':
+      '\u{1F9CE}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_kneeling_medium_light_skin_tone':
+      '\u{1F9CE}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_kneeling_medium_skin_tone':
+      '\u{1F9CE}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_lifting_weights': '\u{1F3CB}\u{FE0F}\u{200D}\u{2640}\u{FE0F}',
-  'woman_lifting_weights_dark_skin_tone': '\u{1F3CB}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_lifting_weights_light_skin_tone': '\u{1F3CB}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_lifting_weights_medium-dark_skin_tone': '\u{1F3CB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_lifting_weights_medium-light_skin_tone': '\u{1F3CB}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_lifting_weights_medium_dark_skin_tone': '\u{1F3CB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_lifting_weights_medium_light_skin_tone': '\u{1F3CB}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_lifting_weights_medium_skin_tone': '\u{1F3CB}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_lifting_weights_dark_skin_tone':
+      '\u{1F3CB}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_lifting_weights_light_skin_tone':
+      '\u{1F3CB}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_lifting_weights_medium-dark_skin_tone':
+      '\u{1F3CB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_lifting_weights_medium-light_skin_tone':
+      '\u{1F3CB}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_lifting_weights_medium_dark_skin_tone':
+      '\u{1F3CB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_lifting_weights_medium_light_skin_tone':
+      '\u{1F3CB}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_lifting_weights_medium_skin_tone':
+      '\u{1F3CB}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_light_skin_tone': '\u{1F469}\u{1F3FB}',
   'woman_light_skin_tone_bald': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9B2}',
   'woman_light_skin_tone_beard': '\u{1F9D4}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_light_skin_tone_blond_hair': '\u{1F471}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_light_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
   'woman_light_skin_tone_curly_hair': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9B1}',
   'woman_light_skin_tone_red_hair': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9B0}',
   'woman_light_skin_tone_white_hair': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9B3}',
   'woman_mage': '\u{1F9D9}\u{200D}\u{2640}\u{FE0F}',
   'woman_mage_dark_skin_tone': '\u{1F9D9}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_mage_light_skin_tone': '\u{1F9D9}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mage_medium-dark_skin_tone': '\u{1F9D9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mage_medium-light_skin_tone': '\u{1F9D9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mage_medium_dark_skin_tone': '\u{1F9D9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mage_medium_light_skin_tone': '\u{1F9D9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mage_medium-dark_skin_tone':
+      '\u{1F9D9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mage_medium-light_skin_tone':
+      '\u{1F9D9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mage_medium_dark_skin_tone':
+      '\u{1F9D9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mage_medium_light_skin_tone':
+      '\u{1F9D9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'woman_mage_medium_skin_tone': '\u{1F9D9}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_mechanic': '\u{1F469}\u{200D}\u{1F527}',
   'woman_mechanic:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F527}',
@@ -7566,53 +8862,81 @@ const emojiUnicodeAliases = <String, String>{
   'woman_mechanic_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F527}',
   'woman_mechanic_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F527}',
   'woman_mechanic_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F527}',
-  'woman_mechanic_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F527}',
+  'woman_mechanic_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F527}',
   'woman_mechanic_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F527}',
-  'woman_mechanic_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F527}',
+  'woman_mechanic_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F527}',
   'woman_mechanic_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F527}',
   'woman_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}',
   'woman_medium-dark_skin_tone_bald': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B2}',
-  'woman_medium-dark_skin_tone_beard': '\u{1F9D4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium-dark_skin_tone_blond_hair': '\u{1F471}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium-dark_skin_tone_curly_hair': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B1}',
+  'woman_medium-dark_skin_tone_beard':
+      '\u{1F9D4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium-dark_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium-dark_skin_tone_curly_hair':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B1}',
   'woman_medium-dark_skin_tone_red_hair': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B0}',
-  'woman_medium-dark_skin_tone_white_hair': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B3}',
+  'woman_medium-dark_skin_tone_white_hair':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B3}',
   'woman_medium-light_skin_tone': '\u{1F469}\u{1F3FC}',
   'woman_medium-light_skin_tone_bald': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B2}',
-  'woman_medium-light_skin_tone_beard': '\u{1F9D4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium-light_skin_tone_blond_hair': '\u{1F471}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium-light_skin_tone_curly_hair': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B1}',
-  'woman_medium-light_skin_tone_red_hair': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B0}',
-  'woman_medium-light_skin_tone_white_hair': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B3}',
+  'woman_medium-light_skin_tone_beard':
+      '\u{1F9D4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium-light_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium-light_skin_tone_curly_hair':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B1}',
+  'woman_medium-light_skin_tone_red_hair':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B0}',
+  'woman_medium-light_skin_tone_white_hair':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B3}',
   'woman_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}',
   'woman_medium_dark_skin_tone_bald': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B2}',
-  'woman_medium_dark_skin_tone_beard': '\u{1F9D4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium_dark_skin_tone_blond_hair': '\u{1F471}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium_dark_skin_tone_curly_hair': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B1}',
+  'woman_medium_dark_skin_tone_beard':
+      '\u{1F9D4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium_dark_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium_dark_skin_tone_curly_hair':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B1}',
   'woman_medium_dark_skin_tone_red_hair': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B0}',
-  'woman_medium_dark_skin_tone_white_hair': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B3}',
+  'woman_medium_dark_skin_tone_white_hair':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9B3}',
   'woman_medium_light_skin_tone': '\u{1F469}\u{1F3FC}',
   'woman_medium_light_skin_tone_bald': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B2}',
-  'woman_medium_light_skin_tone_beard': '\u{1F9D4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium_light_skin_tone_blond_hair': '\u{1F471}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium_light_skin_tone_curly_hair': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B1}',
-  'woman_medium_light_skin_tone_red_hair': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B0}',
-  'woman_medium_light_skin_tone_white_hair': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B3}',
+  'woman_medium_light_skin_tone_beard':
+      '\u{1F9D4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium_light_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium_light_skin_tone_curly_hair':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B1}',
+  'woman_medium_light_skin_tone_red_hair':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B0}',
+  'woman_medium_light_skin_tone_white_hair':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9B3}',
   'woman_medium_skin_tone': '\u{1F469}\u{1F3FD}',
   'woman_medium_skin_tone_bald': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9B2}',
   'woman_medium_skin_tone_beard': '\u{1F9D4}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
-  'woman_medium_skin_tone_blond_hair': '\u{1F471}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_medium_skin_tone_blond_hair':
+      '\u{1F471}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_medium_skin_tone_curly_hair': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9B1}',
   'woman_medium_skin_tone_red_hair': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9B0}',
   'woman_medium_skin_tone_white_hair': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9B3}',
   'woman_mountain_biking': '\u{1F6B5}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mountain_biking_dark_skin_tone': '\u{1F6B5}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mountain_biking_light_skin_tone': '\u{1F6B5}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mountain_biking_medium-dark_skin_tone': '\u{1F6B5}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mountain_biking_medium-light_skin_tone': '\u{1F6B5}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mountain_biking_medium_dark_skin_tone': '\u{1F6B5}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mountain_biking_medium_light_skin_tone': '\u{1F6B5}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_mountain_biking_medium_skin_tone': '\u{1F6B5}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mountain_biking_dark_skin_tone':
+      '\u{1F6B5}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mountain_biking_light_skin_tone':
+      '\u{1F6B5}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mountain_biking_medium-dark_skin_tone':
+      '\u{1F6B5}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mountain_biking_medium-light_skin_tone':
+      '\u{1F6B5}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mountain_biking_medium_dark_skin_tone':
+      '\u{1F6B5}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mountain_biking_medium_light_skin_tone':
+      '\u{1F6B5}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_mountain_biking_medium_skin_tone':
+      '\u{1F6B5}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_office_worker': '\u{1F469}\u{200D}\u{1F4BC}',
   'woman_office_worker:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F4BC}',
   'woman_office_worker:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BC}',
@@ -7621,10 +8945,14 @@ const emojiUnicodeAliases = <String, String>{
   'woman_office_worker:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F4BC}',
   'woman_office_worker_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F4BC}',
   'woman_office_worker_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F4BC}',
-  'woman_office_worker_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F4BC}',
-  'woman_office_worker_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BC}',
-  'woman_office_worker_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F4BC}',
-  'woman_office_worker_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BC}',
+  'woman_office_worker_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F4BC}',
+  'woman_office_worker_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BC}',
+  'woman_office_worker_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F4BC}',
+  'woman_office_worker_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BC}',
   'woman_office_worker_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F4BC}',
   'woman_pilot': '\u{1F469}\u{200D}\u{2708}\u{FE0F}',
   'woman_pilot:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{2708}\u{FE0F}',
@@ -7634,10 +8962,14 @@ const emojiUnicodeAliases = <String, String>{
   'woman_pilot:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{2708}\u{FE0F}',
   'woman_pilot_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{2708}\u{FE0F}',
   'woman_pilot_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{2708}\u{FE0F}',
-  'woman_pilot_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2708}\u{FE0F}',
-  'woman_pilot_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2708}\u{FE0F}',
-  'woman_pilot_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{2708}\u{FE0F}',
-  'woman_pilot_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{2708}\u{FE0F}',
+  'woman_pilot_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2708}\u{FE0F}',
+  'woman_pilot_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2708}\u{FE0F}',
+  'woman_pilot_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{2708}\u{FE0F}',
+  'woman_pilot_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{2708}\u{FE0F}',
   'woman_pilot_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{2708}\u{FE0F}',
   'woman_playing_handball': '\u{1F93E}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_handball:t2': '\u{1F93E}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
@@ -7645,75 +8977,128 @@ const emojiUnicodeAliases = <String, String>{
   'woman_playing_handball:t4': '\u{1F93E}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_handball:t5': '\u{1F93E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_handball:t6': '\u{1F93E}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_handball_dark_skin_tone': '\u{1F93E}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_handball_light_skin_tone': '\u{1F93E}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_handball_medium-dark_skin_tone': '\u{1F93E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_handball_medium-light_skin_tone': '\u{1F93E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_handball_medium_dark_skin_tone': '\u{1F93E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_handball_medium_light_skin_tone': '\u{1F93E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_handball_medium_skin_tone': '\u{1F93E}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_handball_dark_skin_tone':
+      '\u{1F93E}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_handball_light_skin_tone':
+      '\u{1F93E}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_handball_medium-dark_skin_tone':
+      '\u{1F93E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_handball_medium-light_skin_tone':
+      '\u{1F93E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_handball_medium_dark_skin_tone':
+      '\u{1F93E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_handball_medium_light_skin_tone':
+      '\u{1F93E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_handball_medium_skin_tone':
+      '\u{1F93E}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_water_polo': '\u{1F93D}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_water_polo:t2': '\u{1F93D}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_water_polo:t3': '\u{1F93D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_water_polo:t4': '\u{1F93D}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_water_polo:t5': '\u{1F93D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
   'woman_playing_water_polo:t6': '\u{1F93D}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_water_polo_dark_skin_tone': '\u{1F93D}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_water_polo_light_skin_tone': '\u{1F93D}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_water_polo_medium-dark_skin_tone': '\u{1F93D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_water_polo_medium-light_skin_tone': '\u{1F93D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_water_polo_medium_dark_skin_tone': '\u{1F93D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_water_polo_medium_light_skin_tone': '\u{1F93D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_playing_water_polo_medium_skin_tone': '\u{1F93D}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_water_polo_dark_skin_tone':
+      '\u{1F93D}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_water_polo_light_skin_tone':
+      '\u{1F93D}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_water_polo_medium-dark_skin_tone':
+      '\u{1F93D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_water_polo_medium-light_skin_tone':
+      '\u{1F93D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_water_polo_medium_dark_skin_tone':
+      '\u{1F93D}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_water_polo_medium_light_skin_tone':
+      '\u{1F93D}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_playing_water_polo_medium_skin_tone':
+      '\u{1F93D}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_police_officer': '\u{1F46E}\u{200D}\u{2640}\u{FE0F}',
-  'woman_police_officer_dark_skin_tone': '\u{1F46E}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_police_officer_light_skin_tone': '\u{1F46E}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_police_officer_medium-dark_skin_tone': '\u{1F46E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_police_officer_medium-light_skin_tone': '\u{1F46E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_police_officer_medium_dark_skin_tone': '\u{1F46E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_police_officer_medium_light_skin_tone': '\u{1F46E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_police_officer_medium_skin_tone': '\u{1F46E}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_police_officer_dark_skin_tone':
+      '\u{1F46E}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_police_officer_light_skin_tone':
+      '\u{1F46E}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_police_officer_medium-dark_skin_tone':
+      '\u{1F46E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_police_officer_medium-light_skin_tone':
+      '\u{1F46E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_police_officer_medium_dark_skin_tone':
+      '\u{1F46E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_police_officer_medium_light_skin_tone':
+      '\u{1F46E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_police_officer_medium_skin_tone':
+      '\u{1F46E}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_pouting': '\u{1F64E}\u{200D}\u{2640}\u{FE0F}',
   'woman_pouting_dark_skin_tone': '\u{1F64E}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_pouting_light_skin_tone': '\u{1F64E}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_pouting_medium-dark_skin_tone': '\u{1F64E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_pouting_medium-light_skin_tone': '\u{1F64E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_pouting_medium_dark_skin_tone': '\u{1F64E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_pouting_medium_light_skin_tone': '\u{1F64E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_pouting_medium_skin_tone': '\u{1F64E}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_pouting_medium-dark_skin_tone':
+      '\u{1F64E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_pouting_medium-light_skin_tone':
+      '\u{1F64E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_pouting_medium_dark_skin_tone':
+      '\u{1F64E}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_pouting_medium_light_skin_tone':
+      '\u{1F64E}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_pouting_medium_skin_tone':
+      '\u{1F64E}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_raising_hand': '\u{1F64B}\u{200D}\u{2640}\u{FE0F}',
-  'woman_raising_hand_dark_skin_tone': '\u{1F64B}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_raising_hand_light_skin_tone': '\u{1F64B}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_raising_hand_medium-dark_skin_tone': '\u{1F64B}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_raising_hand_medium-light_skin_tone': '\u{1F64B}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_raising_hand_medium_dark_skin_tone': '\u{1F64B}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_raising_hand_medium_light_skin_tone': '\u{1F64B}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_raising_hand_medium_skin_tone': '\u{1F64B}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_raising_hand_dark_skin_tone':
+      '\u{1F64B}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_raising_hand_light_skin_tone':
+      '\u{1F64B}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_raising_hand_medium-dark_skin_tone':
+      '\u{1F64B}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_raising_hand_medium-light_skin_tone':
+      '\u{1F64B}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_raising_hand_medium_dark_skin_tone':
+      '\u{1F64B}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_raising_hand_medium_light_skin_tone':
+      '\u{1F64B}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_raising_hand_medium_skin_tone':
+      '\u{1F64B}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_red_hair': '\u{1F469}\u{200D}\u{1F9B0}',
   'woman_rowing_boat': '\u{1F6A3}\u{200D}\u{2640}\u{FE0F}',
-  'woman_rowing_boat_dark_skin_tone': '\u{1F6A3}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_rowing_boat_light_skin_tone': '\u{1F6A3}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_rowing_boat_medium-dark_skin_tone': '\u{1F6A3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_rowing_boat_medium-light_skin_tone': '\u{1F6A3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_rowing_boat_medium_dark_skin_tone': '\u{1F6A3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_rowing_boat_medium_light_skin_tone': '\u{1F6A3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_rowing_boat_medium_skin_tone': '\u{1F6A3}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_rowing_boat_dark_skin_tone':
+      '\u{1F6A3}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_rowing_boat_light_skin_tone':
+      '\u{1F6A3}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_rowing_boat_medium-dark_skin_tone':
+      '\u{1F6A3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_rowing_boat_medium-light_skin_tone':
+      '\u{1F6A3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_rowing_boat_medium_dark_skin_tone':
+      '\u{1F6A3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_rowing_boat_medium_light_skin_tone':
+      '\u{1F6A3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_rowing_boat_medium_skin_tone':
+      '\u{1F6A3}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_running': '\u{1F3C3}\u{200D}\u{2640}\u{FE0F}',
   'woman_running_dark_skin_tone': '\u{1F3C3}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_running_facing_right': '\u{1F3C3}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_running_facing_right_dark_skin_tone': '\u{1F3C3}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_running_facing_right_light_skin_tone': '\u{1F3C3}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_running_facing_right_medium-dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_running_facing_right_medium-light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_running_facing_right_medium_dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_running_facing_right_medium_light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_running_facing_right_medium_skin_tone': '\u{1F3C3}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_running_facing_right':
+      '\u{1F3C3}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_running_facing_right_dark_skin_tone':
+      '\u{1F3C3}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_running_facing_right_light_skin_tone':
+      '\u{1F3C3}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_running_facing_right_medium-dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_running_facing_right_medium-light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_running_facing_right_medium_dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_running_facing_right_medium_light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_running_facing_right_medium_skin_tone':
+      '\u{1F3C3}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
   'woman_running_light_skin_tone': '\u{1F3C3}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_running_medium-dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_running_medium-light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_running_medium_dark_skin_tone': '\u{1F3C3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_running_medium_light_skin_tone': '\u{1F3C3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_running_medium_skin_tone': '\u{1F3C3}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_running_medium-dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_running_medium-light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_running_medium_dark_skin_tone':
+      '\u{1F3C3}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_running_medium_light_skin_tone':
+      '\u{1F3C3}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_running_medium_skin_tone':
+      '\u{1F3C3}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_scientist': '\u{1F469}\u{200D}\u{1F52C}',
   'woman_scientist:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F52C}',
   'woman_scientist:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F52C}',
@@ -7722,10 +9107,14 @@ const emojiUnicodeAliases = <String, String>{
   'woman_scientist:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F52C}',
   'woman_scientist_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F52C}',
   'woman_scientist_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F52C}',
-  'woman_scientist_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F52C}',
-  'woman_scientist_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F52C}',
-  'woman_scientist_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F52C}',
-  'woman_scientist_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F52C}',
+  'woman_scientist_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F52C}',
+  'woman_scientist_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F52C}',
+  'woman_scientist_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F52C}',
+  'woman_scientist_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F52C}',
   'woman_scientist_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F52C}',
   'woman_shrugging': '\u{1F937}\u{200D}\u{2640}\u{FE0F}',
   'woman_shrugging:t2': '\u{1F937}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
@@ -7733,13 +9122,20 @@ const emojiUnicodeAliases = <String, String>{
   'woman_shrugging:t4': '\u{1F937}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_shrugging:t5': '\u{1F937}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
   'woman_shrugging:t6': '\u{1F937}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_shrugging_dark_skin_tone': '\u{1F937}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_shrugging_light_skin_tone': '\u{1F937}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_shrugging_medium-dark_skin_tone': '\u{1F937}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_shrugging_medium-light_skin_tone': '\u{1F937}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_shrugging_medium_dark_skin_tone': '\u{1F937}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_shrugging_medium_light_skin_tone': '\u{1F937}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_shrugging_medium_skin_tone': '\u{1F937}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_shrugging_dark_skin_tone':
+      '\u{1F937}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_shrugging_light_skin_tone':
+      '\u{1F937}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_shrugging_medium-dark_skin_tone':
+      '\u{1F937}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_shrugging_medium-light_skin_tone':
+      '\u{1F937}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_shrugging_medium_dark_skin_tone':
+      '\u{1F937}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_shrugging_medium_light_skin_tone':
+      '\u{1F937}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_shrugging_medium_skin_tone':
+      '\u{1F937}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_singer': '\u{1F469}\u{200D}\u{1F3A4}',
   'woman_singer:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F3A4}',
   'woman_singer:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F3A4}',
@@ -7755,12 +9151,18 @@ const emojiUnicodeAliases = <String, String>{
   'woman_singer_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F3A4}',
   'woman_standing': '\u{1F9CD}\u{200D}\u{2640}\u{FE0F}',
   'woman_standing_dark_skin_tone': '\u{1F9CD}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_standing_light_skin_tone': '\u{1F9CD}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_standing_medium-dark_skin_tone': '\u{1F9CD}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_standing_medium-light_skin_tone': '\u{1F9CD}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_standing_medium_dark_skin_tone': '\u{1F9CD}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_standing_medium_light_skin_tone': '\u{1F9CD}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_standing_medium_skin_tone': '\u{1F9CD}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_standing_light_skin_tone':
+      '\u{1F9CD}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_standing_medium-dark_skin_tone':
+      '\u{1F9CD}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_standing_medium-light_skin_tone':
+      '\u{1F9CD}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_standing_medium_dark_skin_tone':
+      '\u{1F9CD}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_standing_medium_light_skin_tone':
+      '\u{1F9CD}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_standing_medium_skin_tone':
+      '\u{1F9CD}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_student': '\u{1F469}\u{200D}\u{1F393}',
   'woman_student:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F393}',
   'woman_student:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F393}',
@@ -7775,37 +9177,62 @@ const emojiUnicodeAliases = <String, String>{
   'woman_student_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F393}',
   'woman_student_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F393}',
   'woman_superhero': '\u{1F9B8}\u{200D}\u{2640}\u{FE0F}',
-  'woman_superhero_dark_skin_tone': '\u{1F9B8}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_superhero_light_skin_tone': '\u{1F9B8}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_superhero_medium-dark_skin_tone': '\u{1F9B8}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_superhero_medium-light_skin_tone': '\u{1F9B8}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_superhero_medium_dark_skin_tone': '\u{1F9B8}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_superhero_medium_light_skin_tone': '\u{1F9B8}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_superhero_medium_skin_tone': '\u{1F9B8}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_superhero_dark_skin_tone':
+      '\u{1F9B8}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_superhero_light_skin_tone':
+      '\u{1F9B8}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_superhero_medium-dark_skin_tone':
+      '\u{1F9B8}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_superhero_medium-light_skin_tone':
+      '\u{1F9B8}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_superhero_medium_dark_skin_tone':
+      '\u{1F9B8}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_superhero_medium_light_skin_tone':
+      '\u{1F9B8}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_superhero_medium_skin_tone':
+      '\u{1F9B8}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_supervillain': '\u{1F9B9}\u{200D}\u{2640}\u{FE0F}',
-  'woman_supervillain_dark_skin_tone': '\u{1F9B9}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_supervillain_light_skin_tone': '\u{1F9B9}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_supervillain_medium-dark_skin_tone': '\u{1F9B9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_supervillain_medium-light_skin_tone': '\u{1F9B9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_supervillain_medium_dark_skin_tone': '\u{1F9B9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_supervillain_medium_light_skin_tone': '\u{1F9B9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_supervillain_medium_skin_tone': '\u{1F9B9}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_supervillain_dark_skin_tone':
+      '\u{1F9B9}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_supervillain_light_skin_tone':
+      '\u{1F9B9}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_supervillain_medium-dark_skin_tone':
+      '\u{1F9B9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_supervillain_medium-light_skin_tone':
+      '\u{1F9B9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_supervillain_medium_dark_skin_tone':
+      '\u{1F9B9}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_supervillain_medium_light_skin_tone':
+      '\u{1F9B9}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_supervillain_medium_skin_tone':
+      '\u{1F9B9}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_surfing': '\u{1F3C4}\u{200D}\u{2640}\u{FE0F}',
   'woman_surfing_dark_skin_tone': '\u{1F3C4}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_surfing_light_skin_tone': '\u{1F3C4}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_surfing_medium-dark_skin_tone': '\u{1F3C4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_surfing_medium-light_skin_tone': '\u{1F3C4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_surfing_medium_dark_skin_tone': '\u{1F3C4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_surfing_medium_light_skin_tone': '\u{1F3C4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_surfing_medium_skin_tone': '\u{1F3C4}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_surfing_medium-dark_skin_tone':
+      '\u{1F3C4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_surfing_medium-light_skin_tone':
+      '\u{1F3C4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_surfing_medium_dark_skin_tone':
+      '\u{1F3C4}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_surfing_medium_light_skin_tone':
+      '\u{1F3C4}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_surfing_medium_skin_tone':
+      '\u{1F3C4}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_swimming': '\u{1F3CA}\u{200D}\u{2640}\u{FE0F}',
   'woman_swimming_dark_skin_tone': '\u{1F3CA}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_swimming_light_skin_tone': '\u{1F3CA}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_swimming_medium-dark_skin_tone': '\u{1F3CA}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_swimming_medium-light_skin_tone': '\u{1F3CA}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_swimming_medium_dark_skin_tone': '\u{1F3CA}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_swimming_medium_light_skin_tone': '\u{1F3CA}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_swimming_medium_skin_tone': '\u{1F3CA}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_swimming_light_skin_tone':
+      '\u{1F3CA}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_swimming_medium-dark_skin_tone':
+      '\u{1F3CA}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_swimming_medium-light_skin_tone':
+      '\u{1F3CA}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_swimming_medium_dark_skin_tone':
+      '\u{1F3CA}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_swimming_medium_light_skin_tone':
+      '\u{1F3CA}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_swimming_medium_skin_tone':
+      '\u{1F3CA}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_teacher': '\u{1F469}\u{200D}\u{1F3EB}',
   'woman_teacher:t2': '\u{1F469}\u{1F3FB}\u{200D}\u{1F3EB}',
   'woman_teacher:t3': '\u{1F469}\u{1F3FC}\u{200D}\u{1F3EB}',
@@ -7827,51 +9254,87 @@ const emojiUnicodeAliases = <String, String>{
   'woman_technologist:t6': '\u{1F469}\u{1F3FF}\u{200D}\u{1F4BB}',
   'woman_technologist_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F4BB}',
   'woman_technologist_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F4BB}',
-  'woman_technologist_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F4BB}',
-  'woman_technologist_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BB}',
-  'woman_technologist_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F4BB}',
-  'woman_technologist_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BB}',
+  'woman_technologist_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F4BB}',
+  'woman_technologist_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BB}',
+  'woman_technologist_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F4BB}',
+  'woman_technologist_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F4BB}',
   'woman_technologist_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F4BB}',
   'woman_tipping_hand': '\u{1F481}\u{200D}\u{2640}\u{FE0F}',
-  'woman_tipping_hand_dark_skin_tone': '\u{1F481}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_tipping_hand_light_skin_tone': '\u{1F481}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_tipping_hand_medium-dark_skin_tone': '\u{1F481}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_tipping_hand_medium-light_skin_tone': '\u{1F481}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_tipping_hand_medium_dark_skin_tone': '\u{1F481}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_tipping_hand_medium_light_skin_tone': '\u{1F481}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_tipping_hand_medium_skin_tone': '\u{1F481}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_tipping_hand_dark_skin_tone':
+      '\u{1F481}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_tipping_hand_light_skin_tone':
+      '\u{1F481}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_tipping_hand_medium-dark_skin_tone':
+      '\u{1F481}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_tipping_hand_medium-light_skin_tone':
+      '\u{1F481}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_tipping_hand_medium_dark_skin_tone':
+      '\u{1F481}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_tipping_hand_medium_light_skin_tone':
+      '\u{1F481}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_tipping_hand_medium_skin_tone':
+      '\u{1F481}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_vampire': '\u{1F9DB}\u{200D}\u{2640}\u{FE0F}',
   'woman_vampire_dark_skin_tone': '\u{1F9DB}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
   'woman_vampire_light_skin_tone': '\u{1F9DB}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_vampire_medium-dark_skin_tone': '\u{1F9DB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_vampire_medium-light_skin_tone': '\u{1F9DB}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_vampire_medium_dark_skin_tone': '\u{1F9DB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_vampire_medium_light_skin_tone': '\u{1F9DB}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_vampire_medium_skin_tone': '\u{1F9DB}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_vampire_medium-dark_skin_tone':
+      '\u{1F9DB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_vampire_medium-light_skin_tone':
+      '\u{1F9DB}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_vampire_medium_dark_skin_tone':
+      '\u{1F9DB}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_vampire_medium_light_skin_tone':
+      '\u{1F9DB}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_vampire_medium_skin_tone':
+      '\u{1F9DB}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_walking': '\u{1F6B6}\u{200D}\u{2640}\u{FE0F}',
   'woman_walking_dark_skin_tone': '\u{1F6B6}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_walking_facing_right': '\u{1F6B6}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_walking_facing_right_dark_skin_tone': '\u{1F6B6}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_walking_facing_right_light_skin_tone': '\u{1F6B6}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_walking_facing_right_medium-dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_walking_facing_right_medium-light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_walking_facing_right_medium_dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_walking_facing_right_medium_light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_walking_facing_right_medium_skin_tone': '\u{1F6B6}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_walking_facing_right':
+      '\u{1F6B6}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_walking_facing_right_dark_skin_tone':
+      '\u{1F6B6}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_walking_facing_right_light_skin_tone':
+      '\u{1F6B6}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_walking_facing_right_medium-dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_walking_facing_right_medium-light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_walking_facing_right_medium_dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_walking_facing_right_medium_light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_walking_facing_right_medium_skin_tone':
+      '\u{1F6B6}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}\u{200D}\u{27A1}\u{FE0F}',
   'woman_walking_light_skin_tone': '\u{1F6B6}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_walking_medium-dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_walking_medium-light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_walking_medium_dark_skin_tone': '\u{1F6B6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_walking_medium_light_skin_tone': '\u{1F6B6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_walking_medium_skin_tone': '\u{1F6B6}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_walking_medium-dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_walking_medium-light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_walking_medium_dark_skin_tone':
+      '\u{1F6B6}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_walking_medium_light_skin_tone':
+      '\u{1F6B6}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_walking_medium_skin_tone':
+      '\u{1F6B6}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_wearing_turban': '\u{1F473}\u{200D}\u{2640}\u{FE0F}',
-  'woman_wearing_turban_dark_skin_tone': '\u{1F473}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_wearing_turban_light_skin_tone': '\u{1F473}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_wearing_turban_medium-dark_skin_tone': '\u{1F473}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_wearing_turban_medium-light_skin_tone': '\u{1F473}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_wearing_turban_medium_dark_skin_tone': '\u{1F473}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_wearing_turban_medium_light_skin_tone': '\u{1F473}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_wearing_turban_medium_skin_tone': '\u{1F473}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_wearing_turban_dark_skin_tone':
+      '\u{1F473}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_wearing_turban_light_skin_tone':
+      '\u{1F473}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_wearing_turban_medium-dark_skin_tone':
+      '\u{1F473}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_wearing_turban_medium-light_skin_tone':
+      '\u{1F473}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_wearing_turban_medium_dark_skin_tone':
+      '\u{1F473}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_wearing_turban_medium_light_skin_tone':
+      '\u{1F473}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_wearing_turban_medium_skin_tone':
+      '\u{1F473}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_white_hair': '\u{1F469}\u{200D}\u{1F9B3}',
   'woman_with_bunny_ears': '\u{1F46F}',
   'woman_with_headscarf': '\u{1F9D5}',
@@ -7905,29 +9368,50 @@ const emojiUnicodeAliases = <String, String>{
   'woman_with_veil:t4': '\u{1F470}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_with_veil:t5': '\u{1F470}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
   'woman_with_veil:t6': '\u{1F470}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_with_veil_dark_skin_tone': '\u{1F470}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'woman_with_veil_light_skin_tone': '\u{1F470}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'woman_with_veil_medium-dark_skin_tone': '\u{1F470}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_with_veil_medium-light_skin_tone': '\u{1F470}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_with_veil_medium_dark_skin_tone': '\u{1F470}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'woman_with_veil_medium_light_skin_tone': '\u{1F470}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'woman_with_veil_medium_skin_tone': '\u{1F470}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'woman_with_veil_dark_skin_tone':
+      '\u{1F470}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'woman_with_veil_light_skin_tone':
+      '\u{1F470}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'woman_with_veil_medium-dark_skin_tone':
+      '\u{1F470}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_with_veil_medium-light_skin_tone':
+      '\u{1F470}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_with_veil_medium_dark_skin_tone':
+      '\u{1F470}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'woman_with_veil_medium_light_skin_tone':
+      '\u{1F470}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'woman_with_veil_medium_skin_tone':
+      '\u{1F470}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
   'woman_with_white_cane': '\u{1F469}\u{200D}\u{1F9AF}',
   'woman_with_white_cane_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9AF}',
-  'woman_with_white_cane_facing_right': '\u{1F469}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_with_white_cane_facing_right_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_with_white_cane_facing_right_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_with_white_cane_facing_right_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_with_white_cane_facing_right_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_with_white_cane_facing_right_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_with_white_cane_facing_right_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_with_white_cane_facing_right_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
-  'woman_with_white_cane_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F9AF}',
-  'woman_with_white_cane_medium-dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9AF}',
-  'woman_with_white_cane_medium-light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9AF}',
-  'woman_with_white_cane_medium_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F9AF}',
-  'woman_with_white_cane_medium_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F9AF}',
-  'woman_with_white_cane_medium_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F9AF}',
+  'woman_with_white_cane_facing_right':
+      '\u{1F469}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_with_white_cane_facing_right_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_with_white_cane_facing_right_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_with_white_cane_facing_right_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_with_white_cane_facing_right_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_with_white_cane_facing_right_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_with_white_cane_facing_right_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_with_white_cane_facing_right_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F9AF}\u{200D}\u{27A1}\u{FE0F}',
+  'woman_with_white_cane_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F9AF}',
+  'woman_with_white_cane_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9AF}',
+  'woman_with_white_cane_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9AF}',
+  'woman_with_white_cane_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F9AF}',
+  'woman_with_white_cane_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F9AF}',
+  'woman_with_white_cane_medium_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F9AF}',
   'woman_zombie': '\u{1F9DF}\u{200D}\u{2640}\u{FE0F}',
   'womans_boot': '\u{1F462}',
   'womans_boots': '\u{1F462}',
@@ -7936,130 +9420,246 @@ const emojiUnicodeAliases = <String, String>{
   'womans_sandal': '\u{1F461}',
   'women_holding_hands': '\u{1F46D}',
   'women_holding_hands_dark_skin_tone': '\u{1F46D}\u{1F3FF}',
-  'women_holding_hands_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_holding_hands_dark_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_holding_hands_dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_holding_hands_dark_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_holding_hands_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_holding_hands_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_holding_hands_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_holding_hands_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_holding_hands_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_holding_hands_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_holding_hands_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_holding_hands_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
   'women_holding_hands_light_skin_tone': '\u{1F46D}\u{1F3FB}',
-  'women_holding_hands_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_holding_hands_light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_holding_hands_light_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_holding_hands_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_holding_hands_light_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_holding_hands_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_holding_hands_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_holding_hands_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_holding_hands_light_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_holding_hands_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_holding_hands_light_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_holding_hands_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
   'women_holding_hands_medium-dark_skin_tone': '\u{1F46D}\u{1F3FE}',
-  'women_holding_hands_medium-dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_holding_hands_medium-dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_holding_hands_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_holding_hands_medium-dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_holding_hands_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_holding_hands_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_holding_hands_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_holding_hands_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
   'women_holding_hands_medium-light_skin_tone': '\u{1F46D}\u{1F3FC}',
-  'women_holding_hands_medium-light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_holding_hands_medium-light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_holding_hands_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_holding_hands_medium-light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_holding_hands_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_holding_hands_medium-light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_holding_hands_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_holding_hands_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
   'women_holding_hands_medium_dark_skin_tone': '\u{1F46D}\u{1F3FE}',
-  'women_holding_hands_medium_dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_holding_hands_medium_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_holding_hands_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_holding_hands_medium_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_holding_hands_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_holding_hands_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_holding_hands_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_holding_hands_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
   'women_holding_hands_medium_light_skin_tone': '\u{1F46D}\u{1F3FC}',
-  'women_holding_hands_medium_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_holding_hands_medium_light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_holding_hands_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_holding_hands_medium_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_holding_hands_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_holding_hands_medium_light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_holding_hands_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_holding_hands_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FD}',
   'women_holding_hands_medium_skin_tone': '\u{1F46D}\u{1F3FD}',
-  'women_holding_hands_medium_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_holding_hands_medium_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_holding_hands_medium_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_holding_hands_medium_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_holding_hands_medium_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_holding_hands_medium_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_holding_hands_medium_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_holding_hands_medium_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_holding_hands_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_holding_hands_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_holding_hands_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_holding_hands_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F91D}\u{200D}\u{1F469}\u{1F3FC}',
   'women_with_bunny_ears': '\u{1F46F}\u{200D}\u{2640}\u{FE0F}',
-  'women_with_bunny_ears_dark_skin_tone': '\u{1F46F}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'women_with_bunny_ears_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_with_bunny_ears_dark_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_with_bunny_ears_dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_with_bunny_ears_dark_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_with_bunny_ears_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_with_bunny_ears_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_with_bunny_ears_light_skin_tone': '\u{1F46F}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'women_with_bunny_ears_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_with_bunny_ears_light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_with_bunny_ears_light_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_with_bunny_ears_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_with_bunny_ears_light_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_with_bunny_ears_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_with_bunny_ears_medium-dark_skin_tone': '\u{1F46F}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'women_with_bunny_ears_medium-dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_with_bunny_ears_medium-dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_with_bunny_ears_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_with_bunny_ears_medium-dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_with_bunny_ears_medium-light_skin_tone': '\u{1F46F}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'women_with_bunny_ears_medium-light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_with_bunny_ears_medium-light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_with_bunny_ears_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_with_bunny_ears_medium-light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_with_bunny_ears_medium_dark_skin_tone': '\u{1F46F}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'women_with_bunny_ears_medium_dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_with_bunny_ears_medium_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_with_bunny_ears_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_with_bunny_ears_medium_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_with_bunny_ears_medium_light_skin_tone': '\u{1F46F}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'women_with_bunny_ears_medium_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_with_bunny_ears_medium_light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_with_bunny_ears_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_with_bunny_ears_medium_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_with_bunny_ears_medium_skin_tone': '\u{1F46F}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
-  'women_with_bunny_ears_medium_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_with_bunny_ears_medium_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_with_bunny_ears_medium_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_with_bunny_ears_medium_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_with_bunny_ears_medium_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_with_bunny_ears_medium_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_with_bunny_ears_dark_skin_tone':
+      '\u{1F46F}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'women_with_bunny_ears_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_with_bunny_ears_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_with_bunny_ears_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_with_bunny_ears_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_with_bunny_ears_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_with_bunny_ears_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_with_bunny_ears_light_skin_tone':
+      '\u{1F46F}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'women_with_bunny_ears_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_with_bunny_ears_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_with_bunny_ears_light_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_with_bunny_ears_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_with_bunny_ears_light_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_with_bunny_ears_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_with_bunny_ears_medium-dark_skin_tone':
+      '\u{1F46F}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'women_with_bunny_ears_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_with_bunny_ears_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_with_bunny_ears_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_with_bunny_ears_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_with_bunny_ears_medium-light_skin_tone':
+      '\u{1F46F}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'women_with_bunny_ears_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_with_bunny_ears_medium-light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_with_bunny_ears_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_with_bunny_ears_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_with_bunny_ears_medium_dark_skin_tone':
+      '\u{1F46F}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'women_with_bunny_ears_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_with_bunny_ears_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_with_bunny_ears_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_with_bunny_ears_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_with_bunny_ears_medium_light_skin_tone':
+      '\u{1F46F}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'women_with_bunny_ears_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_with_bunny_ears_medium_light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_with_bunny_ears_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_with_bunny_ears_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_with_bunny_ears_medium_skin_tone':
+      '\u{1F46F}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'women_with_bunny_ears_medium_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_with_bunny_ears_medium_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_with_bunny_ears_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_with_bunny_ears_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_with_bunny_ears_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_with_bunny_ears_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1F430}\u{200D}\u{1F469}\u{1F3FC}',
   'women_wrestling': '\u{1F93C}\u{200D}\u{2640}\u{FE0F}',
-  'women_wrestling_dark_skin_tone': '\u{1F93C}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
-  'women_wrestling_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_wrestling_dark_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_wrestling_dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_wrestling_dark_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_wrestling_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_wrestling_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_wrestling_light_skin_tone': '\u{1F93C}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
-  'women_wrestling_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_wrestling_light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_wrestling_light_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_wrestling_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_wrestling_light_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_wrestling_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_wrestling_medium-dark_skin_tone': '\u{1F93C}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'women_wrestling_medium-dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_wrestling_medium-dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_wrestling_medium-dark_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_wrestling_medium-dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_wrestling_medium-light_skin_tone': '\u{1F93C}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'women_wrestling_medium-light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_wrestling_medium-light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_wrestling_medium-light_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_wrestling_medium-light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_wrestling_medium_dark_skin_tone': '\u{1F93C}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
-  'women_wrestling_medium_dark_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_wrestling_medium_dark_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_wrestling_medium_dark_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_wrestling_medium_dark_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_wrestling_medium_light_skin_tone': '\u{1F93C}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
-  'women_wrestling_medium_light_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_wrestling_medium_light_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_wrestling_medium_light_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_wrestling_medium_light_skin_tone_medium_skin_tone': '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
-  'women_wrestling_medium_skin_tone': '\u{1F93C}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
-  'women_wrestling_medium_skin_tone_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
-  'women_wrestling_medium_skin_tone_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
-  'women_wrestling_medium_skin_tone_medium-dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_wrestling_medium_skin_tone_medium-light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
-  'women_wrestling_medium_skin_tone_medium_dark_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
-  'women_wrestling_medium_skin_tone_medium_light_skin_tone': '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_wrestling_dark_skin_tone':
+      '\u{1F93C}\u{1F3FF}\u{200D}\u{2640}\u{FE0F}',
+  'women_wrestling_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_wrestling_dark_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_wrestling_dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_wrestling_dark_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_wrestling_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_wrestling_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FF}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_wrestling_light_skin_tone':
+      '\u{1F93C}\u{1F3FB}\u{200D}\u{2640}\u{FE0F}',
+  'women_wrestling_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_wrestling_light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_wrestling_light_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_wrestling_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_wrestling_light_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_wrestling_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FB}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_wrestling_medium-dark_skin_tone':
+      '\u{1F93C}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'women_wrestling_medium-dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_wrestling_medium-dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_wrestling_medium-dark_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_wrestling_medium-dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_wrestling_medium-light_skin_tone':
+      '\u{1F93C}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'women_wrestling_medium-light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_wrestling_medium-light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_wrestling_medium-light_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_wrestling_medium-light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_wrestling_medium_dark_skin_tone':
+      '\u{1F93C}\u{1F3FE}\u{200D}\u{2640}\u{FE0F}',
+  'women_wrestling_medium_dark_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_wrestling_medium_dark_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_wrestling_medium_dark_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_wrestling_medium_dark_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FE}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_wrestling_medium_light_skin_tone':
+      '\u{1F93C}\u{1F3FC}\u{200D}\u{2640}\u{FE0F}',
+  'women_wrestling_medium_light_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_wrestling_medium_light_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_wrestling_medium_light_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_wrestling_medium_light_skin_tone_medium_skin_tone':
+      '\u{1F469}\u{1F3FC}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FD}',
+  'women_wrestling_medium_skin_tone':
+      '\u{1F93C}\u{1F3FD}\u{200D}\u{2640}\u{FE0F}',
+  'women_wrestling_medium_skin_tone_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FF}',
+  'women_wrestling_medium_skin_tone_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FB}',
+  'women_wrestling_medium_skin_tone_medium-dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_wrestling_medium_skin_tone_medium-light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
+  'women_wrestling_medium_skin_tone_medium_dark_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FE}',
+  'women_wrestling_medium_skin_tone_medium_light_skin_tone':
+      '\u{1F469}\u{1F3FD}\u{200D}\u{1FAEF}\u{200D}\u{1F469}\u{1F3FC}',
   'womens': '\u{1F6BA}',
   'womens_room': '\u{1F6BA}',
   'womens_symbol': '\u{1F6BA}',

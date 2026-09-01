@@ -1,0 +1,344 @@
+{
+  "ratings": [
+    {
+      "ID": 1671,
+      "CourseID": 47,
+      "TeacherID": 146,
+      "UserID": 79,
+      "user": {
+        "id": 79,
+        "username": "同学A"
+      },
+      "Score": 7,
+      "Content": "给分非常低",
+      "CreatedAt": 1788177279,
+      "Upvotes": 0,
+      "course_code": "GBK0103003",
+      "course_name": "大学物理实验",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1670,
+      "CourseID": 680,
+      "TeacherID": 912,
+      "UserID": 181,
+      "user": {
+        "id": 181,
+        "username": "同学B"
+      },
+      "Score": 10,
+      "Content": "教研员来的，2025年第一次当老师来讲课，甚至他当时还不知道什么是学习通，签到都是手动点名打勾，有幸当了教师A的第一批学生。讲中国玉文化，有理论有实践，知识干货多，认真听能学到很多。对学生特别友善，很好的一个老师课上写作业也不会为难你，很宽容，但是他真的很希望同学们学到点东西，所以能听课还是听一听叭，很有意思的！课上可以大胆提问，你可以问为什么现代玉石雕刻依旧古板而不是雕成哈喽kitty，老师很欢迎同学们求知求真。在这门课上我真的能体验到一种轻松和愉悦，以及有所收获的快乐。",
+      "CreatedAt": 1788169279,
+      "Upvotes": 0,
+      "course_code": "YBK0400004",
+      "course_name": "中华玉石文化与玉器鉴赏",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1669,
+      "CourseID": 17,
+      "TeacherID": 236,
+      "UserID": 181,
+      "user": {
+        "id": 181,
+        "username": "同学B"
+      },
+      "Score": 10,
+      "Content": "偶尔签到，讲课nb，伟大无需多言",
+      "CreatedAt": 1788167860,
+      "Upvotes": 0,
+      "course_code": "GBK0101001 GBK0101002 GBK0101003 GBK0101004 GBK0101005",
+      "course_name": "高等数学/微积分",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1668,
+      "CourseID": 264,
+      "TeacherID": 453,
+      "UserID": 181,
+      "user": {
+        "id": 181,
+        "username": "同学B"
+      },
+      "Score": 9,
+      "Content": "每节课点名，课上要求和规矩多，但实际上认真遵守了没有很多额外的负担。旱地冰球好玩的，每节课会打比赛很有意思，考核难度不难，零基础能最后进四个球，最后一次课比赛即使拿了倒一也没关系，给了4.0",
+      "CreatedAt": 1788167791,
+      "Upvotes": 0,
+      "course_code": "",
+      "course_name": "旱地冰球",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1667,
+      "CourseID": 17,
+      "TeacherID": 226,
+      "UserID": 175,
+      "user": {
+        "id": 175,
+        "username": "同学C"
+      },
+      "Score": 9,
+      "Content": "老师上课讲的比较细，但是留给同学思考的时间比较少，只有到期末才会偶尔叫同学提问或者做题，几乎没有提前上课和拖堂的情况，作业的量确实多了一点点，但如果要巩固知识确实需要这么多。到了其中以后会经常提醒同学复习，考试以后也会尽力捞。",
+      "CreatedAt": 1787980670,
+      "Upvotes": 0,
+      "course_code": "GBK0101001 GBK0101002 GBK0101003 GBK0101004 GBK0101005",
+      "course_name": "高等数学/微积分",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1666,
+      "CourseID": 264,
+      "TeacherID": 453,
+      "UserID": 175,
+      "user": {
+        "id": 175,
+        "username": "同学C"
+      },
+      "Score": 9,
+      "Content": "老师对体育很认真，对自己要求很高，对同学的要求也很高，每次课运动强度也很大，旧版小本本说服装和看手机的要求的确存在，但是很适合认真对待体育的同学，我期末五个球全进拿到了4.0，如果团队赛拿第一也能全队4.0.",
+      "CreatedAt": 1787980342,
+      "Upvotes": 0,
+      "course_code": "",
+      "course_name": "旱地冰球",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1665,
+      "CourseID": 275,
+      "TeacherID": 468,
+      "UserID": 175,
+      "user": {
+        "id": 175,
+        "username": "同学C"
+      },
+      "Score": 10,
+      "Content": "老师超级有耐心，学习通问问题也会及时回复，对学生非常友好，体测没到70分也拉到3.7了",
+      "CreatedAt": 1787979685,
+      "Upvotes": 0,
+      "course_code": "",
+      "course_name": "网球",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1664,
+      "CourseID": 24,
+      "TeacherID": 416,
+      "UserID": 163,
+      "user": {
+        "id": 163,
+        "username": "同学G"
+      },
+      "Score": 9,
+      "Content": "两种听课方式，一种是坐前排认真听拿4.0，一种是后排摸鱼拿3.7。不建议坐前排摸鱼，更不建议前排摸鱼完后回答问题，老师记住你名字会导致分数下降。事少且上课讲的还是可以的，会吐槽会讲笑话。会有思考题，想拿4.0的建议写一写。我考试有没完全找到的地方所以分数偏低。",
+      "CreatedAt": 1785382848,
+      "Upvotes": 0,
+      "course_code": "GBK2000004",
+      "course_name": "中国近现代史纲要",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1663,
+      "CourseID": 283,
+      "TeacherID": 502,
+      "UserID": 163,
+      "user": {
+        "id": 163,
+        "username": "同学G"
+      },
+      "Score": 10,
+      "Content": "足球博士这一块，快乐足球这一块，成绩为自定义量+表现，在老师心里有印象基本4.0没跑。平时可能比较忙，会让研究生（也是好人）来代课。",
+      "CreatedAt": 1785382245,
+      "Upvotes": 0,
+      "course_code": "",
+      "course_name": "足球",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1662,
+      "CourseID": 15,
+      "TeacherID": 909,
+      "UserID": 163,
+      "user": {
+        "id": 163,
+        "username": "同学G"
+      },
+      "Score": 10,
+      "Content": "上课管的少，给分较松，人工智能A到最后就是你和题库做拟合所以该老师还算作可以选。资料会给的比较全面，如果当课代表可能有意外收获。",
+      "CreatedAt": 1785381976,
+      "Upvotes": 0,
+      "course_code": "GBK1200005",
+      "course_name": "人工智能基础",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1661,
+      "CourseID": 45,
+      "TeacherID": 260,
+      "UserID": 163,
+      "user": {
+        "id": 163,
+        "username": "同学G"
+      },
+      "Score": 10,
+      "Content": "线代零基础且想学的你就选吧，选不了吃亏选不了上当，零基础手把手带到4.0。教学是慢而细的风格，有基础或者上课不听的不建议来，签到定的比较死（人脸位置扫码滑块一个不少）。",
+      "CreatedAt": 1785381685,
+      "Upvotes": 0,
+      "course_code": "GBK0101006",
+      "course_name": "线性代数",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1657,
+      "CourseID": 20,
+      "TeacherID": 157,
+      "UserID": 49,
+      "user": {
+        "id": 49,
+        "username": "同学E"
+      },
+      "Score": 6,
+      "Content": "第一节课让我们静默两分钟反思，随后愤怒地表示全班六十多人，竟然没人帮老师擦黑板。平时分也不知道咋给的，最后给分也低。每节课都想一出是一出，要求随时变更。最后的结课论文其他班都是三千字且考试周之后交，只有他要求五千字，考试周前交。“本来想让你们写5000-8000字的，但有同学反应太多，那就五千字吧。”仿佛五千字是给了我们天大的便利。",
+      "CreatedAt": 1784449505,
+      "Upvotes": 0,
+      "course_code": "JBK0409001",
+      "course_name": "写作与沟通",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1656,
+      "CourseID": 17,
+      "TeacherID": 211,
+      "UserID": 168,
+      "user": {
+        "id": 168,
+        "username": "同学F"
+      },
+      "Score": 10,
+      "Content": "上课全板书，做题会巡视监督，认真负责，讲课水平一流，期末给分好",
+      "CreatedAt": 1784340719,
+      "Upvotes": 0,
+      "course_code": "GBK0101001 GBK0101002 GBK0101003 GBK0101004 GBK0101005",
+      "course_name": "高等数学/微积分",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1655,
+      "CourseID": 15,
+      "TeacherID": 908,
+      "UserID": 46,
+      "user": {
+        "id": 46,
+        "username": "同学D"
+      },
+      "Score": 10,
+      "Content": "轻松4.0。老师人挺好的，很随和，之前我下楼买水还和我打招呼。虽然讲课中规中矩，但是好像海底捞，他是通信学院的，开电生理课，学生也说是巨捞巨水。平时作业约等于没有。小组作业哪怕你交个非常简单的NLP上去他都会夸你做的好，很鼓励式教育的好老师。如果你的小组作业架构或者选题比较新颖，可能会更好拿高分(比如我做的是基于UNet架构的降噪系统，他给出了很高的评价)。\n总结：除了讲课中等偏上的水平以外，别的方面都很夯。选他就对了。如果这门课你选教师B都没上3.0那多想想是不是自己的原因。",
+      "CreatedAt": 1784237873,
+      "Upvotes": 0,
+      "course_code": "GBK1200005",
+      "course_name": "人工智能基础",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1654,
+      "CourseID": 278,
+      "TeacherID": 457,
+      "UserID": 46,
+      "user": {
+        "id": 46,
+        "username": "同学D"
+      },
+      "Score": 10,
+      "Content": "25-26春，3.7。我折返跑跑的一坨，但是游泳会游。上课是另一个老师教，但是打分是yml打分。会游的只要蛙泳泳姿不要太不标准就比较好拿高分。",
+      "CreatedAt": 1784237193,
+      "Upvotes": 0,
+      "course_code": "",
+      "course_name": "游泳",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1653,
+      "CourseID": 282,
+      "TeacherID": 493,
+      "UserID": 46,
+      "user": {
+        "id": 46,
+        "username": "同学D"
+      },
+      "Score": 10,
+      "Content": "教师C真的给分好，本人体育不怎么样，我折返跑+滚筒骑行拉完了最后都有4.0。教师C虽然给你合格线报的数据有点夸张，但是不影响最后给分很高。不怎么管你上课，还带我们扔飞盘玩。而且很和蔼可亲。\nbtw我大一上体育基础也选的他，给了3.7，给分很不错。",
+      "CreatedAt": 1784236999,
+      "Upvotes": 0,
+      "course_code": "",
+      "course_name": "自行车",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1652,
+      "CourseID": 24,
+      "TeacherID": 414,
+      "UserID": 46,
+      "user": {
+        "id": 46,
+        "username": "同学D"
+      },
+      "Score": 10,
+      "Content": "4.0。小组作业要求不高，简单来说就是讲得细致一点就行，挑大历史背景中的一些小的方面来讲，这样就能得高分，对于小组作业划水的可以反映，这点挺公平的。课上有很多有意思的话题。而且他会征询同学们的意见，如果大家同意占用课间时间上课就提前下课。",
+      "CreatedAt": 1784236605,
+      "Upvotes": 0,
+      "course_code": "GBK2000004",
+      "course_name": "中国近现代史纲要",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1651,
+      "CourseID": 49,
+      "TeacherID": 39,
+      "UserID": 46,
+      "user": {
+        "id": 46,
+        "username": "同学D"
+      },
+      "Score": 10,
+      "Content": "4.0。挺好的，你犯一些基础问题会提醒你，但是有问题她是真帮你啊。",
+      "CreatedAt": 1784236190,
+      "Upvotes": 0,
+      "course_code": "GBK0104002",
+      "course_name": "大学化学实验",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1649,
+      "CourseID": 48,
+      "TeacherID": 906,
+      "UserID": 46,
+      "user": {
+        "id": 46,
+        "username": "同学D"
+      },
+      "Score": 9,
+      "Content": "25-26春。每次动态扫码+点名，不能翘课。课讲挺快，作业量还好（每章讲完集中布置）。有学习通测验，计入平时分。期末3.7，捞了，要不是考勤太烦了外加有测试肯定打好评，现在只能给到中上。",
+      "CreatedAt": 1784236046,
+      "Upvotes": 0,
+      "course_code": "GBK0104001",
+      "course_name": "大学化学",
+      "teacher_name": "教师A"
+    },
+    {
+      "ID": 1648,
+      "CourseID": 17,
+      "TeacherID": 231,
+      "UserID": 46,
+      "user": {
+        "id": 46,
+        "username": "同学D"
+      },
+      "Score": 8,
+      "Content": "高等数学A1拿了85(3.7)，纯摆子一个，首先拿这分有点意外之喜。这老师捞但不是海底捞，但是必须喷这个作业量，写了十几本本子，这是人类吗??? 考勤倒是几乎不考勤，挺好。课讲的还行，上课习题真多。对于摆子完全不推荐，因为作业抄都抄不完。鉴于她给我3.7给个中评。",
+      "CreatedAt": 1784235789,
+      "Upvotes": 0,
+      "course_code": "GBK0101001 GBK0101002 GBK0101003 GBK0101004 GBK0101005",
+      "course_name": "高等数学/微积分",
+      "teacher_name": "教师A"
+    }
+  ]
+}

@@ -96,8 +96,10 @@ class CookedLinkPreview {
     if (uri == null || !ForumUrlResolver.isKnownForumHost(uri.host)) {
       return false;
     }
-    return uri.path == '/latest' || uri.path == '/latest/' ||
-        uri.path == '/faq' || uri.path == '/faq/' ||
+    return uri.path == '/latest' ||
+        uri.path == '/latest/' ||
+        uri.path == '/faq' ||
+        uri.path == '/faq/' ||
         uri.path == '/my/preferences/account' ||
         uri.path == '/my/preferences/account/';
   }
@@ -696,7 +698,8 @@ class HtmlText {
     final uri = _uriForLink(trimmed);
     if (uri == null) return false;
     final host = uri.host.toLowerCase();
-    final path = uri.path == '/' ? '/' : uri.path.replaceFirst(RegExp(r'/$'), '');
+    final path =
+        uri.path == '/' ? '/' : uri.path.replaceFirst(RegExp(r'/$'), '');
     if ((host == ForumConstants.host || host == ForumUrlResolver.webVpnHost) &&
         (path == '/about' || path == '/badges')) {
       return true;
