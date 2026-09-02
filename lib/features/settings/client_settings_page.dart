@@ -901,9 +901,7 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
     AcademicScheduleAlarmSettings settings,
   ) async {
     final formKey = GlobalKey<FormState>();
-    final controller = TextEditingController(
-      text: settings.leadMinutes.toString(),
-    );
+    var input = settings.leadMinutes.toString();
     final value = await showDialog<int>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -911,7 +909,8 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
         content: Form(
           key: formKey,
           child: TextFormField(
-            controller: controller,
+            initialValue: input,
+            onChanged: (value) => input = value,
             autofocus: true,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
@@ -937,7 +936,7 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
           FilledButton(
             onPressed: () {
               if (formKey.currentState?.validate() ?? false) {
-                Navigator.of(dialogContext).pop(int.parse(controller.text));
+                Navigator.of(dialogContext).pop(int.parse(input));
               }
             },
             child: const Text('保存'),
@@ -945,7 +944,6 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
         ],
       ),
     );
-    controller.dispose();
     if (value != null && mounted) {
       await _saveAlarm(settings.copyWith(leadMinutes: value));
     }

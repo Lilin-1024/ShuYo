@@ -149,6 +149,20 @@ void main() {
       expect(methodCalls, contains('requestAuthorization'));
       expect(find.text('闹钟提前时间'), findsOneWidget);
       expect(find.text('20 分钟'), findsOneWidget);
+
+      await tester.tap(find.text('闹钟提前时间'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('取消'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(find.text('闹钟提前时间'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), '30');
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('30 分钟'), findsOneWidget);
     } finally {
       debugDefaultTargetPlatformOverride = null;
     }
