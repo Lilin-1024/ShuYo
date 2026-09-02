@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as timezone_data;
@@ -27,17 +29,42 @@ class AcademicScheduleNotificationSettings {
   }
 }
 
+class AcademicScheduleAlarmSettings {
+  const AcademicScheduleAlarmSettings({
+    required this.enabled,
+    required this.leadMinutes,
+  });
+
+  final bool enabled;
+  final int leadMinutes;
+
+  AcademicScheduleAlarmSettings copyWith({
+    bool? enabled,
+    int? leadMinutes,
+  }) {
+    return AcademicScheduleAlarmSettings(
+      enabled: enabled ?? this.enabled,
+      leadMinutes: leadMinutes ?? this.leadMinutes,
+    );
+  }
+}
+
 class AcademicScheduleNotificationService {
   AcademicScheduleNotificationService({
     required AcademicScheduleRepository repository,
     Future<SharedPreferences> Function()? preferencesLoader,
     FlutterLocalNotificationsPlugin? notifications,
+    MethodChannel? alarmChannel,
   })  : _repository = repository,
         _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance,
-        _notifications = notifications ?? FlutterLocalNotificationsPlugin();
+        _notifications = notifications ?? FlutterLocalNotificationsPlugin(),
+        _alarmChannel = alarmChannel ??
+            const MethodChannel('work.shuyo.app/early_class_alarms');
 
   static const _enabledKey = 'academic.schedule.notifications.enabled';
   static const _leadMinutesKey = 'academic.schedule.notifications.leadMinutes';
+  static const _alarmEnabledKey = 'academic.schedule.alarms.enabled';
+  static const _alarmLeadMinutesKey = 'academic.schedule.alarms.leadMinutes';
   static const _channelId = 'course_reminders';
   static const _baseNotificationId = 420000;
   static const _maxPendingReminders = 64;
@@ -45,6 +72,7 @@ class AcademicScheduleNotificationService {
   final AcademicScheduleRepository _repository;
   final Future<SharedPreferences> Function() _preferencesLoader;
   final FlutterLocalNotificationsPlugin _notifications;
+  final MethodChannel _alarmChannel;
   bool _initialized = false;
 
   Future<AcademicScheduleNotificationSettings> loadSettings() async {
@@ -88,7 +116,96 @@ class AcademicScheduleNotificationService {
     return saved;
   }
 
+  Future<bool> supportsEarlyClassAlarms() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
+      return false;
+    }
+    try {
+      return await _alarmChannel.invokeMethod<bool>('isAvailable') ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<AcademicScheduleAlarmSettings> loadAlarmSettings() async {
+    final prefs = await _preferencesLoader();
+    return AcademicScheduleAlarmSettings(
+      enabled: prefs.getBool(_alarmEnabledKey) ?? false,
+      leadMinutes: prefs.getInt(_alarmLeadMinutesKey) ?? 20,
+    );
+  }
+
+  Future<AcademicScheduleAlarmSettings> saveAlarmSettings(
+    AcademicScheduleAlarmSettings settings,
+  ) async {
+    final prefs = await _preferencesLoader();
+    final normalized = settings.copyWith(
+      leadMinutes: settings.leadMinutes.clamp(1, 120),
+    );
+    await prefs.setBool(_alarmEnabledKey, normalized.enabled);
+    await prefs.setInt(_alarmLeadMinutesKey, normalized.leadMinutes);
+    return normalized;
+  }
+
+  Future<AcademicScheduleAlarmSettings> saveAlarmSettingsAndSync(
+    AcademicScheduleAlarmSettings settings, {
+    bool requestPermission = false,
+  }) async {
+    var next = settings;
+    if (next.enabled && requestPermission) {
+      final allowed =
+          await _alarmChannel.invokeMethod<bool>('requestAuthorization') ??
+              false;
+      if (!allowed) {
+        next = next.copyWith(enabled: false);
+      }
+    }
+    await saveAlarmSettings(next);
+    await syncEarlyClassAlarms();
+    return loadAlarmSettings();
+  }
+
+  Future<int> syncEarlyClassAlarms({DateTime? now}) async {
+    if (!await supportsEarlyClassAlarms()) {
+      return 0;
+    }
+    await _ensureInitialized();
+    final settings = await loadAlarmSettings();
+    final schedule =
+        settings.enabled ? await _repository.loadCachedSchedule() : null;
+    final alarms = <_EarlyClassAlarm>[];
+    if (schedule != null) {
+      final weekState = await _repository.loadWeekState();
+      alarms.addAll(
+        _upcomingEarlyClassAlarms(
+          schedule: schedule,
+          weekState: weekState,
+          leadMinutes: settings.leadMinutes,
+          now: now ?? DateTime.now(),
+        ),
+      );
+    }
+    final count = await _alarmChannel.invokeMethod<int>('sync', {
+          'alarms': alarms.map((alarm) => alarm.toMap()).toList(),
+        }) ??
+        0;
+    if (count < 0) {
+      if (settings.enabled) {
+        await saveAlarmSettings(settings.copyWith(enabled: false));
+      }
+      return 0;
+    }
+    return count;
+  }
+
   Future<int> syncScheduleReminders({bool requestPermission = false}) async {
+    try {
+      await syncEarlyClassAlarms();
+    } on PlatformException {
+      // Local notification syncing remains independent of AlarmKit.
+    }
     await _ensureInitialized();
     await _cancelCourseReminders();
 
@@ -245,6 +362,69 @@ class AcademicScheduleNotificationService {
     }
   }
 
+  Iterable<_EarlyClassAlarm> _upcomingEarlyClassAlarms({
+    required AcademicSchedule schedule,
+    required ScheduleWeekState weekState,
+    required int leadMinutes,
+    required DateTime now,
+  }) sync* {
+    final shanghaiNow = timezone.TZDateTime.from(now, timezone.local);
+    final today =
+        DateTime(shanghaiNow.year, shanghaiNow.month, shanghaiNow.day);
+    final alarms = <_EarlyClassAlarm>[];
+    final maxDays = schedule.maxWeek * 7 + 7;
+
+    for (var dayOffset = 0; dayOffset < maxDays; dayOffset++) {
+      final day = today.add(Duration(days: dayOffset));
+      final week = _rawWeekForDate(weekState, day);
+      if (week < 1) {
+        continue;
+      }
+      if (schedule.isVacationWeek(week)) {
+        break;
+      }
+
+      CourseSession? earliest;
+      for (final session in schedule.sessions) {
+        final range =
+            AcademicScheduleRepository.sectionTimes[session.startSection];
+        final isMorning = range != null && range.$1 < 12;
+        if (session.weekday == day.weekday &&
+            session.occursInWeek(week) &&
+            isMorning &&
+            (earliest == null ||
+                session.startSection < earliest.startSection)) {
+          earliest = session;
+        }
+      }
+      if (earliest == null) {
+        continue;
+      }
+
+      final range =
+          AcademicScheduleRepository.sectionTimes[earliest.startSection]!;
+      final start = timezone.TZDateTime(
+        timezone.local,
+        day.year,
+        day.month,
+        day.day,
+        range.$1,
+        range.$2,
+      );
+      final fireTime = start.subtract(Duration(minutes: leadMinutes));
+      if (fireTime.isAfter(shanghaiNow.add(const Duration(seconds: 30)))) {
+        alarms.add(
+          _EarlyClassAlarm(
+            title: earliest.courseName.isEmpty ? '早课' : earliest.courseName,
+            fireTime: fireTime,
+          ),
+        );
+      }
+    }
+
+    yield* alarms;
+  }
+
   Iterable<_CourseReminder> _upcomingReminders({
     required AcademicSchedule schedule,
     required ScheduleWeekState weekState,
@@ -317,4 +497,16 @@ class _CourseReminder {
     final location = session.location.isEmpty ? '' : ' · ${session.location}';
     return '$leadMinutes 分钟后开始$location';
   }
+}
+
+class _EarlyClassAlarm {
+  const _EarlyClassAlarm({required this.title, required this.fireTime});
+
+  final String title;
+  final DateTime fireTime;
+
+  Map<String, Object> toMap() => {
+        'title': title,
+        'fireTime': fireTime.millisecondsSinceEpoch,
+      };
 }
