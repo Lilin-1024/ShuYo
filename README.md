@@ -10,12 +10,12 @@
 - 课程评价（由course-rate.icu提供）
 - 乐乎论坛
 
-# 安装
+## 安装
 
-## Android
+### Android
 Android 版本可以打开 [release 页面](https://github.com/shuosc/ShuYo/releases) 或通过 [ShuYo网站](https://download.shuyo.work/latest.apk) 下载。（依据设备差异，您可能需要在设置中允许「安装来自未知来源的应用」）
 
-## iOS/iPadOS
+### iOS/iPadOS
 当前暂未上架App Store，我们正在努力推进ShuYo上架国区App Store。
 
 如果您遇到了本应用中不符合预期的行为，欢迎先查看已有的 [Issues](https://github.com/shuosc/ShuYo/issues)，也可以[新建 Issue](https://github.com/shuosc/ShuYo/issues/new/choose) 反馈问题或提出建议。修复问题或新增功能时，欢迎提交 Pull Request。
