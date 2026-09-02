@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/client_app_info.dart';
@@ -728,10 +729,15 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
   ClientNotificationSettings? _settings;
   bool _saving = false;
 
+  bool _alarmsSupported = false;
+  AcademicScheduleAlarmSettings? _alarmSettings;
+  bool _savingAlarm = false;
+
   @override
   void initState() {
     super.initState();
     _future = _loadSettings();
+    _loadAlarmState();
   }
 
   @override
@@ -762,6 +768,7 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
             );
           }
           final settings = _settings ?? snapshot.data!;
+          final alarmSettings = _alarmSettings;
           return ListView(
             children: [
               _SettingsSwitchRow(
@@ -772,6 +779,27 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
                   settings.copyWith(scheduleEnabled: value),
                 ),
               ),
+              if (_alarmsSupported && alarmSettings != null) ...[
+                _SettingsSwitchRow(
+                  title: '早课闹钟',
+                  subtitle: '每天仅为上午最早的一节课设置闹钟',
+                  value: alarmSettings.enabled,
+                  enabled: !_savingAlarm,
+                  onChanged: (value) => _saveAlarm(
+                    alarmSettings.copyWith(enabled: value),
+                    requestPermission: value,
+                  ),
+                ),
+                if (alarmSettings.enabled)
+                  ListTile(
+                    title: const Text('闹钟提前时间'),
+                    trailing: Text('${alarmSettings.leadMinutes} 分钟'),
+                    enabled: !_savingAlarm,
+                    onTap: _savingAlarm
+                        ? null
+                        : () => _editAlarmLeadMinutes(alarmSettings),
+                  ),
+              ],
             ],
           );
         },
@@ -783,6 +811,22 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
     final settings = await widget.settingsService.loadNotificationSettings();
     _settings = settings;
     return settings;
+  }
+
+  Future<void> _loadAlarmState() async {
+    final supported =
+        await widget.scheduleNotificationService.supportsEarlyClassAlarms();
+    final settings = supported
+        ? await widget.scheduleNotificationService.loadAlarmSettings()
+        : const AcademicScheduleAlarmSettings(
+            enabled: false,
+            leadMinutes: 20,
+          );
+    if (!mounted) return;
+    setState(() {
+      _alarmsSupported = supported;
+      _alarmSettings = settings;
+    });
   }
 
   Future<void> _save(ClientNotificationSettings settings) async {
@@ -816,6 +860,96 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
       }
     }
   }
+
+  Future<void> _saveAlarm(
+    AcademicScheduleAlarmSettings settings, {
+    bool requestPermission = false,
+  }) async {
+    if (_savingAlarm) {
+      return;
+    }
+    setState(() {
+      _savingAlarm = true;
+      _alarmSettings = settings;
+    });
+    try {
+      final saved =
+          await widget.scheduleNotificationService.saveAlarmSettingsAndSync(
+        settings,
+        requestPermission: requestPermission,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() => _alarmSettings = saved);
+      if (settings.enabled && !saved.enabled) {
+        _showSnack(context, '未获得闹钟权限，请在系统设置中允许 ShuYo 使用闹钟');
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        _showSnack(context, '闹钟设置保存失败：$error');
+        _loadAlarmState();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _savingAlarm = false);
+      }
+    }
+  }
+
+  Future<void> _editAlarmLeadMinutes(
+    AcademicScheduleAlarmSettings settings,
+  ) async {
+    final formKey = GlobalKey<FormState>();
+    final controller = TextEditingController(
+      text: settings.leadMinutes.toString(),
+    );
+    final value = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('设置闹钟提前时间'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(
+              labelText: '提前分钟数',
+              helperText: '可设置 1–120 分钟',
+            ),
+            validator: (text) {
+              final minutes = int.tryParse(text ?? '');
+              if (minutes == null || minutes < 1 || minutes > 120) {
+                return '请输入 1–120 之间的整数';
+              }
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.of(dialogContext).pop(int.parse(controller.text));
+              }
+            },
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value != null && mounted) {
+      await _saveAlarm(settings.copyWith(leadMinutes: value));
+    }
+  }
 }
 
 class _SettingsRow extends StatelessWidget {
@@ -843,12 +977,15 @@ class _SettingsSwitchRow extends StatelessWidget {
     required this.value,
     required this.enabled,
     required this.onChanged,
+    this.subtitle,
   });
 
   final String title;
   final bool value;
   final bool enabled;
   final ValueChanged<bool> onChanged;
+  final String? subtitle;
+
 
   @override
   Widget build(BuildContext context) {
@@ -860,6 +997,12 @@ class _SettingsSwitchRow extends StatelessWidget {
           color: enabled ? colors.textPrimary : colors.textMuted,
         ),
       ),
+      subtitle: subtitle == null
+          ? null
+          : Text(
+              subtitle!,
+              style: TextStyle(color: colors.textMuted),
+            ),
       value: value,
       onChanged: enabled ? onChanged : null,
     );
