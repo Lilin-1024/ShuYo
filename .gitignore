@@ -17,7 +17,7 @@ ios/.symlinks/
 
 *.iml
 *.log
+.idea/
 
 /.DS_Store
 /.demo
-assets/demo/README.md
