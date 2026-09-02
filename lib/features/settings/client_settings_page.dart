@@ -793,7 +793,10 @@ class _NotificationSettingsPageState extends State<_NotificationSettingsPage> {
                 if (alarmSettings.enabled)
                   ListTile(
                     title: const Text('闹钟提前时间'),
-                    trailing: Text('${alarmSettings.leadMinutes} 分钟'),
+                    trailing: Padding(
+                      padding: const EdgeInsets.only(right: 7),
+                      child: Text('${alarmSettings.leadMinutes} 分钟'),
+                    ),
                     enabled: !_savingAlarm,
                     onTap: _savingAlarm
                         ? null
