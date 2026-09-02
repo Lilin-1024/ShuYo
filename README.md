@@ -13,7 +13,7 @@
 # 安装
 
 ## Android
-Android 版本可以打开 [release 页面](https://github.com/shuosc/ShuYo/releases) 或通过 [ShuYo网站](https://downloads.shuyo.work/latest.apk) 下载。（依据设备差异，您可能需要在设置中允许「安装来自未知来源的应用」）
+Android 版本可以打开 [release 页面](https://github.com/shuosc/ShuYo/releases) 或通过 [ShuYo网站](https://download.shuyo.work/latest.apk) 下载。（依据设备差异，您可能需要在设置中允许「安装来自未知来源的应用」）
 
 ## iOS/iPadOS
 当前暂未上架App Store，我们正在努力推进ShuYo上架国区App Store。
