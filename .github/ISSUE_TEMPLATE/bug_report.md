@@ -24,4 +24,4 @@ labels: bug
 - 使用平台：iOS / Android
 - 设备型号：
 - 系统版本：
-- ShuYo 版本 (见「设置-关于ShuYO」)：
+- ShuYo 版本 (见「设置-关于ShuYo」)：
