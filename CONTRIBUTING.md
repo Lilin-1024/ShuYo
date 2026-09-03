@@ -13,7 +13,15 @@
 
 ## 开发环境
 
-ShuYo 使用 Dart 和 Flutter 开发。请先参考 [README](README.md) 中的环境配置说明，然后在项目根目录执行：
+ShuYo 使用 Dart 和 Flutter 开发，并跟随 Flutter `stable` 渠道的最新版本。请先参考 [README](README.md) 中的环境配置说明，并将本地 SDK 更新至最新的`stable`版本：
+
+```shell
+flutter channel stable
+flutter upgrade
+flutter --version
+```
+
+然后在项目根目录执行：
 
 ```shell
 flutter pub get
