@@ -43,3 +43,5 @@ flutter run -d <device-id>
 ```shell
 flutter test
 ```
+
+开发约定：[LLM 使用政策](LLM_POLICY.md)
