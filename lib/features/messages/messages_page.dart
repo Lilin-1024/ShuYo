@@ -81,6 +81,7 @@ class _MessagesPageState extends State<MessagesPage> {
       'forum.privateMessages.hidden.';
 
   final _previewFutures = <int, Future<_MessageTopicPreview>>{};
+  final _previewVersions = <int, _MessageTopicVersion>{};
   final _messageScrollController = ScrollController();
   List<TopicListItem>? _topics;
   Set<int> _archivedTopicIds = const {};
@@ -124,6 +125,7 @@ class _MessagesPageState extends State<MessagesPage> {
         widget.onRefreshStateChanged?.call(false);
       }
       _previewFutures.clear();
+      _previewVersions.clear();
       _topics = null;
       _archivedTopicIds = const {};
       _selectedTopicIds = {};
@@ -392,6 +394,7 @@ class _MessagesPageState extends State<MessagesPage> {
         _error = null;
         _loading = false;
       });
+      _updatePreviewVersions(topics);
       unawaited(_refreshList(silent: true, showIndicator: false));
     } on Object catch (error) {
       if (!mounted) {
@@ -446,6 +449,7 @@ class _MessagesPageState extends State<MessagesPage> {
         return;
       }
       final topicIds = topics.map((topic) => topic.id).toSet();
+      _invalidateChangedPreviews(topics);
       setState(() {
         _topics = topics;
         _archivedTopicIds = archivedTopicIds;
@@ -454,6 +458,7 @@ class _MessagesPageState extends State<MessagesPage> {
         );
         _error = null;
       });
+      _updatePreviewVersions(topics);
     } on Object catch (error) {
       if (error is ForumAuthException) {
         refreshRepository.markAuthenticationRequired();
@@ -668,6 +673,25 @@ class _MessagesPageState extends State<MessagesPage> {
 
   Future<_MessageTopicPreview> _previewForTopic(TopicListItem topic) {
     return _previewFutures[topic.id] ??= _loadPreview(topic);
+  }
+
+  void _invalidateChangedPreviews(Iterable<TopicListItem> topics) {
+    for (final topic in topics) {
+      final previous = _previewVersions[topic.id];
+      if (previous != null &&
+          previous != _MessageTopicVersion.fromTopic(topic)) {
+        _previewFutures.remove(topic.id);
+      }
+    }
+  }
+
+  void _updatePreviewVersions(Iterable<TopicListItem> topics) {
+    final ids = <int>{};
+    for (final topic in topics) {
+      ids.add(topic.id);
+      _previewVersions[topic.id] = _MessageTopicVersion.fromTopic(topic);
+    }
+    _previewVersions.removeWhere((topicId, _) => !ids.contains(topicId));
   }
 
   Future<_MessageTopicPreview> _loadPreview(TopicListItem topic) async {
@@ -2136,6 +2160,41 @@ class _MessageTopicPreview {
     final clipped = text.length > 48 ? '${text.substring(0, 48)}...' : text;
     return hasImages ? '$clipped [图片]' : clipped;
   }
+}
+
+class _MessageTopicVersion {
+  const _MessageTopicVersion({
+    required this.postsCount,
+    required this.highestPostNumber,
+    required this.lastPostedAt,
+  });
+
+  final int postsCount;
+  final int highestPostNumber;
+  final DateTime? lastPostedAt;
+
+  factory _MessageTopicVersion.fromTopic(TopicListItem topic) {
+    return _MessageTopicVersion(
+      postsCount: topic.postsCount,
+      highestPostNumber: topic.highestPostNumber,
+      lastPostedAt: topic.lastPostedAt,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is _MessageTopicVersion &&
+        other.postsCount == postsCount &&
+        other.highestPostNumber == highestPostNumber &&
+        other.lastPostedAt == lastPostedAt;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        postsCount,
+        highestPostNumber,
+        lastPostedAt,
+      );
 }
 
 class _PrivateConversationGroup {
