@@ -129,6 +129,11 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
                       _followsCurrentWeek = false;
                       _selectedManualSlot = null;
                     }),
+            onQuickWeekSelected: (week) => setState(() {
+              _displayedWeek = week;
+              _followsCurrentWeek = false;
+              _selectedManualSlot = null;
+            }),
             selectedManualSlot: _selectedManualSlot,
             canAddCourse: !schedule.isVacationWeek(_displayedWeek),
             onEmptySlotTap: _handleEmptySlotTap,
@@ -1753,6 +1758,7 @@ class _ScheduleBody extends StatelessWidget {
     required this.courseColorValues,
     required this.onPreviousWeek,
     required this.onNextWeek,
+    required this.onQuickWeekSelected,
     required this.selectedManualSlot,
     required this.canAddCourse,
     required this.onEmptySlotTap,
@@ -1766,6 +1772,7 @@ class _ScheduleBody extends StatelessWidget {
   final Map<String, int> courseColorValues;
   final VoidCallback? onPreviousWeek;
   final VoidCallback? onNextWeek;
+  final ValueChanged<int> onQuickWeekSelected;
   final _ScheduleSlot? selectedManualSlot;
   final bool canAddCourse;
   final ValueChanged<_ScheduleSlot> onEmptySlotTap;
@@ -1775,26 +1782,27 @@ class _ScheduleBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final sessions = schedule.sessionsForWeek(displayedWeek);
     final untimed = schedule.untimedForWeek(displayedWeek);
-    final weekdays = _visibleWeekdays(sessions);
+    const weekdays = [1, 2, 3, 4, 5, 6, 7];
 
     return Column(
       children: [
         _WeekSwitcher(
           week: displayedWeek,
           isVacation: schedule.isVacationWeek(displayedWeek),
+          maxWeek: schedule.maxWeek,
           onPrevious: onPreviousWeek,
           onNext: onNextWeek,
+          onQuickWeekSelected: onQuickWeekSelected,
         ),
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final needsHorizontalScroll = weekdays.length > 5;
               final weekdayWidth =
                   (constraints.maxWidth - _ScheduleGrid.leftWidth) / 5;
-              final gridWidth = needsHorizontalScroll
-                  ? _ScheduleGrid.leftWidth + weekdays.length * weekdayWidth
-                  : constraints.maxWidth;
+              final gridWidth =
+                  _ScheduleGrid.leftWidth + weekdays.length * weekdayWidth;
               final grid = SingleChildScrollView(
+                key: const PageStorageKey('academic-schedule-vertical-scroll'),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -1819,9 +1827,6 @@ class _ScheduleBody extends StatelessWidget {
                   ],
                 ),
               );
-              if (!needsHorizontalScroll) {
-                return grid;
-              }
               return SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: SizedBox(width: gridWidth, child: grid),
@@ -1832,25 +1837,59 @@ class _ScheduleBody extends StatelessWidget {
       ],
     );
   }
-
-  List<int> _visibleWeekdays(List<CourseSession> sessions) {
-    final hasWeekend = sessions.any((session) => session.weekday >= 6);
-    return hasWeekend ? const [1, 2, 3, 4, 5, 6, 7] : const [1, 2, 3, 4, 5];
-  }
 }
 
-class _WeekSwitcher extends StatelessWidget {
+class _WeekSwitcher extends StatefulWidget {
   const _WeekSwitcher({
     required this.week,
     required this.isVacation,
+    required this.maxWeek,
     required this.onPrevious,
     required this.onNext,
+    required this.onQuickWeekSelected,
   });
 
   final int week;
   final bool isVacation;
+  final int maxWeek;
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
+  final ValueChanged<int> onQuickWeekSelected;
+
+  @override
+  State<_WeekSwitcher> createState() => _WeekSwitcherState();
+}
+
+class _WeekSwitcherState extends State<_WeekSwitcher> {
+  bool _fastSwitching = false;
+  int _previewWeek = 1;
+  double _dragStartDx = 0;
+  int _dragStartWeek = 1;
+  double _dragWidth = 1;
+  double _scheduleAreaTop = 0;
+  OverlayEntry? _previewOverlay;
+
+  @override
+  void initState() {
+    super.initState();
+    _previewWeek = widget.week.clamp(1, widget.maxWeek);
+  }
+
+  @override
+  void didUpdateWidget(covariant _WeekSwitcher oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_fastSwitching &&
+        (oldWidget.week != widget.week ||
+            oldWidget.maxWeek != widget.maxWeek)) {
+      _previewWeek = widget.week.clamp(1, widget.maxWeek);
+    }
+  }
+
+  @override
+  void dispose() {
+    _removePreviewOverlay();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1860,25 +1899,206 @@ class _WeekSwitcher extends StatelessWidget {
         children: [
           IconButton(
             tooltip: '上一周',
-            onPressed: onPrevious,
+            onPressed: _fastSwitching ? null : widget.onPrevious,
             icon: const Icon(Icons.chevron_left),
           ),
           Expanded(
-            child: Text(
-              isVacation ? '假期中' : '第 $week 周',
-              textAlign: TextAlign.center,
-              style: ShuYoTextStyles.title(
-                size: 16.5,
-                weight: FontWeight.w600,
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragStart: widget.maxWeek > 1
+                      ? (details) => _beginFastSwitch(
+                            details,
+                            constraints.maxWidth,
+                          )
+                      : null,
+                  onHorizontalDragUpdate:
+                      widget.maxWeek > 1 ? _updateFastSwitch : null,
+                  onHorizontalDragEnd:
+                      widget.maxWeek > 1 ? _finishFastSwitch : null,
+                  onHorizontalDragCancel:
+                      widget.maxWeek > 1 ? _cancelFastSwitch : null,
+                  child: SizedBox(
+                    height: 48,
+                    child: Center(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 120),
+                        child: _fastSwitching
+                            ? SizedBox(
+                                key: const ValueKey('quick-week-scrubber'),
+                                width: constraints.maxWidth.clamp(120.0, 190.0),
+                                child: _WeekScrubber(
+                                  week: _previewWeek,
+                                  maxWeek: widget.maxWeek,
+                                ),
+                              )
+                            : Text(
+                                widget.isVacation
+                                    ? '假期中'
+                                    : '第 ${widget.week} 周',
+                                key: const ValueKey('week-title'),
+                                textAlign: TextAlign.center,
+                                style: ShuYoTextStyles.title(
+                                  size: 16.5,
+                                  weight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           IconButton(
             tooltip: '下一周',
-            onPressed: onNext,
+            onPressed: _fastSwitching ? null : widget.onNext,
             icon: const Icon(Icons.chevron_right),
           ),
         ],
+      ),
+    );
+  }
+
+  void _beginFastSwitch(DragStartDetails details, double width) {
+    setState(() {
+      _fastSwitching = true;
+      _previewWeek = widget.week.clamp(1, widget.maxWeek);
+      _dragStartWeek = _previewWeek;
+      _dragStartDx = details.localPosition.dx;
+      _dragWidth = width;
+    });
+    _showPreviewOverlay();
+  }
+
+  void _updateFastSwitch(DragUpdateDetails details) {
+    if (!_fastSwitching) return;
+    final range = widget.maxWeek - 1;
+    if (range <= 0) return;
+    final pixelsPerWeek = (_dragWidth / (range * 2)).clamp(6.0, 18.0);
+    final offset =
+        ((details.localPosition.dx - _dragStartDx) / pixelsPerWeek).round();
+    final week = (_dragStartWeek + offset).clamp(1, widget.maxWeek);
+    if (week != _previewWeek) {
+      setState(() => _previewWeek = week);
+      _previewOverlay?.markNeedsBuild();
+    }
+  }
+
+  void _finishFastSwitch(DragEndDetails details) {
+    if (!_fastSwitching) return;
+    final week = _previewWeek;
+    _removePreviewOverlay();
+    setState(() => _fastSwitching = false);
+    widget.onQuickWeekSelected(week);
+  }
+
+  void _cancelFastSwitch() {
+    if (!_fastSwitching) return;
+    _removePreviewOverlay();
+    setState(() => _fastSwitching = false);
+  }
+
+  void _showPreviewOverlay() {
+    _removePreviewOverlay();
+    final renderObject = context.findRenderObject();
+    if (renderObject is RenderBox) {
+      _scheduleAreaTop =
+          renderObject.localToGlobal(Offset(0, renderObject.size.height)).dy;
+    }
+    _previewOverlay = OverlayEntry(
+      builder: (context) {
+        final colors = context.shuyoColors;
+        return Positioned(
+          top: _scheduleAreaTop,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: IgnorePointer(
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 21, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: colors.inverseSurface.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '第 $_previewWeek 周',
+                    style: ShuYoTextStyles.meta(
+                      color: colors.inverseOnSurface,
+                      size: 16,
+                      weight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+    Overlay.of(context).insert(_previewOverlay!);
+  }
+
+  void _removePreviewOverlay() {
+    _previewOverlay?.remove();
+    _previewOverlay = null;
+  }
+}
+
+class _WeekScrubber extends StatelessWidget {
+  const _WeekScrubber({required this.week, required this.maxWeek});
+
+  final int week;
+  final int maxWeek;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.shuyoColors;
+    final progress = maxWeek <= 1 ? 0.0 : (week - 1) / (maxWeek - 1);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const dotSize = 14.0;
+          final dotLeft = (constraints.maxWidth - dotSize) * progress;
+          return SizedBox(
+            height: dotSize,
+            child: Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.borderStrong,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                Positioned(
+                  left: dotLeft,
+                  child: Container(
+                    width: dotSize,
+                    height: dotSize,
+                    decoration: BoxDecoration(
+                      color: colors.accent,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.background.withValues(alpha: 0.28),
+                          blurRadius: 3,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
