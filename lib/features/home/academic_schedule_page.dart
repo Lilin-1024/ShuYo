@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/academic_schedule.dart';
 import '../../data/repositories/academic_schedule_repository.dart';
 import '../../data/services/academic_schedule_api_client.dart';
+import '../../data/services/academic_schedule_display_settings_service.dart';
 import '../../data/services/academic_schedule_notification_service.dart';
 import '../../data/services/academic_schedule_widget_service.dart';
 import '../../shared/shuyo_text_styles.dart';
@@ -43,11 +44,15 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
   bool _refreshing = false;
   bool _followsCurrentWeek = true;
   Timer? _weekTimer;
+  final _displaySettingsService = AcademicScheduleDisplaySettingsService();
+  AcademicScheduleDisplaySettings _displaySettings =
+      const AcademicScheduleDisplaySettings(colorful: false, showTeacher: false);
 
   @override
   void initState() {
     super.initState();
     _loadFuture = _loadCached();
+    unawaited(_loadDisplaySettings());
     _weekTimer = Timer.periodic(
       const Duration(minutes: 1),
       (_) => _refreshDisplayedWeekIfNeeded(),
@@ -103,6 +108,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
             schedule: schedule,
             weekState: weekState,
             displayedWeek: _displayedWeek,
+            displaySettings: _displaySettings,
             onPreviousWeek: _displayedWeek <= 0
                 ? null
                 : () => setState(() {
@@ -125,6 +131,14 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         },
       ),
     );
+  }
+
+  Future<void> _loadDisplaySettings() async {
+    final settings = await _displaySettingsService.loadSettings();
+    if (!mounted) {
+      return;
+    }
+    setState(() => _displaySettings = settings);
   }
 
   Future<void> _loadCached() async {
@@ -370,6 +384,28 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
                   _DetailLine(Icons.person_outline, session.teacherName),
                 if (session.credit.isNotEmpty)
                   _DetailLine(Icons.school_outlined, '${session.credit} 学分'),
+                if (session.note.trim().isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceAlt,
+                      border: Border(
+                        left: BorderSide(color: color, width: 3),
+                      ),
+                    ),
+                    child: Text(
+                      session.note.trim(),
+                      style: TextStyle(
+                        color: colors.textSecondary,
+                        fontSize: 13,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -603,6 +639,12 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
                   onTap: () =>
                       Navigator.of(context).pop(_ScheduleMenuAction.settings),
                 ),
+                ListTile(
+                  leading: const Icon(Icons.palette_outlined),
+                  title: const Text('显示设置'),
+                  onTap: () => Navigator.of(context)
+                      .pop(_ScheduleMenuAction.displaySettings),
+                ),
               ],
             ),
           ),
@@ -617,7 +659,26 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
         await _refreshSchedule();
       case _ScheduleMenuAction.settings:
         await _openNotificationSettings();
+      case _ScheduleMenuAction.displaySettings:
+        await _openDisplaySettings();
     }
+  }
+
+  Future<void> _openDisplaySettings() async {
+    final next = await showModalBottomSheet<AcademicScheduleDisplaySettings>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) =>
+          _DisplaySettingsSheet(initial: _displaySettings),
+    );
+    if (!mounted || next == null) {
+      return;
+    }
+    final saved = await _displaySettingsService.saveSettings(next);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _displaySettings = saved);
   }
 
   Future<void> _openNotificationSettings() async {
@@ -735,11 +796,96 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
 enum _ScheduleMenuAction {
   refreshSchedule,
   settings,
+  displaySettings,
 }
 
 enum _ManualCourseAction {
   edit,
   delete,
+}
+
+class _DisplaySettingsSheet extends StatefulWidget {
+  const _DisplaySettingsSheet({required this.initial});
+
+  final AcademicScheduleDisplaySettings initial;
+
+  @override
+  State<_DisplaySettingsSheet> createState() =>
+      _DisplaySettingsSheetState();
+}
+
+class _DisplaySettingsSheetState extends State<_DisplaySettingsSheet> {
+  late bool _colorful;
+  late bool _showTeacher;
+
+  @override
+  void initState() {
+    super.initState();
+    _colorful = widget.initial.colorful;
+    _showTeacher = widget.initial.showTeacher;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.shuyoColors;
+    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(12, 8, 12, 12 + bottomPadding),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+              child: Text(
+                '显示设置',
+                style: TextStyle(
+                  color: colors.textPrimary,
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            SwitchListTile(
+              title: const Text('多彩显示'),
+              subtitle: const Text('为相关联的课程使用相同颜色'),
+              value: _colorful,
+              onChanged: (value) => setState(() => _colorful = value),
+            ),
+            SwitchListTile(
+              title: const Text('显示教师'),
+              subtitle: const Text('在课程名称下方显示教师姓名'),
+              value: _showTeacher,
+              onChanged: (value) => setState(() => _showTeacher = value),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(
+                    AcademicScheduleDisplaySettings(
+                      colorful: _colorful,
+                      showTeacher: _showTeacher,
+                    ),
+                  ),
+                  child: const Text('完成'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ScheduleSlot {
@@ -1229,6 +1375,7 @@ class _ScheduleBody extends StatelessWidget {
     required this.schedule,
     required this.weekState,
     required this.displayedWeek,
+    required this.displaySettings,
     required this.onPreviousWeek,
     required this.onNextWeek,
     required this.selectedManualSlot,
@@ -1240,6 +1387,7 @@ class _ScheduleBody extends StatelessWidget {
   final AcademicSchedule schedule;
   final ScheduleWeekState weekState;
   final int displayedWeek;
+  final AcademicScheduleDisplaySettings displaySettings;
   final VoidCallback? onPreviousWeek;
   final VoidCallback? onNextWeek;
   final _ScheduleSlot? selectedManualSlot;
@@ -1281,6 +1429,7 @@ class _ScheduleBody extends StatelessWidget {
                         weekdays: weekdays,
                         weekState: weekState,
                         displayedWeek: displayedWeek,
+                        displaySettings: displaySettings,
                         selectedManualSlot: selectedManualSlot,
                         canAddCourse: canAddCourse,
                         onEmptySlotTap: onEmptySlotTap,
@@ -1364,6 +1513,7 @@ class _ScheduleGrid extends StatelessWidget {
     required this.weekdays,
     required this.weekState,
     required this.displayedWeek,
+    required this.displaySettings,
     required this.selectedManualSlot,
     required this.canAddCourse,
     required this.onEmptySlotTap,
@@ -1379,6 +1529,7 @@ class _ScheduleGrid extends StatelessWidget {
   final List<int> weekdays;
   final ScheduleWeekState weekState;
   final int displayedWeek;
+  final AcademicScheduleDisplaySettings displaySettings;
   final _ScheduleSlot? selectedManualSlot;
   final bool canAddCourse;
   final ValueChanged<_ScheduleSlot> onEmptySlotTap;
@@ -1423,6 +1574,7 @@ class _ScheduleGrid extends StatelessWidget {
                         _scheduleCourseInset * 2,
                     child: _CourseBlock(
                       session: session,
+                      displaySettings: displaySettings,
                       onTap: () => onCourseTap(session),
                     ),
                   ),
@@ -1643,17 +1795,22 @@ class _SectionLabel extends StatelessWidget {
 class _CourseBlock extends StatelessWidget {
   const _CourseBlock({
     required this.session,
+    required this.displaySettings,
     required this.onTap,
   });
 
   final CourseSession session;
+  final AcademicScheduleDisplaySettings displaySettings;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.shuyoColors;
+    final fillColor = displaySettings.colorful
+        ? _courseColor(context, _courseColorSeed(session))
+        : colors.scheduleCourseFill;
     return Material(
-      color: colors.scheduleCourseFill,
+      color: fillColor,
       borderRadius: BorderRadius.circular(_scheduleCourseRadius),
       child: InkWell(
         borderRadius: BorderRadius.circular(_scheduleCourseRadius),
@@ -1677,6 +1834,19 @@ class _CourseBlock extends StatelessWidget {
                   height: 1.2,
                 ),
               ),
+              if (displaySettings.showTeacher &&
+                  session.teacherName.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  session.teacherName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: colors.scheduleCourseMetaText,
+                    fontSize: 10.5,
+                  ),
+                ),
+              ],
               const Spacer(),
               if (session.location.isNotEmpty)
                 Text(
@@ -1804,4 +1974,12 @@ Color _courseColor(BuildContext context, String seed) {
     hash = (hash + unit) & 0x7fffffff;
   }
   return colors[hash % colors.length];
+}
+
+String _courseColorSeed(CourseSession session) {
+  final code = session.courseCode.trim();
+  if (!session.isManual && code.isNotEmpty) {
+    return code;
+  }
+  return session.courseName.trim();
 }
