@@ -1,7 +1,7 @@
 name: shuyo
 description: An unofficial, all-in-one utility app for SHU.
 publish_to: "none"
-version: 0.4.4+16
+version: 0.4.5+17
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -13,6 +13,7 @@ dependencies:
   home_widget: ^0.9.3
   html: ^0.15.6
   http: ^1.6.0
+  lunar: ^1.2.20
   package_info_plus: ^10.2.1
   path_provider: ^2.1.5
   pointycastle: ^4.0.0
