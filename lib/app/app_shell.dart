@@ -2258,13 +2258,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (!mounted || !shouldPrompt) {
         return;
       }
-      await showInfoConfirmDialog(
+      final acknowledged = await showInfoConfirmDialog(
         context,
         title: announcement.title,
         message: announcement.content,
         confirmText: '知道了',
+        secondaryText: '不再提示',
       );
-      await _clientBackendRepository.markAnnouncementPrompted(announcement.id);
+      if (!acknowledged) {
+        await _clientBackendRepository
+            .markAnnouncementPrompted(announcement.id);
+      }
     } on Object {
       // 后端检查失败时不影响主流程。
     } finally {

@@ -7,6 +7,7 @@ Future<bool> showInfoConfirmDialog(
   required String title,
   required String message,
   String confirmText = '确认',
+  String? secondaryText,
   Duration confirmDelay = Duration.zero,
   bool barrierDismissible = false,
 }) async {
@@ -18,6 +19,7 @@ Future<bool> showInfoConfirmDialog(
         title: title,
         message: message,
         confirmText: confirmText,
+        secondaryText: secondaryText,
         confirmDelay: confirmDelay,
       );
     },
@@ -30,12 +32,14 @@ class _InfoConfirmDialog extends StatefulWidget {
     required this.title,
     required this.message,
     required this.confirmText,
+    required this.secondaryText,
     required this.confirmDelay,
   });
 
   final String title;
   final String message;
   final String confirmText;
+  final String? secondaryText;
   final Duration confirmDelay;
 
   @override
@@ -85,6 +89,11 @@ class _InfoConfirmDialogState extends State<_InfoConfirmDialog> {
         child: Text(widget.message),
       ),
       actions: [
+        if (widget.secondaryText != null)
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(widget.secondaryText!),
+          ),
         FilledButton(
           onPressed: canConfirm ? () => Navigator.of(context).pop(true) : null,
           child: Text(label),
