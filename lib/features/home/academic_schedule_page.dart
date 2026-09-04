@@ -46,7 +46,8 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
   Timer? _weekTimer;
   final _displaySettingsService = AcademicScheduleDisplaySettingsService();
   AcademicScheduleDisplaySettings _displaySettings =
-      const AcademicScheduleDisplaySettings(colorful: false, showTeacher: false);
+      const AcademicScheduleDisplaySettings(
+          colorful: false, showTeacher: false);
 
   @override
   void initState() {
@@ -332,7 +333,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final colors = context.shuyoColors;
-        final color = _courseColor(context, session.courseName);
+        final color = _courseColorForSession(context, session);
         final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
         return SafeArea(
           top: false,
@@ -668,8 +669,7 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     final next = await showModalBottomSheet<AcademicScheduleDisplaySettings>(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) =>
-          _DisplaySettingsSheet(initial: _displaySettings),
+      builder: (context) => _DisplaySettingsSheet(initial: _displaySettings),
     );
     if (!mounted || next == null) {
       return;
@@ -810,8 +810,7 @@ class _DisplaySettingsSheet extends StatefulWidget {
   final AcademicScheduleDisplaySettings initial;
 
   @override
-  State<_DisplaySettingsSheet> createState() =>
-      _DisplaySettingsSheetState();
+  State<_DisplaySettingsSheet> createState() => _DisplaySettingsSheetState();
 }
 
 class _DisplaySettingsSheetState extends State<_DisplaySettingsSheet> {
@@ -856,13 +855,11 @@ class _DisplaySettingsSheetState extends State<_DisplaySettingsSheet> {
             ),
             SwitchListTile(
               title: const Text('多彩显示'),
-              subtitle: const Text('为相关联的课程使用相同颜色'),
               value: _colorful,
               onChanged: (value) => setState(() => _colorful = value),
             ),
             SwitchListTile(
               title: const Text('显示教师'),
-              subtitle: const Text('在课程名称下方显示教师姓名'),
               value: _showTeacher,
               onChanged: (value) => setState(() => _showTeacher = value),
             ),
@@ -1807,8 +1804,14 @@ class _CourseBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.shuyoColors;
     final fillColor = displaySettings.colorful
-        ? _courseColor(context, _courseColorSeed(session))
+        ? _courseColorForSession(context, session)
         : colors.scheduleCourseFill;
+    final courseTextColor = displaySettings.colorful
+        ? const Color(0xFFFFFFFF)
+        : colors.scheduleCourseText;
+    final metaTextColor = displaySettings.colorful
+        ? const Color(0xD9FFFFFF)
+        : colors.scheduleCourseMetaText;
     return Material(
       color: fillColor,
       borderRadius: BorderRadius.circular(_scheduleCourseRadius),
@@ -1828,7 +1831,7 @@ class _CourseBlock extends StatelessWidget {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: colors.scheduleCourseText,
+                  color: courseTextColor,
                   fontWeight: FontWeight.w600,
                   fontSize: 11.5,
                   height: 1.2,
@@ -1842,7 +1845,7 @@ class _CourseBlock extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: colors.scheduleCourseMetaText,
+                    color: metaTextColor,
                     fontSize: 10.5,
                   ),
                 ),
@@ -1854,7 +1857,7 @@ class _CourseBlock extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: colors.scheduleCourseMetaText,
+                    color: metaTextColor,
                     fontSize: 10.5,
                   ),
                 ),
@@ -1974,6 +1977,10 @@ Color _courseColor(BuildContext context, String seed) {
     hash = (hash + unit) & 0x7fffffff;
   }
   return colors[hash % colors.length];
+}
+
+Color _courseColorForSession(BuildContext context, CourseSession session) {
+  return _courseColor(context, _courseColorSeed(session));
 }
 
 String _courseColorSeed(CourseSession session) {
