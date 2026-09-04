@@ -325,7 +325,7 @@ class _AboutClientPage extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            '版本 ${ClientAppInfo.version}（Build ${ClientAppInfo.buildNumber}）',
+            '版本 ${ClientAppInfo.version}（${ClientAppInfo.buildNumber}）',
             style: ShuYoTextStyles.meta(color: colors.textMuted),
           ),
           const SizedBox(height: 22),
