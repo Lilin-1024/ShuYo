@@ -32,4 +32,12 @@ void main() {
     expect(settings.colorful, isTrue);
     expect(settings.showTeacher, isTrue);
   });
+
+  test('custom course colors are persisted by course identity', () async {
+    final service = AcademicScheduleDisplaySettingsService();
+
+    await service.saveCourseColor('CS101', 0xFF6C96CA);
+
+    expect(await service.loadCourseColors(), {'CS101': 0xFF6C96CA});
+  });
 }
