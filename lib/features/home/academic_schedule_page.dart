@@ -445,9 +445,13 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
       case _ManualCourseAction.edit:
         await _openCourseEditSheet(session);
       case _ManualCourseAction.delete:
-        final confirmed = await _confirmDeleteCourseGroup(session);
+        final scope = await _openDeleteScopeMenu(session);
+        if (scope == null || !mounted) {
+          return;
+        }
+        final confirmed = await _confirmDeleteCourse(session, scope);
         if (confirmed) {
-          await _deleteCourseGroup(session);
+          await _deleteCourse(session, scope);
         }
     }
   }
@@ -511,15 +515,50 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     unawaited(widget.notificationService.syncScheduleReminders());
   }
 
-  Future<void> _deleteCourseGroup(CourseSession target) async {
+  Future<void> _deleteCourse(
+    CourseSession target,
+    _CourseDeleteScope scope,
+  ) async {
     final schedule = _schedule;
     if (schedule == null) {
       return;
     }
-    final nextSessions = schedule.sessions
-        .where((session) => !_sameCourseSlotGroup(session, target))
-        .toList();
-    if (nextSessions.length == schedule.sessions.length) {
+    final nextSessions = <CourseSession>[];
+    var changed = false;
+    for (final session in schedule.sessions) {
+      final sameCourse = _sameCourse(session, target);
+      final sameSlot = _sameCourseSlot(session, target);
+      if (scope == _CourseDeleteScope.allCourseSlots && sameCourse) {
+        changed = true;
+        continue;
+      }
+      if (scope == _CourseDeleteScope.allWeeksInSlot &&
+          sameCourse &&
+          sameSlot) {
+        changed = true;
+        continue;
+      }
+      if (scope == _CourseDeleteScope.singleOccurrence &&
+          _sameCourseIdentity(session, target)) {
+        final weeks = session.weeks.isEmpty
+            ? [
+                for (var week = 1; week <= schedule.maxWeek; week++)
+                  if (week != _displayedWeek) week,
+              ]
+            : session.weeks.where((week) => week != _displayedWeek).toList();
+        if (weeks.isEmpty) {
+          changed = true;
+          continue;
+        }
+        changed = true;
+        nextSessions.add(
+          _copySessionWithWeeks(session, weeks),
+        );
+        continue;
+      }
+      nextSessions.add(session);
+    }
+    if (!changed) {
       return;
     }
     final next = schedule.copyWith(sessions: nextSessions);
@@ -540,16 +579,80 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     unawaited(widget.notificationService.syncScheduleReminders());
   }
 
-  Future<bool> _confirmDeleteCourseGroup(CourseSession session) async {
+  Future<_CourseDeleteScope?> _openDeleteScopeMenu(
+    CourseSession session,
+  ) {
+    return showModalBottomSheet<_CourseDeleteScope>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final colors = context.shuyoColors;
+        final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
+        final week = _displayedWeek;
+        final weekday = _weekdayName(session.weekday);
+        return SafeArea(
+          top: false,
+          bottom: false,
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(12, 8, 12, 12 + bottomPadding),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(8),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.event_busy_outlined),
+                  title: Text('仅第$week周$weekday的这节课'),
+                  onTap: () => Navigator.of(context)
+                      .pop(_CourseDeleteScope.singleOccurrence),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.view_week_outlined),
+                  title: Text('全部$weekday的这节课'),
+                  onTap: () => Navigator.of(context)
+                      .pop(_CourseDeleteScope.allWeeksInSlot),
+                ),
+                ListTile(
+                  leading:
+                      Icon(Icons.delete_sweep_outlined, color: colors.danger),
+                  title: Text(
+                    '这门课程的全部时间段',
+                    style: TextStyle(color: colors.danger),
+                  ),
+                  onTap: () => Navigator.of(context)
+                      .pop(_CourseDeleteScope.allCourseSlots),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool> _confirmDeleteCourse(
+    CourseSession session,
+    _CourseDeleteScope scope,
+  ) async {
+    final description = switch (scope) {
+      _CourseDeleteScope.singleOccurrence =>
+        '仅删除第$_displayedWeek周${_weekdayName(session.weekday)}的这节课。',
+      _CourseDeleteScope.allWeeksInSlot =>
+        '删除${_weekdayName(session.weekday)}该时间段的全部周次。',
+      _CourseDeleteScope.allCourseSlots => '删除这门课程的全部时间段。',
+    };
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         final colors = context.shuyoColors;
         return AlertDialog(
           title: const Text('确认删除'),
-          content: Text(
-            '将删除 ${session.courseName}，同节次的课程将会一起删除。',
-          ),
+          content: Text('${session.courseName}\n$description'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -804,6 +907,12 @@ enum _ManualCourseAction {
   delete,
 }
 
+enum _CourseDeleteScope {
+  singleOccurrence,
+  allWeeksInSlot,
+  allCourseSlots,
+}
+
 class _DisplaySettingsSheet extends StatefulWidget {
   const _DisplaySettingsSheet({required this.initial});
 
@@ -961,10 +1070,42 @@ bool _sameCourseIdentity(CourseSession session, CourseSession target) {
       session.endSection == target.endSection;
 }
 
-bool _sameCourseSlotGroup(CourseSession session, CourseSession target) {
+bool _sameCourse(CourseSession session, CourseSession target) {
+  final sessionCode = session.courseCode.trim();
+  final targetCode = target.courseCode.trim();
+  if (!session.isManual &&
+      !target.isManual &&
+      sessionCode.isNotEmpty &&
+      targetCode.isNotEmpty) {
+    return sessionCode == targetCode;
+  }
+  return session.courseName.trim() == target.courseName.trim();
+}
+
+bool _sameCourseSlot(CourseSession session, CourseSession target) {
   return session.weekday == target.weekday &&
       session.startSection == target.startSection &&
       session.endSection == target.endSection;
+}
+
+CourseSession _copySessionWithWeeks(CourseSession session, List<int> weeks) {
+  final sorted = [...weeks]..sort();
+  return CourseSession(
+    id: session.id,
+    courseName: session.courseName,
+    courseCode: session.courseCode,
+    teacherName: session.teacherName,
+    campus: session.campus,
+    location: session.location,
+    weekday: session.weekday,
+    startSection: session.startSection,
+    endSection: session.endSection,
+    sections: session.sections,
+    weeks: sorted,
+    weekText: _formatWeekText(sorted),
+    credit: session.credit,
+    note: session.note,
+  );
 }
 
 bool _sectionRangesOverlap(
