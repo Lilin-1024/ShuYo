@@ -132,7 +132,6 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('公开个人资料'),
-                  subtitle: const Text('关闭后隐藏个人资料'),
                   value: !_hideProfile,
                   onChanged: (value) {
                     setState(() => _hideProfile = !value);

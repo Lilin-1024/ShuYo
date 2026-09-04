@@ -48,6 +48,7 @@ class AcademicScheduleEditorPage extends StatefulWidget {
     required this.initialStartSection,
     required this.colorful,
     required this.palette,
+    required this.conflictValidator,
     this.initialSessions = const [],
     this.initialColorValue,
   });
@@ -58,6 +59,8 @@ class AcademicScheduleEditorPage extends StatefulWidget {
   final int initialStartSection;
   final bool colorful;
   final List<Color> palette;
+  final List<String> Function(ScheduleCourseEditorResult result)
+      conflictValidator;
   final List<CourseSession> initialSessions;
   final int? initialColorValue;
 
@@ -134,6 +137,7 @@ class _AcademicScheduleEditorPageState
         body: Form(
           key: _formKey,
           child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             children: [
               TextFormField(
@@ -219,6 +223,7 @@ class _AcademicScheduleEditorPageState
       ].join('\u{1f}');
 
   void _addTime() {
+    FocusManager.instance.primaryFocus?.unfocus();
     final source = _times.last;
     setState(() {
       _times.add(_EditableCourseTime.empty(
@@ -309,15 +314,34 @@ class _AcademicScheduleEditorPageState
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() => _saving = true);
     final result = ScheduleCourseEditorResult(
       courseName: _nameController.text.trim(),
       credit: _creditController.text.trim(),
       colorValue: _colorValue,
       times: _times.map((time) => time.toDraft()).toList(),
     );
+    final conflicts = widget.conflictValidator(result).toSet().toList();
+    if (conflicts.isNotEmpty) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('存在时段冲突'),
+          content: Text('以下时段与已有课程冲突：\n\n${conflicts.join('\n')}'),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('返回修改'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _saving = true);
     _dirty = false;
     Navigator.of(context).pop(result);
   }
@@ -868,7 +892,10 @@ class _EditorValueTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
+          onTap: () {
+            FocusManager.instance.primaryFocus?.unfocus();
+            onTap();
+          },
           child: SizedBox(
             height: _editorRowHeight,
             child: Padding(
@@ -1020,7 +1047,12 @@ class _EditorHeaderAction extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: onTap == null
+            ? null
+            : () {
+                FocusManager.instance.primaryFocus?.unfocus();
+                onTap!();
+              },
         borderRadius: BorderRadius.circular(6),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),

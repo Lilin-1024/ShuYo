@@ -305,26 +305,11 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
           initialStartSection: slot.section,
           colorful: _displaySettings.colorful,
           palette: context.shuyoColors.schedulePalette,
+          conflictValidator: (result) => _findEditorConflicts(schedule, result),
         ),
       ),
     );
     if (!mounted || result == null) {
-      return;
-    }
-    final conflicts = <String>[];
-    for (var index = 0; index < result.times.length; index++) {
-      final time = result.times[index];
-      final existing = _findScheduleConflicts(schedule, time);
-      conflicts.addAll(existing);
-      for (var previous = 0; previous < index; previous++) {
-        final other = result.times[previous];
-        if (_timeDraftsOverlap(time, other)) {
-          conflicts.add(_formatDraftTime(other));
-        }
-      }
-    }
-    if (conflicts.isNotEmpty) {
-      await _showScheduleConflictDialog(conflicts);
       return;
     }
     final sessions = [
@@ -520,27 +505,15 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
           colorful: _displaySettings.colorful,
           palette: context.shuyoColors.schedulePalette,
           initialColorValue: _courseColorValues[colorKey],
+          conflictValidator: (result) => _findEditorConflicts(
+            schedule,
+            result,
+            excludingCourse: session,
+          ),
         ),
       ),
     );
     if (!mounted || result == null) {
-      return;
-    }
-    final conflicts = <String>[];
-    for (final time in result.times) {
-      conflicts.addAll(
-        _findScheduleConflicts(schedule, time, excludingCourse: session),
-      );
-    }
-    for (var index = 0; index < result.times.length; index++) {
-      for (var previous = 0; previous < index; previous++) {
-        if (_timeDraftsOverlap(result.times[index], result.times[previous])) {
-          conflicts.add(_formatDraftTime(result.times[previous]));
-        }
-      }
-    }
-    if (conflicts.isNotEmpty) {
-      await _showScheduleConflictDialog(conflicts);
       return;
     }
     final nextSessions =
@@ -806,21 +779,29 @@ class _AcademicSchedulePageState extends State<AcademicSchedulePage> {
     return conflicts.toList();
   }
 
-  Future<void> _showScheduleConflictDialog(List<String> conflicts) async {
-    final unique = conflicts.toSet().toList();
-    await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('存在时段冲突'),
-        content: Text('以下时段与已有课程冲突：\n\n${unique.join('\n')}'),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('返回修改'),
-          ),
-        ],
-      ),
-    );
+  List<String> _findEditorConflicts(
+    AcademicSchedule schedule,
+    ScheduleCourseEditorResult result, {
+    CourseSession? excludingCourse,
+  }) {
+    final conflicts = <String>[];
+    for (var index = 0; index < result.times.length; index++) {
+      final time = result.times[index];
+      conflicts.addAll(
+        _findScheduleConflicts(
+          schedule,
+          time,
+          excludingCourse: excludingCourse,
+        ),
+      );
+      for (var previous = 0; previous < index; previous++) {
+        final other = result.times[previous];
+        if (_timeDraftsOverlap(time, other)) {
+          conflicts.add(_formatDraftTime(other));
+        }
+      }
+    }
+    return conflicts;
   }
 
   Future<void> _openMoreMenu() async {
