@@ -221,6 +221,7 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
                 builder: (context) => FullscreenImagePage(
                   urls: imageUrls,
                   initialIndex: imageIndex,
+                  networkOnly: true,
                 ),
               ),
             );
