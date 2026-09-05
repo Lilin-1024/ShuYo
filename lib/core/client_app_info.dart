@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:package_info_plus/package_info_plus.dart';
 
 class ClientAppInfo {
@@ -25,8 +27,10 @@ class ClientAppInfo {
     try {
       final info = await PackageInfo.fromPlatform();
       version = info.version.trim().isEmpty ? _fallbackVersion : info.version;
-      buildNumber =
-          int.tryParse(info.buildNumber.trim()) ?? _fallbackBuildNumber;
+      final parsedBuildNumber = int.tryParse(info.buildNumber.trim());
+      buildNumber = parsedBuildNumber == null
+          ? _fallbackBuildNumber
+          : _logicalBuildNumber(parsedBuildNumber);
       appName = info.appName.trim().isEmpty ? _fallbackAppName : info.appName;
       packageName = info.packageName.trim().isEmpty
           ? _fallbackPackageName
@@ -37,5 +41,23 @@ class ClientAppInfo {
       appName = _fallbackAppName;
       packageName = _fallbackPackageName;
     }
+  }
+
+  /// Flutter adds an ABI-specific offset when an APK is built with
+  /// `--split-per-abi` (1000/2000/4000 for armeabi-v7a/arm64-v8a/x86_64).
+  /// package_info_plus exposes Android's resulting versionCode, so strip that
+  /// offset before using the value for update checks and telemetry. Without
+  /// this, build 16 is reported as 2016 by an arm64 APK and update checks can
+  /// never match the backend's logical build number.
+  static int _logicalBuildNumber(int value) {
+    if (!Platform.isAndroid) {
+      return value;
+    }
+    for (final offset in const [4000, 2000, 1000]) {
+      if (value >= offset && value < offset + 1000) {
+        return value - offset;
+      }
+    }
+    return value;
   }
 }

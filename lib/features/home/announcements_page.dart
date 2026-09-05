@@ -7,6 +7,7 @@ import '../../shared/shuyo_text_styles.dart';
 import '../../shared/navigation/shuyo_route.dart';
 import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/empty_state.dart';
+import '../../shared/widgets/fullscreen_image_page.dart';
 
 class AnnouncementsPage extends StatefulWidget {
   const AnnouncementsPage({
@@ -158,6 +159,10 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
           }
           final detail = snapshot.data!;
           final colors = context.shuyoColors;
+          final imageUrls = detail.blocks
+              .where((block) => block.isImage)
+              .map((block) => block.value)
+              .toList(growable: false);
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
             children: [
@@ -179,7 +184,21 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
                   style: TextStyle(color: colors.textTertiary),
                 )
               else
-                ...detail.blocks.map(_blockWidget),
+                ...List.generate(detail.blocks.length, (index) {
+                  final block = detail.blocks[index];
+                  final imageIndex = block.isImage
+                      ? detail.blocks
+                              .take(index + 1)
+                              .where((item) => item.isImage)
+                              .length -
+                          1
+                      : 0;
+                  return _blockWidget(
+                    block,
+                    imageUrls: imageUrls,
+                    imageIndex: imageIndex,
+                  );
+                }),
             ],
           );
         },
@@ -187,27 +206,44 @@ class _AnnouncementDetailPageState extends State<AnnouncementDetailPage> {
     );
   }
 
-  Widget _blockWidget(AnnouncementContentBlock block) {
+  Widget _blockWidget(
+    AnnouncementContentBlock block, {
+    required List<String> imageUrls,
+    required int imageIndex,
+  }) {
     if (block.isImage) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            block.value,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              final colors = context.shuyoColors;
-              return Container(
-                height: 120,
-                alignment: Alignment.center,
-                color: colors.surfaceAlt,
-                child: Text(
-                  '图片加载失败',
-                  style: TextStyle(color: colors.textTertiary),
+        child: GestureDetector(
+          onTap: () {
+            Navigator.of(context).push<void>(
+              shuyoRoute(
+                builder: (context) => FullscreenImagePage(
+                  urls: imageUrls,
+                  initialIndex: imageIndex,
+                  networkOnly: true,
                 ),
-              );
-            },
+              ),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              block.value,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                final colors = context.shuyoColors;
+                return Container(
+                  height: 120,
+                  alignment: Alignment.center,
+                  color: colors.surfaceAlt,
+                  child: Text(
+                    '图片加载失败',
+                    style: TextStyle(color: colors.textTertiary),
+                  ),
+                );
+              },
+            ),
           ),
         ),
       );
