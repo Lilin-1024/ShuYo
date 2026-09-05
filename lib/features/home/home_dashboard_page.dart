@@ -53,6 +53,8 @@ class HomeDashboardPage extends StatelessWidget {
   final String announcementContent;
   final bool isDemo;
 
+  static String? _sessionGreetingText;
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -153,48 +155,58 @@ class HomeDashboardPage extends StatelessWidget {
   }
 
   String _greeting() {
+    final cached = _sessionGreetingText;
+    if (cached != null) {
+      return cached;
+    }
+
     final now = DateTime.now();
     final special = _specialGreeting(now);
     if (special != null) {
-      return special;
+      return _cacheGreeting(special);
     }
 
     final hour = now.hour;
     if (hour < 6) {
-      return _pick(const [
+      return _cacheGreeting(_pick(const [
         '夜深了，记得休息',
         '披星戴月，也别忘了好好睡觉',
         '夜色渐深，明天又是崭新开始',
-      ]);
+      ]));
     }
     if (hour < 11) {
-      return _pick(const [
+      return _cacheGreeting(_pick(const [
         '早上好，今天也顺利',
         '一日之计在于晨',
         '学习与生活，此刻渐入佳境',
         '早安，有个好心情',
         '保持节奏，灵感正发生',
-      ]);
+      ]));
     }
     if (hour < 14) {
-      return _pick(const [
+      return _cacheGreeting(_pick(const [
         '快到中午啦',
         '忙碌过半，先好好吃顿午餐',
         '停下片刻，稍作休息',
-      ]);
+      ]));
     }
     if (hour < 18) {
-      return _pick(const [
+      return _cacheGreeting(_pick(const [
         '下午好，保持节奏',
         '下午的悠闲时光～',
-      ]);
+      ]));
     }
-    return _pick(const [
+    return _cacheGreeting(_pick(const [
       '晚上好，今天辛苦了',
       '忙碌一天，晚上放松一下',
       '晚风轻轻，愿你今晚好梦',
       '晚上好～',
-    ]);
+    ]));
+  }
+
+  String _cacheGreeting(String greeting) {
+    _sessionGreetingText = greeting;
+    return greeting;
   }
 
   String? _specialGreeting(DateTime date) {
