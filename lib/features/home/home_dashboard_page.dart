@@ -77,13 +77,19 @@ class HomeDashboardPage extends StatelessWidget {
               : academicSessionExpired
                   ? '登录已失效，请重新登录'
                   : '登录后同步个人数据',
-      trailing: isAcademicLoginCompleting
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 3),
-            )
-          : const Icon(Icons.account_circle_outlined),
+      trailing: SizedBox(
+        width: kMinInteractiveDimension,
+        height: kMinInteractiveDimension,
+        child: Center(
+          child: isAcademicLoginCompleting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                )
+              : const Icon(Icons.account_circle_outlined),
+        ),
+      ),
       onTap: isAcademicLoginCompleting ? null : onLogin,
     );
     return ColoredBox(
@@ -128,7 +134,7 @@ class HomeDashboardPage extends StatelessWidget {
                       key: ValueKey(entry.key),
                       color: colors.borderStrong,
                       height: 1,
-                      thickness: 1,
+                      thickness: 0.2,
                       indent: 0,
                       endIndent: 0,
                     )
