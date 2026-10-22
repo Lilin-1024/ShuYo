@@ -528,7 +528,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
                 style: ShuYoTextStyles.title(
                   color: colors.textPrimary,
                   size: 36,
-                  weight: FontWeight.w700,
+                  weight: FontWeight.w500,
                 ),
               ),
             ),
@@ -607,11 +607,11 @@ class _CampusCardPageState extends State<CampusCardPage> {
                     style: ShuYoTextStyles.title(
                         color: colors.textPrimary,
                         size: 15,
-                        weight: FontWeight.w600)),
+                        weight: FontWeight.w500)),
                 Text(amountText,
                     style: TextStyle(
                         color: colors.textPrimary,
-                        fontWeight: FontWeight.w600)),
+                        fontWeight: FontWeight.w500)),
               ],
             ),
           ),

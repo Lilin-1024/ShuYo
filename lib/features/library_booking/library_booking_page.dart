@@ -1669,7 +1669,7 @@ class _LibraryBookingPageState extends State<LibraryBookingPage> {
                             color: selectedPreviewRoomName == null
                                 ? colors.textMuted
                                 : null,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w500,
                           ),
                     ),
                   ],

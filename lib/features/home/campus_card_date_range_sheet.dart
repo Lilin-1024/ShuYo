@@ -178,7 +178,7 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
                     Semantics(
                       liveRegion: true,
                       child: Text(
-                        '${_selectingEnd ? '选择结束日期' : '选择开始日期'} · 仅支持查询近90天记录',
+                        '${_selectingEnd ? '选择结束日期' : '选择开始日期'} ',
                         style: ShuYoTextStyles.meta(color: colors.textTertiary),
                       ),
                     ),

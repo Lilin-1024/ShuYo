@@ -330,7 +330,7 @@ class _OtpTokenPageState extends State<OtpTokenPage>
               color: colors.textPrimary,
               fontSize: 52,
               height: 1.1,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               letterSpacing: 6,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
