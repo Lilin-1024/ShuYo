@@ -16,6 +16,7 @@ import 'package:shuyo/data/repositories/academic_schedule_repository.dart';
 import 'package:shuyo/data/services/academic_account_store.dart';
 import 'package:shuyo/data/services/academic_auth_service.dart';
 import 'package:shuyo/data/services/academic_schedule_api_client.dart';
+import 'package:shuyo/data/services/campus_card_service.dart';
 import 'package:shuyo/data/services/unified_account_service.dart';
 import 'package:shuyo/features/auth/native_login_page.dart';
 import 'package:shuyo/features/onboarding/startup_onboarding.dart';
@@ -97,6 +98,12 @@ class _LocalUnifiedAccount extends UnifiedAccountService {
 
   @override
   Future<Uri?> authorizeAcademic() async => null;
+
+  @override
+  Future<Uri?> authorizeCampusCard() async {
+    // Model an unavailable card service while keeping the campus login valid.
+    throw const CampusCardException('unavailable', '校园卡服务暂不可用');
+  }
 }
 
 class _StubNotifications extends FlutterLocalNotificationsPlatform {

@@ -81,6 +81,7 @@ void main() {
     expect(field.decoration?.enabledBorder, InputBorder.none);
     expect(field.decoration?.focusedBorder, InputBorder.none);
     await tester.enterText(find.byType(TextField).first, 'ABC123');
+    await tester.pumpAndSettle();
     expect(field.focusNode!.hasFocus, isTrue);
     await tester.tapAt(const Offset(16, 600));
     await tester.pumpAndSettle();
