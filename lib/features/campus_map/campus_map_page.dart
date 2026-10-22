@@ -341,10 +341,6 @@ class _CampusMapPageState extends State<CampusMapPage>
             children: [
               Text('导航至 ${place.name}',
                   style: Theme.of(context).textTheme.titleMedium),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 8, 20, 12),
-                child: Text('使用地图应用规划步行路线'),
-              ),
               for (final provider in CampusMapNavigationProvider.values)
                 ListTile(
                   leading: const Icon(Icons.directions_walk),
@@ -685,7 +681,7 @@ class _CampusMapPageState extends State<CampusMapPage>
         builder: (context) => AlertDialog(
           title: const Text('校园地图'),
           content: const Text(
-            '校园地图为离线功能，地图与地点资料来自「上海大学交通社 SHUMap」，可访问https://map.shutf.com/map获取最新地图。\n\n感谢交通社的付出！',
+            '校园地图为离线功能，地图与地点资料来自「上海大学交通社 SHUMap」\n\n可访问  https://map.shutf.com/map 获取最新地图。\n\n感谢交通社的付出！',
           ),
           actions: [
             TextButton(
