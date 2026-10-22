@@ -412,8 +412,8 @@ class _HomeRow extends StatelessWidget {
           : Icon(icon, size: 24, color: colors.textSecondary),
       titleTextStyle: TextStyle(
         color: colors.textPrimary,
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
+        fontSize: 15.5,
+        fontWeight: FontWeight.w500,
         height: 1.5,
         letterSpacing: 0.5,
       ),
