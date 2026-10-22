@@ -43,24 +43,36 @@
       let bottomInset = 0;
       let places = new Map();
       let featureElements = new Map();
-      let points = [];
+      let featureBounds = new Map();
+      let pointMarkers = new Map();
       let selectedId = null;
       let location = null;
       let markerLayer = null;
       let locationLayer = null;
+      let selectedMarker = null;
+      let locationMarker = null;
+      let accuracyMarker = null;
+      let markerUnit = null;
+      let paintedView = null;
+      let viewport = {width: 1, height: 1, left: 0, top: 0};
       let pointers = new Map();
       let gesture = null;
       let moved = false;
       let lastTap = null;
       let paintFrame = 0;
-      let motionFrame = 0;
-      let autoFocusId = null;
+      let motion = null;
+      let focusTarget = null;
       let isDefaultView = true;
 
       const notify = (value) => {
         if (window.ShuyoMap) window.ShuyoMap.postMessage(JSON.stringify(value));
       };
-      const size = () => ({width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight)});
+      // Read layout only when the viewport changes or a gesture starts.
+      const size = () => viewport;
+      const readViewport = () => {
+        const rect = host.getBoundingClientRect();
+        viewport = {width: Math.max(1, rect.width), height: Math.max(1, rect.height), left: rect.left, top: rect.top};
+      };
       const fillWidth = () => {
         const s = size();
         return Math.min(bounds.width, bounds.height * s.width / s.height);
@@ -69,10 +81,7 @@
       const finitePoint = (point) => point && Number.isFinite(point.x) && Number.isFinite(point.y);
       const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
       const middle = (a, b) => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
-      const localPoint = (event) => {
-        const rect = host.getBoundingClientRect();
-        return {x: event.clientX - rect.left, y: event.clientY - rect.top};
-      };
+      const localPoint = (event) => ({x: event.clientX - viewport.left, y: event.clientY - viewport.top});
       const worldPoint = (point, box = view) => {
         const s = size();
         return {x: box.x + point.x / s.width * box.width, y: box.y + point.y / s.height * box.height};
@@ -86,8 +95,7 @@
         return element;
       };
 
-      function defaultView() {
-        isDefaultView = true;
+      function updateBase() {
         const s = size();
         const visibleHeight = Math.max(s.height * .25, s.height - bottomInset);
         const width = Math.max(bounds.width * 1.08, bounds.height * 1.08 * s.width / visibleHeight);
@@ -97,6 +105,12 @@
           y: bounds.y + bounds.height / 2 - height * visibleHeight / s.height / 2,
           width, height,
         };
+      }
+
+      function defaultView() {
+        isDefaultView = true;
+        updateBase();
+        const s = size();
         // Fill the visible area, with a little extra zoom for readable labels.
         const initialWidth = fillWidth() / initialView.zoom;
         const initialHeight = initialWidth * s.height / s.width;
@@ -109,28 +123,23 @@
       }
 
       function stopMotion() {
-        if (motionFrame) cancelAnimationFrame(motionFrame);
-        motionFrame = 0;
+        motion = null;
       }
 
-      function moveTo(target) {
+      function cancelFocus() {
+        focusTarget = null;
         stopMotion();
-        const start = {...view};
-        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      }
+
+      function moveTo(target, duration = 360) {
+        stopMotion();
+        if (duration <= 0 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
           view = target;
-          draw();
-          return;
+        } else {
+          const started = performance.now();
+          motion = {start: {...view}, target, started, deadline: started + duration};
         }
-        const started = performance.now();
-        const step = (now) => {
-          const progress = clamp((now - started) / 360, 0, 1);
-          const eased = 1 - Math.pow(1 - progress, 3);
-          view = Object.fromEntries(['x', 'y', 'width', 'height'].map(key =>
-            [key, start[key] + (target[key] - start[key]) * eased]));
-          draw();
-          motionFrame = progress < 1 ? requestAnimationFrame(step) : 0;
-        };
-        motionFrame = requestAnimationFrame(step);
+        draw();
       }
 
       function constrain() {
@@ -152,31 +161,35 @@
 
       function draw() {
         if (paintFrame) return;
-        paintFrame = requestAnimationFrame(() => {
+        paintFrame = requestAnimationFrame((now) => {
           paintFrame = 0;
           if (!svg) return;
-          svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.width} ${view.height}`);
+          if (motion) {
+            const progress = clamp((now - motion.started) / (motion.deadline - motion.started), 0, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const {start, target} = motion;
+            view = {
+              x: start.x + (target.x - start.x) * eased,
+              y: start.y + (target.y - start.y) * eased,
+              width: start.width + (target.width - start.width) * eased,
+              height: start.height + (target.height - start.height) * eased,
+            };
+            if (progress === 1) { view = {...target}; motion = null; }
+          }
+          const value = `${view.x} ${view.y} ${view.width} ${view.height}`;
+          if (value !== paintedView) {
+            svg.setAttribute('viewBox', value);
+            paintedView = value;
+          }
           const unit = view.width / size().width;
-          markerLayer.replaceChildren();
-          for (const item of points) {
-            const marker = circle('shuyo-pin', item.point, unit * (item.id === selectedId ? 7 : 4));
-            marker.dataset.placeId = item.id;
-            markerLayer.appendChild(marker);
-          }
-          if (selectedId) {
-            const point = pointFor(selectedId);
-            if (point) {
-              const marker = circle('shuyo-pin', point, unit * 7);
-              marker.dataset.placeId = selectedId;
-              markerLayer.appendChild(marker);
+          // Retain marker nodes; panning does not change their geometry.
+          if (unit !== markerUnit) {
+            for (const [id, marker] of pointMarkers) {
+              marker.setAttribute('r', unit * (id === selectedId ? 7 : 4));
             }
-          }
-          locationLayer.replaceChildren();
-          if (finitePoint(location)) {
-            if (Number.isFinite(location.accuracy) && location.accuracy > 0) {
-              locationLayer.appendChild(circle('shuyo-accuracy', location, Math.min(location.accuracy, bounds.width)));
-            }
-            locationLayer.appendChild(circle('shuyo-location', location, unit * 6));
+            selectedMarker.setAttribute('r', unit * 7);
+            locationMarker.setAttribute('r', unit * 6);
+            markerUnit = unit;
           }
           if (debugView && reportTimer === null) {
             reportTimer = setTimeout(() => {
@@ -187,11 +200,12 @@
               }});
             }, 100);
           }
+          if (motion) draw();
         });
       }
 
-      function boxFor(id) {
-        const boxes = (featureElements.get(id) || []).flatMap((element) => {
+      function measureBox(elements) {
+        const boxes = elements.flatMap((element) => {
           try {
             const box = element.getBBox();
             // Source footprints use viewBox coordinates without transforms.
@@ -208,6 +222,8 @@
         };
       }
 
+      const boxFor = (id) => featureBounds.get(id) || null;
+
       function pointFor(id) {
         const box = boxFor(id);
         if (box) return {x: box.x + box.width / 2, y: box.y + box.height / 2};
@@ -215,29 +231,68 @@
         return finitePoint(point) ? point : null;
       }
 
-      function focus(point, box = null) {
-        if (!finitePoint(point)) return;
-        isDefaultView = false;
+      function focusView() {
+        const {point, box} = focusTarget;
         const s = size();
         const ratio = s.width / s.height;
         const visibleHeight = Math.max(s.height * .25, s.height - bottomInset);
-        const width = Math.max(base.width / 5,
+        const width = clamp(Math.max(base.width / 5,
           box ? box.width * 2 : 0,
-          box ? box.height * 2 * s.width / visibleHeight : 0);
+          box ? box.height * 2 * s.width / visibleHeight : 0),
+          Math.max(bounds.width, bounds.height * ratio) / 18,
+          Math.max(base.width, bounds.width * 1.2));
         const height = width / ratio;
-        const previous = {...view};
-        view = {x: point.x - width / 2,
+        // Clamp the zoom before positioning, so edge buildings also stay centered.
+        return {x: point.x - width / 2,
           y: point.y - height * visibleHeight / s.height / 2,
           width, height};
-        constrain();
-        const target = {...view};
-        view = previous;
-        moveTo(target);
+      }
+
+      function focus(point, box = null) {
+        if (!finitePoint(point)) return;
+        isDefaultView = false;
+        focusTarget = {point: {...point}, box};
+        moveTo(focusView());
+      }
+
+      function refocus() {
+        if (!focusTarget) return;
+        // Layout updates keep the original deadline instead of starting another
+        // 360 ms animation. Once settled, follow panel resizing directly.
+        const remaining = motion ? Math.max(0, motion.deadline - performance.now()) : 0;
+        moveTo(focusView(), remaining);
+      }
+
+      function updateSelectedMarker() {
+        const point = pointFor(selectedId);
+        selectedMarker.style.display = point && !pointMarkers.has(selectedId) ? '' : 'none';
+        if (point) {
+          selectedMarker.setAttribute('cx', point.x);
+          selectedMarker.setAttribute('cy', point.y);
+          selectedMarker.dataset.placeId = selectedId;
+        }
+        markerUnit = null;
+      }
+
+      function updateLocation(next) {
+        const point = finitePoint(next) ? next : null;
+        if (location?.x === point?.x && location?.y === point?.y && location?.accuracy === point?.accuracy) return;
+        location = point;
+        locationMarker.style.display = point ? '' : 'none';
+        const accuracy = point && Number.isFinite(point.accuracy) && point.accuracy > 0;
+        accuracyMarker.style.display = accuracy ? '' : 'none';
+        if (point) {
+          for (const marker of [locationMarker, accuracyMarker]) {
+            marker.setAttribute('cx', point.x);
+            marker.setAttribute('cy', point.y);
+          }
+          if (accuracy) accuracyMarker.setAttribute('r', Math.min(point.accuracy, bounds.width));
+        }
       }
 
       function zoom(factor, point) {
         isDefaultView = false;
-        stopMotion();
+        cancelFocus();
         const anchor = worldPoint(point);
         const s = size();
         const width = clamp(view.width / factor, Math.max(bounds.width, bounds.height * s.width / s.height) / 18, base.width);
@@ -257,8 +312,8 @@
 
       host.addEventListener('pointerdown', (event) => {
         if (!svg) return;
-        stopMotion();
-        autoFocusId = null;
+        readViewport();
+        cancelFocus();
         isDefaultView = false;
         event.preventDefault();
         host.setPointerCapture(event.pointerId);
@@ -331,12 +386,16 @@
       });
       host.addEventListener('wheel', (event) => {
         event.preventDefault();
-        if (svg) zoom(Math.exp(-event.deltaY * .002), localPoint(event));
+        if (svg) {
+          readViewport();
+          zoom(Math.exp(-event.deltaY * .002), localPoint(event));
+        }
       }, {passive: false});
 
       new ResizeObserver(() => {
+        readViewport();
         if (!svg) return;
-        stopMotion();
+        updateBase();
         if (isDefaultView) {
           defaultView();
           return;
@@ -345,13 +404,19 @@
         const center = {x: view.x + view.width / 2, y: view.y + view.height / 2};
         view.height = view.width * s.height / s.width;
         view.y = center.y - view.height / 2;
-        constrain();
-        draw();
+        if (focusTarget) refocus();
+        else {
+          stopMotion();
+          constrain();
+          draw();
+        }
+        if (pointers.size) startGesture();
       }).observe(host);
 
       window.campusMap = {
         load(data) {
           try {
+            readViewport();
             if (reportTimer !== null) clearTimeout(reportTimer);
             reportTimer = null;
             campusId = data.campusId;
@@ -361,7 +426,11 @@
               throw new Error('Invalid initial map view');
             }
             document.body.style.background = data.backgroundColor;
-            stopMotion();
+            cancelFocus();
+            if (paintFrame) cancelAnimationFrame(paintFrame);
+            paintFrame = 0;
+            paintedView = null;
+            markerUnit = null;
             pointers.clear(); gesture = null; lastTap = null;
             const documentSvg = new DOMParser().parseFromString(data.svg, 'image/svg+xml');
             const source = documentSvg.documentElement;
@@ -385,18 +454,32 @@
             places = new Map(data.places.map(place => [place.id, place]));
             featureElements = new Map();
             const byId = new Map([...svg.querySelectorAll('[id]')].map(element => [element.id, element]));
-            points = [];
             for (const place of places.values()) {
               const elements = place.featureIds.map(id => byId.get(id)).filter(Boolean);
               featureElements.set(place.id, elements);
               for (const element of elements) element.dataset.placeId = place.id;
-              if (!elements.length && finitePoint(place.point)) points.push({id: place.id, point: place.point});
             }
+            // Batch geometry reads after inserting the SVG, before marker writes.
+            featureBounds = new Map([...featureElements].map(([id, elements]) => [id, measureBox(elements)]));
             markerLayer = document.createElementNS(ns, 'g');
             locationLayer = document.createElementNS(ns, 'g');
             locationLayer.setAttribute('pointer-events', 'none');
+            pointMarkers = new Map();
+            for (const place of places.values()) {
+              if (featureElements.get(place.id).length || !finitePoint(place.point)) continue;
+              const marker = circle('shuyo-pin', place.point, 0);
+              marker.dataset.placeId = place.id;
+              markerLayer.appendChild(marker);
+              pointMarkers.set(place.id, marker);
+            }
+            selectedMarker = circle('shuyo-pin', {x: 0, y: 0}, 0);
+            locationMarker = circle('shuyo-location', {x: 0, y: 0}, 0);
+            accuracyMarker = circle('shuyo-accuracy', {x: 0, y: 0}, 0);
+            for (const marker of [selectedMarker, locationMarker, accuracyMarker]) marker.style.display = 'none';
+            markerLayer.appendChild(selectedMarker);
+            locationLayer.append(accuracyMarker, locationMarker);
             svg.append(markerLayer, locationLayer);
-            selectedId = null; location = null; autoFocusId = null;
+            selectedId = null; location = null;
             defaultView();
           } catch (_) { notify({type: 'error'}); }
         },
@@ -404,25 +487,26 @@
           if (!svg) return;
           const previousInset = bottomInset;
           bottomInset = Math.max(0, data.bottomInset || 0);
-          document.documentElement.style.setProperty('--accent', data.accent);
-          document.documentElement.style.setProperty('--selected-fill', data.accent + '70');
+          if (document.documentElement.style.getPropertyValue('--accent') !== data.accent) {
+            document.documentElement.style.setProperty('--accent', data.accent);
+            document.documentElement.style.setProperty('--selected-fill', data.accent + '70');
+          }
           if (selectedId !== data.selectedId) {
-            autoFocusId = null;
+            cancelFocus();
             for (const element of featureElements.get(selectedId) || []) element.classList.remove('shuyo-selected');
             selectedId = places.has(data.selectedId) ? data.selectedId : null;
             for (const element of featureElements.get(selectedId) || []) element.classList.add('shuyo-selected');
+            updateSelectedMarker();
           }
-          location = finitePoint(data.location) ? data.location : null;
+          updateLocation(data.location);
+          const insetChanged = previousInset !== bottomInset;
+          if (insetChanged) updateBase();
           if (data.focus) {
             if (finitePoint(data.focusPoint)) focus(data.focusPoint);
             else if (selectedId) {
-              autoFocusId = selectedId;
               focus(pointFor(selectedId), boxFor(selectedId));
             }
-          } else if (autoFocusId && autoFocusId === selectedId && Math.abs(previousInset - bottomInset) > 1) {
-            // Flutter reports the final content-sized panel height after layout.
-            focus(pointFor(selectedId), boxFor(selectedId));
-          }
+          } else if (insetChanged) refocus();
           draw();
         },
       };

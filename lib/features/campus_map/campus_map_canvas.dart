@@ -65,11 +65,14 @@ class CampusMapCanvas extends StatefulWidget {
 
 class _CampusMapCanvasState extends State<CampusMapCanvas> {
   late final WebViewController _controller;
-  Future<void> _pending = Future.value();
+  bool _syncing = false;
+  bool _syncRequested = false;
   bool _ready = false;
   bool _failed = false;
+  int _loadGeneration = 0;
   String? _campusId;
   int _focusRevision = -1;
+  String? _lastUpdate;
   Timer? _loadTimeout;
 
   @override
@@ -96,9 +99,11 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
   }
 
   Future<void> _load() async {
+    _loadGeneration++;
     _ready = false;
     _campusId = null;
     _focusRevision = -1;
+    _lastUpdate = null;
     _loadTimeout?.cancel();
     _loadTimeout = Timer(const Duration(seconds: 12), _fail);
     try {
@@ -158,12 +163,30 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
   }
 
   void _sync() {
-    _pending = _pending.then((_) async {
-      if (!mounted || !_ready || _failed) return;
-      final c = widget.configuration;
-      try {
+    _syncRequested = true;
+    if (_syncing || !_canSync) return;
+    unawaited(_drainSync());
+  }
+
+  bool get _canSync => mounted && _ready && !_failed;
+
+  Future<void> _drainSync() async {
+    _syncing = true;
+    var generation = _loadGeneration;
+    try {
+      // Keep one pending update while the platform channel is busy. Panel and
+      // keyboard animations can otherwise enqueue many obsolete camera states.
+      while (_syncRequested && _canSync) {
+        _syncRequested = false;
+        generation = _loadGeneration;
+        final c = widget.configuration;
         if (_campusId != c.campus.id) {
           await _controller.setBackgroundColor(c.backgroundColor);
+          if (!_canSync || generation != _loadGeneration) continue;
+          if (widget.configuration.campus.id != c.campus.id) {
+            _syncRequested = true;
+            continue;
+          }
           await _call('load', {
             'campusId': c.campus.id,
             'svg': c.svg,
@@ -174,21 +197,36 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
             'places': c.places.map((place) => place.toCanvasJson()).toList(),
             'bottomInset': c.bottomInset,
           });
+          if (!_canSync || generation != _loadGeneration) continue;
           _campusId = c.campus.id;
+          _focusRevision = -1;
+          _lastUpdate = null;
         }
-        await _call('update', {
+        if (!identical(c, widget.configuration)) {
+          _syncRequested = true;
+          continue;
+        }
+        final update = {
           'selectedId': c.selectedPlaceId,
           'location': c.location,
           'accent': '#${c.accent.toARGB32().toRadixString(16).substring(2)}',
           'bottomInset': c.bottomInset,
-          'focus': _focusRevision != c.focusRevision,
           'focusPoint': c.focusPoint?.toJson(),
-        });
+        };
+        final encoded = jsonEncode(update);
+        final focus = _focusRevision != c.focusRevision;
+        if (!focus && encoded == _lastUpdate) continue;
+        await _call('update', {...update, 'focus': focus});
+        if (!_canSync || generation != _loadGeneration) continue;
         _focusRevision = c.focusRevision;
-      } catch (_) {
-        _fail();
+        _lastUpdate = encoded;
       }
-    });
+    } catch (_) {
+      if (generation == _loadGeneration) _fail();
+    } finally {
+      _syncing = false;
+      if (_syncRequested && _canSync) _sync();
+    }
   }
 
   Future<void> _call(String method, Map<String, dynamic> value) => _controller

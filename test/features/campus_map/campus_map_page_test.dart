@@ -155,6 +155,50 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final result in [
+    ('D5 楼（文学院）', '文学院', 'place_baoshan_building-d5', 'baoshan'),
+    ('文武大楼', '文武大楼', 'place_yanchang_wenwu-building', 'yanchang'),
+  ]) {
+    testWidgets(
+        'keyboard resizing retains the selected target and sheet inset for ${result.$4}',
+        (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetViewInsets);
+
+      await tester.pumpWidget(MaterialApp(home: map()));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), result.$2);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, result.$1));
+      await tester.pump(const Duration(milliseconds: 80));
+      expect(canvas.selectedPlaceId, result.$3);
+      final revision = canvas.focusRevision;
+
+      for (final inset in [200.0, 100.0, 0.0]) {
+        tester.view.viewInsets = FakeViewPadding(bottom: inset);
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(canvas.selectedPlaceId, result.$3);
+        expect(canvas.focusRevision, revision);
+      }
+      await tester.pumpAndSettle();
+
+      expect(canvas.campus.id, result.$4);
+      expect(canvas.focusPoint, isNull);
+      expect(canvas.focusRevision, revision);
+      expect(
+          canvas.bottomInset,
+          closeTo(
+              tester.getSize(find.byType(CampusMapPlaceDetails)).height, 1));
+      expect(
+          tester.getRect(find.byKey(const ValueKey('map-canvas'))).bottom, 844);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final dismiss in ['background', 'close', 'back', 'another building']) {
     testWidgets('search does not return after selecting a result and $dismiss',
         (tester) async {
