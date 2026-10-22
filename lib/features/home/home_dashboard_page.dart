@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:lunar/calendar/Lunar.dart';
 
-import '../../shared/shuyo_text_styles.dart';
+import '../../data/models/home_layout.dart';
 import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/theme/custom_background.dart';
 
@@ -27,6 +27,7 @@ class HomeDashboardPage extends StatelessWidget {
     required this.onOpenOtp,
     required this.todayCourseContent,
     required this.announcementContent,
+    this.layout,
     this.isDemo = false,
   });
 
@@ -47,69 +48,113 @@ class HomeDashboardPage extends StatelessWidget {
   final VoidCallback onOpenOtp;
   final String todayCourseContent;
   final String announcementContent;
+  final HomeLayout? layout;
   final bool isDemo;
 
   static String? _sessionGreetingText;
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.only(top: 8, bottom: 20),
-      children: [
-        if (isDemo) ...[
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(
-              color: context.shuyoColors.surfaceAlt,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: context.shuyoColors.border),
-            ),
-            child: Text(
-              '演示模式 · 本地静态数据，操作不会上传',
-              style: TextStyle(
-                color: context.shuyoColors.textSecondary,
-                fontSize: 13,
+    final colors = context.shuyoColors;
+    final customBackground = CustomBackgroundScope.maybeOf(context) != null;
+    final background =
+        customBackground ? Colors.transparent : colors.background;
+    final groups = (layout ?? HomeLayout.defaults()).visibleGroups;
+    final accountRow = _HomeRow(
+      title: isAcademicLoginCompleting
+          ? '正在完成校园登录'
+          : hasAcademicAccount
+              ? academicDisplayName?.isNotEmpty == true
+                  ? '你好，$academicDisplayName！'
+                  : '你好！'
+              : academicSessionExpired
+                  ? '重新登录'
+                  : '立即登录',
+      content: isAcademicLoginCompleting
+          ? '正在获取课表...'
+          : hasAcademicAccount
+              ? _greeting()
+              : academicSessionExpired
+                  ? '登录已失效，请重新登录'
+                  : '登录后同步个人数据',
+      trailing: isAcademicLoginCompleting
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            )
+          : const Icon(Icons.account_circle_outlined),
+      onTap: isAcademicLoginCompleting ? null : onLogin,
+    );
+    return ColoredBox(
+      key: const ValueKey('home-background'),
+      color: background,
+      child: ListView(
+        key: const PageStorageKey('home-dashboard'),
+        padding: const EdgeInsets.only(top: 6, bottom: 16),
+        children: [
+          if (isDemo) ...[
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: context.shuyoColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: context.shuyoColors.border),
+              ),
+              child: Text(
+                '演示模式 · 本地静态数据，操作不会上传',
+                style: TextStyle(
+                  color: context.shuyoColors.textSecondary,
+                  fontSize: 13,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
+            const SizedBox(height: 10),
+          ],
+          if (groups.isEmpty)
+            _HomeCard(
+              key: const ValueKey('home-account'),
+              children: [accountRow],
+            ),
+          for (var index = 0; index < groups.length; index++)
+            _HomeCard(
+              key: ValueKey('home-card:${groups[index].id}'),
+              children: [
+                if (index == 0) accountRow,
+                for (final entry in groups[index].entries)
+                  if (entry.isDivider)
+                    Divider(
+                      key: ValueKey(entry.key),
+                      color: colors.borderStrong,
+                      height: 1,
+                      thickness: 1,
+                      indent: 0,
+                      endIndent: 0,
+                    )
+                  else
+                    _moduleRow(entry.module!),
+              ],
+            ),
         ],
-        _HomeRow(
-          title: isAcademicLoginCompleting
-              ? '正在完成校园登录'
-              : hasAcademicAccount
-                  ? academicDisplayName?.isNotEmpty == true
-                      ? '你好，$academicDisplayName！'
-                      : '你好！'
-                  : academicSessionExpired
-                      ? '重新登录'
-                      : '立即登录',
-          content: isAcademicLoginCompleting
-              ? '正在获取课表...'
-              : hasAcademicAccount
-                  ? _greeting()
-                  : academicSessionExpired
-                      ? '登录已失效，请重新登录'
-                      : '登录后同步个人数据',
-          trailing: isAcademicLoginCompleting
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 3),
-                )
-              : const Icon(Icons.account_circle_outlined),
-          onTap: isAcademicLoginCompleting ? null : onLogin,
-        ),
-        _HomeRow(
+      ),
+    );
+  }
+
+  Widget _moduleRow(HomeModule module) {
+    final key = ValueKey('home-module:${module.id}');
+    return switch (module) {
+      HomeModule.todayCourse => _HomeRow(
+          key: key,
           icon: Icons.event,
-          title: '今日课程',
+          title: module.title,
           content: todayCourseContent,
           onTap: onOpenAcademicSystem,
         ),
-        _HomeRow(
+      HomeModule.campusCard => _HomeRow(
+          key: key,
           icon: Icons.account_balance_wallet_outlined,
-          title: '校园卡',
+          title: module.title,
           content: campusCardContent,
           onTap: onOpenCampusCard,
           disableRipple: true,
@@ -121,50 +166,53 @@ class HomeDashboardPage extends StatelessWidget {
               overlayColor: WidgetStatePropertyAll(Colors.transparent),
             ),
             icon: isCampusCardRefreshing
-                ? SizedBox(
+                ? const SizedBox(
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: context.shuyoColors.textSecondary,
                       semanticsLabel: '正在刷新校园卡余额',
                     ),
                   )
                 : const Icon(Icons.refresh, size: 22),
           ),
         ),
-        _HomeRow(
+      HomeModule.announcements => _HomeRow(
+          key: key,
           icon: Icons.developer_board,
-          title: '通知公告',
+          title: module.title,
           content: announcementContent,
           onTap: onOpenAnnouncements,
         ),
-        _HomeRow(
+      HomeModule.emptyClassroom => _HomeRow(
+          key: key,
           icon: Icons.location_on,
-          title: '空教室查询',
+          title: module.title,
           content: '查询当前可用教室',
           onTap: onOpenEmptyClassroom,
         ),
-        _HomeRow(
+      HomeModule.libraryBooking => _HomeRow(
+          key: key,
           icon: Icons.local_library_outlined,
-          title: '图书馆预约',
+          title: module.title,
           content: '预约场馆座位',
           onTap: onOpenLibraryBooking,
         ),
-        _HomeRow(
+      HomeModule.campusMap => _HomeRow(
+          key: key,
           icon: Icons.map_outlined,
-          title: '校园地图',
+          title: module.title,
           content: '查找校园地点',
           onTap: onOpenCampusMap,
         ),
-        _HomeRow(
+      HomeModule.otp => _HomeRow(
+          key: key,
           icon: Icons.password,
-          title: '动态口令',
+          title: module.title,
           content: '查看并复制 OTP 令牌',
           onTap: onOpenOtp,
         ),
-      ],
-    );
+    };
   }
 
   String _greeting() {
@@ -294,8 +342,41 @@ class HomeDashboardPage extends StatelessWidget {
   }
 }
 
+class _HomeCard extends StatelessWidget {
+  const _HomeCard({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.shuyoColors;
+    final custom = CustomBackgroundScope.maybeOf(context) != null;
+    final lightCard = !custom && colors.brightness == Brightness.light;
+    final surface = custom
+        ? colors.surface.withValues(alpha: 0.72)
+        : lightCard
+            ? const Color(0xFFFFFEFC)
+            : colors.surface;
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      color: surface,
+      elevation: lightCard ? 0.5 : 0,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+}
+
 class _HomeRow extends StatelessWidget {
   const _HomeRow({
+    super.key,
     required this.title,
     required this.content,
     this.icon,
@@ -315,74 +396,48 @@ class _HomeRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.shuyoColors;
     final customBackground = CustomBackgroundScope.maybeOf(context) != null;
-    return InkWell(
-      onTap: onTap,
-      splashFactory:
-          customBackground || disableRipple ? NoSplash.splashFactory : null,
-      overlayColor: customBackground || disableRipple
-          ? const WidgetStatePropertyAll(Colors.transparent)
-          : null,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 68),
-        // Keep the content inset while the tap ripple spans the full width.
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: customBackground
-            ? null
-            : BoxDecoration(
-                border: Border(bottom: BorderSide(color: colors.border)),
-              ),
-        child: Row(
-          children: [
-            if (icon != null) ...[
-              SizedBox(
-                width: 40,
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Icon(
-                    icon,
-                    color: colors.textSecondary,
-                    size: 22,
-                  ),
-                ),
-              ),
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: ShuYoTextStyles.title(
-                      color: colors.textPrimary,
-                      size: 16,
-                      weight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    content,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: colors.textTertiary,
-                      fontSize: 13.5,
-                      height: 1.46,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(
-              width: 48,
-              height: 48,
-              child: Center(child: trailing ?? const Icon(Icons.chevron_right)),
-            ),
-          ],
+    final tile = ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      minVerticalPadding: 12,
+      minLeadingWidth: 24,
+      horizontalTitleGap: 16,
+      leading: icon == null
+          ? null
+          : Icon(icon, size: 24, color: colors.textSecondary),
+      titleTextStyle: TextStyle(
+        color: colors.textPrimary,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
+      ),
+      title: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        content,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: customBackground ? colors.textTertiary : colors.textSecondary,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          height: 1.45,
         ),
       ),
+      trailing: trailing,
+      onTap: onTap,
+    );
+    if (!customBackground && !disableRipple) return tile;
+    return Theme(
+      data: Theme.of(context).copyWith(
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+      ),
+      child: tile,
     );
   }
 }

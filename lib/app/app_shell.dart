@@ -16,6 +16,7 @@ import '../data/demo/demo_repositories.dart';
 import '../data/models/client_backend.dart';
 import '../data/models/campus_card.dart';
 import '../data/models/classroom.dart';
+import '../data/models/home_layout.dart';
 import '../data/repositories/academic_schedule_repository.dart';
 import '../data/repositories/academic_progress_repository.dart';
 import '../data/repositories/academic_ranking_repository.dart';
@@ -48,6 +49,7 @@ import '../features/home/announcements_page.dart';
 import '../features/home/campus_card_page.dart';
 import '../features/home/empty_classroom_page.dart';
 import '../features/home/home_dashboard_page.dart';
+import '../features/home/home_layout_page.dart';
 import '../features/home/otp_token_page.dart';
 import '../features/home/shuyo_content_page.dart';
 import '../features/library_booking/library_booking_page.dart';
@@ -134,6 +136,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   static const _webVpnStatusRefreshInterval = Duration(minutes: 5);
 
   AppTab _tab = AppTab.home;
+  HomeLayout? _homeLayout;
+  late final Future<void> _homeLayoutReady;
+  bool _openingHomeLayout = false;
   late AppTab _preferredStartupTab = widget.initialStartupTab;
   bool _scheduleTabInitialized = false;
   bool _progressTabInitialized = false;
@@ -207,6 +212,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _homeLayoutReady = _loadHomeLayout();
     _tab =
         widget.initialOpenSchedule ? AppTab.schedule : widget.initialStartupTab;
     _progressTabInitialized = _tab == AppTab.progress;
@@ -432,33 +438,67 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  Widget _homeBody() => HomeDashboardPage(
-        hasAcademicAccount: _hasAcademicSession,
-        academicSessionExpired: _academicSessionExpired,
-        academicDisplayName: _nickname ?? _academicStudentId,
-        isAcademicLoginCompleting:
-            _syncingAcademicSchedule && !_academicSessionExpired,
-        onLogin: _openAccountManager,
-        onOpenAcademicSystem: _syncingAcademicSchedule
-            ? () => _showSnack('正在获取课表，请稍后')
-            : () => _selectTab(AppTab.schedule),
-        onOpenAnnouncements: () => unawaited(_openAnnouncements()),
-        onOpenEmptyClassroom: () => unawaited(_openEmptyClassroom()),
-        onOpenLibraryBooking: () => unawaited(_openLibraryBooking()),
-        onOpenCampusCard: () => unawaited(_openCampusCard()),
-        onRefreshCampusCard: () => unawaited(_refreshCampusCardFromHome()),
-        isCampusCardRefreshing: _refreshingCampusCardFromHome,
-        campusCardContent: _academicSessionExpired
-            ? '登录已失效'
-            : _campusCardBalance == null
-                ? '查询余额和消费记录'
-                : '当前余额：¥${_campusCardBalance!.toStringAsFixed(2)}',
-        onOpenCampusMap: () => unawaited(_openCampusMap()),
-        onOpenOtp: () => unawaited(_openOtp()),
-        todayCourseContent: _scheduleSummaryText,
-        announcementContent: _announcementSummaryText,
-        isDemo: widget.isDemo,
-      );
+  Widget _homeBody() {
+    final layout = _homeLayout;
+    if (layout == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    return HomeDashboardPage(
+      layout: layout,
+      hasAcademicAccount: _hasAcademicSession,
+      academicSessionExpired: _academicSessionExpired,
+      academicDisplayName: _nickname ?? _academicStudentId,
+      isAcademicLoginCompleting:
+          _syncingAcademicSchedule && !_academicSessionExpired,
+      onLogin: _openAccountManager,
+      onOpenAcademicSystem: _syncingAcademicSchedule
+          ? () => _showSnack('正在获取课表，请稍后')
+          : () => _selectTab(AppTab.schedule),
+      onOpenAnnouncements: () => unawaited(_openAnnouncements()),
+      onOpenEmptyClassroom: () => unawaited(_openEmptyClassroom()),
+      onOpenLibraryBooking: () => unawaited(_openLibraryBooking()),
+      onOpenCampusCard: () => unawaited(_openCampusCard()),
+      onRefreshCampusCard: () => unawaited(_refreshCampusCardFromHome()),
+      isCampusCardRefreshing: _refreshingCampusCardFromHome,
+      campusCardContent: _academicSessionExpired
+          ? '登录已失效'
+          : _campusCardBalance == null
+              ? '查询余额和消费记录'
+              : '当前余额：¥${_campusCardBalance!.toStringAsFixed(2)}',
+      onOpenCampusMap: () => unawaited(_openCampusMap()),
+      onOpenOtp: () => unawaited(_openOtp()),
+      todayCourseContent: _scheduleSummaryText,
+      announcementContent: _announcementSummaryText,
+      isDemo: widget.isDemo,
+    );
+  }
+
+  Future<void> _loadHomeLayout() async {
+    final layout =
+        await _clientSettingsService.loadHomeLayout(isDemo: widget.isDemo);
+    if (mounted) setState(() => _homeLayout = layout);
+  }
+
+  Future<void> _openHomeLayout() async {
+    if (_openingHomeLayout) return;
+    _openingHomeLayout = true;
+    try {
+      await _homeLayoutReady;
+      if (!mounted) return;
+      await Navigator.of(context).push<void>(shuyoRoute(
+        builder: (_) => HomeLayoutPage(
+          initialLayout: _homeLayout!,
+          onChanged: (layout) async {
+            await _clientSettingsService.saveHomeLayout(layout,
+                isDemo: widget.isDemo);
+            if (mounted) setState(() => _homeLayout = layout);
+          },
+        ),
+      ));
+    } finally {
+      _openingHomeLayout = false;
+    }
+  }
 
   void _openNotifications() {
     Navigator.of(context).push<void>(
@@ -1215,6 +1255,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       shuyoRoute(
         builder: (_) => ClientSettingsPage(
           settingsService: _clientSettingsService,
+          onOpenHomeLayout: () => unawaited(_openHomeLayout()),
           scheduleNotificationService: _scheduleNotificationService,
           backendRepository: _clientBackendRepository,
           selectedThemeId: widget.selectedThemeId,

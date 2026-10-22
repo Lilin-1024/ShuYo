@@ -32,6 +32,7 @@ class ClientSettingsPage extends StatelessWidget {
   const ClientSettingsPage({
     super.key,
     required this.settingsService,
+    this.onOpenHomeLayout,
     required this.scheduleNotificationService,
     required this.backendRepository,
     required this.selectedThemeId,
@@ -52,6 +53,7 @@ class ClientSettingsPage extends StatelessWidget {
   });
 
   final ClientSettingsService settingsService;
+  final VoidCallback? onOpenHomeLayout;
   final AcademicScheduleNotificationService scheduleNotificationService;
   final ClientBackendRepository backendRepository;
   final String selectedThemeId;
@@ -92,6 +94,11 @@ class ClientSettingsPage extends StatelessWidget {
               ),
             ),
           ),
+          if (onOpenHomeLayout != null)
+            _SettingsRow(
+              title: '首页布局',
+              onTap: onOpenHomeLayout,
+            ),
           if (!isDemo)
             _SettingsRow(
               title: '默认公告',

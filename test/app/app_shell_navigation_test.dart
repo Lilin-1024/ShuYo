@@ -37,6 +37,7 @@ void main() {
     expect(await controller.savePreferredCampus('延长'), isTrue);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('图书馆预约'), 180);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('图书馆预约'));
     await tester.pumpAndSettle();
     expect(

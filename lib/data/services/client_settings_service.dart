@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/app_tab.dart';
 import '../models/announcement_source.dart';
+import '../models/home_layout.dart';
 import '../../shared/theme/custom_background.dart';
 
 class ClientNotificationSettings {
@@ -58,6 +59,8 @@ class ClientSettingsService {
   static const customBackgroundKey = 'client.theme.custom_background';
   static const startupTabKey = 'client.startup.tab';
   static const defaultAnnouncementSourceKey = 'announcements.defaultSource';
+  static const homeLayoutKey = 'client.home.layout.v1';
+  static const demoHomeLayoutKey = 'demo.home.layout.v1';
   static final _backgroundImageName =
       RegExp(r'^custom_background_[0-9]+\.png$');
   // Imports run in the app shell while commits run in the root app. Share
@@ -67,6 +70,27 @@ class ClientSettingsService {
 
   final Future<SharedPreferences> Function() _preferencesLoader;
   final Future<Directory> Function() _supportDirectoryLoader;
+
+  Future<HomeLayout> loadHomeLayout({bool isDemo = false}) async {
+    try {
+      final prefs = await _preferencesLoader();
+      final raw = prefs.getString(isDemo ? demoHomeLayoutKey : homeLayoutKey);
+      return raw == null
+          ? HomeLayout.defaults()
+          : HomeLayout.fromJson(jsonDecode(raw));
+    } on Object {
+      return HomeLayout.defaults();
+    }
+  }
+
+  Future<void> saveHomeLayout(HomeLayout layout, {bool isDemo = false}) async {
+    final prefs = await _preferencesLoader();
+    final saved = await prefs.setString(
+      isDemo ? demoHomeLayoutKey : homeLayoutKey,
+      jsonEncode(layout.toJson()),
+    );
+    if (!saved) throw StateError('首页布局保存失败');
+  }
 
   Future<File> createCustomBackgroundPhoto(List<int> bytes) async {
     final directory = await _supportDirectoryLoader();
