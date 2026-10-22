@@ -445,8 +445,10 @@ class _CampusCardPageState extends State<CampusCardPage> {
             side: BorderSide(color: selected ? colors.accent : colors.border),
             minimumSize: const Size.fromHeight(44),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
-            textStyle:
-                const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            textStyle: TextStyle(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -465,7 +467,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border),
+        border: Border.all(color: colors.borderStrong),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -581,6 +583,14 @@ class _CampusCardPageState extends State<CampusCardPage> {
 
   Widget _billRow(CampusCardBill bill) {
     final colors = context.shuyoColors;
+    // 门户以扣款记正、入账记负；界面按余额变动方向展示。
+    final balanceChange = -bill.amount;
+    final sign = balanceChange > 0
+        ? '+'
+        : balanceChange < 0
+            ? '-'
+            : '';
+    final amountText = '$sign¥ ${balanceChange.abs().toStringAsFixed(2)}';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: Column(
@@ -598,7 +608,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
                         color: colors.textPrimary,
                         size: 15,
                         weight: FontWeight.w600)),
-                Text('¥ ${bill.amount.toStringAsFixed(2)}',
+                Text(amountText,
                     style: TextStyle(
                         color: colors.textPrimary,
                         fontWeight: FontWeight.w600)),
