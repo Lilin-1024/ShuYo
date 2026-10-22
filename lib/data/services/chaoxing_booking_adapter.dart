@@ -114,6 +114,7 @@ class ChaoxingBookingAdapter extends ThereBookingClient {
           ChaoxingFailureKind.uncertain => ThereFailureKind.uncertain,
         },
         error.message,
+        ssoExpired: error.ssoExpired,
       );
     }
   }

@@ -14,10 +14,12 @@ import 'session_cookie_jar.dart';
 enum ChaoxingFailureKind { loginRequired, unreachable, business, uncertain }
 
 class ChaoxingBookingException implements Exception {
-  const ChaoxingBookingException(this.kind, this.message);
+  const ChaoxingBookingException(this.kind, this.message,
+      {this.ssoExpired = false});
 
   final ChaoxingFailureKind kind;
   final String message;
+  final bool ssoExpired;
 
   @override
   String toString() => message;
@@ -493,7 +495,8 @@ class ChaoxingBookingClient {
     if (!ssoCookie.split(';').any((part) =>
         part.trimLeft().startsWith('${WeComConstants.sessionCookieName}='))) {
       throw const ChaoxingBookingException(
-          ChaoxingFailureKind.loginRequired, '请先登录校园账号，再使用图书馆座位预约');
+          ChaoxingFailureKind.loginRequired, '请先登录校园账号，再使用图书馆座位预约',
+          ssoExpired: true);
     }
     final authorize = authorizeUri.replace(queryParameters: {
       'client_id': _clientId,
@@ -506,11 +509,12 @@ class ChaoxingBookingClient {
     var next = response.location;
     if (!_isRedirect(response.status) || next == null) {
       throw const ChaoxingBookingException(
-          ChaoxingFailureKind.loginRequired, '校园登录无法授权图书馆座位预约，请重新登录');
+          ChaoxingFailureKind.uncertain, '暂时无法取得图书馆座位预约授权，请稍后重试');
     }
     if (next.path.startsWith('/oauth2/login/')) {
       throw const ChaoxingBookingException(
-          ChaoxingFailureKind.loginRequired, '校园登录已失效，请重新登录');
+          ChaoxingFailureKind.loginRequired, '校园登录已失效，请重新登录',
+          ssoExpired: true);
     }
     if (next.host != oauthRedirectUri.host ||
         _string(next.queryParameters['code']) == null) {

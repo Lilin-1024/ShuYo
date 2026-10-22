@@ -170,8 +170,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   DateTime? _campusCardQueriedAt;
   int _campusCardRevision = 0;
   Future<CampusCardInfo>? _campusCardRefreshTask;
-  Future<bool>? _campusCardLoginTask;
+  Future<bool>? _campusLoginTask;
   Future<void>? _campusAccountExpiryTask;
+  Future<bool>? _webVpnFeatureRecoveryTask;
   bool _refreshingCampusCardFromHome = false;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
@@ -770,17 +771,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _handlingInvalidAcademicSession = true;
     try {
       final recovered = await _recoverAcademicWithSso();
-      if (!mounted || recovered == true) return;
-      setState(() {
-        _hasAcademicSession = false;
-        _academicSessionExpired = true;
-      });
-      _syncOnboardingAccountStatus();
-      if (recovered == null) return;
-      await _academicAuthService.clearAccount(sessionExpired: true);
-      if (!mounted) return;
-      _showSnack('统一认证需要重新登录');
-      await _openAcademicLogin(trySso: false);
+      if (!mounted || recovered != false) return;
+      await _handleCampusSsoExpired();
     } finally {
       _handlingInvalidAcademicSession = false;
     }
@@ -832,20 +824,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     return true;
   }
 
-  Future<void> _openAcademicLogin({bool trySso = true}) async {
-    if (widget.isDemo) return;
-    if (trySso && _academicSessionExpired) {
-      final recovered = await _recoverAcademicWithSso();
-      if (recovered == true || recovered == null || !mounted) return;
-    }
-    final result = await Navigator.of(context).push<NativeLoginResult>(
-      shuyoRoute(builder: (_) => const NativeLoginPage()),
-    );
-    if (result == NativeLoginResult.authenticated && mounted) {
-      await _finishAcademicLogin();
-    }
-  }
-
   Future<void> _openAnnouncements() async {
     await Navigator.of(context).push<void>(
       shuyoRoute(
@@ -868,7 +846,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           repository: _classroomRepository,
           initialCampus: _preferredCampus,
           initialDate: widget.isDemo ? DateTime(2026, 9, 1) : null,
-          onWebVpnExpired: widget.isDemo ? null : _handleWebVpnExpired,
+          onWebVpnRecoveryRequired: widget.isDemo
+              ? null
+              : (interactive) =>
+                  _recoverWebVpnForFeature(interactive: interactive),
         ),
       ),
     );
@@ -1034,8 +1015,22 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<bool> _loginCampusCard() async {
-    final pending = _campusCardLoginTask;
+  Future<bool> _handleCampusSsoExpired({bool interactive = true}) async {
+    await _markCampusAccountExpired();
+    if (!mounted || !interactive) return false;
+    return _loginCampusAccount();
+  }
+
+  Future<bool> _loginCampusCard() => _loginCampusAccount(
+        title: '登录校园卡',
+        description: '使用上海大学统一认证账户查询余额和消费记录',
+      );
+
+  Future<bool> _loginCampusAccount({
+    String? title,
+    String? description,
+  }) async {
+    final pending = _campusLoginTask;
     if (pending != null) {
       try {
         return await pending;
@@ -1043,29 +1038,35 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         return false;
       }
     }
-    final operation = _openCampusCardLogin();
-    _campusCardLoginTask = operation;
+    final operation = _openCampusLogin(
+      title: title,
+      description: description,
+    );
+    _campusLoginTask = operation;
     try {
       return await operation;
     } on Object {
       if (mounted) _showSnack('暂时无法完成登录，请稍后重试');
       return false;
     } finally {
-      if (identical(_campusCardLoginTask, operation)) {
-        _campusCardLoginTask = null;
+      if (identical(_campusLoginTask, operation)) {
+        _campusLoginTask = null;
       }
     }
   }
 
-  Future<bool> _openCampusCardLogin() async {
+  Future<bool> _openCampusLogin({
+    String? title,
+    String? description,
+  }) async {
     final expiring = _campusAccountExpiryTask;
     if (expiring != null) await expiring;
     if (!mounted || widget.isDemo) return false;
     final result = await Navigator.of(context).push<NativeLoginResult>(
       shuyoRoute(
-          builder: (_) => const NativeLoginPage(
-                title: '登录校园卡',
-                description: '使用上海大学统一认证账户查询余额和消费记录',
+          builder: (_) => NativeLoginPage(
+                title: title,
+                description: description,
               )),
     );
     if (result != NativeLoginResult.authenticated || !mounted) return false;
@@ -1111,7 +1112,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       shuyoRoute(
         builder: (_) => OtpTokenPage(
           repository: _otpTokenRepository,
-          onWebVpnExpired: widget.isDemo ? null : _handleWebVpnExpired,
+          onCampusSessionExpired: widget.isDemo
+              ? null
+              : (interactive) =>
+                  _handleCampusSsoExpired(interactive: interactive),
+          onWebVpnRecoveryRequired: widget.isDemo
+              ? null
+              : (interactive) =>
+                  _recoverWebVpnForFeature(interactive: interactive),
         ),
       ),
     );
@@ -1136,6 +1144,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             useWebVpn: useWebVpn,
             onWebVpnSessionRequired: () =>
                 _changeWebVpnFromAccountManager(true),
+            onWebVpnRecoveryRequired: (interactive) =>
+                _recoverWebVpnForFeature(interactive: interactive),
+            onCampusSessionExpired: (interactive) =>
+                _handleCampusSsoExpired(interactive: interactive),
+            onCampusLoginRequired: () => _loginCampusAccount(),
             onChaoxingLoginRequired: _loginForChaoxingBooking,
           ),
         ),
@@ -1146,17 +1159,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<bool> _loginForChaoxingBooking() async {
-    if (widget.isDemo || !mounted) return false;
-    final result = await Navigator.of(context).push<NativeLoginResult>(
-      shuyoRoute(builder: (_) => const NativeLoginPage()),
-    );
-    if (result != NativeLoginResult.authenticated || !mounted) return false;
+    if (!await _loginCampusAccount() || !mounted) return false;
     try {
       await _clearChaoxingSession();
     } on Object {
       // Campus login succeeded; the booking client can recheck its session.
     }
-    await _finishAcademicLogin(connectWebVpn: false);
     return mounted;
   }
 
@@ -1346,24 +1354,49 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _handleWebVpnExpired() async {
-    if (!mounted) return;
-    final outcome = await _recoverWebVpn();
-    if (!mounted) return;
+  Future<bool> _recoverWebVpnForFeature({bool interactive = true}) async {
+    if (!interactive) return _attemptWebVpnRecovery(interactive: false);
+    final pending = _webVpnFeatureRecoveryTask;
+    if (pending != null) return pending;
+    final operation = _attemptWebVpnRecovery(interactive: true);
+    _webVpnFeatureRecoveryTask = operation;
+    try {
+      return await operation;
+    } finally {
+      if (identical(_webVpnFeatureRecoveryTask, operation)) {
+        _webVpnFeatureRecoveryTask = null;
+      }
+    }
+  }
+
+  Future<bool> _attemptWebVpnRecovery({required bool interactive}) async {
+    if (widget.isDemo || !mounted) return false;
+    var outcome = await _recoverWebVpn();
+    if (!mounted) return false;
+    if (outcome == WebVpnRecoveryOutcome.needsAuthentication) {
+      if (!await _handleCampusSsoExpired(interactive: interactive) ||
+          !mounted) {
+        return false;
+      }
+      outcome = await _recoverWebVpn();
+      if (!mounted) return false;
+    }
     switch (outcome) {
       case WebVpnRecoveryOutcome.alreadyValid:
       case WebVpnRecoveryOutcome.recovered:
-        _showSnack('WebVPN连接已恢复，请重试刚才的操作');
+        await _setWebVpnEnabled(true);
+        return true;
       case WebVpnRecoveryOutcome.needsAuthentication:
-        await _setWebVpnEnabled(false);
-        _showSnack('统一认证已失效，请重新登录WebVPN');
+        if (interactive) _showSnack('统一认证需要重新登录');
       case WebVpnRecoveryOutcome.unavailable:
-        _showSnack('暂时无法确认WebVPN连接，请稍后重试');
+        if (interactive) _showSnack('暂时无法确认WebVPN连接，请稍后重试');
       case WebVpnRecoveryOutcome.businessFailure:
-        await _setWebVpnEnabled(false);
-        _showSnack(_unifiedAccountService.lastWebVpnFailureMessage ??
-            'WebVPN会话恢复失败，请稍后重试');
+        if (interactive) {
+          _showSnack(_unifiedAccountService.lastWebVpnFailureMessage ??
+              'WebVPN会话恢复失败，请稍后重试');
+        }
     }
+    return false;
   }
 
   Future<void> _setWebVpnEnabled(bool enabled) async {
@@ -1388,30 +1421,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<bool> _changeWebVpnFromAccountManager(bool enabled) async {
     if (widget.isDemo || !mounted) return false;
     if (enabled) {
-      final outcome = await _recoverWebVpn();
-      if (!mounted) return false;
-      if (outcome == WebVpnRecoveryOutcome.unavailable) {
-        _showSnack('暂时无法验证WebVPN连接，请稍后重试');
-        return false;
-      }
-      if (outcome == WebVpnRecoveryOutcome.businessFailure) {
-        _showSnack(_unifiedAccountService.lastWebVpnFailureMessage ??
-            'WebVPN会话恢复失败，请稍后重试');
-        return false;
-      }
-      if (outcome == WebVpnRecoveryOutcome.needsAuthentication) {
-        final result = await Navigator.of(context).push<NativeLoginResult>(
-          shuyoRoute(builder: (_) => const NativeLoginPage.webVpn()),
-        );
-        if (result != NativeLoginResult.authenticated || !mounted) return false;
-        _otpTokenRepository.resetSession();
-        await _unifiedAccountService.setWebVpnPendingRecovery(false);
-        setState(() {
-          _webVpnPendingRecovery = false;
-          _webVpnSessionReady = true;
-        });
-        _syncOnboardingAccountStatus();
-      }
+      return _recoverWebVpnForFeature();
     }
     try {
       await _setWebVpnEnabled(enabled);
@@ -1431,8 +1441,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<WebVpnRecoveryOutcome> _runWebVpnRecovery() async {
+    final revision = _campusCardRevision;
     try {
       final outcome = await _unifiedAccountService.recoverWebVpn();
+      if (outcome == WebVpnRecoveryOutcome.needsAuthentication) {
+        if (revision != _campusCardRevision && _hasAcademicSession) {
+          return WebVpnRecoveryOutcome.unavailable;
+        }
+        await _markCampusAccountExpired();
+      }
       if (mounted) {
         setState(() {
           _webVpnSessionReady = outcome == WebVpnRecoveryOutcome.alreadyValid ||

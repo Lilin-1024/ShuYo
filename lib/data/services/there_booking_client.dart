@@ -39,10 +39,12 @@ enum ThereFailureKind {
 }
 
 class ThereBookingException implements Exception {
-  const ThereBookingException(this.kind, this.message);
+  const ThereBookingException(this.kind, this.message,
+      {this.ssoExpired = false});
 
   final ThereFailureKind kind;
   final String message;
+  final bool ssoExpired;
 
   @override
   String toString() => message;

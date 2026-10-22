@@ -22,6 +22,8 @@ class OtpTokenPage extends StatefulWidget {
     super.key,
     required this.repository,
     this.onWebVpnExpired,
+    this.onCampusSessionExpired,
+    this.onWebVpnRecoveryRequired,
   });
 
   final OtpTokenRepository repository;
@@ -29,6 +31,8 @@ class OtpTokenPage extends StatefulWidget {
   /// Invoked when the gateway rejects its token, so the shell can try to
   /// restore the WebVPN session the same way the classroom page does.
   final Future<void> Function()? onWebVpnExpired;
+  final Future<bool> Function(bool interactive)? onCampusSessionExpired;
+  final Future<bool> Function(bool interactive)? onWebVpnRecoveryRequired;
 
   @override
   State<OtpTokenPage> createState() => _OtpTokenPageState();
@@ -43,9 +47,10 @@ class _OtpTokenPageState extends State<OtpTokenPage>
   bool _fetching = false;
   int _fetchRevision = 0;
 
-  /// Set once a failed read has already asked the shell to restore WebVPN, so
-  /// a run of failures does not repeat that request every second.
-  bool _webVpnRecoveryRequested = false;
+  bool _authenticationBlocked = false;
+  bool _recoveringAuthentication = false;
+  bool _authenticationRecoveryAttempted = false;
+  OtpTokenException? _authenticationError;
 
   /// Last failure already reported. Polling retries every second, so the same
   /// reason is shown once instead of one bar per attempt.
@@ -93,7 +98,16 @@ class _OtpTokenPageState extends State<OtpTokenPage>
     _fetching = false;
     setState(() => _token = null);
     _reportedError = null;
-    _webVpnRecoveryRequested = false;
+    _authenticationBlocked = !widget.repository.sessionActive;
+    _authenticationError = null;
+    if (_authenticationBlocked) {
+      _ticker?.cancel();
+      _ticker = null;
+    } else if (!_recoveringAuthentication) {
+      _authenticationRecoveryAttempted = false;
+      _startTicker();
+      unawaited(_fetch());
+    }
   }
 
   @override
@@ -112,49 +126,104 @@ class _OtpTokenPageState extends State<OtpTokenPage>
   }
 
   Future<void> _fetch() async {
-    if (_fetching) return;
+    if (_fetching || _authenticationBlocked || _recoveringAuthentication) {
+      return;
+    }
+    if (ModalRoute.of(context)?.isCurrent == false) return;
     final revision = _fetchRevision;
+    var retry = false;
     _fetching = true;
     try {
       final token = await widget.repository.fetchToken();
       if (!mounted || revision != _fetchRevision) return;
-      _webVpnRecoveryRequested = false;
       _reportedError = null;
+      _authenticationRecoveryAttempted = false;
       setState(() => _token = token);
     } on OtpTokenException catch (error) {
-      if (revision == _fetchRevision) _onFailure(error);
+      if (revision == _fetchRevision) retry = await _onFailure(error);
     } on Object {
-      if (revision == _fetchRevision) _onFailure(null);
+      if (revision == _fetchRevision) await _onFailure(null);
     } finally {
       if (revision == _fetchRevision) _fetching = false;
     }
+    if (retry && mounted) unawaited(_fetch());
   }
 
-  /// Reports a failed read without disturbing what is on screen.
-  ///
-  /// The last code stays put with its bar standing still, and the next tick
-  /// quietly tries again. The reason is still surfaced, but as one bar across
-  /// the bottom rather than page content, and only when it changes: otherwise a
-  /// persistent failure would push a new bar every second.
-  void _onFailure(OtpTokenException? error) {
-    if (!mounted) return;
+  /// Transient failures retain the displayed code. Authentication failures
+  /// clear it and pause polling until the account is restored.
+  Future<bool> _onFailure(OtpTokenException? error) async {
+    if (!mounted) return false;
+    if (error != null &&
+        (error.code == OtpTokenException.sessionNotReused ||
+            error.code == OtpTokenException.webVpnLoginRequired)) {
+      final allowRecovery = !_authenticationRecoveryAttempted;
+      _authenticationRecoveryAttempted = true;
+      return _recoverAuthentication(error, allowRecovery: allowRecovery);
+    }
     final message = _messageFor(error);
     if (message != _reportedError) {
       _reportedError = message;
       _showSnack(message);
     }
-    if (error != null &&
-        error.code == OtpTokenException.webVpnLoginRequired &&
-        !_webVpnRecoveryRequested) {
-      _webVpnRecoveryRequested = true;
-      unawaited(widget.onWebVpnExpired?.call() ?? Future<void>.value());
+    return false;
+  }
+
+  Future<bool> _recoverAuthentication(OtpTokenException error,
+      {bool userInitiated = false, bool allowRecovery = true}) async {
+    if (!mounted || _recoveringAuthentication) return false;
+    _recoveringAuthentication = true;
+    _ticker?.cancel();
+    _ticker = null;
+    setState(() {
+      _authenticationBlocked = true;
+      _authenticationError = error;
+      _token = null;
+    });
+    var recovered = false;
+    final interactive = allowRecovery &&
+        ModalRoute.of(context)?.isCurrent != false &&
+        (WidgetsBinding.instance.lifecycleState == null ||
+            WidgetsBinding.instance.lifecycleState ==
+                AppLifecycleState.resumed);
+    try {
+      if (error.code == OtpTokenException.sessionNotReused) {
+        if (userInitiated || widget.repository.sessionActive) {
+          recovered =
+              await widget.onCampusSessionExpired?.call(interactive) ?? false;
+        }
+      } else if (allowRecovery && widget.onWebVpnRecoveryRequired != null) {
+        recovered = await widget.onWebVpnRecoveryRequired!(interactive);
+      } else if (allowRecovery) {
+        await widget.onWebVpnExpired?.call();
+      }
+    } on Object {
+      if (mounted && interactive) _showSnack('暂时无法恢复登录，请稍后重试。');
+    } finally {
+      _recoveringAuthentication = false;
+      if (mounted) {
+        setState(() {
+          _authenticationBlocked = !recovered;
+          _authenticationError = recovered ? null : error;
+        });
+        if (recovered) _startTicker();
+      }
+    }
+    return recovered;
+  }
+
+  Future<void> _retryAuthentication() async {
+    final error = _authenticationError;
+    if (error == null) return;
+    _authenticationRecoveryAttempted = true;
+    if (await _recoverAuthentication(error, userInitiated: true) && mounted) {
+      await _fetch();
     }
   }
 
   String _messageFor(OtpTokenException? error) {
     if (error == null) return '动态口令加载失败，请稍后重试。';
     return switch (error.code) {
-      OtpTokenException.sessionNotReused => '校园登录状态已失效，请回到首页重新登录后再试。',
+      OtpTokenException.sessionNotReused => '登录已失效，请重新登录。',
       OtpTokenException.webVpnLoginRequired => 'WebVPN 连接已失效，请在账号管理里恢复后重试。',
       _ => error.message,
     };
@@ -173,7 +242,11 @@ class _OtpTokenPageState extends State<OtpTokenPage>
   /// under a second. After that a fixed one-second beat is used, which avoids
   /// rescheduling work on every tick.
   void _startTicker() {
-    if (_ticker != null) return;
+    if (_ticker != null ||
+        _authenticationBlocked ||
+        _recoveringAuthentication) {
+      return;
+    }
     final wait = Duration(milliseconds: 1000 - DateTime.now().millisecond);
     _ticker = Timer(wait, () {
       if (!mounted) return;
@@ -202,6 +275,28 @@ class _OtpTokenPageState extends State<OtpTokenPage>
   }
 
   Widget _buildBody() {
+    if (_authenticationBlocked) {
+      final error = _authenticationError;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(error == null ? '登录已失效，请重新登录。' : _messageFor(error),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: _recoveringAuthentication || error == null
+                    ? null
+                    : _retryAuthentication,
+                child: Text(_recoveringAuthentication ? '正在恢复…' : '重试'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     final token = _token;
     if (token == null) {
       // Nothing has been read yet; a spinner stays until the first read lands.

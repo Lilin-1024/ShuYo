@@ -148,6 +148,9 @@ class LibraryBookingPage extends StatefulWidget {
     this.useWebVpn = false,
     this.onWebVpnSessionRequired,
     this.onChaoxingLoginRequired,
+    this.onCampusLoginRequired,
+    this.onCampusSessionExpired,
+    this.onWebVpnRecoveryRequired,
     this.initialCampus = ClassroomCampus.defaultName,
     this.schoolClock,
   });
@@ -158,6 +161,9 @@ class LibraryBookingPage extends StatefulWidget {
   final bool useWebVpn;
   final Future<bool> Function()? onWebVpnSessionRequired;
   final Future<bool> Function()? onChaoxingLoginRequired;
+  final Future<bool> Function()? onCampusLoginRequired;
+  final Future<bool> Function(bool interactive)? onCampusSessionExpired;
+  final Future<bool> Function(bool interactive)? onWebVpnRecoveryRequired;
   final String initialCampus;
 
   /// Shanghai wall-clock time, overridable for deterministic time selection.
@@ -342,6 +348,7 @@ class _LibraryBookingPageState extends State<LibraryBookingPage> {
   bool _busy = false;
   int _generation = 0;
   Future<void> _authenticationQueue = Future<void>.value();
+  int _authenticationRevision = 0;
   String _bookingFilter = '全部';
   int _bookingAnimationEpoch = 0;
   final Map<BookingVenue, Future<bool>> _bookingLoads = {};
@@ -2957,14 +2964,24 @@ class _LibraryBookingPageState extends State<LibraryBookingPage> {
   Future<bool> _authenticate({
     BookingVenue? venue,
     ThereBookingClient? client,
+    bool interactive = true,
+    int? expectedRevision,
   }) async {
+    final revision = expectedRevision ?? _authenticationRevision;
     final preceding = _authenticationQueue;
     final finished = Completer<void>();
     _authenticationQueue = finished.future;
     await preceding;
     try {
-      if (!mounted) return false;
-      return await _authenticateNow(venue: venue, client: client);
+      if (!mounted || revision != _authenticationRevision) return false;
+      final restored = await _authenticateNow(
+        venue: venue,
+        client: client,
+        interactive: interactive,
+      );
+      // Queued failures from the same action must not reopen a cancelled login.
+      if (!restored && interactive) _authenticationRevision++;
+      return restored;
     } finally {
       finished.complete();
     }
@@ -2973,49 +2990,102 @@ class _LibraryBookingPageState extends State<LibraryBookingPage> {
   Future<bool> _authenticateNow({
     BookingVenue? venue,
     ThereBookingClient? client,
+    bool interactive = true,
   }) async {
     final activeVenue = venue ?? _activeClientVenue;
     final activeClient = client ?? _client;
     if (activeVenue.isChaoxing) {
-      final login = widget.onChaoxingLoginRequired;
-      if (login != null) return login();
-      if (!mounted) return false;
-      final result = await Navigator.of(context).push<NativeLoginResult>(
-        MaterialPageRoute(
-          builder: (_) => const ShuYoRouteSurface(child: NativeLoginPage()),
-        ),
-      );
-      if (result == NativeLoginResult.authenticated) {
+      try {
         activeClient.resetSession();
+        await activeClient.selectVenue(activeVenue);
+        await _checkAccount(await activeClient.profile(), client: activeClient);
         return true;
+      } on ThereBookingException catch (error) {
+        if (error.kind != ThereFailureKind.loginRequired) rethrow;
+        if (!await _requestCampusLogin(
+          ssoExpired: error.ssoExpired,
+          interactive: interactive,
+          chaoxing: true,
+        )) {
+          return false;
+        }
       }
-      return false;
+      return _authenticateNow(
+          venue: activeVenue, client: activeClient, interactive: false);
     }
-    await activeClient.prepareOAuth();
+    try {
+      await activeClient.prepareOAuth();
+    } on ThereBookingException catch (error) {
+      if (error.kind != ThereFailureKind.webVpnLoginRequired ||
+          !await _restoreWebVpn(interactive)) {
+        rethrow;
+      }
+      activeClient.resetSession();
+      await activeClient.prepareOAuth();
+    }
     final callback = await widget.accountService.authorizeThere();
     if (callback != null) {
       await activeClient.completeOAuth(callback);
       return true;
     }
-    if (widget.useWebVpn) {
-      throw const ThereBookingException(
-        ThereFailureKind.loginRequired,
-        '统一认证会话已失效，请先在账号管理恢复WebVPN登录后重试',
-      );
+    if (!await _requestCampusLogin(
+        ssoExpired: true, interactive: interactive)) {
+      return false;
     }
+    activeClient.resetSession();
+    return _authenticateNow(
+        venue: activeVenue, client: activeClient, interactive: false);
+  }
+
+  Future<bool> _requestCampusLogin({
+    required bool ssoExpired,
+    required bool interactive,
+    bool chaoxing = false,
+  }) async {
     if (!mounted) return false;
+    interactive = interactive && ModalRoute.of(context)?.isCurrent != false;
+    if (ssoExpired && widget.onCampusSessionExpired != null) {
+      return widget.onCampusSessionExpired!(interactive);
+    }
+    if (!interactive) return false;
+    final login = chaoxing
+        ? widget.onChaoxingLoginRequired ?? widget.onCampusLoginRequired
+        : widget.onCampusLoginRequired;
+    if (login != null) return login();
     final result = await Navigator.of(context).push<NativeLoginResult>(
       MaterialPageRoute(
-        builder: (_) => const ShuYoRouteSurface(
-          child: NativeLoginPage.there(),
+        builder: (_) => ShuYoRouteSurface(
+          child: chaoxing
+              ? const NativeLoginPage()
+              : const NativeLoginPage.there(),
         ),
       ),
     );
-    if (result == NativeLoginResult.authenticated) {
-      activeClient.resetSession();
-      return true;
+    return result == NativeLoginResult.authenticated;
+  }
+
+  Future<bool> _restoreWebVpn(bool interactive) async {
+    interactive =
+        interactive && mounted && ModalRoute.of(context)?.isCurrent != false;
+    final recover = widget.onWebVpnRecoveryRequired;
+    final restored = recover != null
+        ? await recover(interactive)
+        : interactive
+            ? await widget.onWebVpnSessionRequired?.call() ?? false
+            : false;
+    if (!restored && interactive) _authenticationRevision++;
+    return restored;
+  }
+
+  Future<T> _reportExpiredSession<T>(Future<T> Function() operation) async {
+    try {
+      return await operation();
+    } on ThereBookingException catch (error) {
+      if (error.ssoExpired) {
+        await widget.onCampusSessionExpired?.call(false);
+      }
+      rethrow;
     }
-    return false;
   }
 
   Future<T> _read<T>(
@@ -3027,38 +3097,41 @@ class _LibraryBookingPageState extends State<LibraryBookingPage> {
   }) async {
     final activeVenue = venue ?? _activeClientVenue;
     final activeClient = client ?? _client;
+    final revision = _authenticationRevision;
     try {
       return await operation();
     } on ThereBookingException catch (error) {
-      if (!interactiveAuth &&
-          (error.kind == ThereFailureKind.loginRequired ||
-              error.kind == ThereFailureKind.webVpnLoginRequired)) {
-        rethrow;
-      }
+      if (revision != _authenticationRevision) rethrow;
       if (error.kind == ThereFailureKind.webVpnLoginRequired &&
           widget.useWebVpn) {
-        final restored = await widget.onWebVpnSessionRequired?.call() ?? false;
+        final restored = await _restoreWebVpn(interactiveAuth);
         if (!restored) rethrow;
         activeClient.resetSession();
-        return _readAfterRecovery(operation, validateAfterRecovery,
+        return _reportExpiredSession(() => _readAfterRecovery(
+            operation, validateAfterRecovery,
             venue: activeVenue,
             client: activeClient,
-            selectGlobalVenue: client == null);
+            selectGlobalVenue: client == null));
       }
       if (error.kind != ThereFailureKind.loginRequired) rethrow;
     }
-    final authenticated =
-        await _authenticate(venue: activeVenue, client: activeClient);
+    final authenticated = await _authenticate(
+      venue: activeVenue,
+      client: activeClient,
+      interactive: interactiveAuth,
+      expectedRevision: revision,
+    );
     if (!authenticated) {
       throw const ThereBookingException(
         ThereFailureKind.loginRequired,
         '请先登录图书馆预约',
       );
     }
-    return _readAfterRecovery(operation, validateAfterRecovery,
+    return _reportExpiredSession(() => _readAfterRecovery(
+        operation, validateAfterRecovery,
         venue: activeVenue,
         client: activeClient,
-        selectGlobalVenue: client == null);
+        selectGlobalVenue: client == null));
   }
 
   Future<T> _readAfterRecovery<T>(
@@ -3600,9 +3673,8 @@ class _LibraryBookingPageState extends State<LibraryBookingPage> {
 
   Future<void> _recoverAfterWrite({bool webVpn = false}) async {
     try {
-      final recovered = webVpn
-          ? await widget.onWebVpnSessionRequired?.call() ?? false
-          : await _authenticate();
+      final recovered =
+          webVpn ? await _restoreWebVpn(true) : await _authenticate();
       if (!recovered || !mounted) return;
       if (webVpn) _client.resetSession();
       if (_step == _BookingStep.bookings) {

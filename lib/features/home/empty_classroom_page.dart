@@ -17,12 +17,14 @@ class EmptyClassroomPage extends StatefulWidget {
     this.initialDate,
     this.initialCampus = ClassroomCampus.defaultName,
     this.onWebVpnExpired,
+    this.onWebVpnRecoveryRequired,
   });
 
   final ClassroomRepository repository;
   final DateTime? initialDate;
   final String initialCampus;
   final Future<void> Function()? onWebVpnExpired;
+  final Future<bool> Function(bool interactive)? onWebVpnRecoveryRequired;
 
   @override
   State<EmptyClassroomPage> createState() => _EmptyClassroomPageState();
@@ -210,7 +212,9 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
       setState(() => _refreshingOptions = true);
     }
     try {
-      final options = await widget.repository.loadOptions(forceRefresh: force);
+      final options = await _withWebVpnRecovery(
+        () => widget.repository.loadOptions(forceRefresh: force),
+      );
       if (!mounted) {
         return;
       }
@@ -230,9 +234,6 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
         }
       });
       _search(forceRefresh: force);
-    } on ClassroomWebVpnAuthException {
-      await widget.onWebVpnExpired?.call();
-      rethrow;
     } finally {
       _loadingOptions = false;
       if (showRefreshSpinner && mounted) {
@@ -243,6 +244,22 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
 
   Future<void> _refresh() async {
     await _loadOptions(force: true);
+  }
+
+  Future<T> _withWebVpnRecovery<T>(Future<T> Function() operation) async {
+    try {
+      return await operation();
+    } on ClassroomWebVpnAuthException {
+      final recover = widget.onWebVpnRecoveryRequired;
+      if (recover == null) {
+        await widget.onWebVpnExpired?.call();
+        rethrow;
+      }
+      final interactive = mounted && ModalRoute.of(context)?.isCurrent != false;
+      if (!await recover(interactive) || !mounted) rethrow;
+      // Reads can retry once. A second rejection reaches the existing error UI.
+      return operation();
+    }
   }
 
   String? _validCampus(ClassroomSearchOptions options) {
@@ -367,22 +384,17 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
     required bool forceRefresh,
   }) async {
     final results = <ClassroomAvailabilityResult>[];
-    try {
-      for (final building in buildings) {
-        final result = await widget.repository.search(
-          ClassroomAvailabilityQuery(
-            building: building,
-            date: _selectedDate,
-            startSection: range.start,
-            endSection: range.end,
-          ),
-          forceRefresh: forceRefresh,
-        );
-        results.add(result);
-      }
-    } on ClassroomWebVpnAuthException {
-      await widget.onWebVpnExpired?.call();
-      rethrow;
+    for (final building in buildings) {
+      final result = await _withWebVpnRecovery(() => widget.repository.search(
+            ClassroomAvailabilityQuery(
+              building: building,
+              date: _selectedDate,
+              startSection: range.start,
+              endSection: range.end,
+            ),
+            forceRefresh: forceRefresh,
+          ));
+      results.add(result);
     }
     return _ClassroomQueryResult(
       date: _selectedDate,

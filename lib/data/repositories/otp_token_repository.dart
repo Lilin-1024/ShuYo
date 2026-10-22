@@ -24,6 +24,8 @@ class OtpTokenRepository extends ChangeNotifier {
   int _sessionRevision = 0;
   bool _sessionActive;
 
+  bool get sessionActive => _sessionActive;
+
   Future<OtpToken> fetchToken() async {
     if (!_sessionActive) throw _sessionChanged();
     final revision = _sessionRevision;
