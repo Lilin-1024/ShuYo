@@ -426,7 +426,9 @@ class _HomeRow extends StatelessWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: customBackground ? colors.textTertiary : colors.textSecondary,
+          color: customBackground
+              ? colors.textTertiary
+              : Color.lerp(colors.textSecondary, colors.textTertiary, 0.7),
           fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.45,

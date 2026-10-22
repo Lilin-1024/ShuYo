@@ -185,7 +185,10 @@ void main() {
       final titleStyle = renderedTextStyle(tester, '今日课程');
       final subtitleStyle = renderedTextStyle(tester, '今日无课');
       expect(titleStyle.color, theme.colors.textPrimary);
-      expect(subtitleStyle.color, theme.colors.textSecondary);
+      expect(
+          subtitleStyle.color,
+          Color.lerp(
+              theme.colors.textSecondary, theme.colors.textTertiary, 0.7));
       expect(titleStyle.fontSize, greaterThan(subtitleStyle.fontSize!));
       expect(titleStyle.fontWeight!.index,
           greaterThan(subtitleStyle.fontWeight!.index));
