@@ -133,7 +133,7 @@ class HomeDashboardPage extends StatelessWidget {
                     Divider(
                       key: ValueKey(entry.key),
                       color: colors.borderStrong,
-                      height: 1,
+                      height: 16,
                       thickness: 0.2,
                       indent: 0,
                       endIndent: 0,
@@ -364,7 +364,7 @@ class _HomeCard extends StatelessWidget {
             ? const Color(0xFFFFFEFC)
             : colors.surface;
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       color: surface,
       elevation: lightCard ? 0.5 : 0,
       surfaceTintColor: Colors.transparent,
@@ -403,8 +403,8 @@ class _HomeRow extends StatelessWidget {
     final colors = context.shuyoColors;
     final customBackground = CustomBackgroundScope.maybeOf(context) != null;
     final tile = ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      minVerticalPadding: 12,
+      contentPadding: const EdgeInsetsDirectional.only(start: 16, end: 24),
+      minVerticalPadding: 8,
       minLeadingWidth: 24,
       horizontalTitleGap: 16,
       leading: icon == null
@@ -413,8 +413,9 @@ class _HomeRow extends StatelessWidget {
       titleTextStyle: TextStyle(
         color: colors.textPrimary,
         fontSize: 16,
-        fontWeight: FontWeight.w500,
-        height: 1.4,
+        fontWeight: FontWeight.w400,
+        height: 1.5,
+        letterSpacing: 0.5,
       ),
       title: Text(
         title,
@@ -426,12 +427,11 @@ class _HomeRow extends StatelessWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: customBackground
-              ? colors.textTertiary
-              : Color.lerp(colors.textSecondary, colors.textTertiary, 0.7),
+          color: customBackground ? colors.textTertiary : colors.textSecondary,
           fontSize: 14,
           fontWeight: FontWeight.w400,
-          height: 1.45,
+          height: 1.43,
+          letterSpacing: 0.25,
         ),
       ),
       trailing: trailing,
