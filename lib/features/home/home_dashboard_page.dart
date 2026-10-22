@@ -133,7 +133,7 @@ class HomeDashboardPage extends StatelessWidget {
                     Divider(
                       key: ValueKey(entry.key),
                       color: colors.borderStrong,
-                      height: 16,
+                      height: 1,
                       thickness: 0.2,
                       indent: 0,
                       endIndent: 0,
@@ -159,7 +159,7 @@ class HomeDashboardPage extends StatelessWidget {
         ),
       HomeModule.campusCard => _HomeRow(
           key: key,
-          icon: Icons.account_balance_wallet_outlined,
+          icon: Icons.account_balance_wallet,
           title: module.title,
           content: campusCardContent,
           onTap: onOpenCampusCard,
@@ -199,14 +199,14 @@ class HomeDashboardPage extends StatelessWidget {
         ),
       HomeModule.libraryBooking => _HomeRow(
           key: key,
-          icon: Icons.local_library_outlined,
+          icon: Icons.local_library,
           title: module.title,
           content: '预约场馆座位',
           onTap: onOpenLibraryBooking,
         ),
       HomeModule.campusMap => _HomeRow(
           key: key,
-          icon: Icons.map_outlined,
+          icon: Icons.map,
           title: module.title,
           content: '查找校园地点',
           onTap: onOpenCampusMap,
