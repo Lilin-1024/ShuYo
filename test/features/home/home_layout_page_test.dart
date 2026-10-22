@@ -58,10 +58,15 @@ void main() {
       of: find.byKey(const ValueKey('module:today_course')),
       matching: find.byIcon(Icons.drag_handle_rounded),
     );
-    final gesture = await tester.startGesture(tester.getCenter(handle));
+    final start = tester.getCenter(handle);
+    final targetY = tester
+            .getBottomLeft(find.byKey(const ValueKey('module:campus_card')))
+            .dy +
+        24;
+    final gesture = await tester.startGesture(start);
     await gesture.moveBy(const Offset(0, 40));
     await tester.pump();
-    await gesture.moveBy(const Offset(0, 100));
+    await gesture.moveTo(Offset(start.dx, targetY));
     await tester.pump(const Duration(milliseconds: 100));
     await gesture.up();
     await tester.pumpAndSettle();
@@ -112,14 +117,21 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('添加分割线'));
     await tester.pumpAndSettle();
-    final divider = saved!.entries.singleWhere((entry) => entry.isDivider);
-    expect(find.text('分割线'), findsOneWidget);
+    final divider = saved!.entries.lastWhere((entry) => entry.isDivider);
+    expect(
+        find.descendant(
+            of: find.byKey(ValueKey(divider.key)), matching: find.text('分割线')),
+        findsOneWidget);
     final remove = find.byKey(ValueKey('remove-divider:${divider.dividerId}'));
     await tester.ensureVisible(remove);
     await tester.pumpAndSettle();
     await tester.tap(remove);
     await tester.pumpAndSettle();
-    expect(saved!.entries.where((entry) => entry.isDivider), isEmpty);
+    expect(
+        saved!.entries
+            .where((entry) => entry.isDivider)
+            .map((entry) => entry.dividerId),
+        ['overview-divider']);
     expect(saved!.entries.where((entry) => entry.isGroup), hasLength(2));
     expect(saved!.entries.where((entry) => entry.isModule),
         hasLength(HomeModule.values.length));

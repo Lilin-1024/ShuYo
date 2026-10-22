@@ -159,7 +159,7 @@ class HomeDashboardPage extends StatelessWidget {
         ),
       HomeModule.campusCard => _HomeRow(
           key: key,
-          icon: Icons.account_balance_wallet,
+          icon: Icons.account_balance_wallet_outlined,
           title: module.title,
           content: campusCardContent,
           onTap: onOpenCampusCard,
@@ -194,19 +194,19 @@ class HomeDashboardPage extends StatelessWidget {
           key: key,
           icon: Icons.location_on,
           title: module.title,
-          content: '查询当前可用教室',
+          content: '查看可用教室',
           onTap: onOpenEmptyClassroom,
         ),
       HomeModule.libraryBooking => _HomeRow(
           key: key,
-          icon: Icons.local_library,
+          icon: Icons.local_library_outlined,
           title: module.title,
           content: '预约场馆座位',
           onTap: onOpenLibraryBooking,
         ),
       HomeModule.campusMap => _HomeRow(
           key: key,
-          icon: Icons.map,
+          icon: Icons.map_outlined,
           title: module.title,
           content: '查找校园地点',
           onTap: onOpenCampusMap,
@@ -427,7 +427,9 @@ class _HomeRow extends StatelessWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: customBackground ? colors.textTertiary : colors.textSecondary,
+          color: customBackground
+              ? colors.textTertiary
+              : Color.lerp(colors.textSecondary, colors.textTertiary, 0.7),
           fontSize: 14,
           fontWeight: FontWeight.w400,
           height: 1.43,

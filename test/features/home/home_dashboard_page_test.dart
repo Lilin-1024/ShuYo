@@ -45,7 +45,7 @@ void main() {
     ));
 
     expect(
-      renderedTextStyle(tester, '查询当前可用教室').color,
+      renderedTextStyle(tester, '查看可用教室').color,
       background.text,
     );
     final todayTheme = Theme.of(tester.element(find.text('今日课程')));
@@ -57,7 +57,7 @@ void main() {
             .widget<ColoredBox>(find.byKey(const ValueKey('home-background')))
             .color,
         Colors.transparent);
-    expect(find.byType(Divider), findsNothing);
+    expect(find.byType(Divider), findsOneWidget);
   });
 
   Widget page(
@@ -99,7 +99,8 @@ void main() {
     await tester.pumpWidget(page(loggedIn: true));
     expect(find.text('你好，25120000！'), findsOneWidget);
     expect(find.text('今日课程'), findsOneWidget);
-    expect(find.text('空教室查询'), findsOneWidget);
+    expect(find.text('空教室'), findsOneWidget);
+    expect(find.text('查看可用教室'), findsOneWidget);
     expect(find.text('图书馆预约'), findsOneWidget);
     expect(find.text('动态口令'), findsOneWidget);
     expect(find.text('课程评价'), findsNothing);
@@ -110,7 +111,7 @@ void main() {
         findsOneWidget);
     expect(find.descendant(of: overview, matching: find.text('通知公告')),
         findsOneWidget);
-    expect(find.descendant(of: services, matching: find.text('空教室查询')),
+    expect(find.descendant(of: overview, matching: find.text('空教室')),
         findsOneWidget);
     expect(find.descendant(of: services, matching: find.text('动态口令')),
         findsOneWidget);
@@ -118,7 +119,7 @@ void main() {
         find.ancestor(
             of: find.text('你好，25120000！'), matching: find.byType(Card)),
         findsOneWidget);
-    expect(find.byType(Divider), findsNothing);
+    expect(find.byType(Divider), findsOneWidget);
     expect(find.text('今日概览'), findsNothing);
     expect(find.text('校园服务'), findsNothing);
     expect(find.byIcon(Icons.chevron_right), findsNothing);
@@ -185,10 +186,13 @@ void main() {
       final titleStyle = renderedTextStyle(tester, '今日课程');
       final subtitleStyle = renderedTextStyle(tester, '今日无课');
       expect(titleStyle.color, theme.colors.textPrimary);
-      expect(subtitleStyle.color, theme.colors.textSecondary);
+      expect(
+          subtitleStyle.color,
+          Color.lerp(
+              theme.colors.textSecondary, theme.colors.textTertiary, 0.7));
       expect(titleStyle.fontSize, greaterThan(subtitleStyle.fontSize!));
       expect(titleStyle.fontWeight, subtitleStyle.fontWeight);
-      expect(find.byType(Divider), findsNothing);
+      expect(find.byType(Divider), findsOneWidget);
       expect(find.text('今日概览'), findsNothing);
       expect(find.text('校园服务'), findsNothing);
     });
@@ -225,7 +229,9 @@ void main() {
 
   testWidgets('only explicitly inserted dividers appear inside their card',
       (tester) async {
-    var layout = HomeLayout.defaults().addDivider('line');
+    var layout = HomeLayout.defaults()
+        .removeDivider('overview-divider')
+        .addDivider('line');
     layout = layout.move(layout.entries.length - 1, 2);
     await tester.pumpWidget(page(loggedIn: true, layout: layout));
     final divider = find.byKey(const ValueKey('divider:line'));

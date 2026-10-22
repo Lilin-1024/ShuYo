@@ -2,9 +2,9 @@ enum HomeModule {
   todayCourse('today_course', '今日课程', 'overview'),
   campusCard('campus_card', '校园卡', 'overview'),
   announcements('announcements', '通知公告', 'overview'),
-  emptyClassroom('empty_classroom', '空教室查询', 'services'),
-  libraryBooking('library_booking', '图书馆预约', 'services'),
-  campusMap('campus_map', '校园地图', 'services'),
+  emptyClassroom('empty_classroom', '空教室', 'overview'),
+  libraryBooking('library_booking', '图书馆预约', 'overview'),
+  campusMap('campus_map', '校园地图', 'overview'),
   otp('otp', '动态口令', 'services');
 
   const HomeModule(this.id, this.title, this.defaultGroupId);
@@ -84,8 +84,11 @@ class HomeLayout {
   factory HomeLayout.defaults() => HomeLayout([
         const HomeLayoutEntry.group('overview'),
         for (final module in HomeModule.values
-            .where((module) => module.defaultGroupId == 'overview'))
+            .where((module) => module.defaultGroupId == 'overview')) ...[
           HomeLayoutEntry.module(module),
+          if (module == HomeModule.todayCourse)
+            const HomeLayoutEntry.divider('overview-divider'),
+        ],
         const HomeLayoutEntry.group('services'),
         for (final module in HomeModule.values
             .where((module) => module.defaultGroupId == 'services'))
