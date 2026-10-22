@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../../data/models/academic_schedule.dart';
 import '../../data/repositories/academic_schedule_repository.dart';
+import '../../data/services/schedule_share_cache.dart';
 import '../../data/services/schedule_share_service.dart';
 import '../../data/services/student_identity_service.dart';
 import '../../shared/navigation/shuyo_route.dart';
@@ -21,6 +23,7 @@ class ScheduleSharePage extends StatefulWidget {
     required this.scheduleRepository,
     required this.identityService,
     this.shareApi,
+    this.shareCache,
     this.importStore,
     this.calendarStore,
   });
@@ -30,6 +33,7 @@ class ScheduleSharePage extends StatefulWidget {
   final AcademicScheduleRepository scheduleRepository;
   final StudentIdentityService? identityService;
   final ScheduleShareApi? shareApi;
+  final ScheduleShareCache? shareCache;
   final ImportedScheduleStore? importStore;
   final TermCalendarStore? calendarStore;
 
@@ -39,23 +43,34 @@ class ScheduleSharePage extends StatefulWidget {
 
 class _ScheduleSharePageState extends State<ScheduleSharePage> {
   late final _api = widget.shareApi ?? ScheduleShareApi();
-  late final _store = widget.importStore ?? ImportedScheduleStore();
+  late final _cache = widget.shareCache ??
+      (widget.identityService == null
+          ? null
+          : ScheduleShareCache.forIdentity(widget.identityService!));
+  late final _store = widget.importStore ?? ImportedScheduleStore.shared;
   late final _calendars = widget.calendarStore ?? TermCalendarStore();
   final _importController = TextEditingController();
+  final _importFocus = FocusNode();
   ShareCodeInfo? _code;
   List<ImportedSchedule> _imports = const [];
   bool _generatingMode = true;
   bool _busy = false;
-  bool _loading = true;
-  bool _checkingCode = true;
   bool _includeNote = false;
+  bool _includeNoteEdited = false;
+  int _importsRevision = 0;
+  Timer? _codeExpiration;
   String? _pendingRequestId;
 
   @override
   void initState() {
     super.initState();
+    _imports = _store.cachedItems;
+    _code = _cache?.code;
+    _includeNote = _code?.includeNote ?? false;
+    _cache?.addListener(_shareCodeChanged);
     widget.identityService?.addListener(_identityChanged);
-    _load();
+    _scheduleCodeExpiration();
+    unawaited(_load());
   }
 
   void _identityChanged() {
@@ -63,58 +78,82 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
     setState(() {
       _code = null;
       _pendingRequestId = null;
+      _includeNote = false;
+      _includeNoteEdited = false;
+    });
+    _codeExpiration?.cancel();
+  }
+
+  void _shareCodeChanged() {
+    if (!mounted) return;
+    final code = _cache?.code;
+    if (_code == code) {
+      _scheduleCodeExpiration();
+      return;
+    }
+    setState(() {
+      _code = code;
+      if (code != null && !_includeNoteEdited) {
+        _includeNote = code.includeNote;
+      }
+    });
+    _scheduleCodeExpiration();
+  }
+
+  void _scheduleCodeExpiration() {
+    _codeExpiration?.cancel();
+    final expiresAt = _cache?.validUntil;
+    if (expiresAt == null) return;
+    _codeExpiration = Timer(expiresAt.difference(DateTime.now()), () {
+      _shareCodeChanged();
+      final cache = _cache;
+      if (cache != null) unawaited(cache.refresh(_api, force: true));
     });
   }
 
   @override
   void dispose() {
     widget.identityService?.removeListener(_identityChanged);
+    _cache?.removeListener(_shareCodeChanged);
+    _codeExpiration?.cancel();
+    _importFocus.dispose();
     _importController.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool force = false}) async {
+    await Future.wait([
+      _loadImports(),
+      _saveOwnCalendar(),
+      if (_cache != null) _cache.refresh(_api, force: force),
+    ]);
+  }
+
+  Future<void> _loadImports() async {
+    final revision = _importsRevision;
     try {
       final imports = await _store.list();
-      if (mounted) {
-        setState(() {
-          _imports = imports;
-          _loading = false;
-        });
-      }
-      final own = widget.ownSchedule;
-      final weekState = widget.ownWeekState;
-      if (own != null && weekState != null) {
-        await _calendars.save('${own.term.yearCode}:${own.term.termCode}',
-            weekState.firstWeekStart);
-      }
-      ShareCodeInfo? code;
-      try {
-        final session = await widget.identityService?.checkCurrentSession();
-        if (session != null) {
-          code = await _api.current(session.token);
-          final latest = await widget.identityService?.loadLocalSession();
-          if (latest?.token != session.token) code = null;
-        }
-      } on Object {
-        // Local imported schedules stay available without the server.
-      }
-      if (mounted) {
-        setState(() {
-          _code = code;
-          if (code != null) _includeNote = code.includeNote;
-          _checkingCode = false;
-        });
+      if (mounted && revision == _importsRevision) {
+        setState(() => _imports = imports);
       }
     } on Object {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _checkingCode = false;
-        });
-      }
+      // Previously loaded imports remain visible if local reading fails.
     }
   }
+
+  Future<void> _saveOwnCalendar() async {
+    final own = widget.ownSchedule;
+    final weekState = widget.ownWeekState;
+    if (own == null || weekState == null) return;
+    try {
+      await _calendars.save('${own.term.yearCode}:${own.term.termCode}',
+          weekState.firstWeekStart);
+    } on Object {
+      // Calendar persistence must not delay imports or share-code lookup.
+    }
+  }
+
+  void _dismissImportFocus() => _importFocus.unfocus();
 
   void _snack(String value) {
     if (mounted) {
@@ -131,15 +170,17 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
   }
 
   Future<void> _openIdentity() async {
+    _dismissImportFocus();
     final service = widget.identityService;
     if (service == null) return;
     await Navigator.of(context).push<void>(
       shuyoRoute(builder: (_) => StudentIdentityPage(service: service)),
     );
-    if (mounted) await _load();
+    if (mounted) await _load(force: true);
   }
 
   Future<void> _generate() async {
+    _dismissImportFocus();
     final own = widget.ownSchedule;
     if (own == null) {
       _snack('请先同步课表');
@@ -188,9 +229,9 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
     try {
       final code = await _api.generate(session.token, own,
           includeNote: _includeNote, requestId: _pendingRequestId!);
-      if (!mounted) return;
+      final saved = await _cache!.replace(session, code);
+      if (!mounted || !saved) return;
       setState(() {
-        _code = code;
         _pendingRequestId = null;
       });
       _snack('分享码已生成');
@@ -202,6 +243,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
   }
 
   Future<void> _destroy() async {
+    _dismissImportFocus();
     if (_code == null || _busy) return;
     final approved = await showDialog<bool>(
       context: context,
@@ -233,9 +275,9 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
     setState(() => _busy = true);
     try {
       await _api.destroy(session.token);
-      if (!mounted) return;
+      final saved = await _cache!.replace(session, null);
+      if (!mounted || !saved) return;
       setState(() {
-        _code = null;
         _pendingRequestId = null;
       });
       _snack('已销毁');
@@ -247,6 +289,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
   }
 
   Future<void> _openShareMore() async {
+    _dismissImportFocus();
     final selected = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -282,6 +325,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
   }
 
   Future<void> _showInfo() async {
+    _dismissImportFocus();
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
@@ -298,6 +342,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
   }
 
   Future<void> _import() async {
+    _dismissImportFocus();
     final code = _importController.text.trim();
     if (!RegExp(r'^[A-Za-z0-9]{6}$').hasMatch(code)) {
       _snack('请输入 6 位分享码');
@@ -310,6 +355,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
       final item = await _store.save(result);
       if (!mounted) return;
       _importController.clear();
+      _importsRevision++;
       setState(() =>
           _imports = [item, ..._imports.where((value) => value.id != item.id)]);
       _snack('已导入');
@@ -346,6 +392,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
   }
 
   Future<void> _openImported(ImportedSchedule item) async {
+    _dismissImportFocus();
     final weekState = await _weekStateFor(item);
     if (!mounted || weekState == null) return;
     final own = widget.ownSchedule;
@@ -365,6 +412,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
 
   Future<void> _openCompare(
       ImportedSchedule item, ScheduleWeekState weekState) async {
+    _dismissImportFocus();
     await Navigator.of(context).push<void>(shuyoRoute(
       builder: (_) => ScheduleComparePickerPage(
         subject: item,
@@ -376,6 +424,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
   }
 
   Future<void> _itemAction(ImportedSchedule item, String action) async {
+    _dismissImportFocus();
     if (action == 'rename') {
       var draftName = item.name;
       final name = await showDialog<String>(
@@ -402,6 +451,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
       try {
         await _store.rename(item, name);
         if (mounted) {
+          _importsRevision++;
           setState(() => _imports = [
                 for (final value in _imports)
                   value.id == item.id ? value.copyWith(name: name) : value,
@@ -429,6 +479,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
     if (approved != true) return;
     await _store.delete(item.id);
     if (mounted) {
+      _importsRevision++;
       setState(() =>
           _imports = _imports.where((value) => value.id != item.id).toList());
     }
@@ -456,7 +507,10 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
           height: 38,
           child: InkWell(
             borderRadius: BorderRadius.circular(999),
-            onTap: () => setState(() => _generatingMode = mode),
+            onTap: () {
+              _dismissImportFocus();
+              setState(() => _generatingMode = mode);
+            },
             child: Center(
               child: AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 220),
@@ -546,6 +600,7 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
                         ? null
                         : (value) => setState(() {
                               _includeNote = value ?? false;
+                              _includeNoteEdited = true;
                               _pendingRequestId = null;
                             }),
                   ),
@@ -573,19 +628,11 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
                 opacity: _generatingMode ? 1 : 0,
                 child: Row(children: [
                   Expanded(
-                      child: _checkingCode
-                          ? Align(
-                              alignment: Alignment.centerLeft,
-                              child: SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: colors.textMuted)))
-                          : SelectableText(_code?.code ?? '',
-                              style: TextStyle(
-                                  color: colors.textPrimary,
-                                  fontSize: 17,
-                                  letterSpacing: 2))),
+                      child: SelectableText(_code?.code ?? '',
+                          style: TextStyle(
+                              color: colors.textPrimary,
+                              fontSize: 17,
+                              letterSpacing: 2))),
                   TextButton(
                     onPressed: _busy ? null : _generate,
                     child: Text(_pendingRequestId == null ? '生成' : '重试'),
@@ -595,8 +642,13 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
                     onPressed: _code == null || _busy
                         ? null
                         : () async {
+                            final code = _cache?.code;
+                            if (code == null) {
+                              _shareCodeChanged();
+                              return;
+                            }
                             await Clipboard.setData(
-                                ClipboardData(text: _code!.code));
+                                ClipboardData(text: code.code));
                             _snack('已复制');
                           },
                     icon: const Icon(Icons.copy_outlined),
@@ -614,6 +666,8 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
                   Expanded(
                       child: TextField(
                     controller: _importController,
+                    focusNode: _importFocus,
+                    onTapOutside: (_) => _dismissImportFocus(),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
                       LengthLimitingTextInputFormatter(6),
@@ -697,40 +751,40 @@ class _ScheduleSharePageState extends State<ScheduleSharePage> {
           const SizedBox(width: 2),
         ],
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _shareControls(colors),
-                const SizedBox(height: 20),
-                for (final item in _imports)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Material(
-                      color: colors.surface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: BorderSide(color: colors.border),
-                      ),
-                      child: ListTile(
-                        title: Text(item.name),
-                        onTap: () => _openImported(item),
-                        trailing: PopupMenuButton<String>(
-                          tooltip: '更多',
-                          color: colors.surface,
-                          surfaceTintColor: Colors.transparent,
-                          onSelected: (action) => _itemAction(item, action),
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: 'rename', child: Text('重命名')),
-                            PopupMenuItem(value: 'delete', child: Text('删除')),
-                          ],
-                        ),
-                      ),
-                    ),
+      body: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.all(16),
+        children: [
+          _shareControls(colors),
+          const SizedBox(height: 20),
+          for (final item in _imports)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Material(
+                color: colors.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(color: colors.border),
+                ),
+                child: ListTile(
+                  title: Text(item.name),
+                  onTap: () => _openImported(item),
+                  trailing: PopupMenuButton<String>(
+                    tooltip: '更多',
+                    onOpened: _dismissImportFocus,
+                    color: colors.surface,
+                    surfaceTintColor: Colors.transparent,
+                    onSelected: (action) => _itemAction(item, action),
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(value: 'rename', child: Text('重命名')),
+                      PopupMenuItem(value: 'delete', child: Text('删除')),
+                    ],
                   ),
-              ],
+                ),
+              ),
             ),
+        ],
+      ),
     );
   }
 }

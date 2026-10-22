@@ -28,6 +28,26 @@ class ShareCodeInfo {
   final String termLabel;
   final bool includeNote;
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'code': code,
+        'expiresAt': expiresAt.toIso8601String(),
+        'termLabel': termLabel,
+        'includeNote': includeNote,
+      };
+
+  @override
+  bool operator ==(Object other) =>
+      other is ShareCodeInfo &&
+      other.id == id &&
+      other.code == code &&
+      other.expiresAt == expiresAt &&
+      other.termLabel == termLabel &&
+      other.includeNote == includeNote;
+
+  @override
+  int get hashCode => Object.hash(id, code, expiresAt, termLabel, includeNote);
+
   factory ShareCodeInfo.fromJson(Map<String, dynamic> json) => ShareCodeInfo(
         id: json['id']?.toString() ?? '',
         code: json['code']?.toString() ?? '',
@@ -244,7 +264,13 @@ class ImportedSchedule {
 
 class ImportedScheduleStore {
   ImportedScheduleStore({Directory? directory}) : _directory = directory;
+  static final shared = ImportedScheduleStore();
+
   final Directory? _directory;
+  List<ImportedSchedule> _cachedItems = const [];
+  int _revision = 0;
+
+  List<ImportedSchedule> get cachedItems => _cachedItems;
 
   Future<Directory> _dir() async {
     final base = _directory ?? await getApplicationSupportDirectory();
@@ -254,6 +280,7 @@ class ImportedScheduleStore {
   }
 
   Future<List<ImportedSchedule>> list() async {
+    final revision = _revision;
     final dir = await _dir();
     final items = <ImportedSchedule>[];
     await for (final entity in dir.list()) {
@@ -268,6 +295,9 @@ class ImportedScheduleStore {
       }
     }
     items.sort((a, b) => b.importedAt.compareTo(a.importedAt));
+    if (revision == _revision) {
+      _cachedItems = List.unmodifiable(items);
+    }
     return items;
   }
 
@@ -292,6 +322,8 @@ class ImportedScheduleStore {
       importedAt: DateTime.now(),
     );
     await _write(item);
+    _revision++;
+    _cachedItems = List.unmodifiable([item, ...imported]);
     return item;
   }
 
@@ -301,12 +333,20 @@ class ImportedScheduleStore {
       throw const FormatException('名称不能为空或过长');
     }
     await _write(item.copyWith(name: value));
+    _revision++;
+    _cachedItems = List.unmodifiable([
+      for (final cached in _cachedItems)
+        cached.id == item.id ? cached.copyWith(name: value) : cached,
+    ]);
   }
 
   Future<void> delete(String id) async {
     final dir = await _dir();
     final file = File('${dir.path}/$id.json');
     if (await file.exists()) await file.delete();
+    _revision++;
+    _cachedItems =
+        List.unmodifiable(_cachedItems.where((item) => item.id != id));
   }
 
   Future<void> _write(ImportedSchedule item) async {

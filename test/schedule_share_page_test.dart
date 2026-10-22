@@ -80,6 +80,19 @@ void main() {
     expect(field.decoration?.border, InputBorder.none);
     expect(field.decoration?.enabledBorder, InputBorder.none);
     expect(field.decoration?.focusedBorder, InputBorder.none);
+    await tester.enterText(find.byType(TextField).first, 'ABC123');
+    expect(field.focusNode!.hasFocus, isTrue);
+    await tester.tapAt(const Offset(16, 600));
+    await tester.pumpAndSettle();
+    expect(field.focusNode!.hasFocus, isFalse);
+    expect(tester.testTextInput.isVisible, isFalse);
+    expect(field.controller!.text, 'ABC123');
+    await tester.tap(find.byType(TextField).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('生成分享码'));
+    await tester.pumpAndSettle();
+    expect(field.focusNode!.hasFocus, isFalse);
+    expect(tester.testTextInput.isVisible, isFalse);
     expect(tester.takeException(), isNull);
   });
 
@@ -102,7 +115,10 @@ void main() {
             'data': {
               'id': 'share-one',
               'code': 'Ab3D4e',
-              'expiresAt': '2026-10-22T00:00:00Z',
+              'expiresAt': DateTime.now()
+                  .add(const Duration(days: 14))
+                  .toUtc()
+                  .toIso8601String(),
               'termLabel': '2026 秋',
               'includeNote': false
             }
@@ -248,6 +264,12 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'ABC123');
     await tester.tap(find.text('导入').last);
     await tester.pumpAndSettle();
+    expect(
+        tester
+            .widget<TextField>(find.byType(TextField).first)
+            .focusNode!
+            .hasFocus,
+        isFalse);
     expect(find.text('课表 1'), findsOneWidget);
     expect(find.byType(Card), findsNothing);
     final menu = tester
@@ -263,8 +285,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('同学课表'), findsOneWidget);
+    final importField = tester.widget<TextField>(find.byType(TextField).first);
+    await tester.enterText(find.byType(TextField).first, 'ABC123');
+    expect(importField.focusNode!.hasFocus, isTrue);
     await tester.tap(find.text('同学课表'));
     await tester.pumpAndSettle();
+    expect(importField.focusNode!.hasFocus, isFalse);
     expect(find.text('线性代数'), findsWidgets);
     expect(find.byTooltip('设置开学日期'), findsNothing);
     expect(find.byTooltip('比较'), findsOneWidget);
@@ -275,6 +301,12 @@ void main() {
     expect(find.text('编辑'), findsNothing);
     expect(find.text('删除'), findsNothing);
     await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(importField.focusNode!.hasFocus, isFalse);
+    expect(tester.testTextInput.isVisible, isFalse);
+    await tester.tap(find.text('同学课表'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('比较'));
     await tester.pumpAndSettle();
