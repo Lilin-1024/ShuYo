@@ -14,6 +14,7 @@ import '../core/otp_url_resolver.dart';
 import '../data/demo/demo_data_bundle.dart';
 import '../data/demo/demo_repositories.dart';
 import '../data/models/client_backend.dart';
+import '../data/models/campus_card.dart';
 import '../data/models/classroom.dart';
 import '../data/repositories/academic_schedule_repository.dart';
 import '../data/repositories/academic_progress_repository.dart';
@@ -33,6 +34,7 @@ import '../data/services/academic_schedule_notification_service.dart';
 import '../data/services/academic_schedule_widget_service.dart';
 import '../data/services/client_settings_service.dart';
 import '../data/services/campus_card_service.dart';
+import '../data/services/campus_card_balance_store.dart';
 import '../data/services/chaoxing_booking_client.dart';
 import '../data/services/student_identity_service.dart';
 import '../data/services/unified_account_service.dart';
@@ -159,6 +161,18 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   ChaoxingBookingClient? _chaoxingBookingClient;
   Future<WebVpnRecoveryOutcome>? _webVpnRecoveryTask;
   Future<void>? _thereRecoveryTask;
+  CampusCardService? _campusCardServiceInstance;
+  CampusCardService get _campusCardService => _campusCardServiceInstance ??=
+      CampusCardService(accountService: _unifiedAccountService);
+  final _campusCardBalanceStore = CampusCardBalanceStore();
+  CampusCardInfo? _campusCardInfo;
+  double? _campusCardBalance;
+  DateTime? _campusCardQueriedAt;
+  int _campusCardRevision = 0;
+  Future<CampusCardInfo>? _campusCardRefreshTask;
+  Future<bool>? _campusCardLoginTask;
+  Future<void>? _campusAccountExpiryTask;
+  bool _refreshingCampusCardFromHome = false;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
   DateTime? _lastWebVpnStatusFetchAttempt;
@@ -248,6 +262,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       });
     }
     if (!widget.isDemo) {
+      unawaited(_initializeCampusCardBalance());
       _scheduleSummaryTimer = Timer.periodic(
         const Duration(minutes: 1),
         (_) => unawaited(_refreshScheduleSummaryQuietly()),
@@ -302,6 +317,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _directBookingClient?.dispose();
     _webVpnBookingClient?.dispose();
     _chaoxingBookingClient?.dispose();
+    _campusCardServiceInstance?.dispose();
     _otpTokenRepository.dispose();
     if (widget.studentIdentityService == null) {
       _studentIdentityService.dispose();
@@ -419,7 +435,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         hasAcademicAccount: _hasAcademicSession,
         academicSessionExpired: _academicSessionExpired,
         academicDisplayName: _nickname ?? _academicStudentId,
-        isAcademicLoginCompleting: _syncingAcademicSchedule,
+        isAcademicLoginCompleting:
+            _syncingAcademicSchedule && !_academicSessionExpired,
         onLogin: _openAccountManager,
         onOpenAcademicSystem: _syncingAcademicSchedule
             ? () => _showSnack('正在获取课表，请稍后')
@@ -428,6 +445,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onOpenEmptyClassroom: () => unawaited(_openEmptyClassroom()),
         onOpenLibraryBooking: () => unawaited(_openLibraryBooking()),
         onOpenCampusCard: () => unawaited(_openCampusCard()),
+        onRefreshCampusCard: () => unawaited(_refreshCampusCardFromHome()),
+        isCampusCardRefreshing: _refreshingCampusCardFromHome,
+        campusCardContent: _academicSessionExpired
+            ? '登录已失效'
+            : _campusCardBalance == null
+                ? '查询余额和消费记录'
+                : '当前余额：¥${_campusCardBalance!.toStringAsFixed(2)}',
         onOpenCampusMap: () => unawaited(_openCampusMap()),
         onOpenOtp: () => unawaited(_openOtp()),
         todayCourseContent: _scheduleSummaryText,
@@ -489,9 +513,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<void> _finishAcademicLogin({
     bool connectWebVpn = true,
     bool allowInitialSync = true,
+    bool showRecoveryNotice = true,
   }) async {
     if (widget.isDemo || _completingAcademicLogin) return;
     _completingAcademicLogin = true;
+    final previousStudentId = _academicStudentId;
+    _resetCampusCardRequests();
     _otpTokenRepository.resetSession();
     try {
       // WebVPN obtains its own business session from the same SSO account.
@@ -512,11 +539,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       setState(() {
         _hasAcademicSession = true;
         _academicSessionExpired = false;
+        if (previousStudentId != _academicStudentId) {
+          _campusCardInfo = null;
+          _campusCardBalance = null;
+          _campusCardQueriedAt = null;
+        }
         // Reload account-scoped caches without making network requests.
         _progressDataRevision++;
         _scheduleDataRevision++;
       });
       _syncOnboardingAccountStatus();
+      unawaited(_initializeCampusCardBalance());
       try {
         await _academicAuthService.markLoggedIn();
         await _academicAuthService.cookieHeader();
@@ -535,7 +568,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           await _studentIdentityService.ensureAfterCampusLogin();
           await _clientBackendRepository.reportPresence();
         }());
-        _showSnack('登录已恢复，请再次点击刷新更新数据');
+        if (showRecoveryNotice) {
+          _showSnack('登录已恢复，请再次点击刷新更新数据');
+        }
         return;
       }
       await _syncScheduleAfterAcademicLogin();
@@ -839,23 +874,227 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     );
   }
 
+  void _resetCampusCardRequests() {
+    _campusCardRevision++;
+    _campusCardServiceInstance?.dispose();
+    _campusCardServiceInstance = null;
+    _campusCardRefreshTask = null;
+  }
+
+  Future<void> _initializeCampusCardBalance() async {
+    if (widget.isDemo || (!_hasAcademicSession && !_academicSessionExpired)) {
+      return;
+    }
+    final revision = _campusCardRevision;
+    final studentId = _academicStudentId;
+    if (studentId != null) {
+      try {
+        final cached = await _campusCardBalanceStore.load(studentId);
+        if (!mounted || revision != _campusCardRevision) return;
+        if (cached != null &&
+            (_campusCardQueriedAt == null ||
+                cached.queriedAt.isAfter(_campusCardQueriedAt!))) {
+          setState(() {
+            _campusCardBalance = cached.balance;
+            _campusCardQueriedAt = cached.queriedAt;
+          });
+        }
+      } on Object {
+        // A missing local summary must not prevent a fresh balance query.
+      }
+    }
+    if (!mounted || revision != _campusCardRevision) return;
+    await _refreshCampusCardBalance();
+  }
+
+  void _rememberCampusCard(CampusCardInfo card, DateTime queriedAt) {
+    if (!mounted ||
+        !_hasAcademicSession ||
+        card.studentId != _academicStudentId) {
+      return;
+    }
+    setState(() {
+      _campusCardInfo = card;
+      _campusCardBalance = card.balance;
+      _campusCardQueriedAt = queriedAt;
+    });
+    unawaited(_campusCardBalanceStore
+        .save(
+          studentId: card.studentId,
+          balance: card.balance,
+          queriedAt: queriedAt,
+        )
+        .catchError((Object _) {}));
+  }
+
+  Future<CampusCardInfo> _fetchCampusCardBalance() async {
+    if (_academicSessionExpired && !_hasAcademicSession) {
+      throw const CampusCardAuthRequiredException(ssoExpired: true);
+    }
+    final pending = _campusCardRefreshTask;
+    if (pending != null) return pending;
+    final operation = _campusCardService.fetchCardInfo();
+    _campusCardRefreshTask = operation;
+    try {
+      return await operation;
+    } finally {
+      if (identical(_campusCardRefreshTask, operation)) {
+        _campusCardRefreshTask = null;
+      }
+    }
+  }
+
+  Future<void> _refreshCampusCardFromHome() async {
+    if (!mounted || _refreshingCampusCardFromHome) return;
+    setState(() => _refreshingCampusCardFromHome = true);
+    try {
+      await _refreshCampusCardBalance(interactive: true);
+    } finally {
+      if (mounted) setState(() => _refreshingCampusCardFromHome = false);
+    }
+  }
+
+  Future<void> _refreshCampusCardBalance({
+    bool interactive = false,
+    bool allowLogin = true,
+  }) async {
+    if (widget.isDemo) {
+      if (interactive) _showSnack('演示模式暂不支持校园卡查询');
+      return;
+    }
+    if (!_hasAcademicSession || _academicStudentId == null) {
+      if (interactive && allowLogin && await _loginCampusCard() && mounted) {
+        await _refreshCampusCardBalance(interactive: true, allowLogin: false);
+      }
+      return;
+    }
+    final revision = _campusCardRevision;
+    try {
+      final card = await _fetchCampusCardBalance();
+      if (!mounted || revision != _campusCardRevision) return;
+      _rememberCampusCard(card, DateTime.now());
+      if (interactive) _showSnack('已刷新');
+    } on CampusCardAuthRequiredException catch (error) {
+      if (!mounted) return;
+      if (revision != _campusCardRevision) {
+        // A simultaneous startup refresh may already have marked SSO expired.
+        // The user's explicit refresh still needs to offer the login window.
+        if (interactive &&
+            allowLogin &&
+            error.ssoExpired &&
+            _academicSessionExpired &&
+            await _loginCampusCard() &&
+            mounted) {
+          await _refreshCampusCardBalance(interactive: true, allowLogin: false);
+        }
+        return;
+      }
+      if (error.ssoExpired) {
+        await _markCampusAccountExpired();
+        if (!mounted) return;
+        if (interactive && allowLogin && await _loginCampusCard() && mounted) {
+          await _refreshCampusCardBalance(interactive: true, allowLogin: false);
+        } else if (interactive && !allowLogin) {
+          _showSnack('登录已失效，请重新登录');
+        }
+      } else if (interactive) {
+        _showSnack(error.message);
+      }
+    } on Object catch (error) {
+      if (mounted && revision == _campusCardRevision && interactive) {
+        _showSnack(
+            error is CampusCardException ? error.message : '余额刷新失败，请稍后重试');
+      }
+    }
+  }
+
+  Future<void> _markCampusAccountExpired() async {
+    final pending = _campusAccountExpiryTask;
+    if (pending != null) return pending;
+    if (!mounted || (_academicSessionExpired && !_hasAcademicSession)) return;
+    _resetCampusCardRequests();
+    _otpTokenRepository.resetSession(sessionActive: false);
+    setState(() {
+      _hasAcademicSession = false;
+      _academicSessionExpired = true;
+    });
+    _syncOnboardingAccountStatus();
+    final operation = _academicAuthService
+        .clearAccount(sessionExpired: true)
+        .catchError((Object _) {
+      // Keep the expired state visible even if local cleanup fails.
+    });
+    _campusAccountExpiryTask = operation;
+    try {
+      await operation;
+    } finally {
+      if (identical(_campusAccountExpiryTask, operation)) {
+        _campusAccountExpiryTask = null;
+      }
+    }
+  }
+
+  Future<bool> _loginCampusCard() async {
+    final pending = _campusCardLoginTask;
+    if (pending != null) {
+      try {
+        return await pending;
+      } on Object {
+        return false;
+      }
+    }
+    final operation = _openCampusCardLogin();
+    _campusCardLoginTask = operation;
+    try {
+      return await operation;
+    } on Object {
+      if (mounted) _showSnack('暂时无法完成登录，请稍后重试');
+      return false;
+    } finally {
+      if (identical(_campusCardLoginTask, operation)) {
+        _campusCardLoginTask = null;
+      }
+    }
+  }
+
+  Future<bool> _openCampusCardLogin() async {
+    final expiring = _campusAccountExpiryTask;
+    if (expiring != null) await expiring;
+    if (!mounted || widget.isDemo) return false;
+    final result = await Navigator.of(context).push<NativeLoginResult>(
+      shuyoRoute(
+          builder: (_) => const NativeLoginPage(
+                title: '登录校园卡',
+                description: '使用上海大学统一认证账户查询余额和消费记录',
+              )),
+    );
+    if (result != NativeLoginResult.authenticated || !mounted) return false;
+    await _finishAcademicLogin(
+      allowInitialSync: false,
+      showRecoveryNotice: false,
+    );
+    return mounted && _hasAcademicSession;
+  }
+
   Future<void> _openCampusCard() async {
     if (widget.isDemo) {
       _showSnack('演示模式暂不支持校园卡查询');
       return;
     }
-    if (_academicStudentId == null) {
-      await _openAcademicLogin();
-      if (!mounted || _academicStudentId == null) return;
+    if (!_hasAcademicSession || _academicStudentId == null) {
+      if (!await _loginCampusCard() || !mounted) return;
     }
     await Navigator.of(context).push<void>(
       shuyoRoute(
         builder: (_) => CampusCardPage(
-          onLogin: () async {
-            final result = await Navigator.of(context).push<NativeLoginResult>(
-              shuyoRoute(builder: (_) => const NativeLoginPage.campusCard()),
-            );
-            return result == NativeLoginResult.authenticated;
+          serviceFactory: () => _campusCardService,
+          fetchCardInfo: _fetchCampusCardBalance,
+          initialCard: _campusCardInfo,
+          initialQueriedAt: _campusCardQueriedAt,
+          onCardUpdated: _rememberCampusCard,
+          onLogin: _loginCampusCard,
+          onAuthRequired: (error) async {
+            if (error.ssoExpired) await _markCampusAccountExpired();
           },
         ),
       ),
@@ -1000,6 +1239,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   }
 
   Future<bool> _logoutAcademicAccount() async {
+    _resetCampusCardRequests();
     _otpTokenRepository.resetSession(sessionActive: false);
     // Let an in-flight recovery finish before deleting credentials, so it
     // cannot install a fresh WebVPN token after the user signs out.
@@ -1070,6 +1310,9 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _academicSessionExpired = false;
         _academicStudentId = null;
         _nickname = null;
+        _campusCardInfo = null;
+        _campusCardBalance = null;
+        _campusCardQueriedAt = null;
         _webVpnPendingRecovery = false;
         _webVpnSessionReady = false;
       });

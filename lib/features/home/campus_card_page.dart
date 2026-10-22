@@ -3,33 +3,54 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../data/models/campus_card.dart';
+import '../../data/services/academic_account_store.dart';
 import '../../data/services/campus_card_service.dart';
 import '../../shared/shuyo_text_styles.dart';
 import '../../shared/theme/shuyo_theme.dart';
 import 'campus_card_date_range_sheet.dart';
 
 class CampusCardPage extends StatefulWidget {
-  const CampusCardPage({super.key, required this.onLogin});
+  const CampusCardPage({
+    super.key,
+    required this.onLogin,
+    this.serviceFactory,
+    this.fetchCardInfo,
+    this.initialCard,
+    this.initialQueriedAt,
+    this.onCardUpdated,
+    this.onAuthRequired,
+  });
 
   final Future<bool> Function() onLogin;
+  final CampusCardService Function()? serviceFactory;
+  final Future<CampusCardInfo> Function()? fetchCardInfo;
+  final CampusCardInfo? initialCard;
+  final DateTime? initialQueriedAt;
+  final void Function(CampusCardInfo, DateTime)? onCardUpdated;
+  final Future<void> Function(CampusCardAuthRequiredException)? onAuthRequired;
 
   @override
   State<CampusCardPage> createState() => _CampusCardPageState();
 }
 
 class _CampusCardPageState extends State<CampusCardPage> {
-  final _service = CampusCardService();
+  CampusCardService? _ownedService;
+  CampusCardService get _service =>
+      widget.serviceFactory?.call() ?? (_ownedService ??= CampusCardService());
   late DateTimeRange _range;
   int? _presetDays = 7;
-  CampusCardInfo? _card;
+  late CampusCardInfo? _card = widget.initialCard;
   List<CampusCardBill>? _bills;
   Object? _cardError;
   Object? _billsError;
-  DateTime? _cardQueriedAt;
+  late DateTime? _cardQueriedAt = widget.initialQueriedAt;
   bool _loadingCard = true;
   bool _loadingBills = true;
   bool _loggingIn = false;
+  bool _refreshing = false;
+  int _cardRevision = 0;
   int _billsRevision = 0;
+  DateTimeRange? _billsRange;
 
   @override
   void initState() {
@@ -40,7 +61,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
 
   @override
   void dispose() {
-    _service.dispose();
+    _ownedService?.dispose();
     super.dispose();
   }
 
@@ -52,28 +73,80 @@ class _CampusCardPageState extends State<CampusCardPage> {
     );
   }
 
-  Future<void> _refresh() async {
-    await Future.wait([_loadCard(), _loadBills()]);
+  Object? get _refreshError {
+    for (final error in [_cardError, _billsError]) {
+      if (error is CampusCardAuthRequiredException && error.ssoExpired) {
+        return error;
+      }
+    }
+    return _cardError ?? _billsError;
+  }
+
+  Future<void> _refresh(
+      {bool interactive = false, bool allowLogin = true}) async {
+    if (_refreshing || _loggingIn) return;
+    setState(() => _refreshing = true);
+    try {
+      await Future.wait([_loadCard(), _loadBills()]);
+      if (!mounted) return;
+      var error = _refreshError;
+      if (error is CampusCardAuthRequiredException) {
+        await widget.onAuthRequired?.call(error);
+        if (!mounted) return;
+        if (interactive && allowLogin && error.ssoExpired) {
+          final loggedIn = await _login(refreshAfterLogin: false);
+          if (!mounted) return;
+          if (!loggedIn) {
+            _showSnack(_errorMessage(error));
+            return;
+          }
+          await Future.wait([_loadCard(), _loadBills()]);
+          if (!mounted) return;
+          error = _refreshError;
+          if (error is CampusCardAuthRequiredException) {
+            await widget.onAuthRequired?.call(error);
+          }
+        }
+      }
+      if (interactive && mounted) {
+        final message = error == null
+            ? '已刷新'
+            : _cardError == null
+                ? '余额已刷新，消费记录刷新失败：${_errorMessage(error)}'
+                : _billsError == null
+                    ? '消费记录已刷新，余额刷新失败：${_errorMessage(error)}'
+                    : _errorMessage(error);
+        _showSnack(message);
+      }
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
+    }
   }
 
   Future<void> _loadCard() async {
+    final revision = ++_cardRevision;
     setState(() {
       _loadingCard = true;
-      _card = null;
       _cardError = null;
-      _cardQueriedAt = null;
     });
     try {
-      final card = await _service.fetchCardInfo();
-      if (!mounted) return;
+      final card =
+          await (widget.fetchCardInfo?.call() ?? _service.fetchCardInfo());
+      if (!mounted || revision != _cardRevision) return;
+      final queriedAt = DateTime.now();
       setState(() {
         _card = card;
-        _cardQueriedAt = DateTime.now();
+        _cardQueriedAt = queriedAt;
       });
+      widget.onCardUpdated?.call(card, queriedAt);
     } on Object catch (error) {
-      if (mounted) setState(() => _cardError = error);
+      if (mounted && revision == _cardRevision) {
+        setState(() => _cardError = error);
+      }
     } finally {
-      if (mounted) setState(() => _loadingCard = false);
+      if (mounted && revision == _cardRevision) {
+        setState(() => _loadingCard = false);
+      }
     }
   }
 
@@ -82,7 +155,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
     final range = _range;
     setState(() {
       _loadingBills = true;
-      _bills = null;
+      if (_billsRange != range) _bills = null;
       _billsError = null;
     });
     try {
@@ -91,7 +164,10 @@ class _CampusCardPageState extends State<CampusCardPage> {
         endDate: range.end,
       );
       if (!mounted || revision != _billsRevision) return;
-      setState(() => _bills = bills);
+      setState(() {
+        _bills = bills;
+        _billsRange = range;
+      });
     } on Object catch (error) {
       if (mounted && revision == _billsRevision) {
         setState(() => _billsError = error);
@@ -103,14 +179,34 @@ class _CampusCardPageState extends State<CampusCardPage> {
     }
   }
 
-  Future<void> _login() async {
-    if (_loggingIn) return;
+  Future<bool> _login({bool refreshAfterLogin = true}) async {
+    if (_loggingIn) return false;
     setState(() => _loggingIn = true);
+    var loggedIn = false;
     try {
-      if (await widget.onLogin() && mounted) await _refresh();
+      loggedIn = await widget.onLogin();
+      if (loggedIn && mounted) {
+        final studentId = await AcademicAccountStore().loadStudentId();
+        if (!mounted) return false;
+        if (_card?.studentId != studentId) {
+          setState(() {
+            _card = null;
+            _cardQueriedAt = null;
+            _bills = null;
+            _billsRange = null;
+          });
+        }
+      }
+    } on Object {
+      if (mounted) _showSnack('暂时无法完成登录，请稍后重试');
+      loggedIn = false;
     } finally {
       if (mounted) setState(() => _loggingIn = false);
     }
+    if (loggedIn && mounted && refreshAfterLogin) {
+      await _refresh(interactive: true, allowLogin: false);
+    }
+    return loggedIn;
   }
 
   void _selectRecentDays(int days) {
@@ -118,7 +214,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
       _presetDays = days;
       _range = _recentDays(days);
     });
-    unawaited(_loadBills());
+    unawaited(_refreshBills());
   }
 
   Future<void> _selectRange() async {
@@ -129,7 +225,52 @@ class _CampusCardPageState extends State<CampusCardPage> {
       _presetDays = null;
       _range = range;
     });
+    await _refreshBills();
+  }
+
+  Future<void> _refreshBills() async {
     await _loadBills();
+    if (!mounted) return;
+    final error = _billsError;
+    if (error is CampusCardAuthRequiredException) {
+      await widget.onAuthRequired?.call(error);
+      if (!mounted) return;
+      if (error.ssoExpired) {
+        final loggedIn = await _login();
+        if (!loggedIn && mounted) _showSnack(_errorMessage(error));
+        return;
+      }
+    }
+    if (error != null && mounted) _showSnack(_errorMessage(error));
+  }
+
+  String _errorMessage(Object error) =>
+      error is CampusCardAuthRequiredException && error.ssoExpired
+          ? '登录已失效，请重新登录'
+          : error is CampusCardException
+              ? error.message
+              : '查询失败，请检查网络后重试。';
+
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _showDataInfo() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('校园卡信息说明'),
+        content: const Text('数据由学校信息门户提供，可能存在同步延迟。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -137,13 +278,48 @@ class _CampusCardPageState extends State<CampusCardPage> {
     final colors = context.shuyoColors;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('校园卡'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('校园卡'),
+            Transform.translate(
+              offset: const Offset(-3, -0.5),
+              child: Opacity(
+                opacity: 0.65,
+                child: IconButton(
+                  tooltip: '校园卡信息说明',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 28, minHeight: 28),
+                  icon: const Icon(Icons.info_outline, size: 18),
+                  onPressed: _showDataInfo,
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: '刷新余额和消费记录',
             onPressed:
-                _loadingCard || _loadingBills || _loggingIn ? null : _refresh,
-            icon: const Icon(Icons.refresh),
+                _refreshing || _loadingCard || _loadingBills || _loggingIn
+                    ? null
+                    : () => _refresh(interactive: true),
+            style: const ButtonStyle(
+              splashFactory: NoSplash.splashFactory,
+              overlayColor: WidgetStatePropertyAll(Colors.transparent),
+            ),
+            icon: _refreshing
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      semanticsLabel: '正在刷新余额和消费记录',
+                    ),
+                  )
+                : const Icon(Icons.refresh),
           ),
           const SizedBox(width: 2),
         ],
@@ -153,7 +329,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
         child: RefreshIndicator(
           onRefresh: () async {
             if (!_loadingCard && !_loadingBills && !_loggingIn) {
-              await _refresh();
+              await _refresh(interactive: true);
             }
           },
           child: CustomScrollView(
@@ -163,15 +339,6 @@ class _CampusCardPageState extends State<CampusCardPage> {
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                 sliver: SliverList.list(children: [
                   _cardSection(),
-                  const SizedBox(height: 12),
-                  Text(
-                    '数据由学校信息门户提供，可能存在同步延迟。',
-                    style: TextStyle(
-                      color: colors.textTertiary,
-                      fontSize: 12,
-                      height: 1.5,
-                    ),
-                  ),
                   const SizedBox(height: 28),
                   Semantics(
                     header: true,
@@ -182,40 +349,43 @@ class _CampusCardPageState extends State<CampusCardPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
+                  Row(
                     children: [
-                      ChoiceChip(
-                        label: const Text('近 7 天'),
+                      _dateFilter(
+                        label: '近 7 天',
                         selected: _presetDays == 7,
-                        onSelected: _loadingBills || _loggingIn
-                            ? null
-                            : (_) => _selectRecentDays(7),
+                        onPressed: () => _selectRecentDays(7),
                       ),
-                      ChoiceChip(
-                        label: const Text('近 30 天'),
+                      const SizedBox(width: 10),
+                      _dateFilter(
+                        label: '近 30 天',
                         selected: _presetDays == 30,
-                        onSelected: _loadingBills || _loggingIn
-                            ? null
-                            : (_) => _selectRecentDays(30),
+                        onPressed: () => _selectRecentDays(30),
                       ),
-                      ChoiceChip(
-                        label: const Text('自选日期'),
+                      const SizedBox(width: 10),
+                      _dateFilter(
+                        label: '自选日期',
                         selected: _presetDays == null,
-                        onSelected: _loadingBills || _loggingIn
-                            ? null
-                            : (_) => _selectRange(),
+                        onPressed: _selectRange,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_date(_range.start)} 至 ${_date(_range.end)}',
-                    style: TextStyle(color: colors.textSecondary, fontSize: 13),
-                  ),
+                  if (_presetDays == null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '${_date(_range.start)} 至 ${_date(_range.end)}',
+                      style:
+                          TextStyle(color: colors.textSecondary, fontSize: 13),
+                    ),
+                  ],
                   const SizedBox(height: 16),
-                  if (_loadingBills)
+                  if (_bills != null)
+                    Text(
+                      '共 ${_bills!.length} 条',
+                      style:
+                          TextStyle(color: colors.textTertiary, fontSize: 12),
+                    ),
+                  if (_loadingBills && _bills == null)
                     const Padding(
                       padding: EdgeInsets.all(28),
                       child: Center(
@@ -225,8 +395,9 @@ class _CampusCardPageState extends State<CampusCardPage> {
                         ),
                       ),
                     )
-                  else if (_billsError != null)
-                    _errorSection(_billsError!, onRetry: _loadBills)
+                  else if (_billsError != null && _bills == null)
+                    _errorSection(_billsError!,
+                        onRetry: () => _refresh(interactive: true))
                   else if (_bills?.isEmpty == true)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 28),
@@ -234,16 +405,10 @@ class _CampusCardPageState extends State<CampusCardPage> {
                         '所选日期内暂无消费记录，可切换日期查询。',
                         style: TextStyle(color: colors.textSecondary),
                       ),
-                    )
-                  else
-                    Text(
-                      '共 ${_bills?.length ?? 0} 条',
-                      style:
-                          TextStyle(color: colors.textTertiary, fontSize: 12),
                     ),
                 ]),
               ),
-              if (!_loadingBills && _billsError == null && _bills != null)
+              if (_bills != null)
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
                   sliver: SliverList.builder(
@@ -258,6 +423,40 @@ class _CampusCardPageState extends State<CampusCardPage> {
     );
   }
 
+  Widget _dateFilter({
+    required String label,
+    required bool selected,
+    required VoidCallback onPressed,
+  }) {
+    final colors = context.shuyoColors;
+    return Expanded(
+      child: Semantics(
+        selected: selected,
+        child: OutlinedButton(
+          onPressed:
+              _refreshing || _loadingBills || _loggingIn ? null : onPressed,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: selected ? colors.accent : colors.textSecondary,
+            disabledForegroundColor:
+                selected ? colors.accent : colors.textTertiary,
+            backgroundColor: selected ? colors.accentSoft : Colors.transparent,
+            disabledBackgroundColor:
+                selected ? colors.accentSoft : Colors.transparent,
+            side: BorderSide(color: selected ? colors.accent : colors.border),
+            minimumSize: const Size.fromHeight(44),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 12),
+            textStyle:
+                const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: Text(label),
+        ),
+      ),
+    );
+  }
+
   Widget _cardSection() {
     final colors = context.shuyoColors;
     final card = _card;
@@ -265,7 +464,6 @@ class _CampusCardPageState extends State<CampusCardPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colors.surfaceAlt,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: colors.border),
       ),
@@ -287,26 +485,18 @@ class _CampusCardPageState extends State<CampusCardPage> {
                     style: ShuYoTextStyles.label(color: colors.textSecondary),
                   ),
                 ),
-                if (!_loadingCard &&
-                    _cardError == null &&
-                    card != null &&
-                    card.status.isNotEmpty)
+                if (card != null)
                   Semantics(
-                    label: '卡片状态：${card.status}',
+                    label: '卡片状态：${card.status.isEmpty ? '未知' : card.status}',
                     excludeSemantics: true,
-                    child: DecoratedBox(
+                    child: Container(
+                      width: 10,
+                      height: 10,
                       decoration: BoxDecoration(
-                        color: colors.surface,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
-                        child: Text(
-                          card.status,
-                          style:
-                              ShuYoTextStyles.meta(color: colors.textSecondary),
-                        ),
+                        shape: BoxShape.circle,
+                        color: card.status == '正常'
+                            ? colors.accent
+                            : const Color(0xFF555555),
                       ),
                     ),
                   ),
@@ -314,7 +504,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
             ),
           ),
           const SizedBox(height: 12),
-          if (_loadingCard)
+          if (_loadingCard && card == null)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Center(
@@ -324,8 +514,9 @@ class _CampusCardPageState extends State<CampusCardPage> {
                 ),
               ),
             )
-          else if (_cardError != null)
-            _errorSection(_cardError!, onRetry: _loadCard)
+          else if (_cardError != null && card == null)
+            _errorSection(_cardError!,
+                onRetry: () => _refresh(interactive: true))
           else if (card != null) ...[
             Semantics(
               label: '${card.balance.toStringAsFixed(2)} 元',
@@ -339,24 +530,25 @@ class _CampusCardPageState extends State<CampusCardPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
-            if (card.name.isNotEmpty) ...[
-              Text(
-                card.name,
-                style: ShuYoTextStyles.title(
-                    color: colors.textPrimary,
-                    size: 15,
-                    weight: FontWeight.w600),
-              ),
-              const SizedBox(height: 6),
-            ],
-            Text(
-              '学号 ${card.studentId}',
-              style:
-                  ShuYoTextStyles.meta(color: colors.textSecondary, size: 13),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (card.name.isNotEmpty)
+                  Text(card.name,
+                      style: ShuYoTextStyles.title(
+                          color: colors.textPrimary,
+                          size: 15,
+                          weight: FontWeight.w600)),
+                Text('学号 ${card.studentId}',
+                    style: ShuYoTextStyles.meta(
+                        color: colors.textSecondary, size: 13)),
+              ],
             ),
             if (card.validUntil.isNotEmpty || _cardQueriedAt != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               Wrap(
                 spacing: 24,
                 runSpacing: 12,
@@ -425,8 +617,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
       {required Future<void> Function() onRetry}) {
     final authRequired = error is CampusCardAuthRequiredException ||
         error is CampusCardException && error.code == 'accountMismatch';
-    final message =
-        error is CampusCardException ? error.message : '查询失败，请检查网络后重试。';
+    final message = _errorMessage(error);
     return Semantics(
       liveRegion: true,
       child: Column(
@@ -436,16 +627,16 @@ class _CampusCardPageState extends State<CampusCardPage> {
               style: TextStyle(color: context.shuyoColors.textSecondary)),
           const SizedBox(height: 8),
           TextButton.icon(
-            onPressed: _loggingIn
+            onPressed: _loggingIn || _refreshing
                 ? null
                 : authRequired
-                    ? _login
+                    ? () => _login()
                     : onRetry,
             icon: Icon(authRequired ? Icons.login : Icons.refresh),
             label: Text(_loggingIn
                 ? '正在登录…'
                 : authRequired
-                    ? '登录校园卡服务'
+                    ? '登录校园账户'
                     : '重试'),
           ),
         ],

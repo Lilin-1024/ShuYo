@@ -20,8 +20,11 @@ class CampusCardException implements Exception {
 }
 
 class CampusCardAuthRequiredException extends CampusCardException {
-  const CampusCardAuthRequiredException()
+  const CampusCardAuthRequiredException({this.ssoExpired = false})
       : super('loginRequired', '校园卡查询需要重新验证校园账户');
+
+  /// Only shared SSO expiry should invalidate the application's campus account.
+  final bool ssoExpired;
 }
 
 class _CampusCardTokenExpiredException extends CampusCardAuthRequiredException {
@@ -180,7 +183,9 @@ class CampusCardService {
   Future<_CardSession> _authorizeSession(String studentId) async {
     await _requireAccount(studentId);
     final callback = await _accountService.authorizeCampusCard();
-    if (callback == null) throw const CampusCardAuthRequiredException();
+    if (callback == null) {
+      throw const CampusCardAuthRequiredException(ssoExpired: true);
+    }
     try {
       return await _completeOAuth(callback, expectedStudentId: studentId);
     } on _CampusCardTokenExpiredException {

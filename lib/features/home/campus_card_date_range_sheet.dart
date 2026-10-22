@@ -34,13 +34,34 @@ class CampusCardDateRangeSheet extends StatefulWidget {
 }
 
 class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
-  late DateTime _start = DateUtils.dateOnly(widget.initialRange.start);
-  late DateTime _end = DateUtils.dateOnly(widget.initialRange.end);
   final _today = DateUtils.dateOnly(DateTime.now());
+  late final _firstDay = DateTime(_today.year, _today.month, _today.day - 89);
+  late DateTime _start;
+  late DateTime _end;
   bool _selectingEnd = false;
   late DateTime _focusedDay = _start;
 
+  @override
+  void initState() {
+    super.initState();
+    _start = _clampDate(widget.initialRange.start);
+    _end = _clampDate(widget.initialRange.end);
+    if (_end.isBefore(_start)) _end = _start;
+  }
+
+  DateTime _clampDate(DateTime value) {
+    final day = DateUtils.dateOnly(value);
+    if (day.isBefore(_firstDay)) return _firstDay;
+    if (day.isAfter(_today)) return _today;
+    return day;
+  }
+
   void _selectDate(DateTime date) {
+    if (date.isBefore(_firstDay) ||
+        date.isAfter(_today) ||
+        _selectingEnd && date.isBefore(_start)) {
+      return;
+    }
     setState(() {
       if (_selectingEnd) {
         _end = date;
@@ -64,7 +85,7 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
     final date = await showDatePicker(
       context: context,
       initialDate: _focusedDay,
-      firstDate: DateTime(1970),
+      firstDate: _firstDay,
       lastDate: _today,
       initialDatePickerMode: DatePickerMode.year,
       helpText: '跳转到月份',
@@ -74,8 +95,8 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
   }
 
   void _stepMonth(int step) {
-    setState(() =>
-        _focusedDay = DateTime(_focusedDay.year, _focusedDay.month + step));
+    setState(() => _focusedDay =
+        _clampDate(DateTime(_focusedDay.year, _focusedDay.month + step)));
   }
 
   @override
@@ -156,22 +177,9 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
                     const SizedBox(height: 16),
                     Semantics(
                       liveRegion: true,
-                      label: '已选范围：${_fullDate(_start)}至${_fullDate(_end)}',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${_fullDate(_start)} — ${_fullDate(_end)}',
-                            style: ShuYoTextStyles.meta(
-                                color: colors.textSecondary),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            _selectingEnd ? '选择结束日期' : '选择开始日期',
-                            style: ShuYoTextStyles.meta(
-                                color: colors.textTertiary),
-                          ),
-                        ],
+                      child: Text(
+                        '${_selectingEnd ? '选择结束日期' : '选择开始日期'} · 仅支持查询近90天记录',
+                        style: ShuYoTextStyles.meta(color: colors.textTertiary),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -206,8 +214,6 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
     );
   }
 
-  String _fullDate(DateTime date) => '${date.year}年${date.month}月${date.day}日';
-
   bool _inRange(DateTime date) =>
       !DateUtils.dateOnly(date).isBefore(_start) &&
       !DateUtils.dateOnly(date).isAfter(_end);
@@ -215,6 +221,7 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
   Widget _calendar() {
     final colors = context.shuyoColors;
     final month = DateTime(_focusedDay.year, _focusedDay.month);
+    final firstMonth = DateTime(_firstDay.year, _firstDay.month);
     final lastMonth = DateTime(_today.year, _today.month);
     final textScaler = MediaQuery.textScalerOf(context);
     return Column(
@@ -243,7 +250,7 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
             IconButton(
               tooltip: '上个月',
               onPressed:
-                  month.isAfter(DateTime(1970)) ? () => _stepMonth(-1) : null,
+                  month.isAfter(firstMonth) ? () => _stepMonth(-1) : null,
               icon: const Icon(Icons.chevron_left),
             ),
             IconButton(
@@ -259,7 +266,7 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
         MediaQuery.withClampedTextScaling(
           maxScaleFactor: 1.25,
           child: TableCalendar<void>(
-            firstDay: DateTime(1970),
+            firstDay: _firstDay,
             lastDay: _today,
             focusedDay: _focusedDay,
             currentDay: _today,
@@ -286,9 +293,12 @@ class _CampusCardDateRangeSheetState extends State<CampusCardDateRangeSheet> {
               rangeHighlightColor: colors.accentSoft,
             ),
             enabledDayPredicate: (day) =>
-                !_selectingEnd || !DateUtils.dateOnly(day).isBefore(_start),
+                !day.isBefore(_firstDay) &&
+                !day.isAfter(_today) &&
+                (!_selectingEnd || !DateUtils.dateOnly(day).isBefore(_start)),
             onDaySelected: (day, _) => _selectDate(DateUtils.dateOnly(day)),
-            onPageChanged: (day) => setState(() => _focusedDay = day),
+            onPageChanged: (day) =>
+                setState(() => _focusedDay = _clampDate(day)),
             calendarBuilders: CalendarBuilders(
               defaultBuilder: (_, day, __) => _calendarDay(day),
               todayBuilder: (_, day, __) => _calendarDay(day),

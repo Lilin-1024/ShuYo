@@ -20,6 +20,9 @@ class HomeDashboardPage extends StatelessWidget {
     required this.onOpenEmptyClassroom,
     this.onOpenLibraryBooking,
     this.onOpenCampusCard,
+    this.onRefreshCampusCard,
+    this.isCampusCardRefreshing = false,
+    this.campusCardContent = '查询余额和消费记录',
     this.onOpenCampusMap,
     required this.onOpenOtp,
     required this.todayCourseContent,
@@ -37,6 +40,9 @@ class HomeDashboardPage extends StatelessWidget {
   final VoidCallback onOpenEmptyClassroom;
   final VoidCallback? onOpenLibraryBooking;
   final VoidCallback? onOpenCampusCard;
+  final VoidCallback? onRefreshCampusCard;
+  final bool isCampusCardRefreshing;
+  final String campusCardContent;
   final VoidCallback? onOpenCampusMap;
   final VoidCallback onOpenOtp;
   final String todayCourseContent;
@@ -104,8 +110,28 @@ class HomeDashboardPage extends StatelessWidget {
         _HomeRow(
           icon: Icons.account_balance_wallet_outlined,
           title: '校园卡',
-          content: '查询余额和消费记录',
+          content: campusCardContent,
           onTap: onOpenCampusCard,
+          disableRipple: true,
+          trailing: IconButton(
+            tooltip: isCampusCardRefreshing ? '正在刷新校园卡余额' : '刷新校园卡余额',
+            onPressed: isCampusCardRefreshing ? null : onRefreshCampusCard,
+            style: const ButtonStyle(
+              splashFactory: NoSplash.splashFactory,
+              overlayColor: WidgetStatePropertyAll(Colors.transparent),
+            ),
+            icon: isCampusCardRefreshing
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: context.shuyoColors.textSecondary,
+                      semanticsLabel: '正在刷新校园卡余额',
+                    ),
+                  )
+                : const Icon(Icons.refresh, size: 22),
+          ),
         ),
         _HomeRow(
           icon: Icons.developer_board,
@@ -275,6 +301,7 @@ class _HomeRow extends StatelessWidget {
     this.icon,
     this.trailing,
     this.onTap,
+    this.disableRipple = false,
   });
 
   final String title;
@@ -282,6 +309,7 @@ class _HomeRow extends StatelessWidget {
   final IconData? icon;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final bool disableRipple;
 
   @override
   Widget build(BuildContext context) {
@@ -289,8 +317,9 @@ class _HomeRow extends StatelessWidget {
     final customBackground = CustomBackgroundScope.maybeOf(context) != null;
     return InkWell(
       onTap: onTap,
-      splashFactory: customBackground ? NoSplash.splashFactory : null,
-      overlayColor: customBackground
+      splashFactory:
+          customBackground || disableRipple ? NoSplash.splashFactory : null,
+      overlayColor: customBackground || disableRipple
           ? const WidgetStatePropertyAll(Colors.transparent)
           : null,
       child: Container(
@@ -346,7 +375,11 @@ class _HomeRow extends StatelessWidget {
                 ],
               ),
             ),
-            trailing ?? const Icon(Icons.chevron_right),
+            SizedBox(
+              width: 48,
+              height: 48,
+              child: Center(child: trailing ?? const Icon(Icons.chevron_right)),
+            ),
           ],
         ),
       ),

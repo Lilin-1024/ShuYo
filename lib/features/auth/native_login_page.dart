@@ -48,29 +48,41 @@ class NativeLoginPage extends StatefulWidget {
   const NativeLoginPage({
     super.key,
     this.destination = NativeLoginDestination.academic,
+    this.title,
+    this.description,
   }) : studentIdentityService = null;
 
   const NativeLoginPage.webVpn({
     super.key,
+    this.title,
+    this.description,
   })  : destination = NativeLoginDestination.webVpn,
         studentIdentityService = null;
 
   const NativeLoginPage.there({
     super.key,
+    this.title,
+    this.description,
   })  : destination = NativeLoginDestination.there,
         studentIdentityService = null;
 
   const NativeLoginPage.campusCard({
     super.key,
+    this.title,
+    this.description,
   })  : destination = NativeLoginDestination.campusCard,
         studentIdentityService = null;
 
   const NativeLoginPage.dataDeletion({
     super.key,
     required this.studentIdentityService,
+    this.title,
+    this.description,
   }) : destination = NativeLoginDestination.dataDeletion;
 
   final NativeLoginDestination destination;
+  final String? title;
+  final String? description;
   final StudentIdentityService? studentIdentityService;
 
   @override
@@ -187,15 +199,16 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        dataDeletion
-                            ? '验证学校身份'
-                            : academic
-                                ? '上大校园账户'
-                                : there
-                                    ? '登录图书馆预约'
-                                    : campusCard
-                                        ? '登录校园卡服务'
-                                        : 'WebVPN服务',
+                        widget.title ??
+                            (dataDeletion
+                                ? '验证学校身份'
+                                : academic
+                                    ? '上大校园账户'
+                                    : there
+                                        ? '登录图书馆预约'
+                                        : campusCard
+                                            ? '登录校园卡服务'
+                                            : 'WebVPN服务'),
                         textAlign: TextAlign.center,
                         style: Theme.of(context)
                             .textTheme
@@ -206,15 +219,16 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 28),
                         child: Text(
-                          dataDeletion
-                              ? '重新登录上海大学账户，以确认本人操作'
-                              : academic
-                                  ? '使用上海大学统一认证账户来访问各类校园服务'
-                                  : there
-                                      ? '使用上海大学统一认证账户来访问图书馆预约'
-                                      : campusCard
-                                          ? '使用当前校园账户查询余额和消费记录'
-                                          : '使用上海大学统一认证账户来访问WebVPN服务',
+                          widget.description ??
+                              (dataDeletion
+                                  ? '重新登录上海大学账户，以确认本人操作'
+                                  : academic
+                                      ? '使用上海大学统一认证账户来访问各类校园服务'
+                                      : there
+                                          ? '使用上海大学统一认证账户来访问图书馆预约'
+                                          : campusCard
+                                              ? '使用当前校园账户查询余额和消费记录'
+                                              : '使用上海大学统一认证账户来访问WebVPN服务'),
                           textAlign: TextAlign.center,
                           style: TextStyle(color: colors.textSecondary),
                         ),

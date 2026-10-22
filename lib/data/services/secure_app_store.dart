@@ -14,8 +14,10 @@ class SecureAppStore {
 
   static const _installMarker = 'shuyo.secure_storage.initialized.v1';
   static const campusCardSessionKey = 'campus_card.portal_session.v1';
+  static const campusCardBalanceKey = 'campus_card.balance.v1';
   static const _sensitiveKeys = [
     campusCardSessionKey,
+    campusCardBalanceKey,
     'academic.auth.cached_cookies.direct',
     'academic.auth.cached_cookies.webvpn',
     // Owned by SessionCookieJar.storageKey; repeated here so a fresh install

@@ -29,8 +29,11 @@ class AcademicAccountStore {
     if (normalized.isEmpty) return;
     final preferences = await _preferencesLoader();
     if (preferences.getString(studentIdKey)?.trim() != normalized) {
-      await SecureAppStore(preferencesLoader: _preferencesLoader)
-          .delete(SecureAppStore.campusCardSessionKey);
+      final secure = SecureAppStore(preferencesLoader: _preferencesLoader);
+      await secure.delete(SecureAppStore.campusCardSessionKey);
+      if (await loadDataStudentId() != normalized) {
+        await secure.delete(SecureAppStore.campusCardBalanceKey);
+      }
     }
     await Future.wait([
       preferences.setString(studentIdKey, normalized),
@@ -113,5 +116,9 @@ class AcademicAccountStore {
     ]);
     await SecureAppStore(preferencesLoader: _preferencesLoader)
         .delete(SecureAppStore.campusCardSessionKey);
+    if (!sessionExpired) {
+      await SecureAppStore(preferencesLoader: _preferencesLoader)
+          .delete(SecureAppStore.campusCardBalanceKey);
+    }
   }
 }
