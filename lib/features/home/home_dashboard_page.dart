@@ -403,7 +403,10 @@ class _HomeRow extends StatelessWidget {
     final colors = context.shuyoColors;
     final customBackground = CustomBackgroundScope.maybeOf(context) != null;
     final tile = ListTile(
-      contentPadding: const EdgeInsetsDirectional.only(start: 16, end: 24),
+      contentPadding: EdgeInsetsDirectional.only(
+        start: 16,
+        end: trailing == null ? 24 : 10,
+      ),
       minVerticalPadding: 8,
       minLeadingWidth: 24,
       horizontalTitleGap: 16,
