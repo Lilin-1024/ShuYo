@@ -32,6 +32,7 @@ import '../data/services/academic_schedule_display_settings_service.dart';
 import '../data/services/academic_schedule_notification_service.dart';
 import '../data/services/academic_schedule_widget_service.dart';
 import '../data/services/client_settings_service.dart';
+import '../data/services/campus_card_service.dart';
 import '../data/services/chaoxing_booking_client.dart';
 import '../data/services/student_identity_service.dart';
 import '../data/services/unified_account_service.dart';
@@ -42,6 +43,7 @@ import '../features/campus_map/campus_map_page.dart';
 import '../features/home/academic_schedule_page.dart';
 import '../features/home/academic_progress_page.dart';
 import '../features/home/announcements_page.dart';
+import '../features/home/campus_card_page.dart';
 import '../features/home/empty_classroom_page.dart';
 import '../features/home/home_dashboard_page.dart';
 import '../features/home/otp_token_page.dart';
@@ -425,6 +427,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onOpenAnnouncements: () => unawaited(_openAnnouncements()),
         onOpenEmptyClassroom: () => unawaited(_openEmptyClassroom()),
         onOpenLibraryBooking: () => unawaited(_openLibraryBooking()),
+        onOpenCampusCard: () => unawaited(_openCampusCard()),
         onOpenCampusMap: () => unawaited(_openCampusMap()),
         onOpenOtp: () => unawaited(_openOtp()),
         todayCourseContent: _scheduleSummaryText,
@@ -836,6 +839,29 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> _openCampusCard() async {
+    if (widget.isDemo) {
+      _showSnack('演示模式暂不支持校园卡查询');
+      return;
+    }
+    if (_academicStudentId == null) {
+      await _openAcademicLogin();
+      if (!mounted || _academicStudentId == null) return;
+    }
+    await Navigator.of(context).push<void>(
+      shuyoRoute(
+        builder: (_) => CampusCardPage(
+          onLogin: () async {
+            final result = await Navigator.of(context).push<NativeLoginResult>(
+              shuyoRoute(builder: (_) => const NativeLoginPage.campusCard()),
+            );
+            return result == NativeLoginResult.authenticated;
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _openOtp() async {
     if (!widget.isDemo && !_hasAcademicSession) {
       _showSnack('请先登录校园账户');
@@ -984,6 +1010,14 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       // Continue clearing every local credential.
     }
     var failed = false;
+    final campusCard = CampusCardService();
+    try {
+      await campusCard.clearSession();
+    } on Object {
+      failed = true;
+    } finally {
+      campusCard.dispose();
+    }
     try {
       await _studentIdentityService.signOut();
     } on Object {

@@ -102,6 +102,14 @@ class WeComOAuthTarget {
     redirectUri: 'https://there.shu.edu.cn/login-oauth2',
   );
 
+  static const campusCard = WeComOAuthTarget(
+    kind: WeComOAuthTargetKind.campusCard,
+    clientId: 'WUHWfrntnWYHZfzQ5QvXUCVy',
+    clientName: '校园卡查询',
+    scope: '1',
+    redirectUri: 'https://eportal.shu.edu.cn/login',
+  );
+
   final WeComOAuthTargetKind kind;
 
   final String clientId;
@@ -123,4 +131,4 @@ class WeComOAuthTarget {
       };
 }
 
-enum WeComOAuthTargetKind { academic, webVpn, there }
+enum WeComOAuthTargetKind { academic, webVpn, there, campusCard }

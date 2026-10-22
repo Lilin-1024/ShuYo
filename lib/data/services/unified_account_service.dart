@@ -187,6 +187,21 @@ class UnifiedAccountService {
     }
   }
 
+  Future<Uri?> authorizeCampusCard() async {
+    final cookies = await _ssoSessionStore.sessionCookies();
+    if (cookies.isEmpty) return null;
+    final auth = _weComAuthServiceFactory();
+    try {
+      auth.adoptSessionCookies(cookies);
+      return await auth.authorizeTarget(WeComOAuthTarget.campusCard);
+    } on WeComAuthException catch (error) {
+      if (error.code == 'sessionNotReused') return null;
+      rethrow;
+    } finally {
+      auth.dispose();
+    }
+  }
+
   Future<WebVpnRecoveryOutcome> _finish(WebVpnRecoveryOutcome outcome) async {
     await setWebVpnPendingRecovery(
       outcome != WebVpnRecoveryOutcome.alreadyValid &&

@@ -10,6 +10,7 @@ import '../../data/services/academic_native_auth_service.dart';
 import '../../data/services/academic_account_store.dart';
 import '../../data/services/academic_auth_service.dart';
 import '../../data/services/academic_progress_api_client.dart';
+import '../../data/services/campus_card_service.dart';
 import '../../data/services/student_identity_service.dart';
 import '../../data/services/there_booking_client.dart';
 import '../../data/services/unified_account_service.dart';
@@ -20,7 +21,13 @@ import '../../shared/navigation/shuyo_route.dart';
 import '../../shared/theme/shuyo_theme.dart';
 import 'wecom_scan_page.dart';
 
-enum NativeLoginDestination { academic, webVpn, there, dataDeletion }
+enum NativeLoginDestination {
+  academic,
+  webVpn,
+  there,
+  campusCard,
+  dataDeletion
+}
 
 enum NativeLoginResult { authenticated, demo }
 
@@ -53,6 +60,11 @@ class NativeLoginPage extends StatefulWidget {
   })  : destination = NativeLoginDestination.there,
         studentIdentityService = null;
 
+  const NativeLoginPage.campusCard({
+    super.key,
+  })  : destination = NativeLoginDestination.campusCard,
+        studentIdentityService = null;
+
   const NativeLoginPage.dataDeletion({
     super.key,
     required this.studentIdentityService,
@@ -72,6 +84,8 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         NativeLoginDestination.webVpn => AcademicNativeAuthService.forWebVpn(),
         NativeLoginDestination.academic => AcademicNativeAuthService(),
         NativeLoginDestination.there => AcademicNativeAuthService.forThere(),
+        NativeLoginDestination.campusCard =>
+          AcademicNativeAuthService.forCampusCard(),
         NativeLoginDestination.dataDeletion => AcademicNativeAuthService(),
       };
   final _verificationDeliveryService = VerificationDeliveryService();
@@ -154,6 +168,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     final dataDeletion =
         widget.destination == NativeLoginDestination.dataDeletion;
     final there = widget.destination == NativeLoginDestination.there;
+    final campusCard = widget.destination == NativeLoginDestination.campusCard;
     return Form(
       child: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
@@ -178,7 +193,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                                 ? '上大校园账户'
                                 : there
                                     ? '登录图书馆预约'
-                                    : 'WebVPN服务',
+                                    : campusCard
+                                        ? '登录校园卡服务'
+                                        : 'WebVPN服务',
                         textAlign: TextAlign.center,
                         style: Theme.of(context)
                             .textTheme
@@ -195,7 +212,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                                   ? '使用上海大学统一认证账户来访问各类校园服务'
                                   : there
                                       ? '使用上海大学统一认证账户来访问图书馆预约'
-                                      : '使用上海大学统一认证账户来访问WebVPN服务',
+                                      : campusCard
+                                          ? '使用当前校园账户查询余额和消费记录'
+                                          : '使用上海大学统一认证账户来访问WebVPN服务',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: colors.textSecondary),
                         ),
@@ -705,6 +724,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         NativeLoginDestination.webVpn => WeComOAuthTarget.webVpn,
         NativeLoginDestination.academic => WeComOAuthTarget.academic,
         NativeLoginDestination.there => WeComOAuthTarget.there,
+        NativeLoginDestination.campusCard => WeComOAuthTarget.campusCard,
         NativeLoginDestination.dataDeletion => WeComOAuthTarget.academic,
       };
 
@@ -808,6 +828,27 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
           ),
         ),
       );
+    }
+    if (widget.destination == NativeLoginDestination.campusCard) {
+      final service = CampusCardService();
+      try {
+        final expected = await AcademicAccountStore().loadStudentId();
+        if (expected == null) {
+          _showError('请先登录上大校园账户');
+          return;
+        }
+        await service.completeOAuth(callbackUri, expectedStudentId: expected);
+        await _authService.publishSessionCookies();
+        _closeWith(NativeLoginResult.authenticated,
+            savePassword: weComRedeem == null);
+      } on CampusCardException catch (error) {
+        _showError(error.message);
+      } on Object {
+        _showError('校园卡服务登录失败，请稍后重试');
+      } finally {
+        service.dispose();
+      }
+      return;
     }
     await _authService.resetPreviousSession();
     if (!mounted) return;

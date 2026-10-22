@@ -22,6 +22,7 @@ dependencies:
   path_provider: ^2.1.5
   pointycastle: ^4.0.0
   shared_preferences: ^2.5.3
+  table_calendar: ^3.3.0
   timezone: ^0.11.1
   url_launcher: ^6.3.2
   flutter_secure_storage: ^11.2.0

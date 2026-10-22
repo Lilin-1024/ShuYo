@@ -7,6 +7,7 @@ import 'package:pointycastle/export.dart';
 
 import '../../core/academic_url_resolver.dart';
 import '../../core/client_user_agent.dart';
+import '../../core/wecom_constants.dart';
 import 'academic_auth_service.dart';
 import 'academic_account_store.dart';
 import 'http_timeout.dart';
@@ -16,7 +17,7 @@ import 'webvpn_session_store.dart';
 
 enum AcademicVerificationMethod { wecom, sms }
 
-enum _NativeAuthTarget { academic, webVpn, there }
+enum _NativeAuthTarget { academic, webVpn, there, campusCard }
 
 class AcademicLoginChallenge {
   const AcademicLoginChallenge({required this.methods});
@@ -76,6 +77,12 @@ class AcademicNativeAuthService {
 
   AcademicNativeAuthService.forThere({HttpClient? httpClient})
       : _target = _NativeAuthTarget.there,
+        _client = httpClient ?? HttpClient() {
+    _client.connectionTimeout = HttpTimeout.connect;
+  }
+
+  AcademicNativeAuthService.forCampusCard({HttpClient? httpClient})
+      : _target = _NativeAuthTarget.campusCard,
         _client = httpClient ?? HttpClient() {
     _client.connectionTimeout = HttpTimeout.connect;
   }
@@ -371,6 +378,11 @@ class AcademicNativeAuthService {
           'unsupportedTarget',
           '图书馆预约需要使用专属登录流程',
         );
+      case _NativeAuthTarget.campusCard:
+        throw const AcademicNativeAuthException(
+          'unsupportedTarget',
+          '校园卡查询需要使用专属登录流程',
+        );
       case _NativeAuthTarget.webVpn:
         await _completeWebVpnLogin(callbackUri);
     }
@@ -481,9 +493,19 @@ class AcademicNativeAuthService {
     if (_target == _NativeAuthTarget.webVpn) {
       return _startWebVpnOAuth();
     }
-    var uri = _target == _NativeAuthTarget.there
-        ? Uri.parse(_thereEntry)
-        : _academicEntry;
+    var uri = switch (_target) {
+      _NativeAuthTarget.there => Uri.parse(_thereEntry),
+      _NativeAuthTarget.campusCard => Uri.parse(WeComConstants.ssoBase).replace(
+          path: WeComConstants.authorizePath,
+          queryParameters: {
+            'response_type': 'code',
+            'client_id': WeComOAuthTarget.campusCard.clientId,
+            'redirect_uri': WeComOAuthTarget.campusCard.redirectUri,
+            'scope': WeComOAuthTarget.campusCard.scope,
+          },
+        ),
+      _ => _academicEntry,
+    };
     for (var redirects = 0; redirects < _maxRedirects; redirects++) {
       final response = await _request('GET', uri);
       final location = response.headers.value(HttpHeaders.locationHeader);
@@ -496,6 +518,13 @@ class AcademicNativeAuthService {
       }
       final next = _redirectTarget(response, uri);
       await response.drain<void>().timeout(HttpTimeout.normal);
+      if (_target == _NativeAuthTarget.campusCard &&
+          next != null &&
+          next.host == 'eportal.shu.edu.cn' &&
+          (next.path == '/login' || next.path == '/login/') &&
+          isAuthorizedCallback(next)) {
+        return next;
+      }
       if (next == null) {
         if (uri.path.contains(_newssoPathMarker)) {
           return canonicalSsoUri(uri);

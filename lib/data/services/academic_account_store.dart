@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'secure_app_store.dart';
+
 class AcademicAccountStore {
   AcademicAccountStore({
     Future<SharedPreferences> Function()? preferencesLoader,
@@ -26,6 +28,10 @@ class AcademicAccountStore {
     final normalized = studentId.trim();
     if (normalized.isEmpty) return;
     final preferences = await _preferencesLoader();
+    if (preferences.getString(studentIdKey)?.trim() != normalized) {
+      await SecureAppStore(preferencesLoader: _preferencesLoader)
+          .delete(SecureAppStore.campusCardSessionKey);
+    }
     await Future.wait([
       preferences.setString(studentIdKey, normalized),
       preferences.setString(lastStudentIdKey, normalized),
@@ -105,5 +111,7 @@ class AcademicAccountStore {
       else
         preferences.remove(sessionExpiredKey),
     ]);
+    await SecureAppStore(preferencesLoader: _preferencesLoader)
+        .delete(SecureAppStore.campusCardSessionKey);
   }
 }
