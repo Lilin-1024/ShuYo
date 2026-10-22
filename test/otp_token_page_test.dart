@@ -71,7 +71,7 @@ class _FlakyRepository extends OtpTokenRepository {
 }
 
 void main() {
-  testWidgets('clears the displayed code when the account session resets',
+  testWidgets('clears the displayed code and pauses polling when signed out',
       (tester) async {
     final repository = _FakeRepository(token: _token());
     await tester.pumpWidget(
@@ -80,9 +80,11 @@ void main() {
     await tester.pump();
     expect(find.text('956 370'), findsOneWidget);
 
-    repository.resetSession();
+    repository.resetSession(sessionActive: false);
     await tester.pump();
     expect(find.text('956 370'), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
+    expect(repository.calls, 1);
   });
 
   testWidgets('a pending old read does not block or replace the new code',
@@ -220,7 +222,9 @@ void main() {
     expect(repository.calls, whileVisible + 1);
   });
 
-  testWidgets('an expired campus session asks for a new login', (tester) async {
+  testWidgets(
+      'an expired campus session requests login and pauses if cancelled',
+      (tester) async {
     final repository = _FakeRepository(
       error: const OtpTokenException(
         OtpTokenException.sessionNotReused,
@@ -228,15 +232,28 @@ void main() {
       ),
     );
 
-    await tester.pumpWidget(
-      MaterialApp(home: OtpTokenPage(repository: repository)),
-    );
+    var loginRequests = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: OtpTokenPage(
+        repository: repository,
+        onCampusSessionExpired: (interactive) async {
+          expect(interactive, isTrue);
+          loginRequests++;
+          repository.resetSession(sessionActive: false);
+          return false;
+        },
+      ),
+    ));
     await tester.pump();
 
-    expect(find.text('校园登录状态已失效，请回到首页重新登录后再试。'), findsOneWidget);
+    expect(loginRequests, 1);
+    expect(find.text('登录已失效，请重新登录。'), findsOneWidget);
     expect(find.text('复制口令'), findsNothing);
-    expect(find.text('重新加载'), findsNothing);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('重试'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
+    expect(repository.calls, 1);
+    expect(loginRequests, 1);
   });
 
   testWidgets('a rejected WebVPN token asks the shell to recover the session',

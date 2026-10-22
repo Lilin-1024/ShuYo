@@ -56,12 +56,20 @@ class _OtpTokenPageState extends State<OtpTokenPage>
   /// reason is shown once instead of one bar per attempt.
   String? _reportedError;
   Timer? _ticker;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.repository.addListener(_onSessionReset);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
     _startTicker();
     unawaited(_fetch());
   }
