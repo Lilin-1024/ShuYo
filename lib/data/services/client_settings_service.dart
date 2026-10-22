@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/app_tab.dart';
@@ -42,7 +43,10 @@ class ClientNetworkSettings {
 class ClientSettingsService {
   ClientSettingsService({
     Future<SharedPreferences> Function()? preferencesLoader,
-  }) : _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance;
+    Future<Directory> Function()? supportDirectoryLoader,
+  })  : _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance,
+        _supportDirectoryLoader =
+            supportDirectoryLoader ?? getApplicationSupportDirectory;
 
   static const scheduleNotificationsEnabledKey =
       'client.notifications.schedule.enabled';
@@ -54,8 +58,39 @@ class ClientSettingsService {
   static const customBackgroundKey = 'client.theme.custom_background';
   static const startupTabKey = 'client.startup.tab';
   static const defaultAnnouncementSourceKey = 'announcements.defaultSource';
+  static final _backgroundImageName =
+      RegExp(r'^custom_background_[0-9]+\.png$');
+  // Imports run in the app shell while commits run in the root app. Share
+  // ownership and serialization across their separate settings services.
+  static final Set<String> _pendingBackgroundImages = {};
+  static Future<void> _backgroundSaveTail = Future<void>.value();
 
   final Future<SharedPreferences> Function() _preferencesLoader;
+  final Future<Directory> Function() _supportDirectoryLoader;
+
+  Future<File> createCustomBackgroundPhoto(List<int> bytes) async {
+    final directory = await _supportDirectoryLoader();
+    final photo = File(
+      '${directory.path}/custom_background_${DateTime.now().microsecondsSinceEpoch}.png',
+    );
+    _pendingBackgroundImages.add(photo.path);
+    try {
+      await photo.writeAsBytes(bytes, flush: true);
+      return photo;
+    } on Object {
+      await discardCustomBackgroundPhoto(photo);
+      rethrow;
+    }
+  }
+
+  Future<void> discardCustomBackgroundPhoto(File photo) async {
+    if (!_pendingBackgroundImages.remove(photo.path)) return;
+    try {
+      await photo.delete();
+    } on Object {
+      // Retry an unfinished import's file on the next successful theme save.
+    }
+  }
 
   Future<AnnouncementSource> loadDefaultAnnouncementSource() async {
     final prefs = await _preferencesLoader();
@@ -135,19 +170,110 @@ class ClientSettingsService {
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) return null;
       final settings = CustomBackground.fromJson(decoded);
-      if (settings == null ||
-          (settings.hasPhoto && !await File(settings.imagePath).exists())) {
-        return null;
+      if (settings == null || !settings.hasPhoto) return settings;
+      try {
+        final name = _storedBackgroundImageName(settings.imagePath);
+        if (name != null) {
+          // Older versions stored the absolute iOS container path. Only the
+          // filename survives an update; resolve it in the current container.
+          final directory = await _supportDirectoryLoader();
+          final photo = File('${directory.path}/$name');
+          if (await photo.exists()) {
+            return settings.copyWith(imagePath: photo.path);
+          }
+        }
+      } on Object {
+        // An unavailable photo must not discard the user's theme colors.
       }
-      return settings;
+      // Keep the stored reference intact so a later load can retry the photo.
+      return settings.copyWith(imagePath: '');
     } on Object {
       return null;
     }
   }
 
-  Future<void> saveCustomBackground(CustomBackground settings) async {
+  Future<void> saveCustomBackground(CustomBackground settings) {
+    // Serialize commits and cleanup so overlapping edits retain the last photo.
+    final save =
+        _backgroundSaveTail.then((_) => _saveCustomBackground(settings));
+    _backgroundSaveTail =
+        save.then<void>((_) {}, onError: (Object error, StackTrace stack) {});
+    return save;
+  }
+
+  Future<void> _saveCustomBackground(CustomBackground settings) async {
     final prefs = await _preferencesLoader();
-    await prefs.setString(customBackgroundKey, jsonEncode(settings.toJson()));
+    Directory? directory;
+    String? imageName;
+    if (settings.hasPhoto) {
+      imageName = _storedBackgroundImageName(settings.imagePath);
+      if (imageName == null) {
+        throw ArgumentError.value(settings.imagePath, 'imagePath');
+      }
+      directory = await _supportDirectoryLoader();
+      if (!await File('${directory.path}/$imageName').exists()) {
+        throw FileSystemException('背景照片不存在', settings.imagePath);
+      }
+    }
+    final storedSettings = settings.copyWith(imagePath: imageName ?? '');
+    try {
+      if (!await prefs.setString(
+        customBackgroundKey,
+        jsonEncode(storedSettings.toJson()),
+      )) {
+        throw StateError('无法保存自定义主题');
+      }
+    } on Object {
+      // SharedPreferences updates its cache before the platform write succeeds.
+      // Restore that cache as well as leaving the previous photo untouched.
+      try {
+        await prefs.reload();
+      } on Object {
+        // Preserve the original save error.
+      }
+      rethrow;
+    }
+    if (imageName != null) {
+      _pendingBackgroundImages.remove('${directory!.path}/$imageName');
+    }
+    await _removeUnusedBackgroundImages(imageName, directory: directory);
+  }
+
+  static String? _storedBackgroundImageName(String path) {
+    final file = File(path);
+    final segments = file.uri.pathSegments;
+    if (segments.isEmpty) return null;
+    final name = segments.last;
+    if (!_backgroundImageName.hasMatch(name) ||
+        (!file.isAbsolute && path != name)) {
+      return null;
+    }
+    return name;
+  }
+
+  Future<void> _removeUnusedBackgroundImages(
+    String? retainedName, {
+    Directory? directory,
+  }) async {
+    try {
+      final root = directory ?? await _supportDirectoryLoader();
+      await for (final entry in root.list(followLinks: false)) {
+        if (entry is! File) continue;
+        final name = _storedBackgroundImageName(entry.path);
+        if (name == null ||
+            name == retainedName ||
+            _pendingBackgroundImages.contains(entry.path)) {
+          continue;
+        }
+        try {
+          await entry.delete();
+        } on Object {
+          // Retry orphaned photos on the next successful theme save.
+        }
+      }
+    } on Object {
+      // Photo cleanup must not roll back a successfully saved theme.
+    }
   }
 
   Future<AppTab> loadStartupTab() async {

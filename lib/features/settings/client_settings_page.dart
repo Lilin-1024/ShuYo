@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/client_app_info.dart';
@@ -82,6 +81,7 @@ class ClientSettingsPage extends StatelessWidget {
             onTap: () => Navigator.of(context).push<void>(
               shuyoRoute(
                 builder: (context) => _ThemeSettingsPage(
+                  settingsService: settingsService,
                   selectedThemeId: selectedThemeId,
                   followSystemTheme: followSystemTheme,
                   onThemeChanged: onThemeChanged,
@@ -907,6 +907,7 @@ class _PermissionItem extends StatelessWidget {
 
 class _ThemeSettingsPage extends StatefulWidget {
   const _ThemeSettingsPage({
+    required this.settingsService,
     required this.selectedThemeId,
     required this.followSystemTheme,
     required this.onThemeChanged,
@@ -915,6 +916,7 @@ class _ThemeSettingsPage extends StatefulWidget {
     this.onCustomBackgroundChanged,
   });
 
+  final ClientSettingsService settingsService;
   final String selectedThemeId;
   final bool followSystemTheme;
   final Future<void> Function(String themeId) onThemeChanged;
@@ -1234,33 +1236,24 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
         shuyoRoute(builder: (_) => _BackgroundCropPage(image: bytes)),
       );
       if (cropped == null || !mounted) return;
-      final directory = await getApplicationSupportDirectory();
-      newFile = File(
-        '${directory.path}/custom_background_${DateTime.now().microsecondsSinceEpoch}.png',
-      );
-      await newFile.writeAsBytes(cropped, flush: true);
+      newFile =
+          await widget.settingsService.createCustomBackgroundPhoto(cropped);
       final settings = await CustomBackground.fromImage(
         imagePath: newFile.path,
         provider: MemoryImage(cropped),
       );
       await widget.onCustomBackgroundChanged!(settings);
-      final oldPath = _customBackground?.imagePath;
+      // The saved configuration owns this file, even if the page has closed.
+      newFile = null;
       if (!mounted) return;
       setState(() {
         _customBackground = settings;
         _selectedThemeId = ShuYoThemes.customBackgroundId;
         _followSystemTheme = false;
       });
-      if (oldPath != null && oldPath.isNotEmpty && oldPath != newFile.path) {
-        await _deleteStoredPhoto(oldPath);
-      }
     } on Object catch (error) {
       if (newFile != null) {
-        try {
-          await newFile.delete();
-        } on FileSystemException {
-          // Keep the original error visible.
-        }
+        await widget.settingsService.discardCustomBackgroundPhoto(newFile);
       }
       if (mounted) _showSnack(context, '照片设置失败：$error');
     } finally {
@@ -1284,27 +1277,12 @@ class _ThemeSettingsPageState extends State<_ThemeSettingsPage> {
     });
     try {
       await callback(cleared);
-      await _deleteStoredPhoto(previous.imagePath);
     } on Object catch (error) {
       if (!mounted) return;
       _showSnack(context, '照片清除失败：$error');
       setState(() => _customBackground = previous);
     } finally {
       if (mounted) setState(() => _savingCustom = false);
-    }
-  }
-
-  Future<void> _deleteStoredPhoto(String path) async {
-    final file = File(path);
-    if (!file.uri.pathSegments.last.startsWith('custom_background_')) {
-      return;
-    }
-    try {
-      final directory = await getApplicationSupportDirectory();
-      if (file.parent.path != directory.path) return;
-      await file.delete();
-    } on Object {
-      // Theme changes are already saved; an orphaned cache file is harmless.
     }
   }
 
