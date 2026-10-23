@@ -21,6 +21,33 @@ flutter run --profile --dart-define=CAMPUS_MAP_CACHED_GESTURES=false
 不会沿用旧的惯性；系统要求减少动态效果时不启用惯性。
 高频触摸和滚轮事件只在下一帧计算一次镜头变化。
 
+## Android 合成模式
+
+默认显式选择 Texture Layer Hybrid Composition，延续原插件默认行为。
+保持缓存配置相同，用以下参数对比 Hybrid Composition：
+
+```sh
+flutter run --profile --dart-define=CAMPUS_MAP_ANDROID_HYBRID_COMPOSITION=true
+```
+
+将参数设为 `false` 或省略即可恢复纹理模式。
+两种模式各有开销，不能仅凭单元测试认定其中一种在设备上更快。
+记录设备型号、Android 与 Android System WebView 版本、屏幕刷新率，
+在同一缩放倍率下对比持续拖动、快速滑动、双指缩放，以及显示详情面板时的表现。
+
+如果设备为 Android 14/API 34 以上、支持 Vulkan，且应用使用 Impeller，
+Flutter 3.44 以上还可单独对比实验性的 HCPP：
+
+```sh
+flutter run --profile --enable-hcpp
+```
+
+该命令只是本地评估入口，没有更改应用全局 manifest；不满足条件时由 Flutter 回退。
+参考：[插件显示模式](https://pub.dev/packages/webview_flutter_android#display-mode)、
+[Flutter Android Platform Views](https://docs.flutter.dev/platform-integration/android/platform-views)。
+
+## 回归测试
+
 ```sh
 flutter test
 ```

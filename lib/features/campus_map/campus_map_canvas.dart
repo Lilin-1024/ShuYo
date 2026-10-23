@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../data/models/campus_map.dart';
 
@@ -58,6 +59,9 @@ class CampusMapCanvas extends StatefulWidget {
     'CAMPUS_MAP_CACHED_GESTURES',
     defaultValue: true,
   );
+  static const _androidHybridComposition = bool.fromEnvironment(
+    'CAMPUS_MAP_ANDROID_HYBRID_COMPOSITION',
+  );
 
   final CampusMapCanvasConfiguration configuration;
   final ValueChanged<String> onPlaceTap;
@@ -69,6 +73,7 @@ class CampusMapCanvas extends StatefulWidget {
 
 class _CampusMapCanvasState extends State<CampusMapCanvas> {
   late final WebViewController _controller;
+  late final WebViewWidget _webView;
   bool _syncing = false;
   bool _syncRequested = false;
   bool _ready = false;
@@ -99,6 +104,25 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
           if (error.isForMainFrame == true) _fail();
         },
       ));
+    final gestures = <Factory<OneSequenceGestureRecognizer>>{
+      Factory<OneSequenceGestureRecognizer>(EagerGestureRecognizer.new),
+    };
+    // Keep the display mode explicit and stable for the life of the native
+    // view. The define allows device comparisons without exposing app settings.
+    final PlatformWebViewWidgetCreationParams params;
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      params = AndroidWebViewWidgetCreationParams(
+        controller: _controller.platform,
+        gestureRecognizers: gestures,
+        displayWithHybridComposition: CampusMapCanvas._androidHybridComposition,
+      );
+    } else {
+      params = PlatformWebViewWidgetCreationParams(
+        controller: _controller.platform,
+        gestureRecognizers: gestures,
+      );
+    }
+    _webView = WebViewWidget.fromPlatformCreationParams(params: params);
     unawaited(_load());
   }
 
@@ -269,12 +293,7 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          WebViewWidget(
-            controller: _controller,
-            gestureRecognizers: {
-              Factory<OneSequenceGestureRecognizer>(EagerGestureRecognizer.new),
-            },
-          ),
+          _webView,
           if (!_ready) const Center(child: CircularProgressIndicator()),
         ],
       ),

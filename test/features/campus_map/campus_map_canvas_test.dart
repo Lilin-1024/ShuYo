@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shuyo/data/models/campus_map.dart';
 import 'package:shuyo/features/campus_map/campus_map_canvas.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 class _CanvasCall {
@@ -17,6 +19,7 @@ class _CanvasCall {
 
 class _WebViewPlatform extends WebViewPlatform {
   late _WebViewController controller;
+  final widgetParams = <PlatformWebViewWidgetCreationParams>[];
 
   @override
   PlatformWebViewController createPlatformWebViewController(
@@ -33,6 +36,7 @@ class _WebViewPlatform extends WebViewPlatform {
   @override
   PlatformWebViewWidget createPlatformWebViewWidget(
       PlatformWebViewWidgetCreationParams params) {
+    widgetParams.add(params);
     return _WebViewWidget(params);
   }
 }
@@ -164,6 +168,42 @@ void main() {
     platform.controller.message('ready');
     await tester.pumpAndSettle();
   }
+
+  testWidgets('Android composition and cache defines reach the canvas',
+      (tester) async {
+    await show(tester, configuration());
+    await ready(tester);
+    final params =
+        platform.widgetParams.single as AndroidWebViewWidgetCreationParams;
+    expect(params.displayWithHybridComposition,
+        const bool.fromEnvironment('CAMPUS_MAP_ANDROID_HYBRID_COMPOSITION'));
+    expect(params.gestureRecognizers, hasLength(1));
+    expect(
+        platform.controller.loads.single.value['cachedGestures'],
+        const bool.fromEnvironment('CAMPUS_MAP_CACHED_GESTURES',
+            defaultValue: true));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('non Android canvas does not request Android composition',
+      (tester) async {
+    await show(tester, configuration());
+    await ready(tester);
+    expect(platform.widgetParams.single,
+        isNot(isA<AndroidWebViewWidgetCreationParams>()));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  testWidgets('panel rebuilds reuse the native view and gesture recognizer',
+      (tester) async {
+    await show(tester, configuration());
+    await ready(tester);
+    final params = platform.widgetParams.single;
+    await show(tester, configuration(bottomInset: 280));
+    await tester.pumpAndSettle();
+    await show(tester, configuration(bottomInset: 240));
+    await tester.pumpAndSettle();
+    expect(platform.widgetParams, [params]);
+    expect(platform.controller.documentLoads, 1);
+  });
 
   testWidgets('equivalent rebuilds do not send more canvas commands',
       (tester) async {
