@@ -54,6 +54,10 @@ class CampusMapCanvas extends StatefulWidget {
   });
 
   static const asset = 'assets/campus_map/canvas.html';
+  static const _cachedGestures = bool.fromEnvironment(
+    'CAMPUS_MAP_CACHED_GESTURES',
+    defaultValue: true,
+  );
 
   final CampusMapCanvasConfiguration configuration;
   final ValueChanged<String> onPlaceTap;
@@ -196,6 +200,7 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
             'debug': kDebugMode,
             'places': c.places.map((place) => place.toCanvasJson()).toList(),
             'bottomInset': c.bottomInset,
+            'cachedGestures': CampusMapCanvas._cachedGestures,
           });
           if (!_canSync || generation != _loadGeneration) continue;
           _campusId = c.campus.id;

@@ -9,8 +9,10 @@
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
     body { background: #eaeadf; overscroll-behavior: none; }
-    #map { width: 100%; height: 100%; touch-action: none; user-select: none; -webkit-user-select: none; }
-    #map > svg { display: block; width: 100%; height: 100%; }
+    #map { position: relative; width: 100%; height: 100%; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+    #map-base { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+    #map-base > svg { display: block; width: 100%; height: 100%; overflow: hidden; }
+    #map-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
     [data-place-id] { cursor: pointer; }
     .shuyo-selected:is(path, polygon, rect, circle, ellipse),
     .shuyo-selected :is(path, polygon, rect, circle, ellipse) {
@@ -19,7 +21,7 @@
       stroke-width: 2px !important;
       vector-effect: non-scaling-stroke;
     }
-    .shuyo-pin { fill: var(--accent, #3478d4); stroke: white; stroke-width: 2px; vector-effect: non-scaling-stroke; }
+    .shuyo-pin { fill: var(--accent, #3478d4); stroke: white; stroke-width: 2px; vector-effect: non-scaling-stroke; pointer-events: all; }
     .shuyo-location { fill: #2678f2; stroke: white; stroke-width: 3px; vector-effect: non-scaling-stroke; }
     .shuyo-accuracy { fill: #2678f2; fill-opacity: .12; stroke: #2678f2; stroke-opacity: .3; stroke-width: 1px; vector-effect: non-scaling-stroke; }
   </style>
@@ -37,6 +39,14 @@
       let debugView = false;
       let reportTimer = null;
       let svg = null;
+      let baseLayer = null;
+      let overlay = null;
+      let selectionLayer = null;
+      let cachedGestures = true;
+      let cachedView = null;
+      let cachedViewport = null;
+      let cacheAnchor = null;
+      let cacheMoving = false;
       let bounds = {x: 0, y: 0, width: 1, height: 1};
       let view = {...bounds};
       let base = {...bounds};
@@ -159,6 +169,50 @@
         view.y = y - view.height / 2;
       }
 
+      const sameView = (a, b) => a && b &&
+        a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+
+      function paintBaseMap() {
+        const s = size();
+        if (!cachedGestures) {
+          baseLayer.style.width = `${s.width}px`;
+          baseLayer.style.height = `${s.height}px`;
+          if (!sameView(cacheAnchor, view)) {
+            svg.setAttribute('viewBox', `${view.x} ${view.y} ${view.width} ${view.height}`);
+            cacheAnchor = {...view};
+          }
+          return;
+        }
+        const moving = pointers.size > 0 || motion !== null;
+        const scale = cachedView ? cacheAnchor.width / view.width : 1;
+        const covered = cachedView && view.x >= cachedView.x && view.y >= cachedView.y &&
+          view.x + view.width <= cachedView.x + cachedView.width &&
+          view.y + view.height <= cachedView.y + cachedView.height;
+        if (!covered || cachedViewport.width !== s.width || cachedViewport.height !== s.height ||
+            scale < .67 || scale > 1.5 || (!moving && (cacheMoving || !sameView(cacheAnchor, view)))) {
+          // A modest overscan keeps short drags on the compositor without
+          // allocating a texture for the whole campus at the current zoom.
+          const padX = Math.min(s.width * .25, 128);
+          const padY = Math.min(s.height * .25, 192);
+          const unit = view.width / s.width;
+          cachedView = {
+            x: view.x - padX * unit, y: view.y - padY * unit,
+            width: view.width + 2 * padX * unit,
+            height: view.height + 2 * padY * unit,
+          };
+          cachedViewport = {width: s.width, height: s.height};
+          cacheAnchor = {...view};
+          baseLayer.style.width = `${s.width + 2 * padX}px`;
+          baseLayer.style.height = `${s.height + 2 * padY}px`;
+          svg.setAttribute('viewBox', `${cachedView.x} ${cachedView.y} ${cachedView.width} ${cachedView.height}`);
+        }
+        const currentScale = cacheAnchor.width / view.width;
+        const x = (cachedView.x - view.x) * s.width / view.width;
+        const y = (cachedView.y - view.y) * s.height / view.height;
+        baseLayer.style.transform = `matrix(${currentScale}, 0, 0, ${currentScale}, ${x}, ${y})`;
+        cacheMoving = moving;
+      }
+
       function draw() {
         if (paintFrame) return;
         paintFrame = requestAnimationFrame((now) => {
@@ -178,9 +232,10 @@
           }
           const value = `${view.x} ${view.y} ${view.width} ${view.height}`;
           if (value !== paintedView) {
-            svg.setAttribute('viewBox', value);
+            overlay.setAttribute('viewBox', value);
             paintedView = value;
           }
+          paintBaseMap();
           const unit = view.width / size().width;
           // Retain marker nodes; panning does not change their geometry.
           if (unit !== markerUnit) {
@@ -264,6 +319,17 @@
       }
 
       function updateSelectedMarker() {
+        selectionLayer.replaceChildren();
+        for (const element of featureElements.get(selectedId) || []) {
+          const clone = element.cloneNode(true);
+          // IDs belong to the immutable bottom map. Overlay copies must not
+          // participate in feature lookup or intercept building/label taps.
+          for (const child of [clone, ...clone.querySelectorAll('*')]) {
+            child.removeAttribute('id');
+            child.removeAttribute('data-place-id');
+          }
+          selectionLayer.appendChild(clone);
+        }
         const point = pointFor(selectedId);
         selectedMarker.style.display = point && !pointMarkers.has(selectedId) ? '' : 'none';
         if (point) {
@@ -374,6 +440,7 @@
           }
         }
         startGesture();
+        draw();
       }
       host.addEventListener('pointerup', event => endPointer(event, false));
       host.addEventListener('pointercancel', event => endPointer(event, true));
@@ -382,6 +449,7 @@
           pointers.delete(event.pointerId);
           moved = true;
           startGesture();
+          draw();
         }
       });
       host.addEventListener('wheel', (event) => {
@@ -431,6 +499,8 @@
             paintFrame = 0;
             paintedView = null;
             markerUnit = null;
+            cachedGestures = data.cachedGestures !== false;
+            cachedView = null; cachedViewport = null; cacheAnchor = null; cacheMoving = false;
             pointers.clear(); gesture = null; lastTap = null;
             const documentSvg = new DOMParser().parseFromString(data.svg, 'image/svg+xml');
             const source = documentSvg.documentElement;
@@ -447,7 +517,17 @@
             svg = document.importNode(source, true);
             svg.removeAttribute('width'); svg.removeAttribute('height');
             svg.setAttribute('preserveAspectRatio', 'none');
-            host.replaceChildren(svg);
+            baseLayer = document.createElement('div');
+            baseLayer.id = 'map-base';
+            baseLayer.style.width = `${size().width}px`;
+            baseLayer.style.height = `${size().height}px`;
+            if (cachedGestures) baseLayer.style.willChange = 'transform';
+            baseLayer.appendChild(svg);
+            overlay = document.createElementNS(ns, 'svg');
+            overlay.id = 'map-overlay';
+            overlay.setAttribute('preserveAspectRatio', 'none');
+            overlay.setAttribute('aria-hidden', 'true');
+            host.replaceChildren(baseLayer, overlay);
             const [x, y, width, height] = data.viewBox;
             bounds = {x, y, width, height};
             bottomInset = Math.max(0, data.bottomInset || 0);
@@ -463,6 +543,8 @@
             featureBounds = new Map([...featureElements].map(([id, elements]) => [id, measureBox(elements)]));
             markerLayer = document.createElementNS(ns, 'g');
             locationLayer = document.createElementNS(ns, 'g');
+            selectionLayer = document.createElementNS(ns, 'g');
+            selectionLayer.setAttribute('class', 'shuyo-selected');
             locationLayer.setAttribute('pointer-events', 'none');
             pointMarkers = new Map();
             for (const place of places.values()) {
@@ -478,7 +560,7 @@
             for (const marker of [selectedMarker, locationMarker, accuracyMarker]) marker.style.display = 'none';
             markerLayer.appendChild(selectedMarker);
             locationLayer.append(accuracyMarker, locationMarker);
-            svg.append(markerLayer, locationLayer);
+            overlay.append(selectionLayer, markerLayer, locationLayer);
             selectedId = null; location = null;
             defaultView();
           } catch (_) { notify({type: 'error'}); }
@@ -493,9 +575,7 @@
           }
           if (selectedId !== data.selectedId) {
             cancelFocus();
-            for (const element of featureElements.get(selectedId) || []) element.classList.remove('shuyo-selected');
             selectedId = places.has(data.selectedId) ? data.selectedId : null;
-            for (const element of featureElements.get(selectedId) || []) element.classList.add('shuyo-selected');
             updateSelectedMarker();
           }
           updateLocation(data.location);
