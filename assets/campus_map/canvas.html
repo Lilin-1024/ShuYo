@@ -67,6 +67,9 @@
       let viewport = {width: 1, height: 1, left: 0, top: 0};
       let pointers = new Map();
       let gesture = null;
+      let gestureDirty = false;
+      let panSamples = [];
+      let wheelInput = null;
       let moved = false;
       let lastTap = null;
       let paintFrame = 0;
@@ -147,7 +150,7 @@
           view = target;
         } else {
           const started = performance.now();
-          motion = {start: {...view}, target, started, deadline: started + duration};
+          motion = {kind: 'focus', start: {...view}, target, started, deadline: started + duration};
         }
         draw();
       }
@@ -218,18 +221,8 @@
         paintFrame = requestAnimationFrame((now) => {
           paintFrame = 0;
           if (!svg) return;
-          if (motion) {
-            const progress = clamp((now - motion.started) / (motion.deadline - motion.started), 0, 1);
-            const eased = 1 - Math.pow(1 - progress, 3);
-            const {start, target} = motion;
-            view = {
-              x: start.x + (target.x - start.x) * eased,
-              y: start.y + (target.y - start.y) * eased,
-              width: start.width + (target.width - start.width) * eased,
-              height: start.height + (target.height - start.height) * eased,
-            };
-            if (progress === 1) { view = {...target}; motion = null; }
-          }
+          applyInputs();
+          advanceMotion(now);
           const value = `${view.x} ${view.y} ${view.width} ${view.height}`;
           if (value !== paintedView) {
             overlay.setAttribute('viewBox', value);
@@ -356,7 +349,7 @@
         }
       }
 
-      function zoom(factor, point) {
+      function zoom(factor, point, schedule = true) {
         isDefaultView = false;
         cancelFocus();
         const anchor = worldPoint(point);
@@ -366,55 +359,131 @@
         view = {x: anchor.x - point.x / s.width * width,
           y: anchor.y - point.y / s.height * height, width, height};
         constrain();
-        draw();
+        if (schedule) draw();
       }
 
-      function startGesture() {
+      function startGesture(time = performance.now()) {
         const current = [...pointers.values()];
+        gestureDirty = false;
+        panSamples = current.length === 1 ? [{...current[0], time}] : [];
         gesture = current.length >= 2
           ? {view: {...view}, midpoint: middle(current[0], current[1]), distance: Math.max(1, distance(current[0], current[1]))}
           : current.length === 1 ? {view: {...view}, point: current[0]} : null;
       }
 
+      function samplePan(point, time) {
+        if (!gesture?.point || pointers.size !== 1) return;
+        const previous = panSamples[panSamples.length - 1];
+        if (previous && time < previous.time) return;
+        if (previous && time === previous.time) panSamples.pop();
+        panSamples.push({...point, time});
+        while (panSamples.length > 2 && time - panSamples[0].time > 80) panSamples.shift();
+        if (panSamples.length > 12) panSamples.shift();
+      }
+
+      function updatePointer(event) {
+        const point = localPoint(event);
+        pointers.set(event.pointerId, point);
+        if (gesture?.point && distance(point, gesture.point) > 3) moved = true;
+        samplePan(point, event.timeStamp);
+        gestureDirty = true;
+      }
+
+      function applyInputs() {
+        if (gestureDirty && gesture) {
+          gestureDirty = false;
+          const current = [...pointers.values()];
+          const s = size();
+          if (current.length >= 2 && gesture.midpoint) {
+            const midpoint = middle(current[0], current[1]);
+            const scale = distance(current[0], current[1]) / gesture.distance;
+            const anchor = worldPoint(gesture.midpoint, gesture.view);
+            const width = clamp(gesture.view.width / Math.max(.1, scale), Math.max(bounds.width, bounds.height * s.width / s.height) / 18, base.width);
+            const height = width * s.height / s.width;
+            view = {x: anchor.x - midpoint.x / s.width * width,
+              y: anchor.y - midpoint.y / s.height * height, width, height};
+          } else if (current.length === 1 && gesture.point && moved) {
+            const point = current[0];
+            view = {...gesture.view,
+              x: gesture.view.x - (point.x - gesture.point.x) / s.width * gesture.view.width,
+              y: gesture.view.y - (point.y - gesture.point.y) / s.height * gesture.view.height};
+          }
+          if (moved) constrain();
+        }
+        if (wheelInput) {
+          const input = wheelInput;
+          wheelInput = null;
+          zoom(Math.exp(clamp(input.delta, -4, 4)), input.point, false);
+        }
+      }
+
+      function startInertia(time) {
+        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        const samples = panSamples.filter(sample => time - sample.time <= 80);
+        if (samples.length < 2) return;
+        const first = samples[0], last = samples[samples.length - 1];
+        const elapsed = last.time - first.time;
+        if (elapsed < 8) return;
+        const vx = (last.x - first.x) / elapsed, vy = (last.y - first.y) / elapsed;
+        const speed = Math.hypot(vx, vy);
+        if (speed < .08) return;
+        const unit = view.width / size().width;
+        const factor = Math.min(1, 3 / speed) * -unit;
+        motion = {kind: 'inertia', start: {...view}, started: performance.now(),
+          vx: vx * factor, vy: vy * factor,
+          duration: Math.min(1200, 240 * Math.log(Math.min(speed, 3) / .02))};
+      }
+
+      function advanceMotion(now) {
+        if (!motion) return;
+        if (motion.kind === 'inertia') {
+          // Integrate exponential friction in time, so 60/90/120 Hz displays
+          // travel the same distance. A held finger contributes no stale fling.
+          const elapsed = clamp(now - motion.started, 0, motion.duration);
+          const decay = Math.exp(-elapsed / 240);
+          const travel = 240 * (1 - decay);
+          const {start, vx, vy} = motion;
+          const x = start.x + vx * travel, y = start.y + vy * travel;
+          view = {...start, x, y};
+          constrain();
+          if (Math.abs(view.x - x) > 1e-6) { motion.vx = 0; motion.start.x = view.x; }
+          if (Math.abs(view.y - y) > 1e-6) { motion.vy = 0; motion.start.y = view.y; }
+          if (elapsed >= motion.duration || (motion.vx === 0 && motion.vy === 0)) stopMotion();
+          return;
+        }
+        const progress = clamp((now - motion.started) / (motion.deadline - motion.started), 0, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const {start, target} = motion;
+        view = {
+          x: start.x + (target.x - start.x) * eased,
+          y: start.y + (target.y - start.y) * eased,
+          width: start.width + (target.width - start.width) * eased,
+          height: start.height + (target.height - start.height) * eased,
+        };
+        if (progress === 1) { view = {...target}; motion = null; }
+      }
+
       host.addEventListener('pointerdown', (event) => {
         if (!svg) return;
+        applyInputs();
         readViewport();
+        const interrupted = motion?.kind === 'inertia';
         cancelFocus();
         isDefaultView = false;
         event.preventDefault();
         host.setPointerCapture(event.pointerId);
-        if (pointers.size === 0) moved = false;
+        if (pointers.size === 0) moved = interrupted;
         pointers.set(event.pointerId, localPoint(event));
         if (pointers.size > 1) { moved = true; lastTap = null; }
-        startGesture();
+        startGesture(event.timeStamp);
       });
 
       host.addEventListener('pointermove', (event) => {
         if (!pointers.has(event.pointerId) || !gesture) return;
         event.preventDefault();
-        const point = localPoint(event);
-        pointers.set(event.pointerId, point);
-        const current = [...pointers.values()];
-        const s = size();
-        if (current.length >= 2 && gesture.midpoint) {
-          moved = true;
-          const midpoint = middle(current[0], current[1]);
-          const scale = distance(current[0], current[1]) / gesture.distance;
-          const anchor = worldPoint(gesture.midpoint, gesture.view);
-          const width = clamp(gesture.view.width / Math.max(.1, scale), Math.max(bounds.width, bounds.height * s.width / s.height) / 18, base.width);
-          const height = width * s.height / s.width;
-          view = {x: anchor.x - midpoint.x / s.width * width,
-            y: anchor.y - midpoint.y / s.height * height, width, height};
-        } else if (current.length === 1 && gesture.point) {
-          const dx = point.x - gesture.point.x;
-          const dy = point.y - gesture.point.y;
-          if (Math.hypot(dx, dy) > 6) moved = true;
-          if (!moved) return;
-          view = {...gesture.view,
-            x: gesture.view.x - dx / s.width * gesture.view.width,
-            y: gesture.view.y - dy / s.height * gesture.view.height};
-        }
-        constrain();
+        // Pointer dispatch can be much faster than the display. Keep the last
+        // positions and a short velocity history, then solve the camera once.
+        updatePointer(event);
         draw();
       });
 
@@ -422,7 +491,10 @@
         if (!pointers.has(event.pointerId)) return;
         const single = pointers.size === 1;
         const point = localPoint(event);
+        if (!cancelled) updatePointer(event);
+        applyInputs();
         pointers.delete(event.pointerId);
+        if (!cancelled && single && moved && gesture?.point) startInertia(event.timeStamp);
         if (!cancelled && single && !moved) {
           const now = Date.now();
           const id = document.elementsFromPoint(event.clientX, event.clientY)
@@ -439,13 +511,14 @@
             else notify({type: 'background'});
           }
         }
-        startGesture();
+        startGesture(event.timeStamp);
         draw();
       }
       host.addEventListener('pointerup', event => endPointer(event, false));
       host.addEventListener('pointercancel', event => endPointer(event, true));
       host.addEventListener('lostpointercapture', event => {
         if (pointers.has(event.pointerId)) {
+          applyInputs();
           pointers.delete(event.pointerId);
           moved = true;
           startGesture();
@@ -455,12 +528,17 @@
       host.addEventListener('wheel', (event) => {
         event.preventDefault();
         if (svg) {
-          readViewport();
-          zoom(Math.exp(-event.deltaY * .002), localPoint(event));
+          if (!wheelInput) readViewport();
+          cancelFocus();
+          isDefaultView = false;
+          wheelInput = {delta: (wheelInput?.delta || 0) - event.deltaY * .002, point: localPoint(event)};
+          draw();
         }
       }, {passive: false});
 
       new ResizeObserver(() => {
+        applyInputs();
+        const previousViewport = viewport;
         readViewport();
         if (!svg) return;
         updateBase();
@@ -478,8 +556,22 @@
           constrain();
           draw();
         }
-        if (pointers.size) startGesture();
+        if (pointers.size) {
+          for (const [id, point] of pointers) pointers.set(id, {
+            x: point.x + previousViewport.left - viewport.left,
+            y: point.y + previousViewport.top - viewport.top,
+          });
+          startGesture();
+        }
       }).observe(host);
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) return;
+        pointers.clear(); gesture = null; gestureDirty = false; panSamples = []; wheelInput = null; lastTap = null;
+        if (focusTarget) view = focusView();
+        stopMotion();
+        draw();
+      });
 
       window.campusMap = {
         load(data) {
@@ -502,6 +594,7 @@
             cachedGestures = data.cachedGestures !== false;
             cachedView = null; cachedViewport = null; cacheAnchor = null; cacheMoving = false;
             pointers.clear(); gesture = null; lastTap = null;
+            gestureDirty = false; panSamples = []; wheelInput = null;
             const documentSvg = new DOMParser().parseFromString(data.svg, 'image/svg+xml');
             const source = documentSvg.documentElement;
             if (source.localName !== 'svg' || source.querySelector('parsererror')) throw new Error('Invalid SVG');

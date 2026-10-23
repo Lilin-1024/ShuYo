@@ -36,7 +36,10 @@ function canvas(options = {}) {
     get attributes() { return Object.entries(this.attrs).map(([name, value]) => ({name, value})); }
     setAttribute(name, value) { this.attrs[name] = String(value); writes.push({element: this, name, value: String(value)}); }
     getAttribute(name) { return this.attrs[name] ?? null; }
-    removeAttribute(name) { delete this.attrs[name]; }
+    removeAttribute(name) {
+      delete this.attrs[name];
+      if (name === 'data-place-id') delete this.dataset.placeId;
+    }
     appendChild(child) { child.parentNode = this; this.children.push(child); return child; }
     append(...children) { children.forEach(child => this.appendChild(child)); }
     replaceChildren(...children) { this.children = []; this.append(...children); }
@@ -149,6 +152,10 @@ function canvas(options = {}) {
   return {host, document, window, config, viewport, frames, messages, writes,
     base, overlay, box, screen, tick, settle, pointer, update, checkAlignment,
     resize(width, height) { viewport.width = width; viewport.height = height; resize(); },
+    wheel(deltaY, x = 195, y = 350) {
+      host.listeners.get('wheel')({deltaY, clientX: x, clientY: y, preventDefault() {}});
+    },
+    hide() { document.hidden = true; document.listeners.get('visibilitychange')(); },
     advance(ms) { now += ms; },
     get reads() { return {bbox: bboxReads, rect: rectReads}; },
   };
@@ -227,6 +234,144 @@ test('switching campuses discards the old layer and pending frames', () => {
   c.window.campusMap.load({...c.config, campusId: 'another', initialView: {center: {x: 300, y: 300}, zoom: 1}});
   c.settle(); assert.notEqual(c.base(), old); c.checkAlignment();
   const current = c.box(c.overlay()); near(current.x + current.width / 2, 300);
+});
+
+function fling(c) {
+  c.pointer('pointerdown', 190, 350);
+  for (let i = 1; i <= 4; i++) {
+    c.advance(16); c.pointer('pointermove', 190 - i * 8, 350); c.tick(0);
+  }
+  c.pointer('pointerup', 158, 350); c.tick(0);
+}
+
+test('high frequency pointer moves update the camera only on the next frame', () => {
+  const c = canvas(); const before = c.box(c.overlay());
+  c.pointer('pointerdown', 190, 350);
+  for (let i = 1; i <= 20; i++) c.pointer('pointermove', 190 + i, 350);
+  assert.equal(c.frames.size, 1);
+  assert.deepEqual(c.box(c.overlay()), before);
+  c.tick();
+  near(c.box(c.overlay()).x, before.x - 20 / 390 * before.width);
+  c.checkAlignment();
+});
+
+test('release before the next frame flushes the last pointer position', () => {
+  const c = canvas(); const before = c.box(c.overlay());
+  c.pointer('pointerdown', 190, 350);
+  c.pointer('pointermove', 200, 350); c.pointer('pointerup', 210, 350); c.tick();
+  near(c.box(c.overlay()).x, before.x - 20 / 390 * before.width);
+});
+
+test('flings continue after release and settle with friction', () => {
+  const c = canvas(); fling(c);
+  const released = c.box(c.overlay()).x;
+  c.tick(100); assert.ok(c.box(c.overlay()).x > released); c.checkAlignment();
+  c.settle(); const stopped = c.box(c.overlay()).x;
+  c.tick(100); near(c.box(c.overlay()).x, stopped);
+});
+
+test('inertia travels the same distance at 60 and 120 frames per second', () => {
+  const slow = canvas(), fast = canvas(); fling(slow); fling(fast);
+  for (let i = 0; i < 24; i++) slow.tick(1000 / 60);
+  for (let i = 0; i < 48; i++) fast.tick(1000 / 120);
+  near(slow.box(slow.overlay()).x, fast.box(fast.overlay()).x);
+  for (let i = 0; i < 24; i++) slow.tick(1000 / 60);
+  for (let i = 0; i < 48; i++) fast.tick(1000 / 120);
+  near(slow.box(slow.overlay()).x, fast.box(fast.overlay()).x);
+});
+
+test('holding a finger before release does not fling from an old velocity', () => {
+  const c = canvas();
+  c.pointer('pointerdown', 190, 350); c.advance(16);
+  c.pointer('pointermove', 150, 350); c.tick();
+  c.advance(120); c.pointer('pointerup', 150, 350); c.tick();
+  const released = c.box(c.overlay()); c.tick(100);
+  assert.deepEqual(c.box(c.overlay()), released); assert.equal(c.frames.size, 0);
+});
+
+test('a new touch stops inertia without treating the stop as a building tap', () => {
+  const c = canvas(); fling(c); c.tick(80);
+  c.document.elementsFromPoint = () => [c.base().children[0].children[0]];
+  c.pointer('pointerdown', 190, 350); c.tick();
+  const interrupted = c.box(c.overlay()); c.tick(100);
+  assert.deepEqual(c.box(c.overlay()), interrupted);
+  c.pointer('pointerup', 190, 350); c.settle();
+  assert.ok(!c.messages.some(message => message.type === 'place' || message.type === 'background'));
+});
+
+test('reduced motion disables inertia and focuses immediately', () => {
+  const c = canvas({reducedMotion: true}); fling(c);
+  const released = c.box(c.overlay()); c.tick(100);
+  assert.deepEqual(c.box(c.overlay()), released); assert.equal(c.frames.size, 0);
+  c.update({selectedId: 'building', bottomInset: 210, focus: true}); c.tick();
+  near(c.screen({x: 200, y: 195}).y, 245);
+});
+
+test('cancellation and lost pointer capture never launch inertia', () => {
+  for (const end of ['pointercancel', 'lostpointercapture']) {
+    const c = canvas();
+    c.pointer('pointerdown', 190, 350); c.advance(16);
+    c.pointer('pointermove', 150, 350); c.pointer(end, 150, 350); c.tick();
+    const released = c.box(c.overlay()); c.tick(100);
+    assert.deepEqual(c.box(c.overlay()), released); assert.equal(c.frames.size, 0);
+  }
+});
+
+test('pinching does not fling and one remaining finger continues without jumping', () => {
+  const c = canvas();
+  c.pointer('pointerdown', 150, 350, 1); c.pointer('pointerdown', 230, 350, 2);
+  c.pointer('pointermove', 130, 350, 1); c.pointer('pointermove', 250, 350, 2);
+  c.pointer('pointerup', 250, 350, 2); c.tick();
+  const pinched = c.box(c.overlay());
+  c.pointer('pointermove', 140, 350, 1); c.tick();
+  near(c.box(c.overlay()).x, pinched.x - 10 / 390 * pinched.width);
+  c.advance(120); c.pointer('pointerup', 140, 350, 1); c.tick();
+  assert.equal(c.frames.size, 0); c.checkAlignment();
+});
+
+test('wheel events combine into one anchored zoom per frame and stop inertia', () => {
+  const c = canvas(); fling(c);
+  const old = c.box(c.overlay()); const point = {x: old.x + old.width / 2, y: old.y + old.height / 2};
+  for (let i = 0; i < 5; i++) c.wheel(-10);
+  assert.equal(c.frames.size, 1); assert.deepEqual(c.box(c.overlay()), old);
+  c.tick(); near(c.box(c.overlay()).width, old.width / Math.exp(.1));
+  near(c.screen(point).x, 195); near(c.screen(point).y, 350);
+  c.settle(); c.checkAlignment();
+});
+
+test('search focus interrupts a fling and still centers above the panel', () => {
+  const c = canvas(); fling(c); c.tick(80);
+  c.update({selectedId: 'building', bottomInset: 210, focus: true}); c.settle();
+  near(c.screen({x: 200, y: 195}).x, 195); near(c.screen({x: 200, y: 195}).y, 245);
+  c.checkAlignment();
+});
+
+test('backgrounding and viewport resizing cancel inertia', () => {
+  for (const end of [c => c.hide(), c => c.resize(700, 390)]) {
+    const c = canvas(); fling(c); c.tick(80); end(c); c.tick();
+    const stopped = c.box(c.overlay()); c.tick(100);
+    assert.deepEqual(c.box(c.overlay()), stopped); assert.equal(c.frames.size, 0); c.checkAlignment();
+  }
+});
+
+test('inertia stops at the campus boundary without endless frames', () => {
+  const c = canvas();
+  c.pointer('pointerdown', 100, 350); c.advance(16);
+  c.pointer('pointermove', 350, 350); c.tick(); c.pointer('pointerup', 350, 350);
+  c.settle(); c.checkAlignment();
+  const stopped = c.box(c.overlay()); c.tick(100);
+  assert.deepEqual(c.box(c.overlay()), stopped);
+});
+
+test('small tap jitter still selects source footprints and point-only places', () => {
+  for (const id of ['building', 'point']) {
+    const c = canvas();
+    c.document.elementsFromPoint = () => id === 'building'
+      ? [c.base().children[0].children[0]] : [c.overlay().children[1].children[0]];
+    c.pointer('pointerdown', 190, 350); c.pointer('pointermove', 192, 351);
+    c.pointer('pointerup', 192, 351); c.settle();
+    assert.ok(c.messages.some(message => message.type === 'place' && message.id === id));
+  }
 });
 
 let failed = 0;
