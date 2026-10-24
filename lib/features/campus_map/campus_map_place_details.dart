@@ -43,6 +43,7 @@ class CampusMapPlaceDetails extends StatelessWidget {
           // Keep the background painted to the screen edge while the content
           // stays above the home indicator and system navigation controls.
           child: SafeArea(
+            maintainBottomViewPadding: true,
             top: false,
             left: false,
             right: false,

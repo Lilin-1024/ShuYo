@@ -20,6 +20,7 @@ class CampusMapCanvasConfiguration {
     this.focusPoint,
     this.focusRevision = 0,
     this.bottomInset = 0,
+    this.active = true,
     this.onViewChanged,
   });
 
@@ -32,6 +33,7 @@ class CampusMapCanvasConfiguration {
   final CampusMapPoint? focusPoint;
   final int focusRevision;
   final double bottomInset;
+  final bool active;
   final ValueChanged<CampusMapView>? onViewChanged;
 
   Color get backgroundColor => Color(campus.backgroundArgb);
@@ -161,12 +163,13 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
           _sync();
         case 'place':
           final id = value['id'];
-          if (id is String &&
+          if (widget.configuration.active &&
+              id is String &&
               widget.configuration.places.any((place) => place.id == id)) {
             widget.onPlaceTap(id);
           }
         case 'background':
-          widget.onMapTap();
+          if (widget.configuration.active) widget.onMapTap();
         case 'viewport':
           if (kDebugMode &&
               value['campusId'] == widget.configuration.campus.id) {
@@ -225,6 +228,7 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
             'places': c.places.map((place) => place.toCanvasJson()).toList(),
             'bottomInset': c.bottomInset,
             'cachedGestures': CampusMapCanvas._cachedGestures,
+            'active': c.active,
           });
           if (!_canSync || generation != _loadGeneration) continue;
           _campusId = c.campus.id;
@@ -241,6 +245,7 @@ class _CampusMapCanvasState extends State<CampusMapCanvas> {
           'accent': '#${c.accent.toARGB32().toRadixString(16).substring(2)}',
           'bottomInset': c.bottomInset,
           'focusPoint': c.focusPoint?.toJson(),
+          'active': c.active,
         };
         final encoded = jsonEncode(update);
         final focus = _focusRevision != c.focusRevision;

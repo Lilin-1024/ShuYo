@@ -39,6 +39,8 @@ class _CampusMapPageState extends State<CampusMapPage>
       widget.navigationService ?? CampusMapNavigationService();
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
+  (CampusMapData, String, String)? _searchKey;
+  List<CampusMapPlace> _searchMatches = const [];
   CampusMapView? _debugView;
   Timer? _debugTimer;
   CampusMapData? _data;
@@ -83,12 +85,11 @@ class _CampusMapPageState extends State<CampusMapPage>
   }
 
   void _focusChanged() {
-    if (!mounted) return;
+    if (!mounted || !_searchFocus.hasFocus) return;
     setState(() {
-      if (_searchFocus.hasFocus) {
-        _searching = true;
-        _selected = null;
-      }
+      _searching = true;
+      _selected = null;
+      _focusPoint = null;
     });
   }
 
@@ -165,16 +166,12 @@ class _CampusMapPageState extends State<CampusMapPage>
   }
 
   void _back() {
-    if (_searchFocus.hasFocus) {
-      _searchFocus.unfocus();
+    if (_searching) {
+      _closeSearch();
       return;
     }
     if (_selected != null) {
       _closeDetail();
-      return;
-    }
-    if (_searching) {
-      _closeSearch();
       return;
     }
     Navigator.of(context).maybePop();
@@ -387,25 +384,34 @@ class _CampusMapPageState extends State<CampusMapPage>
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) _back();
       },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            tooltip: '返回',
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _back,
-          ),
-          title: const Text('校园地图'),
-          actions: [
-            IconButton(
-              tooltip: '地图说明',
-              icon: const Icon(Icons.info_outline),
-              onPressed: _showAbout,
+      child: GestureDetector(
+        // Let result taps, text editing and list scrolling win the gesture
+        // arena. Closing on pointer-down would remove a result before its tap.
+        behavior: HitTestBehavior.opaque,
+        onTap: _searching ? _closeSearch : null,
+        child: Scaffold(
+          // Only the lightweight search overlay follows the keyboard. Resizing
+          // the native map here invalidates its SVG cache on every inset update.
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            leading: IconButton(
+              tooltip: '返回',
+              icon: const Icon(Icons.arrow_back),
+              onPressed: _back,
             ),
-          ],
+            title: const Text('校园地图'),
+            actions: [
+              IconButton(
+                tooltip: '地图说明',
+                icon: const Icon(Icons.info_outline),
+                onPressed: _showAbout,
+              ),
+            ],
+          ),
+          // Let the map and panel background reach the gesture/navigation area.
+          // Interactive controls apply their own bottom safe-area spacing.
+          body: SafeArea(top: false, bottom: false, child: _body()),
         ),
-        // Let the map and panel background reach the gesture/navigation area.
-        // Interactive controls apply their own bottom safe-area spacing.
-        body: SafeArea(top: false, bottom: false, child: _body()),
       ),
     );
   }
@@ -423,7 +429,7 @@ class _CampusMapPageState extends State<CampusMapPage>
     final colors = context.shuyoColors;
     final data = _data!;
     final campus = _campus!;
-    final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final bottomPadding = MediaQuery.viewPaddingOf(context).bottom;
     return Column(
       children: [
         Padding(
@@ -434,6 +440,7 @@ class _CampusMapPageState extends State<CampusMapPage>
                 child: DropdownButton<String>(
                   value: campus.id,
                   borderRadius: BorderRadius.zero,
+                  onTap: _searching ? _closeSearch : null,
                   items: [
                     for (final item in data.campuses)
                       DropdownMenuItem(value: item.id, child: Text(item.name)),
@@ -562,6 +569,7 @@ class _CampusMapPageState extends State<CampusMapPage>
       focusPoint: _focusPoint,
       focusRevision: _focusRevision,
       bottomInset: bottomInset,
+      active: !_searching,
       accent: context.shuyoColors.accent,
       onViewChanged: kDebugMode ? _onViewChanged : null,
     );
@@ -586,53 +594,68 @@ class _CampusMapPageState extends State<CampusMapPage>
   Widget _searchResults() {
     final data = _data!;
     final query = _searchController.text;
-    final places = data.search(query, preferredCampusId: _campus!.id);
+    final key = (data, query, _campus!.id);
+    if (_searchKey != key) {
+      _searchKey = key;
+      _searchMatches = data.search(query, preferredCampusId: _campus!.id);
+    }
+    final places = _searchMatches;
+    final results = SafeArea(
+      key: const ValueKey('campus-map-search-results'),
+      top: false,
+      left: false,
+      right: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text(
+              query.trim().isEmpty
+                  ? '搜索教学楼、图书馆、食堂等地点'
+                  : '共找到 ${places.length} 个地点',
+              style: TextStyle(color: context.shuyoColors.textTertiary),
+            ),
+          ),
+          Expanded(
+            child: places.isEmpty
+                ? Center(
+                    child: Text(query.trim().isEmpty
+                        ? '输入地点或学院名称查找'
+                        : '未找到相关地点，试试其他名称'),
+                  )
+                : ListView.builder(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    itemCount: places.length,
+                    itemBuilder: (context, index) {
+                      final place = places[index];
+                      return ListTile(
+                        leading: const Icon(Icons.place_outlined),
+                        title: Text(place.name),
+                        subtitle: Text(
+                          '${data.campusById[place.campusId]!.name} · ${place.kind}',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _selectPlace(place),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
     return Material(
       color: context.shuyoColors.surface,
-      child: SafeArea(
-        top: false,
-        left: false,
-        right: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Text(
-                query.trim().isEmpty
-                    ? '搜索教学楼、图书馆、食堂等地点'
-                    : '共找到 ${places.length} 个地点',
-                style: TextStyle(color: context.shuyoColors.textTertiary),
-              ),
-            ),
-            Expanded(
-              child: places.isEmpty
-                  ? Center(
-                      child: Text(query.trim().isEmpty
-                          ? '输入地点或学院名称查找'
-                          : '未找到相关地点，试试其他名称'),
-                    )
-                  : ListView.builder(
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      itemCount: places.length,
-                      itemBuilder: (context, index) {
-                        final place = places[index];
-                        return ListTile(
-                          leading: const Icon(Icons.place_outlined),
-                          title: Text(place.name),
-                          subtitle: Text(
-                            '${data.campusById[place.campusId]!.name} · ${place.kind}',
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _selectPlace(place),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
+      child: Builder(builder: (context) {
+        // Inset changes rebuild and lay out this overlay, not the map or search
+        // matching. Its opaque background also blocks taps through to the map.
+        return Padding(
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          child: results,
+        );
+      }),
     );
   }
 
@@ -672,6 +695,7 @@ class _CampusMapPageState extends State<CampusMapPage>
       );
 
   Future<void> _showAbout() async {
+    if (_searching) _closeSearch();
     _obscured = true;
     _searchFocus.unfocus();
     _stopWatching();

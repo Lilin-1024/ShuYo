@@ -111,7 +111,7 @@ function canvas(options = {}) {
     initialView: {center: {x: 200, y: 200}, zoom: 2}, backgroundColor: '#eaeadf', debug: false,
     places: [{id: 'building', featureIds: ['building'], point: {x: 200, y: 195}},
       {id: 'point', featureIds: [], point: {x: 250, y: 250}}], bottomInset: 0,
-    cachedGestures: options.cachedGestures !== false};
+    cachedGestures: options.cachedGestures !== false, active: options.active !== false};
   function tick(ms = 1000 / 60) {
     now += ms;
     const callbacks = [...frames.values()]; frames.clear();
@@ -372,6 +372,58 @@ test('small tap jitter still selects source footprints and point-only places', (
     c.pointer('pointerup', 192, 351); c.settle();
     assert.ok(c.messages.some(message => message.type === 'place' && message.id === id));
   }
+});
+
+test('covering the map stops inertia and all camera paints until it is shown', () => {
+  const c = canvas(); fling(c); c.tick(80);
+  const view = c.box(c.overlay());
+  const map = c.base().children[0], cached = map.getAttribute('viewBox');
+  const writes = c.writes.filter(write => write.name === 'viewBox').length;
+  c.update({active: false});
+  assert.equal(c.frames.size, 0);
+  c.pointer('pointerdown', 100, 350); c.advance(16);
+  c.pointer('pointermove', 200, 350); c.pointer('pointerup', 200, 350);
+  c.wheel(-100); c.tick(500);
+  assert.deepEqual(c.box(c.overlay()), view);
+  assert.equal(c.writes.filter(write => write.name === 'viewBox').length, writes);
+  assert.equal(map.getAttribute('viewBox'), cached);
+  assert.equal(c.frames.size, 0);
+  c.update(); c.settle();
+  assert.equal(c.base().children[0], map);
+  assert.deepEqual(c.box(c.overlay()), view); c.checkAlignment();
+});
+
+test('a map first loaded behind search defers painting until it is shown', () => {
+  const c = canvas({active: false}); const map = c.base().children[0];
+  assert.equal(c.frames.size, 0);
+  assert.equal(c.writes.filter(write => write.name === 'viewBox').length, 0);
+  c.update(); c.settle(); c.checkAlignment();
+  assert.equal(c.base().children[0], map);
+});
+
+test('search selection resumes a covered map with the requested focus', () => {
+  const c = canvas(); fling(c); c.tick(80); c.update({active: false});
+  c.update({selectedId: 'building', bottomInset: 210, focus: true}); c.settle();
+  near(c.screen({x: 200, y: 195}).x, 195);
+  near(c.screen({x: 200, y: 195}).y, 245); c.checkAlignment();
+});
+
+test('covering the map discards a pending finger move and release', () => {
+  const c = canvas(); const view = c.box(c.overlay());
+  c.pointer('pointerdown', 190, 350); c.pointer('pointermove', 230, 350);
+  c.update({active: false}); c.pointer('pointerup', 230, 350); c.tick(100);
+  c.update(); c.settle();
+  assert.deepEqual(c.box(c.overlay()), view);
+  assert.ok(!c.messages.some(message => message.type === 'place' || message.type === 'background'));
+});
+
+test('covered maps cancel pending debug reports', () => {
+  const c = canvas();
+  c.window.campusMap.load({...c.config, debug: true}); c.tick();
+  c.update({active: false}); c.tick(500);
+  assert.ok(!c.messages.some(message => message.type === 'viewport'));
+  c.update(); c.tick(); c.tick(100);
+  assert.ok(c.messages.some(message => message.type === 'viewport'));
 });
 
 let failed = 0;

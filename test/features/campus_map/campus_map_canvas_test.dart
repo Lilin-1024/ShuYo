@@ -55,9 +55,10 @@ class _WebViewController extends PlatformWebViewController {
   List<_CanvasCall> get updates =>
       calls.where((call) => call.method == 'update').toList();
 
-  void message(String type) {
+  void message(String type, {String? id}) {
     channels['ShuyoMap']!.onMessageReceived(
-      JavaScriptMessage(message: jsonEncode({'type': type})),
+      JavaScriptMessage(
+          message: jsonEncode({'type': type, if (id != null) 'id': id})),
     );
   }
 
@@ -138,6 +139,7 @@ void main() {
     double bottomInset = 210,
     Map<String, dynamic>? location,
     CampusMapPoint? focusPoint,
+    bool active = true,
   }) =>
       CampusMapCanvasConfiguration(
         campus: data.campusById[campusId]!,
@@ -150,15 +152,17 @@ void main() {
         bottomInset: bottomInset,
         location: location,
         focusPoint: focusPoint,
+        active: active,
       );
 
   Future<void> show(
-      WidgetTester tester, CampusMapCanvasConfiguration configuration) async {
+      WidgetTester tester, CampusMapCanvasConfiguration configuration,
+      {ValueChanged<String>? onPlaceTap, VoidCallback? onMapTap}) async {
     await tester.pumpWidget(MaterialApp(
       home: CampusMapCanvas(
         configuration: configuration,
-        onPlaceTap: (_) {},
-        onMapTap: () {},
+        onPlaceTap: onPlaceTap ?? (_) {},
+        onMapTap: onMapTap ?? () {},
       ),
     ));
     await tester.pump();
@@ -203,6 +207,61 @@ void main() {
     await tester.pumpAndSettle();
     expect(platform.widgetParams, [params]);
     expect(platform.controller.documentLoads, 1);
+  });
+
+  testWidgets(
+      'covering and uncovering the map updates activity without reloading',
+      (tester) async {
+    await show(tester, configuration());
+    await ready(tester);
+    final controller = platform.controller;
+    controller.calls.clear();
+
+    await show(tester, configuration(active: false));
+    await tester.pumpAndSettle();
+    expect(controller.updates.single.value['active'], isFalse);
+    expect(controller.updates.single.value['focus'], isFalse);
+    await show(tester, configuration(active: false));
+    await tester.pumpAndSettle();
+    expect(controller.updates, hasLength(1));
+
+    await show(tester, configuration());
+    await tester.pumpAndSettle();
+    expect(controller.updates.last.value['active'], isTrue);
+    expect(controller.updates.last.value['focus'], isFalse);
+    expect(controller.loads, isEmpty);
+    expect(controller.documentLoads, 1);
+    expect(platform.widgetParams, hasLength(1));
+  });
+
+  testWidgets('canvas can load behind search without starting active',
+      (tester) async {
+    await show(tester, configuration(active: false));
+    await ready(tester);
+    expect(platform.controller.loads.single.value['active'], isFalse);
+    expect(platform.controller.updates.single.value['active'], isFalse);
+  });
+
+  testWidgets('covered canvas ignores late tap messages from the platform',
+      (tester) async {
+    final places = <String>[];
+    var backgrounds = 0;
+    await show(tester, configuration(active: false),
+        onPlaceTap: places.add, onMapTap: () => backgrounds++);
+    await ready(tester);
+    final controller = platform.controller;
+    controller.message('place', id: 'place_baoshan_building-d5');
+    controller.message('background');
+    expect(places, isEmpty);
+    expect(backgrounds, 0);
+
+    await show(tester, configuration(),
+        onPlaceTap: places.add, onMapTap: () => backgrounds++);
+    await tester.pumpAndSettle();
+    controller.message('place', id: 'place_baoshan_building-d5');
+    controller.message('background');
+    expect(places, ['place_baoshan_building-d5']);
+    expect(backgrounds, 1);
   });
 
   testWidgets('equivalent rebuilds do not send more canvas commands',

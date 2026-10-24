@@ -37,6 +37,7 @@
       let initialView = null;
       let campusId = null;
       let debugView = false;
+      let active = true;
       let reportTimer = null;
       let svg = null;
       let baseLayer = null;
@@ -144,6 +145,23 @@
         stopMotion();
       }
 
+      function setActive(next) {
+        if (active === next) return;
+        active = next;
+        if (!active) {
+          // Flutter can cover this WebView without changing document.hidden.
+          // Stop work behind search and discard input; keep the loaded SVG and
+          // camera so returning to the map does not reload or resume a fling.
+          cancelFocus();
+          pointers.clear(); gesture = null; gestureDirty = false;
+          panSamples = []; wheelInput = null; lastTap = null;
+          if (paintFrame) cancelAnimationFrame(paintFrame);
+          paintFrame = 0;
+          if (reportTimer !== null) clearTimeout(reportTimer);
+          reportTimer = null;
+        }
+      }
+
       function moveTo(target, duration = 360) {
         stopMotion();
         if (duration <= 0 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
@@ -217,10 +235,10 @@
       }
 
       function draw() {
-        if (paintFrame) return;
+        if (!active || paintFrame) return;
         paintFrame = requestAnimationFrame((now) => {
           paintFrame = 0;
-          if (!svg) return;
+          if (!svg || !active) return;
           applyInputs();
           advanceMotion(now);
           const value = `${view.x} ${view.y} ${view.width} ${view.height}`;
@@ -464,7 +482,7 @@
       }
 
       host.addEventListener('pointerdown', (event) => {
-        if (!svg) return;
+        if (!svg || !active) return;
         applyInputs();
         readViewport();
         const interrupted = motion?.kind === 'inertia';
@@ -527,7 +545,7 @@
       });
       host.addEventListener('wheel', (event) => {
         event.preventDefault();
-        if (svg) {
+        if (svg && active) {
           if (!wheelInput) readViewport();
           cancelFocus();
           isDefaultView = false;
@@ -581,6 +599,7 @@
             reportTimer = null;
             campusId = data.campusId;
             debugView = data.debug === true;
+            active = data.active !== false;
             initialView = data.initialView;
             if (!finitePoint(initialView?.center) || !Number.isFinite(initialView.zoom) || initialView.zoom <= 0) {
               throw new Error('Invalid initial map view');
@@ -660,6 +679,7 @@
         },
         update(data) {
           if (!svg) return;
+          setActive(data.active !== false);
           const previousInset = bottomInset;
           bottomInset = Math.max(0, data.bottomInset || 0);
           if (document.documentElement.style.getPropertyValue('--accent') !== data.accent) {
