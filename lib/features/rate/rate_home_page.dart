@@ -33,6 +33,9 @@ class _RateHomePageState extends State<RateHomePage> {
   List<RateScheduleMatch> _matches = const [];
   Object? _error;
   bool _loading = false;
+  bool _scheduleCollapsed = false;
+  bool _savingScheduleCollapsed = false;
+  late final Future<void> _schedulePreferenceReady;
   DateTime? _loadedAt;
 
   CourseReviewRepository get _repo => widget.repository;
@@ -40,6 +43,7 @@ class _RateHomePageState extends State<RateHomePage> {
   @override
   void initState() {
     super.initState();
+    _schedulePreferenceReady = _restoreScheduleCollapsed();
     unawaited(_load());
   }
 
@@ -55,6 +59,27 @@ class _RateHomePageState extends State<RateHomePage> {
     }
   }
 
+  Future<void> _restoreScheduleCollapsed() async {
+    final collapsed = await _repo.loadScheduleCollapsed();
+    if (mounted) _scheduleCollapsed = collapsed;
+  }
+
+  Future<void> _toggleScheduleCollapsed() async {
+    if (_savingScheduleCollapsed) return;
+    final collapsed = !_scheduleCollapsed;
+    setState(() {
+      _scheduleCollapsed = collapsed;
+      _savingScheduleCollapsed = true;
+    });
+    try {
+      await _repo.saveScheduleCollapsed(collapsed);
+    } on Object {
+      if (mounted) showRateSnack(context, '折叠状态保存失败，下次进入可能不会保留');
+    } finally {
+      if (mounted) setState(() => _savingScheduleCollapsed = false);
+    }
+  }
+
   Future<void> _load() async {
     if (_loading) return;
     setState(() => _loading = true);
@@ -64,6 +89,7 @@ class _RateHomePageState extends State<RateHomePage> {
     try {
       final home = await _repo.home();
       final matched = await matches;
+      await _schedulePreferenceReady;
       if (!mounted) return;
       setState(() {
         _home = home;
@@ -130,14 +156,7 @@ class _RateHomePageState extends State<RateHomePage> {
           ),
           if (_matches.isNotEmpty) ...[
             const SizedBox(height: 16),
-            _section('本学期课程'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _ScheduleGrid(
-                matches: _matches,
-                onTap: _openMatch,
-              ),
-            ),
+            _scheduleSection(),
           ],
           if (home.recent.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -173,6 +192,77 @@ class _RateHomePageState extends State<RateHomePage> {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _scheduleSection() {
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 240);
+    final progress = _scheduleCollapsed ? 0.0 : 1.0;
+    final onToggle =
+        _savingScheduleCollapsed ? null : _toggleScheduleCollapsed;
+    return Column(
+      children: [
+        Semantics(
+          button: true,
+          enabled: onToggle != null,
+          expanded: !_scheduleCollapsed,
+          child: Tooltip(
+            message: _scheduleCollapsed ? '展开本学期课程' : '折叠本学期课程',
+            child: InkWell(
+              key: const ValueKey('rate-schedule-toggle'),
+              onTap: onToggle,
+              splashFactory: NoSplash.splashFactory,
+              overlayColor:
+                  const WidgetStatePropertyAll<Color>(Colors.transparent),
+              child: _section(
+                '本学期课程',
+                action: SizedBox(
+                  width: 48,
+                  child: Center(
+                    child: AnimatedRotation(
+                      turns: progress / 2,
+                      duration: duration,
+                      curve: Curves.easeInOutCubic,
+                      child: Icon(Icons.expand_more,
+                          color: context.shuyoColors.textSecondary),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: progress, end: progress),
+          duration: duration,
+          curve: Curves.easeInOutCubic,
+          builder: (context, value, child) => ClipRect(
+            key: const ValueKey('rate-schedule-content'),
+            child: Align(
+              alignment: Alignment.topCenter,
+              heightFactor: value,
+              child: value == 0
+                  ? const SizedBox(width: double.infinity)
+                  : IgnorePointer(
+                      ignoring: _scheduleCollapsed,
+                      child: ExcludeFocus(
+                        excluding: _scheduleCollapsed,
+                        child: ExcludeSemantics(
+                          excluding: _scheduleCollapsed,
+                          child: Opacity(opacity: value, child: child),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: _ScheduleGrid(matches: _matches, onTap: _openMatch),
+          ),
+        ),
+      ],
     );
   }
 
@@ -273,12 +363,22 @@ class _ScheduleCourseCard extends StatelessWidget {
             style: ShuYoTextStyles.meta(color: colors.textSecondary),
           ),
           const Spacer(),
-          Text(
-            score,
-            style: hasScore
-                ? ShuYoTextStyles.title(
-                    color: colors.textPrimary, size: 16, weight: FontWeight.w500)
-                : ShuYoTextStyles.meta(color: colors.textTertiary),
+          Row(
+            children: [
+              Text(
+                score,
+                style: hasScore
+                    ? ShuYoTextStyles.title(
+                        color: colors.textPrimary,
+                        size: 16,
+                        weight: FontWeight.w500)
+                    : ShuYoTextStyles.meta(color: colors.textTertiary),
+              ),
+              if (hasScore) ...[
+                const SizedBox(width: 6),
+                RateStars(average: unit.average, size: 12),
+              ],
+            ],
           ),
         ],
       ),

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/client_app_info.dart';
 import '../models/academic_schedule.dart';
 import '../models/course_review.dart';
@@ -18,12 +20,17 @@ class CourseReviewIdentityRequired implements Exception {
 class CourseReviewRepository {
   CourseReviewRepository({
     CourseReviewApiClient? apiClient,
+    Future<SharedPreferences> Function()? preferencesLoader,
     required this.studentIdentityService,
     required this.scheduleRepository,
     this.isDemo = false,
-  }) : _api = apiClient ?? CourseReviewApiClient();
+  })  : _api = apiClient ?? CourseReviewApiClient(),
+        _preferencesLoader = preferencesLoader ?? SharedPreferences.getInstance;
+
+  static const _scheduleCollapsedKey = 'rate.home.schedule.collapsed';
 
   final CourseReviewApiClient _api;
+  final Future<SharedPreferences> Function() _preferencesLoader;
   final StudentIdentityService studentIdentityService;
   final AcademicScheduleRepository scheduleRepository;
   final bool isDemo;
@@ -31,6 +38,22 @@ class CourseReviewRepository {
   Future<RateCatalogConfig>? _config;
 
   void dispose() => _api.dispose();
+
+  Future<bool> loadScheduleCollapsed() async {
+    try {
+      final preferences = await _preferencesLoader();
+      return preferences.getBool(_scheduleCollapsedKey) ?? false;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<void> saveScheduleCollapsed(bool collapsed) async {
+    final preferences = await _preferencesLoader();
+    if (!await preferences.setBool(_scheduleCollapsedKey, collapsed)) {
+      throw StateError('本学期课程折叠状态保存失败');
+    }
+  }
 
   /// Questions and categories rarely change; keep them for the app session
   /// but retry after a failure.
