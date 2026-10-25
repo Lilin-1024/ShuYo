@@ -431,7 +431,7 @@ class _OptionStatRow extends StatelessWidget {
                     style: ShuYoTextStyles.bodyCompact(
                         color: textColor, size: 13.5, weight: weight)),
               ),
-              Text('${option.count} · ${option.percent}%',
+              Text('${option.percent}%',
                   style: ShuYoTextStyles.meta(color: textColor, weight: weight)),
             ],
           ),
