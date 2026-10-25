@@ -24,6 +24,7 @@ import '../data/repositories/announcement_repository.dart';
 import '../data/repositories/shuyo_content_repository.dart';
 import '../data/repositories/classroom_repository.dart';
 import '../data/repositories/client_backend_repository.dart';
+import '../data/repositories/course_review_repository.dart';
 import '../data/repositories/otp_token_repository.dart';
 import '../data/services/academic_account_store.dart';
 import '../data/services/academic_native_auth_service.dart';
@@ -54,6 +55,7 @@ import '../features/home/otp_token_page.dart';
 import '../features/home/shuyo_content_page.dart';
 import '../features/library_booking/library_booking_page.dart';
 import '../features/onboarding/startup_onboarding.dart';
+import '../features/rate/rate_home_page.dart';
 import '../features/settings/client_settings_page.dart';
 import '../shared/navigation/shuyo_route.dart';
 import '../shared/widgets/app_header.dart';
@@ -142,6 +144,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   late AppTab _preferredStartupTab = widget.initialStartupTab;
   bool _scheduleTabInitialized = false;
   bool _progressTabInitialized = false;
+  bool _rateTabInitialized = false;
   int _progressDataRevision = 0;
   int _scheduleDataRevision = 0;
   late bool _webVpnEnabled = widget.initialWebVpnEnabled;
@@ -207,6 +210,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       widget.studentIdentityService ?? StudentIdentityService();
   late final ClientBackendRepository _clientBackendRepository =
       ClientBackendRepository(studentIdentityService: _studentIdentityService);
+  CourseReviewRepository? _courseReviewRepositoryInstance;
+  CourseReviewRepository get _courseReviewRepository =>
+      _courseReviewRepositoryInstance ??= CourseReviewRepository(
+        studentIdentityService: _studentIdentityService,
+        scheduleRepository: _scheduleRepository,
+        isDemo: widget.isDemo,
+      );
 
   @override
   void initState() {
@@ -217,6 +227,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         widget.initialOpenSchedule ? AppTab.schedule : widget.initialStartupTab;
     _progressTabInitialized = _tab == AppTab.progress;
     _scheduleTabInitialized = _tab == AppTab.schedule;
+    _rateTabInitialized = _tab == AppTab.rate;
     final demo = widget.demoData;
     _scheduleRepository = widget.scheduleRepository ??
         (widget.isDemo && demo != null
@@ -325,6 +336,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     _webVpnBookingClient?.dispose();
     _chaoxingBookingClient?.dispose();
     _campusCardServiceInstance?.dispose();
+    _courseReviewRepositoryInstance?.dispose();
     _otpTokenRepository.dispose();
     if (widget.studentIdentityService == null) {
       _studentIdentityService.dispose();
@@ -358,6 +370,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   index: _tab.index,
                   children: [
                     _homeBody(),
+                    _rateTabInitialized
+                        ? RateHomePage(
+                            key: ValueKey(_scheduleDataRevision),
+                            repository: _courseReviewRepository,
+                            active: _tab == AppTab.rate,
+                          )
+                        : const SizedBox.expand(),
                     _progressTabInitialized
                         ? AcademicProgressPage(
                             key: ValueKey(_progressDataRevision),
@@ -422,6 +441,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   IconData _tabIcon(AppTab tab) => switch (tab) {
         AppTab.home => Icons.dashboard,
+        AppTab.rate => Icons.rate_review_outlined,
         AppTab.progress => Icons.school_outlined,
         AppTab.schedule => Icons.calendar_month,
       };
@@ -430,6 +450,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     setState(() {
       _tab = tab;
       if (tab == AppTab.progress) _progressTabInitialized = true;
+      if (tab == AppTab.rate) _rateTabInitialized = true;
       if (tab == AppTab.schedule) _scheduleTabInitialized = true;
     });
     if (tab == AppTab.home) {

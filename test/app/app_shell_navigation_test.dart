@@ -86,7 +86,7 @@ void main() {
       find.byType(BottomNavigationBar),
     );
     expect(navigation.items.map((item) => item.label).toList(),
-        ['首页', '学业', '日程']);
+        ['首页', '课评', '学业', '日程']);
     expect(find.text('你好，小明！'), findsOneWidget);
     await tester.tap(find.text('今日课程'));
     await tester.pumpAndSettle();
@@ -94,7 +94,7 @@ void main() {
         tester
             .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
             .currentIndex,
-        2);
+        AppTab.schedule.index);
     expect(find.byType(AcademicSchedulePage), findsOneWidget);
     expect(find.byTooltip('课表信息说明'), findsOneWidget);
     expect(find.byTooltip('更多'), findsOneWidget);
@@ -108,7 +108,7 @@ void main() {
           tester
               .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
               .currentIndex,
-          ['首页', '学业', '日程'].indexOf(label));
+          ['首页', '课评', '学业', '日程'].indexOf(label));
       if (label == '学业') {
         expect(find.byType(AcademicProgressPage), findsOneWidget);
         expect(find.byTooltip('更多'), findsOneWidget);
@@ -149,7 +149,7 @@ void main() {
         tester
             .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
             .currentIndex,
-        2);
+        AppTab.schedule.index);
     expect(find.byType(AcademicSchedulePage), findsOneWidget);
   });
 

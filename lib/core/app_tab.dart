@@ -1,5 +1,6 @@
 enum AppTab {
   home('home', '首页'),
+  rate('rate', '课评'),
   progress('progress', '学业'),
   schedule('schedule', '日程');
 

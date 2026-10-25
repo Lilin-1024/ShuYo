@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shuyo/app/app_shell.dart';
+import 'package:shuyo/core/app_tab.dart';
 import 'package:shuyo/data/demo/demo_repositories.dart';
 import 'package:shuyo/data/models/academic_progress.dart';
 import 'package:shuyo/data/models/academic_ranking.dart';
@@ -312,7 +313,7 @@ void main() {
             tester
                 .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
                 .currentIndex,
-            tab == '学业' ? 1 : 2);
+            tab == '学业' ? AppTab.progress.index : AppTab.schedule.index);
         if (tab == '学业') expect(find.text('学业总览'), findsOneWidget);
         await tester.tap(find.text('首页').last);
         await tester.pumpAndSettle();
