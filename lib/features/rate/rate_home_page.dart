@@ -303,13 +303,13 @@ class _RankingRow extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 124,
+      height: _HomeUnitCard.height,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: ranking.items.length,
         separatorBuilder: (_, __) => const SizedBox(width: 10),
-        itemBuilder: (context, index) => RateUnitCard(
+        itemBuilder: (context, index) => _HomeUnitCard(
           unit: ranking.items[index],
           rank: index + 1,
           onTap: () => onTap(ranking.items[index]),
@@ -377,7 +377,6 @@ class _RecentReviewsRow extends StatefulWidget {
 
 class _RecentReviewsRowState extends State<_RecentReviewsRow>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  static const _cardWidth = 156.0;
   static const _gap = 10.0;
   static const _speed = 24.0;
   static const _resumeDelay = Duration(seconds: 3);
@@ -390,7 +389,7 @@ class _RecentReviewsRowState extends State<_RecentReviewsRow>
   bool _foreground = true;
   bool _loops = false;
 
-  double get _loopWidth => widget.units.length * (_cardWidth + _gap);
+  double get _loopWidth => widget.units.length * (_HomeUnitCard.width + _gap);
 
   @override
   void initState() {
@@ -474,7 +473,7 @@ class _RecentReviewsRowState extends State<_RecentReviewsRow>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 112,
+      height: _HomeUnitCard.height,
       child: LayoutBuilder(builder: (context, constraints) {
         final loops = _loopWidth - _gap + 32 > constraints.maxWidth;
         if (loops != _loops) {
@@ -496,7 +495,7 @@ class _RecentReviewsRowState extends State<_RecentReviewsRow>
             separatorBuilder: (_, __) => const SizedBox(width: _gap),
             itemBuilder: (context, index) {
               final unit = widget.units[index % widget.units.length];
-              return _RecentCard(unit: unit, onTap: () => widget.onTap(unit));
+              return _HomeUnitCard(unit: unit, onTap: () => widget.onTap(unit));
             },
           ),
         );
@@ -505,24 +504,28 @@ class _RecentReviewsRowState extends State<_RecentReviewsRow>
   }
 }
 
-class _RecentCard extends StatelessWidget {
-  const _RecentCard({required this.unit, required this.onTap});
+class _HomeUnitCard extends StatelessWidget {
+  const _HomeUnitCard({required this.unit, required this.onTap, this.rank});
+
+  static const width = 156.0;
+  static const height = 112.0;
 
   final RateUnit unit;
   final VoidCallback onTap;
+  final int? rank;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.shuyoColors;
     return RateCard(
-      width: _RecentReviewsRowState._cardWidth,
+      width: width,
       onTap: onTap,
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            unit.course.name,
+            rank == null ? unit.course.name : '$rank  ${unit.course.name}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: ShuYoTextStyles.title(color: colors.textPrimary, size: 14.5),
