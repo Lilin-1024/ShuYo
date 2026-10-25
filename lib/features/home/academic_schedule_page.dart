@@ -1783,6 +1783,9 @@ CourseSession _courseSessionFromDraft(
     weekText: _formatWeekText(weeks),
     credit: credit,
     note: draft.note,
+    // A renamed course is no longer the synced teaching class.
+    teachingClassId:
+        base != null && base.courseName == courseName ? base.teachingClassId : '',
   );
 }
 
@@ -1828,6 +1831,7 @@ CourseSession _copySessionWithWeeks(CourseSession session, List<int> weeks) {
     weekText: _formatWeekText(sorted),
     credit: session.credit,
     note: session.note,
+    teachingClassId: session.teachingClassId,
   );
 }
 
@@ -1852,6 +1856,7 @@ CourseSession _oneOffDayCopy(
     weekText: _formatWeekText([targetWeek]),
     credit: session.credit,
     note: session.note,
+    teachingClassId: session.teachingClassId,
   );
 }
 

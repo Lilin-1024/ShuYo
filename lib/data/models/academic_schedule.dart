@@ -80,11 +80,14 @@ class CourseSession {
     required this.weekText,
     required this.credit,
     required this.note,
+    this.teachingClassId = '',
   });
 
   final String id;
   final String courseName;
   final String courseCode;
+  // jxb_id from the academic system; empty for manual and older cached courses.
+  final String teachingClassId;
   final String teacherName;
   final String campus;
   final String location;
@@ -138,6 +141,7 @@ class CourseSession {
       'weekText': weekText,
       'credit': credit,
       'note': note,
+      if (teachingClassId.isNotEmpty) 'teachingClassId': teachingClassId,
     };
   }
 
@@ -157,6 +161,7 @@ class CourseSession {
       weekText: stringValue(json['weekText']),
       credit: stringValue(json['credit']),
       note: stringValue(json['note']),
+      teachingClassId: stringValue(json['teachingClassId']),
     );
   }
 
@@ -351,6 +356,7 @@ class AcademicScheduleParser {
           weekText: stringValue(raw['zcd']),
           credit: stringValue(raw['xf']),
           note: stringValue(raw['xkbz'], stringValue(raw['qqqh'])),
+          teachingClassId: stringValue(raw['jxb_id']),
         ),
       );
     }
