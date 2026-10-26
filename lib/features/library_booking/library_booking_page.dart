@@ -1279,7 +1279,7 @@ class _LibraryBookingPageState extends State<LibraryBookingPage> {
                 children: [
                   Row(
                     children: [
-                      Expanded(
+                      Flexible(
                         child: Text(
                           _areaName(venue, area, areas: areas),
                           maxLines: 1,
