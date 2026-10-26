@@ -106,11 +106,15 @@ class ClassroomApiClient {
     String path, {
     Map<String, String>? body,
   }) async {
+    // Keep the destination and authentication in the same access mode even
+    // if settings change while session cookies are being read.
+    final useWebVpn = ClassroomUrlResolver.usesWebVpn;
+    final uri = ClassroomUrlResolver.uri(path);
     try {
-      final headers = await _headers();
+      final headers = await _headers(uri, useWebVpn: useWebVpn);
       final response = await HttpTimeout.request(
         _httpClient.post(
-          ClassroomUrlResolver.uri(path),
+          uri,
           headers: headers,
           body: body,
         ),
@@ -134,7 +138,7 @@ class ClassroomApiClient {
     } on ClassroomWebVpnAuthException {
       rethrow;
     } on Object {
-      if (ClassroomUrlResolver.usesWebVpn) {
+      if (useWebVpn) {
         final status = await AcademicAuthService().validateWebVpnSession();
         if (status == WebVpnSessionStatus.loginRequired) {
           throw const ClassroomWebVpnAuthException();
@@ -144,15 +148,18 @@ class ClassroomApiClient {
     }
   }
 
-  Future<Map<String, String>> _headers() async {
+  Future<Map<String, String>> _headers(
+    Uri uri, {
+    required bool useWebVpn,
+  }) async {
     final headers = <String, String>{
       'accept': 'application/json, text/javascript, */*; q=0.01',
-      'referer': ClassroomUrlResolver.baseUrl,
+      'referer': uri.origin,
       'user-agent': ClientUserAgent.mobileBrowser,
       'x-requested-with': 'XMLHttpRequest',
     };
-    if (ClassroomUrlResolver.usesWebVpn) {
-      final cookie = await _authService.cookieHeader();
+    if (useWebVpn) {
+      final cookie = await _authService.cookieHeader(targetUri: uri);
       if (cookie == null || cookie.isEmpty) {
         throw const ClassroomWebVpnAuthException();
       }
