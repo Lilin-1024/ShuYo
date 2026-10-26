@@ -1609,7 +1609,12 @@ void main() {
             of: venue, matching: find.byIcon(Icons.keyboard_arrow_up)),
         findsOneWidget);
     expect(find.text('2楼东侧'), findsOneWidget);
-    expect(find.text('开放时间：08:00–22:00'), findsOneWidget);
+    expect(find.text('08:00–22:00'), findsOneWidget);
+    expect(find.textContaining('开放时间：'), findsNothing);
+    expect(tester.getCenter(find.text('2楼东侧')).dy,
+        tester.getCenter(find.text('08:00–22:00')).dy);
+    expect(tester.widget<Text>(find.text('08:00–22:00')).style?.color,
+        ShuYoThemes.byId(ShuYoThemes.defaultId).colors.textTertiary);
     expect(find.textContaining('开放座位数：6/9'), findsOneWidget);
     await tester.scrollUntilVisible(
         find.byKey(const ValueKey('home-venue-studySpace')), 180,
