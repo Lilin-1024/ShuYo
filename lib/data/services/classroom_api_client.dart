@@ -109,6 +109,7 @@ class ClassroomApiClient {
     // Keep the destination and authentication in the same access mode even
     // if settings change while session cookies are being read.
     final useWebVpn = ClassroomUrlResolver.usesWebVpn;
+    final accessRevision = ClassroomUrlResolver.revision;
     final uri = ClassroomUrlResolver.uri(path);
     try {
       final headers = await _headers(uri, useWebVpn: useWebVpn);
@@ -138,9 +139,10 @@ class ClassroomApiClient {
     } on ClassroomWebVpnAuthException {
       rethrow;
     } on Object {
-      if (useWebVpn) {
+      if (useWebVpn && accessRevision == ClassroomUrlResolver.revision) {
         final status = await AcademicAuthService().validateWebVpnSession();
-        if (status == WebVpnSessionStatus.loginRequired) {
+        if (accessRevision == ClassroomUrlResolver.revision &&
+            status == WebVpnSessionStatus.loginRequired) {
           throw const ClassroomWebVpnAuthException();
         }
       }

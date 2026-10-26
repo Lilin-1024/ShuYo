@@ -4,11 +4,115 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shuyo/core/classroom_url_resolver.dart';
 import 'package:shuyo/data/models/classroom.dart';
 import 'package:shuyo/data/repositories/classroom_repository.dart';
+import 'package:shuyo/data/services/classroom_api_client.dart';
 import 'package:shuyo/features/home/empty_classroom_page.dart';
 
 void main() {
+  setUp(() => ClassroomUrlResolver.configure(useWebVpn: false));
+  tearDown(() => ClassroomUrlResolver.configure(useWebVpn: false));
+
+  for (final reenable in [false, true]) {
+    testWidgets('late auth failure ignores a changed mode: reenable=$reenable',
+        (tester) async {
+      ClassroomUrlResolver.configure(useWebVpn: true);
+      final repository = _PendingRepository();
+      var recoveries = 0;
+      var expiryNotifications = 0;
+      await tester.pumpWidget(MaterialApp(
+        home: EmptyClassroomPage(
+          repository: repository,
+          onWebVpnRecoveryRequired: (_) async {
+            recoveries++;
+            return true;
+          },
+          onWebVpnExpired: () async => expiryNotifications++,
+        ),
+      ));
+
+      ClassroomUrlResolver.configure(useWebVpn: false);
+      if (reenable) ClassroomUrlResolver.configure(useWebVpn: true);
+      repository.pending.completeError(const ClassroomWebVpnAuthException());
+      await tester.pumpAndSettle();
+
+      expect(recoveries, 0);
+      expect(expiryNotifications, 0);
+      expect(repository.searches, 1);
+      expect(ClassroomUrlResolver.usesWebVpn, reenable);
+    });
+  }
+
+  testWidgets('an unchanged WebVPN mode recovers and retries once',
+      (tester) async {
+    ClassroomUrlResolver.configure(useWebVpn: true);
+    final repository = _PendingRepository();
+    var recoveries = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: EmptyClassroomPage(
+        repository: repository,
+        onWebVpnRecoveryRequired: (_) async {
+          recoveries++;
+          return true;
+        },
+      ),
+    ));
+
+    repository.pending.completeError(const ClassroomWebVpnAuthException());
+    await tester.pumpAndSettle();
+
+    expect(recoveries, 1);
+    expect(repository.searches, 2);
+    expect(find.text('没有空教室'), findsOneWidget);
+  });
+
+  testWidgets('closing WebVPN during recovery prevents retry', (tester) async {
+    ClassroomUrlResolver.configure(useWebVpn: true);
+    final repository = _PendingRepository();
+    final recovery = Completer<bool>();
+    var recoveries = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: EmptyClassroomPage(
+        repository: repository,
+        onWebVpnRecoveryRequired: (_) {
+          recoveries++;
+          return recovery.future;
+        },
+      ),
+    ));
+
+    repository.pending.completeError(const ClassroomWebVpnAuthException());
+    await tester.pump();
+    expect(recoveries, 1);
+    ClassroomUrlResolver.configure(useWebVpn: false);
+    recovery.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(repository.searches, 1);
+    expect(ClassroomUrlResolver.usesWebVpn, isFalse);
+  });
+
+  testWidgets('late options failure does not invoke the legacy expiry callback',
+      (tester) async {
+    ClassroomUrlResolver.configure(useWebVpn: true);
+    final load = Completer<ClassroomSearchOptions>();
+    var expiryNotifications = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: EmptyClassroomPage(
+        repository: _SnapshotRepository(pendingLoad: load.future),
+        onWebVpnExpired: () async => expiryNotifications++,
+      ),
+    ));
+
+    ClassroomUrlResolver.configure(useWebVpn: false);
+    load.completeError(const ClassroomWebVpnAuthException());
+    await tester.pumpAndSettle();
+
+    expect(expiryNotifications, 0);
+    expect(ClassroomUrlResolver.usesWebVpn, isFalse);
+  });
+
   test('keeps loaded options as the memory snapshot', () async {
     SharedPreferences.setMockInitialValues({
       'classroom.options.cache': jsonEncode({
@@ -69,6 +173,24 @@ void main() {
     expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
     expect(repository.searches, 1);
   });
+}
+
+class _PendingRepository extends _SnapshotRepository {
+  _PendingRepository() : super(snapshot: _SnapshotRepository.options);
+
+  final pending = Completer<ClassroomAvailabilityResult>();
+
+  @override
+  Future<ClassroomAvailabilityResult> search(
+    ClassroomAvailabilityQuery query, {
+    bool forceRefresh = false,
+  }) {
+    if (searches == 0) {
+      searches++;
+      return pending.future;
+    }
+    return super.search(query, forceRefresh: forceRefresh);
+  }
 }
 
 class _SnapshotRepository extends ClassroomRepository {
