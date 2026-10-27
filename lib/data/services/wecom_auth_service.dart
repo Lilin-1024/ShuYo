@@ -144,6 +144,8 @@ class WeComAuthException implements Exception {
 /// 整个流程共享同一个 Cookie 容器，否则第 5 步会因缺少 `SHU_OAUTH2`
 /// 而被判定为未登录。
 class WeComAuthService {
+  static const scanTimeout = Duration(seconds: 90);
+
   WeComAuthService({
     HttpClient? httpClient,
     Future<SharedPreferences> Function()? preferencesLoader,
@@ -268,7 +270,7 @@ class WeComAuthService {
   /// 避免在后台持续发起网络请求。
   Future<WeComScanResult> waitForScan(
     String key, {
-    Duration timeout = const Duration(seconds: 180),
+    Duration timeout = scanTimeout,
     void Function(WeComScanStatus status)? onStatusChanged,
     bool Function()? isCancelled,
   }) async {
@@ -278,7 +280,12 @@ class WeComAuthService {
       if (isCancelled?.call() ?? false) {
         return WeComScanResult.expired();
       }
-      final result = await _pollOnce(key);
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) return WeComScanResult.expired();
+      final result = await _pollOnce(key).timeout(
+        remaining,
+        onTimeout: () => const WeComScanResult.expired(),
+      );
       lastStatus = result.status;
       onStatusChanged?.call(lastStatus);
       if (result.status == WeComScanStatus.succeeded) {
@@ -287,11 +294,12 @@ class WeComAuthService {
       if (result.status == WeComScanStatus.expired) {
         return result;
       }
-      if (result.status == WeComScanStatus.confirmedPending) {
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-      } else {
-        await Future<void>.delayed(const Duration(milliseconds: 1000));
-      }
+      final delay = result.status == WeComScanStatus.confirmedPending
+          ? const Duration(milliseconds: 500)
+          : const Duration(seconds: 1);
+      final timeLeft = deadline.difference(DateTime.now());
+      if (timeLeft <= Duration.zero) return WeComScanResult.expired();
+      await Future<void>.delayed(timeLeft < delay ? timeLeft : delay);
     }
     return WeComScanResult.expired();
   }
