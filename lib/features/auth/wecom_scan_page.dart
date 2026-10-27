@@ -255,11 +255,11 @@ class _WeComScanPageState extends State<WeComScanPage> {
                       constraints: const BoxConstraints(maxWidth: 440),
                       child: SizedBox(
                         width: double.infinity,
-                        child: OutlinedButton.icon(
+                        child: FilledButton.icon(
                           onPressed: _launchingLink ? null : _openWeCom,
                           icon: const Icon(Icons.open_in_new),
                           label: const Text('打开企业微信登录'),
-                          style: OutlinedButton.styleFrom(
+                          style: FilledButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),
                           ),
                         ),

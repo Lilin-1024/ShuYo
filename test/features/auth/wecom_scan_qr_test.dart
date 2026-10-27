@@ -159,6 +159,42 @@ void main() {
     await _closePage(tester, service);
   });
 
+  testWidgets('open button follows filled button colors across themes',
+      (tester) async {
+    final service = _WaitingWeComAuthService();
+    addTearDown(service.dispose);
+
+    for (final theme in ShuYoThemes.all) {
+      await _pumpPage(tester, service, theme);
+      await tester.pump(const Duration(milliseconds: 300));
+      final button = _openButton();
+      expect(button, findsOneWidget, reason: theme.id);
+      expect(tester.widget<FilledButton>(button).onPressed, isNotNull,
+          reason: theme.id);
+      final material = find.descendant(
+        of: button,
+        matching: find.byWidgetPredicate(
+          (widget) => widget is Material && widget.color == theme.colors.accent,
+        ),
+      );
+      expect(material, findsOneWidget, reason: theme.id);
+      final icon = find.descendant(
+        of: button,
+        matching: find.byIcon(Icons.open_in_new),
+      );
+      expect(IconTheme.of(tester.element(icon)).color, theme.colors.onAccent,
+          reason: theme.id);
+      expect(
+        DefaultTextStyle.of(tester.element(find.text('打开企业微信登录'))).style.color,
+        theme.colors.onAccent,
+        reason: theme.id,
+      );
+      expect(tester.takeException(), isNull, reason: theme.id);
+    }
+
+    await _closePage(tester, service);
+  });
+
   testWidgets('QR page fits a narrow screen', (tester) async {
     final service = _WaitingWeComAuthService();
     addTearDown(service.dispose);
@@ -361,7 +397,7 @@ void main() {
 
 Finder _openButton() => find.ancestor(
       of: find.text('打开企业微信登录'),
-      matching: find.byWidgetPredicate((widget) => widget is OutlinedButton),
+      matching: find.byType(FilledButton),
     );
 
 Finder _policyText() => find.byWidgetPredicate(
