@@ -155,8 +155,6 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
   bool _verifyingCode = false;
   bool _routeClosed = false;
   bool _passwordVisible = false;
-  bool _studentIdError = false;
-  bool _passwordError = false;
   AcademicLoginChallenge? _challenge;
   AcademicVerificationMethod _method = AcademicVerificationMethod.wecom;
   Timer? _countdownTimer;
@@ -315,13 +313,6 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                                           textInputAction: TextInputAction.next,
                                           onTapOutside: (_) =>
                                               FocusScope.of(context).unfocus(),
-                                          onChanged: (value) {
-                                            if (_studentIdError &&
-                                                value.trim().isNotEmpty) {
-                                              setState(() =>
-                                                  _studentIdError = false);
-                                            }
-                                          },
                                           decoration: _credentialDecoration(),
                                         ),
                                       ),
@@ -350,13 +341,6 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                                               _passwordFocusNode.unfocus(),
                                           onFieldSubmitted: (_) =>
                                               _submitCredentials(),
-                                          onChanged: (value) {
-                                            if (_passwordError &&
-                                                value.isNotEmpty) {
-                                              setState(
-                                                  () => _passwordError = false);
-                                            }
-                                          },
                                           decoration: _credentialDecoration(
                                             suffixIcon: IgnorePointer(
                                               ignoring:
@@ -400,13 +384,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                                     ],
                                   ),
                                 ),
-                                _credentialHelpSlot(
-                                  _studentIdError
-                                      ? '请输入学/工号'
-                                      : _passwordError
-                                          ? '请输入密码'
-                                          : null,
-                                ),
+                                _credentialHelpSlot(),
                                 FilledButton(
                                   onPressed: _busy ? null : _submitCredentials,
                                   style: FilledButton.styleFrom(
@@ -479,7 +457,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     );
   }
 
-  Widget _credentialHelpSlot(String? message) {
+  Widget _credentialHelpSlot() {
     final buttonStyle = TextButton.styleFrom(
       minimumSize: const Size(0, 32),
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -491,7 +469,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       TextButton(
         onPressed: _busy ? null : _openRegistration,
         style: buttonStyle,
-        child: const Text('新用户注册'),
+        child: const Text('校园用户注册'),
       ),
       TextButton(
         onPressed: _busy
@@ -506,25 +484,14 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         child: const Text('登录问题？'),
       ),
     ];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth <
-            MediaQuery.textScalerOf(context).scale(250)) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _validationSlot(message, height: 44),
-              Wrap(alignment: WrapAlignment.end, children: actions),
-            ],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(child: _validationSlot(message, height: 44)),
-            ...actions,
-          ],
-        );
-      },
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: MediaQuery.textScalerOf(context).scale(44),
+      ),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Wrap(alignment: WrapAlignment.end, children: actions),
+      ),
     );
   }
 
@@ -561,63 +528,6 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
           ),
           Expanded(child: field),
         ],
-      ),
-    );
-  }
-
-  Widget _validationSlot(String? message, {required double height}) {
-    final colors = context.shuyoColors;
-    final textScaler = MediaQuery.textScalerOf(context);
-    return SizedBox(
-      height: textScaler.scale(height),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 180),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        layoutBuilder: (currentChild, previousChildren) => Stack(
-          alignment: Alignment.centerLeft,
-          children: [
-            ...previousChildren,
-            if (currentChild != null) currentChild,
-          ],
-        ),
-        child: message == null
-            ? const SizedBox(key: ValueKey('validation-empty'))
-            : SizedBox(
-                key: ValueKey(message),
-                width: double.infinity,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 16),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Semantics(
-                      liveRegion: true,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 14,
-                            color: colors.danger,
-                          ),
-                          const SizedBox(width: 5),
-                          Flexible(
-                            child: Text(
-                              message,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: colors.danger,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
       ),
     );
   }
@@ -664,13 +574,10 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     if (_busy) return;
     final studentIdError = _studentId.text.trim().isEmpty;
     final passwordError = _password.text.isEmpty;
-    setState(() {
-      _studentIdError = studentIdError;
-      _passwordError = passwordError;
-    });
     if (studentIdError || passwordError) {
       (studentIdError ? _studentIdFocusNode : _passwordFocusNode)
           .requestFocus();
+      _showError(studentIdError ? '请输入学/工号' : '请输入密码');
       return;
     }
     // 演示模式完全离线，在发起网络请求之前处理。
@@ -1093,6 +1000,18 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(
+        SnackBar(
+          content: Builder(
+            builder: (context) => Padding(
+              padding: EdgeInsets.only(
+                bottom:
+                    _step == 0 ? MediaQuery.viewInsetsOf(context).bottom : 0,
+              ),
+              child: Text(message),
+            ),
+          ),
+        ),
+      );
   }
 }

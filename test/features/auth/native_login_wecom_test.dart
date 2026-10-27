@@ -21,7 +21,7 @@ class _WaitingWeComAuthService extends WeComAuthService {
   @override
   Future<WeComScanResult> waitForScan(
     String key, {
-    Duration timeout = const Duration(seconds: 180),
+    Duration timeout = WeComAuthService.scanTimeout,
     void Function(WeComScanStatus status)? onStatusChanged,
     bool Function()? isCancelled,
   }) =>
@@ -147,6 +147,33 @@ void main() {
     expect(restoredRect.right, closeTo(originalRect.right, 0.01));
     expect(restoredRect.bottom, closeTo(originalRect.bottom, 0.01));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('login validation snackbar stays above the keyboard',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetViewInsets);
+
+    await tester.pumpWidget(const MaterialApp(home: NativeLoginPage()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(TextFormField).last);
+    await tester.pumpAndSettle();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    final snackbar = find.byType(SnackBar);
+    expect(snackbar, findsOneWidget);
+    expect(find.descendant(of: snackbar, matching: find.text('请输入学/工号')),
+        findsOneWidget);
+    final error = find.descendant(
+      of: snackbar,
+      matching: find.text('请输入学/工号'),
+    );
+    expect(tester.getBottomLeft(error).dy, lessThanOrEqualTo(844 - 300));
   });
 
   testWidgets('short screen can scroll between credentials and login button',
@@ -299,10 +326,25 @@ void main() {
 
     await tester.tap(continueButton);
     await tester.pumpAndSettle();
-    expect(find.text('请输入学/工号'), findsOneWidget);
+    expect(
+      find.descendant(
+          of: find.byType(SnackBar), matching: find.text('请输入学/工号')),
+      findsOneWidget,
+    );
+    expect(find.text('校园用户注册'), findsOneWidget);
     expect(find.text('登录问题？'), findsOneWidget);
     expect(tester.getRect(continueButton), buttonBefore);
     expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
+
+    await tester.enterText(find.byType(TextFormField).first, 'test-user');
+    await tester.tap(continueButton);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: find.byType(SnackBar), matching: find.text('请输入密码')),
+      findsOneWidget,
+    );
+    expect(find.text('校园用户注册'), findsOneWidget);
+    expect(find.text('登录问题？'), findsOneWidget);
 
     await tester.tap(find.text('登录问题？'));
     await tester.pumpAndSettle();
@@ -326,7 +368,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: NativeLoginPage()));
     await tester.pumpAndSettle();
 
-    final register = find.text('新用户注册');
+    final register = find.text('校园用户注册');
     final help = find.text('登录问题？');
     expect(register, findsOneWidget);
     expect(help, findsOneWidget);
@@ -366,7 +408,7 @@ void main() {
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
     expect(find.text('请输入学/工号'), findsOneWidget);
-    expect(find.text('新用户注册'), findsOneWidget);
+    expect(find.text('校园用户注册'), findsOneWidget);
     expect(find.text('登录问题？'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -636,7 +678,7 @@ void main() {
     NativeLoginPage.webVpn(),
     NativeLoginPage.there(),
   ]) {
-    testWidgets('${page.destination.name} shows hints without changing rows',
+    testWidgets('${page.destination.name} shows errors without changing rows',
         (tester) async {
       await tester.pumpWidget(MaterialApp(home: page));
       await tester.pumpAndSettle();
@@ -653,7 +695,13 @@ void main() {
       expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
       await tester.tap(continueButton);
       await tester.pumpAndSettle();
-      expect(find.text('请输入学/工号'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.text('请输入学/工号'),
+        ),
+        findsOneWidget,
+      );
       expect(tester.getRect(find.byType(Divider)), dividerBefore);
       expect(tester.getRect(continueButton), buttonBefore);
       expect(tester.widget<Text>(find.text('学/工号')).style?.color,
@@ -662,51 +710,23 @@ void main() {
           passwordLabelColor);
 
       await tester.enterText(fields.first, '123456');
+      await tester.tap(continueButton);
       await tester.pumpAndSettle();
-      expect(find.text('请输入学/工号'), findsNothing);
-      expect(find.text('请输入密码'), findsOneWidget);
+      expect(
+        find.descendant(
+            of: find.byType(SnackBar), matching: find.text('请输入密码')),
+        findsOneWidget,
+      );
       expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
       expect(tester.getRect(find.byType(Divider)), dividerBefore);
       expect(tester.getRect(continueButton), buttonBefore);
 
       await tester.enterText(fields.last, 'password');
       await tester.pumpAndSettle();
-      expect(find.text('请输入密码'), findsNothing);
       expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
       expect(tester.getRect(continueButton), buttonBefore);
     });
   }
-
-  testWidgets('login hint fades in without moving the continue button',
-      (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: NativeLoginPage()));
-    await tester.pumpAndSettle();
-
-    final continueButton = find.widgetWithText(FilledButton, '继续');
-    final buttonBefore = tester.getRect(continueButton);
-    await tester.tap(continueButton);
-    await tester.pump();
-
-    final hintFade = find.ancestor(
-      of: find.text('请输入学/工号'),
-      matching: find.byType(FadeTransition),
-    );
-    double hintOpacity() => tester
-        .widgetList<FadeTransition>(hintFade)
-        .map((fade) => fade.opacity.value)
-        .reduce((current, next) => current < next ? current : next);
-    expect(hintOpacity(), 0);
-
-    await tester.pump(const Duration(milliseconds: 90));
-    final midwayOpacity = hintOpacity();
-    expect(midwayOpacity, greaterThan(0));
-    expect(midwayOpacity, lessThan(1));
-    expect(tester.getRect(continueButton), buttonBefore);
-
-    await tester.pumpAndSettle();
-    expect(hintOpacity(), 1);
-    expect(tester.getRect(continueButton), buttonBefore);
-  });
 
   testWidgets(
       'credential card keeps labels and reveals password action on focus',
