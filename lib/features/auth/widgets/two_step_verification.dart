@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../../../shared/theme/shuyo_theme.dart';
 import '../../../shared/widgets/wecom_icon.dart';
 
-/// Shared presentation for the login and account recovery verification steps.
+/// Presentation for login verification steps.
 /// The caller owns the code, verification state, and all network operations.
 class TwoStepVerification extends StatelessWidget {
   const TwoStepVerification({

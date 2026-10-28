@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shuyo/data/demo/demo_session.dart';
@@ -10,10 +9,7 @@ import 'package:shuyo/data/services/wecom_auth_service.dart';
 import 'package:shuyo/data/services/academic_native_auth_service.dart';
 import 'package:shuyo/data/services/student_identity_service.dart';
 import 'package:shuyo/features/auth/native_login_page.dart';
-import 'package:shuyo/features/auth/login_help_page.dart';
-import 'package:shuyo/features/auth/recovery_form_page.dart';
 import 'package:shuyo/features/auth/wecom_scan_page.dart';
-import 'package:shuyo/shared/theme/shuyo_theme.dart';
 
 class _WaitingWeComAuthService extends WeComAuthService {
   final result = Completer<WeComScanResult>();
@@ -77,7 +73,8 @@ void main() {
     expect(find.text('使用企业微信扫码或跳转至企业微信登录'), findsNothing);
     expect(find.byType(Checkbox), findsNothing);
     expect(find.text('我已阅读并同意 ShuYo 的'), findsNothing);
-    expect(find.text('登录问题？'), findsOneWidget);
+    expect(find.text('校园用户注册'), findsNothing);
+    expect(find.text('登录问题？'), findsNothing);
     expect(
       find.text('你的上海大学账户用于登录并访问校园服务。'
           'ShuYo 会在设备上保存登录状态，以便你继续使用相关功能。'),
@@ -317,7 +314,7 @@ void main() {
     expect(await DemoSession.isEnabled(), isTrue);
   });
 
-  testWidgets('login help remains accessible alongside validation errors',
+  testWidgets('credential validation keeps the login actions available',
       (tester) async {
     await tester.pumpWidget(const MaterialApp(home: NativeLoginPage()));
     await tester.pumpAndSettle();
@@ -331,8 +328,8 @@ void main() {
           of: find.byType(SnackBar), matching: find.text('请输入学/工号')),
       findsOneWidget,
     );
-    expect(find.text('校园用户注册'), findsOneWidget);
-    expect(find.text('登录问题？'), findsOneWidget);
+    expect(find.text('校园用户注册'), findsNothing);
+    expect(find.text('登录问题？'), findsNothing);
     expect(tester.getRect(continueButton), buttonBefore);
     expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
 
@@ -343,53 +340,11 @@ void main() {
       find.descendant(of: find.byType(SnackBar), matching: find.text('请输入密码')),
       findsOneWidget,
     );
-    expect(find.text('校园用户注册'), findsOneWidget);
-    expect(find.text('登录问题？'), findsOneWidget);
-
-    await tester.tap(find.text('登录问题？'));
-    await tester.pumpAndSettle();
-    expect(find.text('重置密码'), findsOneWidget);
-    expect(find.text('修改手机号'), findsOneWidget);
+    expect(find.text('校园用户注册'), findsNothing);
+    expect(find.text('登录问题？'), findsNothing);
   });
 
-  testWidgets('registration opens the external page and reports failure',
-      (tester) async {
-    const channel = MethodChannel('plugins.flutter.io/url_launcher');
-    final calls = <MethodCall>[];
-    var launchSucceeds = true;
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel,
-        (call) async {
-      calls.add(call);
-      return launchSucceeds;
-    });
-    addTearDown(() => tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, null));
-
-    await tester.pumpWidget(const MaterialApp(home: NativeLoginPage()));
-    await tester.pumpAndSettle();
-
-    final register = find.text('校园用户注册');
-    final help = find.text('登录问题？');
-    expect(register, findsOneWidget);
-    expect(help, findsOneWidget);
-    expect(
-        tester.getTopLeft(register).dx, lessThan(tester.getTopLeft(help).dx));
-
-    await tester.tap(register);
-    await tester.pumpAndSettle();
-    final call = calls.singleWhere((call) => call.method == 'launch');
-    expect(
-        call.arguments['url'], 'https://services.shu.edu.cn/oauth2/register');
-    expect(call.arguments['useSafariVC'], isFalse);
-    expect(call.arguments['useWebView'], isFalse);
-
-    launchSucceeds = false;
-    await tester.tap(register);
-    await tester.pumpAndSettle();
-    expect(find.text('无法打开注册页面'), findsOneWidget);
-  });
-
-  testWidgets('login links and validation fit on a narrow large-text screen',
+  testWidgets('login form and validation fit on a narrow large-text screen',
       (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 568);
@@ -408,134 +363,8 @@ void main() {
     await tester.tap(find.text('继续'));
     await tester.pumpAndSettle();
     expect(find.text('请输入学/工号'), findsOneWidget);
-    expect(find.text('校园用户注册'), findsOneWidget);
-    expect(find.text('登录问题？'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('recovery options open local first steps and return to help',
-      (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: LoginHelpPage()));
-    for (final option in [
-      (title: '重置密码', labels: ['学/工号', '姓名', '证件号码', '校园卡号']),
-      (title: '修改手机号', labels: ['学/工号', '密码']),
-    ]) {
-      await tester.tap(find.text(option.title));
-      await tester.pumpAndSettle();
-      expect(find.byType(RecoveryFormPage), findsOneWidget);
-      expect(find.text(option.title), findsOneWidget);
-      expect(
-        find.descendant(
-          of: find.byType(AppBar),
-          matching: find.text(option.title),
-        ),
-        findsOneWidget,
-      );
-      expect(find.byType(TextFormField), findsNWidgets(option.labels.length));
-      for (final label in option.labels) {
-        expect(find.text(label), findsOneWidget);
-      }
-
-      final fields = find.byType(TextFormField);
-      for (var i = 0; i < option.labels.length; i++) {
-        final input = find.descendant(
-          of: fields.at(i),
-          matching: find.byType(TextField),
-        );
-        final decoration = tester.widget<TextField>(input).decoration;
-        expect(
-          find.descendant(
-            of: fields.at(i),
-            matching: find.text(option.labels[i]),
-          ),
-          findsOneWidget,
-        );
-        expect(decoration?.border, isNot(InputBorder.none));
-        expect(decoration?.enabledBorder, isNot(InputBorder.none));
-        expect(decoration?.focusedBorder, isNot(InputBorder.none));
-
-        await tester.tap(fields.at(i));
-        await tester.pumpAndSettle();
-        final labelRect = tester.getRect(find.text(option.labels[i]));
-        final fieldRect = tester.getRect(fields.at(i));
-        // A floating label straddles the outline rather than sitting wholly
-        // inside the input's bounds.
-        expect(labelRect.center.dy, greaterThanOrEqualTo(fieldRect.top));
-        expect(labelRect.center.dy, lessThan(fieldRect.bottom));
-        await tester.enterText(fields.at(i), 'test$i');
-      }
-      await tester.ensureVisible(find.text('下一步'));
-      await tester.pumpAndSettle();
-      expect(find.byType(RecoveryFormPage), findsOneWidget);
-      for (var i = 0; i < option.labels.length; i++) {
-        expect(tester.widget<TextFormField>(fields.at(i)).controller?.text,
-            'test$i');
-      }
-      expect(tester.takeException(), isNull);
-
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      expect(find.byType(LoginHelpPage), findsOneWidget);
-      expect(find.text('重置密码'), findsOneWidget);
-      expect(find.text('修改手机号'), findsOneWidget);
-    }
-  });
-
-  testWidgets('campus card number help works before and after focusing field',
-      (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: RecoveryFormPage.resetPassword()),
-    );
-
-    final help = find.byTooltip('校园卡号说明');
-    final cardField = find.ancestor(
-      of: find.text('校园卡号'),
-      matching: find.byType(TextFormField),
-    );
-    expect(help, findsOneWidget);
-    expect(cardField, findsOneWidget);
-
-    for (final focus in [false, true]) {
-      if (focus) {
-        await tester.tap(cardField);
-        await tester.pumpAndSettle();
-      }
-      await tester.tap(help);
-      await tester.pumpAndSettle();
-      expect(find.textContaining('卡号在校园卡人像面左下角'), findsOneWidget);
-      await tester.tap(find.text('知道了'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('卡号在校园卡人像面左下角'), findsNothing);
-    }
-  });
-
-  testWidgets('login help has an app bar title and descriptive icon rows',
-      (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: LoginHelpPage()));
-
-    expect(find.text('登录问题'), findsOneWidget);
-    expect(
-      find.descendant(of: find.byType(AppBar), matching: find.text('登录问题')),
-      findsOneWidget,
-    );
-    expect(
-      find.text('如果你遇到密码错误、无法完成两步验证等问题，可以尝试以下选项。'),
-      findsOneWidget,
-    );
-    final colors = tester.element(find.byType(LoginHelpPage)).shuyoColors;
-    for (final title in ['重置密码', '修改手机号']) {
-      final tileFinder = find.ancestor(
-        of: find.text(title),
-        matching: find.byType(ListTile),
-      );
-      final tile = tester.widget<ListTile>(tileFinder);
-      expect(tile.leading, isA<Icon>());
-      expect((tile.leading! as Icon).color, colors.textSecondary);
-      expect(tile.subtitle, isA<Text>());
-      final subtitle = tile.subtitle! as Text;
-      expect(subtitle.data, isNotEmpty);
-      expect(subtitle.style?.color, colors.textSecondary);
-    }
+    expect(find.text('校园用户注册'), findsNothing);
+    expect(find.text('登录问题？'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -560,52 +389,6 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     service.result.complete(const WeComScanResult.expired());
     await tester.pump();
-  });
-
-  testWidgets('change phone keeps account and password input types distinct',
-      (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: RecoveryFormPage.changePhone()),
-    );
-    final fields = find.byType(TextFormField);
-    await tester.tap(fields.first);
-    await tester.pumpAndSettle();
-    var configuration = tester.testTextInput.setClientArgs!;
-    expect(configuration['inputType']['name'], 'TextInputType.text');
-    expect(configuration['obscureText'], isFalse);
-    expect(configuration['enableSuggestions'], isTrue);
-
-    await tester.tap(fields.last);
-    await tester.pumpAndSettle();
-    configuration = tester.testTextInput.setClientArgs!;
-    expect(configuration['obscureText'], isTrue);
-    expect(configuration['enableSuggestions'], isFalse);
-    await tester.tap(find.byTooltip('显示密码'));
-    await tester.pumpAndSettle();
-    expect(tester.testTextInput.setClientArgs!['obscureText'], isFalse);
-  });
-
-  testWidgets('reset form remains usable on a short screen with keyboard',
-      (tester) async {
-    tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(320, 568);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetViewInsets);
-
-    await tester.pumpWidget(
-      const MaterialApp(home: RecoveryFormPage.resetPassword()),
-    );
-    await tester.tap(find.byType(TextFormField).first);
-    tester.view.viewInsets = const FakeViewPadding(bottom: 250);
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byType(TextFormField).last);
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextFormField).last, '001234');
-    await tester.ensureVisible(find.text('下一步'));
-    await tester.pumpAndSettle();
-    expect(find.text('下一步'), findsOneWidget);
-    expect(tester.takeException(), isNull);
   });
 
   testWidgets('credential fields keep their text input configurations',

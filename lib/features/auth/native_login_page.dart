@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/academic_url_resolver.dart';
 import '../../core/wecom_constants.dart';
@@ -21,7 +20,6 @@ import '../../data/demo/demo_session.dart';
 import '../../shared/navigation/shuyo_route.dart';
 import '../../shared/theme/shuyo_theme.dart';
 import '../../shared/widgets/wecom_icon.dart';
-import 'login_help_page.dart';
 import 'wecom_scan_page.dart';
 import 'widgets/two_step_verification.dart';
 
@@ -384,7 +382,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                                     ],
                                   ),
                                 ),
-                                _credentialHelpSlot(),
+                                const SizedBox(height: 16),
                                 FilledButton(
                                   onPressed: _busy ? null : _submitCredentials,
                                   style: FilledButton.styleFrom(
@@ -455,57 +453,6 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         ),
       ),
     );
-  }
-
-  Widget _credentialHelpSlot() {
-    final buttonStyle = TextButton.styleFrom(
-      minimumSize: const Size(0, 32),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      tapTargetSize: MaterialTapTargetSize.padded,
-      visualDensity: VisualDensity.standard,
-      textStyle: const TextStyle(fontSize: 12),
-    );
-    final actions = <Widget>[
-      TextButton(
-        onPressed: _busy ? null : _openRegistration,
-        style: buttonStyle,
-        child: const Text('校园用户注册'),
-      ),
-      TextButton(
-        onPressed: _busy
-            ? null
-            : () {
-                FocusScope.of(context).unfocus();
-                Navigator.of(context).push<void>(
-                  shuyoRoute(builder: (_) => const LoginHelpPage()),
-                );
-              },
-        style: buttonStyle,
-        child: const Text('登录问题？'),
-      ),
-    ];
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        minHeight: MediaQuery.textScalerOf(context).scale(44),
-      ),
-      child: Align(
-        alignment: Alignment.centerRight,
-        child: Wrap(alignment: WrapAlignment.end, children: actions),
-      ),
-    );
-  }
-
-  Future<void> _openRegistration() async {
-    FocusScope.of(context).unfocus();
-    try {
-      final opened = await launchUrl(
-        Uri.parse('https://services.shu.edu.cn/oauth2/register'),
-        mode: LaunchMode.externalApplication,
-      );
-      if (!opened) _showError('无法打开注册页面');
-    } on Object {
-      _showError('无法打开注册页面');
-    }
   }
 
   Widget _credentialRow({
