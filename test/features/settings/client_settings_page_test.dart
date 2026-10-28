@@ -16,6 +16,7 @@ import 'package:shuyo/data/services/academic_auth_service.dart';
 import 'package:shuyo/data/services/client_settings_service.dart';
 import 'package:shuyo/data/services/student_identity_service.dart';
 import 'package:shuyo/features/settings/client_settings_page.dart';
+import 'package:shuyo/features/settings/contributors_page.dart';
 import 'package:shuyo/features/onboarding/startup_onboarding.dart';
 import 'package:shuyo/shared/widgets/webvpn_toggle.dart';
 import 'package:shuyo/core/client_app_info.dart';
@@ -510,6 +511,17 @@ void main() {
     expect(find.text('隐私政策'), findsOneWidget);
     expect(find.text('问题与反馈'), findsOneWidget);
     expect(find.text('检查更新'), findsOneWidget);
+  });
+
+  testWidgets('about page opens the contributors page', (tester) async {
+    await _pumpSettings(tester);
+    await tester.tap(find.text('关于ShuYo'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('贡献者'), 200);
+    await tester.tap(find.text('贡献者'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ContributorsPage), findsOneWidget);
   });
 
   testWidgets('about page explains Android permissions', (tester) async {
