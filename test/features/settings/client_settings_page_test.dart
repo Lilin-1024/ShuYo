@@ -16,6 +16,8 @@ import 'package:shuyo/data/services/academic_auth_service.dart';
 import 'package:shuyo/data/services/client_settings_service.dart';
 import 'package:shuyo/data/services/student_identity_service.dart';
 import 'package:shuyo/features/settings/client_settings_page.dart';
+import 'package:shuyo/features/settings/third_party_licenses_page.dart';
+import 'package:shuyo/shared/navigation/shuyo_route.dart';
 import 'package:shuyo/features/onboarding/startup_onboarding.dart';
 import 'package:shuyo/shared/widgets/webvpn_toggle.dart';
 import 'package:shuyo/core/client_app_info.dart';
@@ -502,7 +504,28 @@ void main() {
     expect(find.text('源代码'), findsOneWidget);
     expect(find.text('GNU General Public License v3.0'), findsOneWidget);
     expect(find.text('第三方开源许可'), findsOneWidget);
+    final licenseRow = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, '开源许可'),
+    );
+    expect(licenseRow.onTap, isNull);
+    expect(licenseRow.trailing, isNull);
     expect(find.text('贡献者'), findsOneWidget);
+    for (final title in ['源代码', '贡献者']) {
+      expect(
+        find.descendant(
+          of: find.widgetWithText(ListTile, title),
+          matching: find.byIcon(Icons.open_in_new),
+        ),
+        findsOneWidget,
+      );
+    }
+    expect(
+      find.descendant(
+        of: find.widgetWithText(ListTile, '第三方开源许可'),
+        matching: find.byIcon(Icons.chevron_right),
+      ),
+      findsOneWidget,
+    );
 
     await tester.scrollUntilVisible(find.text('检查更新'), 300);
     expect(find.text('权限说明'), findsOneWidget);
@@ -510,6 +533,38 @@ void main() {
     expect(find.text('隐私政策'), findsOneWidget);
     expect(find.text('问题与反馈'), findsOneWidget);
     expect(find.text('检查更新'), findsOneWidget);
+    for (final title in ['使用条款', '隐私政策']) {
+      expect(
+        find.descendant(
+          of: find.widgetWithText(ListTile, title),
+          matching: find.byIcon(Icons.open_in_new),
+        ),
+        findsOneWidget,
+      );
+    }
+  });
+
+  testWidgets('third-party licenses open with the shared child-page route',
+      (tester) async {
+    await _pumpSettings(tester);
+    await tester.tap(find.text('关于ShuYo'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('第三方开源许可'), 200);
+    await tester.tap(find.text('第三方开源许可'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ThirdPartyLicensesPage), findsOneWidget);
+    expect(find.byType(LicensePage), findsNothing);
+    expect(
+      find.ancestor(
+        of: find.byType(ThirdPartyLicensesPage),
+        matching: find.byType(ShuYoRouteSurface),
+      ),
+      findsOneWidget,
+    );
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('关于ShuYo'), findsOneWidget);
   });
 
   testWidgets('about page explains Android permissions', (tester) async {
