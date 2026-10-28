@@ -35,6 +35,11 @@ class WeComConstants {
   /// `launchWWByScheme("wxwork://sso/jump?url=" + encodeURIComponent(confirm2_url))`。
   static const schemeJumpBase = 'wxwork://sso/jump?url=';
 
+  /// Open SHU's campus-card application in WeCom. The user then chooses
+  /// account recharge inside the school application.
+  static const campusCardAppScheme =
+      'wxwork://jump?target=jump_to_third_app&businessid=5629500339709576';
+
   /// 承载企微扫码会话的域名，用于构造正确的 Referer/Origin。
   static const weComHost = 'open.work.weixin.qq.com';
 
