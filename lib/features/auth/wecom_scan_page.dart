@@ -9,7 +9,6 @@ import '../../core/wecom_constants.dart';
 import '../../data/services/wecom_auth_service.dart';
 import '../../shared/theme/shuyo_theme.dart';
 import 'widgets/wecom_login_qr.dart';
-import 'widgets/wecom_scan_countdown.dart';
 
 /// 企业微信扫码登录等待页。
 ///
@@ -35,7 +34,6 @@ class WeComScanPage extends StatefulWidget {
 
 class _WeComScanPageState extends State<WeComScanPage> {
   late final TapGestureRecognizer _privacyLinkRecognizer;
-  late final DateTime _scanStartedAt;
   WeComScanStatus _status = WeComScanStatus.waiting;
   bool _launchingLink = false;
   bool _cancelled = false;
@@ -44,7 +42,6 @@ class _WeComScanPageState extends State<WeComScanPage> {
   void initState() {
     super.initState();
     _privacyLinkRecognizer = TapGestureRecognizer()..onTap = _openPrivacyPolicy;
-    _scanStartedAt = DateTime.now();
     unawaited(_waitForScan());
   }
 
@@ -238,17 +235,6 @@ class _WeComScanPageState extends State<WeComScanPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 440),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: WeComScanCountdown(
-                          duration: WeComAuthService.scanTimeout,
-                          startedAt: _scanStartedAt,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     _statusWidget(),
                     const SizedBox(height: 16),
                     ConstrainedBox(

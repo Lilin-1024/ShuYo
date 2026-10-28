@@ -9,7 +9,6 @@ import 'package:shuyo/core/wecom_constants.dart';
 import 'package:shuyo/data/services/wecom_auth_service.dart';
 import 'package:shuyo/features/auth/wecom_scan_page.dart';
 import 'package:shuyo/features/auth/widgets/wecom_login_qr.dart';
-import 'package:shuyo/features/auth/widgets/wecom_scan_countdown.dart';
 import 'package:shuyo/shared/theme/shuyo_theme.dart';
 import 'package:shuyo/shared/widgets/wecom_icon.dart';
 
@@ -62,14 +61,9 @@ void main() {
     expect(tester.getSize(find.byType(WeComIcon)), const Size.square(30));
     expect(tester.getCenter(find.byType(WeComIcon)),
         tester.getCenter(find.byType(QrImageView)));
-    final countdown = find.byType(WeComScanCountdown);
-    expect(countdown, findsOneWidget);
-    expect(tester.widget<WeComScanCountdown>(countdown).duration,
-        WeComAuthService.scanTimeout);
-    expect(tester.getTopLeft(countdown).dy,
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(tester.getTopLeft(find.text('等待扫码...')).dy,
         greaterThan(tester.getBottomLeft(find.byType(WeComLoginQr)).dy));
-    expect(tester.getBottomLeft(countdown).dy,
-        lessThan(tester.getTopLeft(find.text('等待扫码...')).dy));
     expect(tester.takeException(), isNull);
 
     await _closePage(tester, service);
@@ -154,7 +148,6 @@ void main() {
     await _pumpPage(tester, service, ShuYoThemes.byId(ShuYoThemes.defaultId));
 
     expect(tester.getSize(_openButton()), const Size(440, 50));
-    expect(tester.getSize(find.byType(WeComScanCountdown)).width, 440);
     expect(tester.takeException(), isNull);
     await _closePage(tester, service);
   });
@@ -209,7 +202,6 @@ void main() {
     await _pumpPageAnimations(tester);
     expect(openButton.hitTestable(), findsOneWidget);
     expect(tester.getSize(_openButton()), const Size(272, 50));
-    expect(tester.getSize(find.byType(WeComScanCountdown)).width, 272);
     final policy = _policyText();
     await tester.ensureVisible(policy);
     await _pumpPageAnimations(tester);
@@ -240,7 +232,6 @@ void main() {
     await tester.pump();
 
     for (final element in [
-      find.byType(WeComScanCountdown),
       find.text('已扫码，请确认登录'),
       find.text('打开企业微信登录'),
     ]) {
