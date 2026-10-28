@@ -176,6 +176,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   CampusCardInfo? _campusCardInfo;
   double? _campusCardBalance;
   DateTime? _campusCardQueriedAt;
+  String? _campusCardRefreshError;
+  DateTime? _campusCardInfoQueriedAt;
   int _campusCardRevision = 0;
   Future<CampusCardInfo>? _campusCardRefreshTask;
   Future<bool>? _campusLoginTask;
@@ -481,11 +483,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       onOpenCampusCard: () => unawaited(_openCampusCard()),
       onRefreshCampusCard: () => unawaited(_refreshCampusCardFromHome()),
       isCampusCardRefreshing: _refreshingCampusCardFromHome,
-      campusCardContent: _academicSessionExpired
-          ? '登录已失效'
-          : _campusCardBalance == null
-              ? '查询余额和消费记录'
-              : '当前余额：¥${_campusCardBalance!.toStringAsFixed(2)}',
+      campusCardContent: [
+        if (_academicSessionExpired)
+          '登录已失效'
+        else if (_campusCardBalance != null)
+          '当前余额：¥${_campusCardBalance!.toStringAsFixed(2)}'
+        else if (_campusCardRefreshError == null)
+          '查询余额和消费记录',
+        if (_campusCardRefreshError != null) _campusCardRefreshError!,
+      ].join('\n'),
       onOpenCampusMap: () => unawaited(_openCampusMap()),
       onOpenOtp: () => unawaited(_openOtp()),
       todayCourseContent: _scheduleSummaryText,
@@ -603,8 +609,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _academicSessionExpired = false;
         if (previousStudentId != _academicStudentId) {
           _campusCardInfo = null;
+          _campusCardInfoQueriedAt = null;
           _campusCardBalance = null;
           _campusCardQueriedAt = null;
+          _campusCardRefreshError = null;
         }
         // Reload account-scoped caches without making network requests.
         _progressDataRevision++;
@@ -957,8 +965,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
     setState(() {
       _campusCardInfo = card;
+      _campusCardInfoQueriedAt = queriedAt;
       _campusCardBalance = card.balance;
       _campusCardQueriedAt = queriedAt;
+      _campusCardRefreshError = null;
     });
     unawaited(_campusCardBalanceStore
         .save(
@@ -988,7 +998,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
 
   Future<void> _refreshCampusCardFromHome() async {
     if (!mounted || _refreshingCampusCardFromHome) return;
-    setState(() => _refreshingCampusCardFromHome = true);
+    setState(() {
+      _refreshingCampusCardFromHome = true;
+      _campusCardRefreshError = null;
+    });
     try {
       await _refreshCampusCardBalance(interactive: true);
     } finally {
@@ -1001,11 +1014,16 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     bool allowLogin = true,
   }) async {
     if (widget.isDemo) {
-      if (interactive) _showSnack('演示模式暂不支持校园卡查询');
+      if (interactive) {
+        setState(() => _campusCardRefreshError = '演示模式暂不支持校园卡查询');
+      }
       return;
     }
     if (!_hasAcademicSession || _academicStudentId == null) {
-      if (interactive && allowLogin && await _loginCampusCard() && mounted) {
+      if (interactive &&
+          allowLogin &&
+          await _loginCampusCard(showErrorSnack: false) &&
+          mounted) {
         await _refreshCampusCardBalance(interactive: true, allowLogin: false);
       }
       return;
@@ -1015,7 +1033,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       final card = await _fetchCampusCardBalance();
       if (!mounted || revision != _campusCardRevision) return;
       _rememberCampusCard(card, DateTime.now());
-      if (interactive) _showSnack('已刷新');
     } on CampusCardAuthRequiredException catch (error) {
       if (!mounted) return;
       if (revision != _campusCardRevision) {
@@ -1025,7 +1042,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             allowLogin &&
             error.ssoExpired &&
             _academicSessionExpired &&
-            await _loginCampusCard() &&
+            await _loginCampusCard(showErrorSnack: false) &&
             mounted) {
           await _refreshCampusCardBalance(interactive: true, allowLogin: false);
         }
@@ -1034,17 +1051,18 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       if (error.ssoExpired) {
         await _markCampusAccountExpired();
         if (!mounted) return;
-        if (interactive && allowLogin && await _loginCampusCard() && mounted) {
+        if (interactive &&
+            allowLogin &&
+            await _loginCampusCard(showErrorSnack: false) &&
+            mounted) {
           await _refreshCampusCardBalance(interactive: true, allowLogin: false);
-        } else if (interactive && !allowLogin) {
-          _showSnack('登录已失效，请重新登录');
         }
       } else if (interactive) {
-        _showSnack(error.message);
+        setState(() => _campusCardRefreshError = error.message);
       }
     } on Object catch (error) {
       if (mounted && revision == _campusCardRevision && interactive) {
-        _showSnack(
+        setState(() => _campusCardRefreshError =
             error is CampusCardException ? error.message : '余额刷新失败，请稍后重试');
       }
     }
@@ -1082,14 +1100,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     return _loginCampusAccount();
   }
 
-  Future<bool> _loginCampusCard() => _loginCampusAccount(
+  Future<bool> _loginCampusCard({bool showErrorSnack = true}) =>
+      _loginCampusAccount(
         title: '登录校园卡',
         description: '使用上海大学统一认证账户查询余额和消费记录',
+        showErrorSnack: showErrorSnack,
       );
 
   Future<bool> _loginCampusAccount({
     String? title,
     String? description,
+    bool showErrorSnack = true,
   }) async {
     final pending = _campusLoginTask;
     if (pending != null) {
@@ -1107,7 +1128,13 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     try {
       return await operation;
     } on Object {
-      if (mounted) _showSnack('暂时无法完成登录，请稍后重试');
+      if (mounted) {
+        if (showErrorSnack) {
+          _showSnack('暂时无法完成登录，请稍后重试');
+        } else {
+          setState(() => _campusCardRefreshError = '暂时无法完成登录，请稍后重试');
+        }
+      }
       return false;
     } finally {
       if (identical(_campusLoginTask, operation)) {
@@ -1152,7 +1179,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           serviceFactory: () => _campusCardService,
           fetchCardInfo: _fetchCampusCardBalance,
           initialCard: _campusCardInfo,
-          initialQueriedAt: _campusCardQueriedAt,
+          initialQueriedAt: _campusCardInfoQueriedAt,
           onCardUpdated: _rememberCampusCard,
           onLogin: _loginCampusCard,
           onAuthRequired: (error) async {
@@ -1381,8 +1408,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         _academicStudentId = null;
         _nickname = null;
         _campusCardInfo = null;
+        _campusCardInfoQueriedAt = null;
         _campusCardBalance = null;
         _campusCardQueriedAt = null;
+        _campusCardRefreshError = null;
         _webVpnPendingRecovery = false;
         _webVpnSessionReady = false;
       });

@@ -15,6 +15,32 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets('home campus card refresh shows its feedback inline',
+      (tester) async {
+    final controller = StartupOnboardingController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(MaterialApp(
+      home: AppShell(
+        initialWebVpnEnabled: false,
+        selectedThemeId: 'default',
+        followSystemTheme: false,
+        onThemeChanged: (_) async {},
+        onFollowSystemThemeChanged: (_) async {},
+        academicLoginSignal: 0,
+        initialHasAcademicSession: true,
+        initialAcademicStudentId: '25120000',
+        onboardingController: controller,
+        isDemo: true,
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byTooltip('刷新校园卡余额'));
+    await tester.tap(find.byTooltip('刷新校园卡余额'));
+    await tester.pumpAndSettle();
+    expect(find.text('演示模式暂不支持校园卡查询'), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+  });
+
   testWidgets('library booking opens with the latest account campus preference',
       (tester) async {
     final controller = StartupOnboardingController();
