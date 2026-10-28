@@ -67,6 +67,8 @@ class _CampusCardPageState extends State<CampusCardPage> {
   Completer<void>? _refreshSuperseded;
   final _authNotifications = <bool, Future<void>>{};
   DateTimeRange? _billsRange;
+  bool _balanceSnapshotValid = false;
+  ({List<CampusCardBill>? bills, DateTimeRange range})? _pendingBalanceSnapshot;
 
   @override
   void initState() {
@@ -201,7 +203,14 @@ class _CampusCardPageState extends State<CampusCardPage> {
       }
     } finally {
       if (mounted && revision == _cardRevision) {
-        setState(() => _loadingCard = false);
+        setState(() {
+          _loadingCard = false;
+          final pending = _pendingBalanceSnapshot;
+          _pendingBalanceSnapshot = null;
+          if (pending != null) {
+            _publishOrStageBills(pending.bills, pending.range);
+          }
+        });
       }
     }
   }
@@ -212,6 +221,8 @@ class _CampusCardPageState extends State<CampusCardPage> {
     var receivedProgress = false;
     setState(() {
       _loadingBills = true;
+      _balanceSnapshotValid = false;
+      _pendingBalanceSnapshot = null;
       if (_billsRange != range) _bills = null;
       _billsError = null;
     });
@@ -227,15 +238,14 @@ class _CampusCardPageState extends State<CampusCardPage> {
           if (bills.isEmpty && !receivedProgress) return;
           receivedProgress = true;
           setState(() {
-            _bills = bills.isEmpty ? null : sortCampusCardBills(bills);
-            _billsRange = range;
+            _publishOrStageBills(
+                bills.isEmpty ? null : sortCampusCardBills(bills), range);
           });
         },
       );
       if (!mounted || revision != _billsRevision) return;
       setState(() {
-        _bills = sortCampusCardBills(bills);
-        _billsRange = range;
+        _publishOrStageBills(sortCampusCardBills(bills), range);
       });
     } on Object catch (error) {
       if (mounted && revision == _billsRevision) {
@@ -250,6 +260,16 @@ class _CampusCardPageState extends State<CampusCardPage> {
         setState(() => _loadingBills = false);
       }
     }
+  }
+
+  void _publishOrStageBills(List<CampusCardBill>? bills, DateTimeRange range) {
+    if (_loadingCard) {
+      _pendingBalanceSnapshot = (bills: bills, range: range);
+      return;
+    }
+    _bills = bills;
+    _billsRange = range;
+    _balanceSnapshotValid = bills != null;
   }
 
   Future<void> _loadChart() async {
@@ -317,6 +337,8 @@ class _CampusCardPageState extends State<CampusCardPage> {
     _bills = null;
     _chartBills = null;
     _billsRange = null;
+    _balanceSnapshotValid = false;
+    _pendingBalanceSnapshot = null;
     _loadingCard = false;
     _loadingBills = false;
     _loadingChart = false;
@@ -338,6 +360,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
       ++_cardRevision;
       ++_billsRevision;
       ++_chartRevision;
+      _pendingBalanceSnapshot = null;
       const authRequired = CampusCardAuthRequiredException();
       if (_loadingCard) _cardError ??= authRequired;
       if (_loadingBills) _billsError ??= authRequired;
@@ -366,6 +389,8 @@ class _CampusCardPageState extends State<CampusCardPage> {
             _chartBills = null;
             _loadingChart = false;
             _billsRange = null;
+            _balanceSnapshotValid = false;
+            _pendingBalanceSnapshot = null;
           });
         }
       }
@@ -389,6 +414,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
     ++_cardRevision;
     ++_billsRevision;
     ++_chartRevision;
+    _pendingBalanceSnapshot = null;
     _supersedeRefresh();
     setState(() {
       _pullRefreshing = false;
@@ -475,12 +501,29 @@ class _CampusCardPageState extends State<CampusCardPage> {
   Widget build(BuildContext context) {
     final colors = context.shuyoColors;
     final bills = _bills;
+    final occurrences = <(String, String, double), int>{};
+    final billKeys = [
+      for (final bill
+          in (bills ?? const <CampusCardBill>[]).take(_recentBillLimit))
+        ValueKey((
+          bill.name,
+          bill.payTime,
+          bill.amount,
+          occurrences.update(
+              (bill.name, bill.payTime, bill.amount), (count) => count + 1,
+              ifAbsent: () => 0),
+        )),
+    ];
+    final billIndexes = {
+      for (var index = 0; index < billKeys.length; index++)
+        billKeys[index]: index,
+    };
     final balances = bills == null
         ? const <double?>[]
         : campusCardBalances(
             bills,
             currentBalance: _loadingCard ||
-                    _loadingBills ||
+                    !_balanceSnapshotValid ||
                     _cardError != null ||
                     _billsError != null ||
                     _billsRange == null ||
@@ -588,9 +631,15 @@ class _CampusCardPageState extends State<CampusCardPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   sliver: SliverList.separated(
                     itemCount: _bills!.length.clamp(0, _recentBillLimit),
+                    findItemIndexCallback: (key) => billIndexes[key],
                     itemBuilder: (context, index) => CampusCardBillRow(
+                      key: billKeys[index],
                       bill: _bills![index],
                       balanceAfter: balances[index],
+                      retainPreviousBalance: _loadingCard ||
+                          !_balanceSnapshotValid ||
+                          _cardError != null ||
+                          _billsError != null,
                     ),
                     separatorBuilder: (context, index) =>
                         const CampusCardBillSeparator(),

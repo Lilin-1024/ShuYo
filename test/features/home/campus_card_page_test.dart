@@ -145,6 +145,46 @@ void main() {
     expect(balance.style!.color, colors.textTertiary);
   });
 
+  testWidgets('home refresh keeps balances and stages rows until card loads',
+      (tester) async {
+    const updated = CampusCardInfo(
+      studentId: 'TEST-IDENTITY-999',
+      name: '',
+      status: '',
+      balance: 200,
+      validUntil: '',
+    );
+    final service = _ControlledCampusCardService();
+    await _pumpPage(tester, service, viewport: const Size(402, 1500));
+    service.requests.single.complete(const [_firstBill]);
+    await tester.pumpAndSettle();
+    expect(find.text('余额 ¥128.50'), findsOneWidget);
+    final pendingCard = Completer<CampusCardInfo>();
+    service.nextCard = pendingCard;
+    unawaited(tester
+        .state<RefreshIndicatorState>(find.byType(RefreshIndicator))
+        .show());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('余额 ¥128.50'), findsOneWidget);
+    expect(find.text('余额 —'), findsNothing);
+    final request = service.requests.last;
+    request.report(const [_currentBill, _firstBill]);
+    await tester.pump();
+    expect(find.text(_currentBill.name), findsNothing);
+    expect(find.text('余额 ¥128.50'), findsOneWidget);
+
+    pendingCard.complete(updated);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(_currentBill.name), findsOneWidget);
+    expect(find.text('余额 ¥200.00'), findsOneWidget);
+    expect(find.text('余额 ¥202.50'), findsOneWidget);
+    request.complete(const [_currentBill, _firstBill]);
+    await tester.pumpAndSettle();
+    expect(find.text('余额 —'), findsNothing);
+  });
+
   testWidgets('year preview streams cumulative rows under the app bar',
       (tester) async {
     final pendingCard = Completer<CampusCardInfo>();

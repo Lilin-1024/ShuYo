@@ -71,6 +71,7 @@ List<Widget> campusCardBillSlivers(
   List<CampusCardBill> bills, {
   required BuildContext context,
   List<double?>? balances,
+  bool retainPreviousBalances = false,
 }) {
   final scaledFontSize = MediaQuery.textScalerOf(context).scale(12.5);
   final headerExtent = scaledFontSize > 12.5 ? scaledFontSize * 1.3 + 22 : 38.0;
@@ -122,6 +123,7 @@ List<Widget> campusCardBillSlivers(
               index: firstIndex + index,
               bill: group.bills[index],
               balanceAfter: group.balances[index],
+              retainPreviousBalance: retainPreviousBalances,
             ),
             separatorBuilder: (context, index) =>
                 const CampusCardBillSeparator(),
@@ -139,11 +141,13 @@ class _AnimatedCampusCardBillRow extends StatefulWidget {
     required this.index,
     required this.bill,
     this.balanceAfter,
+    this.retainPreviousBalance = false,
   });
 
   final int index;
   final CampusCardBill bill;
   final double? balanceAfter;
+  final bool retainPreviousBalance;
 
   @override
   State<_AnimatedCampusCardBillRow> createState() =>
@@ -186,7 +190,9 @@ class _AnimatedCampusCardBillRowState extends State<_AnimatedCampusCardBillRow>
         child: FadeTransition(
           opacity: _entrance,
           child: CampusCardBillRow(
-              bill: widget.bill, balanceAfter: widget.balanceAfter),
+              bill: widget.bill,
+              balanceAfter: widget.balanceAfter,
+              retainPreviousBalance: widget.retainPreviousBalance),
         ),
       );
 }
@@ -201,15 +207,44 @@ class CampusCardBillSeparator extends StatelessWidget {
           : Divider(height: 1, color: context.shuyoColors.border);
 }
 
-class CampusCardBillRow extends StatelessWidget {
-  const CampusCardBillRow({super.key, required this.bill, this.balanceAfter});
+class CampusCardBillRow extends StatefulWidget {
+  const CampusCardBillRow({
+    super.key,
+    required this.bill,
+    this.balanceAfter,
+    this.retainPreviousBalance = false,
+  });
 
   final CampusCardBill bill;
   final double? balanceAfter;
+  final bool retainPreviousBalance;
+
+  @override
+  State<CampusCardBillRow> createState() => _CampusCardBillRowState();
+}
+
+class _CampusCardBillRowState extends State<CampusCardBillRow> {
+  late double? _displayedBalance = widget.balanceAfter;
+
+  @override
+  void didUpdateWidget(covariant CampusCardBillRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldBill = oldWidget.bill;
+    final newBill = widget.bill;
+    if (oldBill.name != newBill.name ||
+        oldBill.payTime != newBill.payTime ||
+        oldBill.amount != newBill.amount) {
+      _displayedBalance = null;
+    }
+    if (widget.balanceAfter != null || !widget.retainPreviousBalance) {
+      _displayedBalance = widget.balanceAfter;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = context.shuyoColors;
+    final bill = widget.bill;
     // The portal records debits as positive and credits as negative.
     final balanceChange = -bill.amount;
     final sign = balanceChange > 0
@@ -256,9 +291,9 @@ class CampusCardBillRow extends StatelessWidget {
                           fontWeight: FontWeight.w500)),
                   const SizedBox(height: 4),
                   Text(
-                      balanceAfter == null
+                      _displayedBalance == null
                           ? '余额 —'
-                          : '余额 ¥${balanceAfter!.toStringAsFixed(2)}',
+                          : '余额 ¥${_displayedBalance!.toStringAsFixed(2)}',
                       textAlign: TextAlign.end,
                       style:
                           TextStyle(color: colors.textTertiary, fontSize: 12)),

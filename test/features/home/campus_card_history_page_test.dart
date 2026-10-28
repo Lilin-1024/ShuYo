@@ -37,6 +37,99 @@ const _stale = CampusCardBill(
 );
 
 void main() {
+  testWidgets('new history rows enter only after their balance is ready',
+      (tester) async {
+    const card = CampusCardInfo(
+      studentId: 'test',
+      name: '',
+      status: '',
+      balance: 100,
+      validUntil: '',
+    );
+    final pendingCard = Completer<CampusCardInfo>();
+    final service = _HistoryService();
+    await _pumpPage(tester, service, fetchCardInfo: () => pendingCard.future);
+    final request = service.requests.single;
+    request.report(const [_debit]);
+    await tester.pump();
+    expect(find.text(_debit.name), findsNothing);
+    request.complete(const [_debit]);
+    await tester.pump();
+    expect(find.text(_debit.name), findsNothing);
+    expect(_appBarProgress(), findsOneWidget);
+
+    pendingCard.complete(card);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(_debit.name), findsOneWidget);
+    expect(find.text('余额 ¥100.00'), findsOneWidget);
+    final row = find.ancestor(
+        of: find.text(_debit.name), matching: find.byType(SlideTransition));
+    expect(row, findsWidgets);
+    expect(
+        tester.widgetList<SlideTransition>(row).any((transition) =>
+            (transition.position.value.dx - 0.12).abs() < 0.001),
+        isTrue);
+    await tester.pumpAndSettle();
+    expect(_appBarProgress(), findsNothing);
+  });
+
+  testWidgets('history shows records if the balance request fails',
+      (tester) async {
+    final pendingCard = Completer<CampusCardInfo>();
+    final service = _HistoryService();
+    await _pumpPage(tester, service, fetchCardInfo: () => pendingCard.future);
+    service.requests.single.complete(const [_debit]);
+    await tester.pump();
+    expect(find.text(_debit.name), findsNothing);
+    pendingCard.completeError(const CampusCardException('network', '网络错误'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+    expect(find.text(_debit.name), findsOneWidget);
+    expect(find.text('余额 —'), findsOneWidget);
+    expect(_appBarProgress(), findsNothing);
+  });
+
+  testWidgets('history refresh keeps old balances until new rows are ready',
+      (tester) async {
+    const card = CampusCardInfo(
+        studentId: 'test', name: '', status: '', balance: 100, validUntil: '');
+    const updated = CampusCardInfo(
+        studentId: 'test', name: '', status: '', balance: 120, validUntil: '');
+    final pendingCard = Completer<CampusCardInfo>();
+    var calls = 0;
+    final service = _HistoryService();
+    await _pumpPage(tester, service,
+        fetchCardInfo: () =>
+            calls++ == 0 ? Future.value(card) : pendingCard.future);
+    service.requests.single.complete(const [_debit]);
+    await tester.pumpAndSettle();
+    expect(find.text('余额 ¥100.00'), findsOneWidget);
+
+    unawaited(tester
+        .state<RefreshIndicatorState>(find.byType(RefreshIndicator))
+        .show());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('余额 ¥100.00'), findsOneWidget);
+    expect(find.text('余额 —'), findsNothing);
+    final request = service.requests.last;
+    request.report(const [_credit, _debit]);
+    await tester.pump();
+    expect(find.text(_credit.name), findsNothing);
+    expect(find.text('余额 ¥100.00'), findsOneWidget);
+
+    pendingCard.complete(updated);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text(_credit.name), findsOneWidget);
+    expect(find.text('余额 ¥120.00'), findsOneWidget);
+    expect(find.text('余额 ¥110.00'), findsOneWidget);
+    request.complete(const [_credit, _debit]);
+    await tester.pumpAndSettle();
+    expect(find.text('余额 —'), findsNothing);
+  });
+
   testWidgets('past date range includes newer transactions for balances',
       (tester) async {
     const card = CampusCardInfo(
@@ -911,6 +1004,7 @@ Future<void> _pumpPage(
   Size viewport = const Size(402, 1000),
   CampusCardInfo? initialCard,
   DateTime? initialQueriedAt,
+  Future<CampusCardInfo> Function()? fetchCardInfo,
 }) async {
   addTearDown(service.dispose);
   tester.view.physicalSize = viewport;
@@ -928,6 +1022,7 @@ Future<void> _pumpPage(
       onAuthRequired: onAuthRequired,
       initialCard: initialCard,
       initialQueriedAt: initialQueriedAt,
+      fetchCardInfo: fetchCardInfo,
     ),
   ));
   await tester.pump();

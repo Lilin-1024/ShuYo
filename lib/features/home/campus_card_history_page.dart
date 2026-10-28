@@ -46,6 +46,11 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
   late DateTime? _balanceTime = widget.initialQueriedAt;
   bool _anchorLoading = false;
   bool _balanceSnapshotValid = false;
+  ({
+    List<CampusCardBill>? bills,
+    DateTimeRange range,
+    DateTime end
+  })? _pendingBalanceSnapshot;
   DateTimeRange? _billsRange;
   DateTime? _billsQueryEnd;
   DateTime? _nextOlderEnd;
@@ -204,9 +209,10 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
       _olderWindowEmpty = false;
       _pauseAutoLoad = false;
       _balanceSnapshotValid = false;
+      _pendingBalanceSnapshot = null;
       if (_billsRange != range) _bills = null;
     });
-    unawaited(_loadBalance());
+    final balanceTask = _loadBalance();
     try {
       final bills = await _service.fetchBills(
         startDate: queryRange.start,
@@ -217,26 +223,24 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
           if (bills.isEmpty && !receivedProgress) return;
           receivedProgress = true;
           setState(() {
-            _bills = bills.isEmpty ? null : sortCampusCardBills(bills);
-            _billsRange = range;
-            _billsQueryEnd = queryRange.end;
-            _balanceSnapshotValid = bills.isNotEmpty;
+            _publishOrStageBills(
+                bills.isEmpty ? null : sortCampusCardBills(bills),
+                range,
+                queryRange.end);
           });
         },
       );
       acceptingProgress = false;
       if (!isCurrent()) return;
       setState(() {
-        _bills = sortCampusCardBills(bills);
-        _billsRange = range;
-        _billsQueryEnd = queryRange.end;
-        _balanceSnapshotValid = true;
+        _publishOrStageBills(sortCampusCardBills(bills), range, queryRange.end);
         _olderWindowEmpty = bills.isEmpty;
         if (_timePreset == 'all' && queryRange.start.isAfter(range.start)) {
           _nextOlderEnd = DateTime(queryRange.start.year,
               queryRange.start.month, queryRange.start.day - 1);
         }
       });
+      await balanceTask;
     } on Object catch (error) {
       acceptingProgress = false;
       if (!isCurrent()) return;
@@ -253,6 +257,7 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
           _balanceTime = null;
           _anchorLoading = false;
           _balanceSnapshotValid = false;
+          _pendingBalanceSnapshot = null;
           _loading = false;
           _pullRefreshing = false;
         }
@@ -262,6 +267,19 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
       acceptingProgress = false;
       if (isCurrent()) setState(() => _loading = false);
     }
+  }
+
+  void _publishOrStageBills(
+      List<CampusCardBill>? bills, DateTimeRange range, DateTime end) {
+    final snapshot = (bills: bills, range: range, end: end);
+    if (_anchorLoading) {
+      _pendingBalanceSnapshot = snapshot;
+      return;
+    }
+    _bills = bills;
+    _billsRange = range;
+    _billsQueryEnd = end;
+    _balanceSnapshotValid = bills != null;
   }
 
   Future<void> _loadBalance() async {
@@ -285,7 +303,14 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
       });
     } finally {
       if (isCurrent()) {
-        setState(() => _anchorLoading = false);
+        setState(() {
+          _anchorLoading = false;
+          final pending = _pendingBalanceSnapshot;
+          _pendingBalanceSnapshot = null;
+          if (pending != null) {
+            _publishOrStageBills(pending.bills, pending.range, pending.end);
+          }
+        });
       }
     }
   }
@@ -366,6 +391,7 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
           _balanceTime = null;
           _anchorLoading = false;
           _balanceSnapshotValid = false;
+          _pendingBalanceSnapshot = null;
           _nextOlderEnd = null;
           _olderBaseBills = null;
           _loading = false;
@@ -396,6 +422,7 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
       _balanceTime = null;
       _anchorLoading = false;
       _balanceSnapshotValid = false;
+      _pendingBalanceSnapshot = null;
       _loginError = null;
       _error ??= const CampusCardAuthRequiredException();
     });
@@ -672,7 +699,11 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
                     ]),
                   ),
                 ...campusCardBillSlivers(bills,
-                    context: context, balances: balances),
+                    context: context,
+                    balances: balances,
+                    retainPreviousBalances: _anchorLoading ||
+                        !_balanceSnapshotValid ||
+                        _balanceCard == null),
                 if (_error != null && _olderError)
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
