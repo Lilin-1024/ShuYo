@@ -189,6 +189,282 @@ void main() {
     expect(tester.getRect(chart), chartBounds);
   });
 
+  testWidgets('taps ease the unchanged underline and crossfade bar highlights',
+      (tester) async {
+    await _pump(tester, bills: _motionBills(), disableAnimations: false);
+    final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+    final bounds = tester.getRect(plot);
+    final original = _recordedUnderline(tester);
+    final bars = _recordedBars(tester);
+    final step = bars[1].shape.left - bars[0].shape.left;
+    final targetX = original.start.dx - step;
+    await tester.tapAt(Offset(
+        bounds.left + (original.start.dx + original.end.dx) / 2 - step,
+        bounds.center.dy));
+    await tester.pump();
+    expect(find.text('2026-01-02'), findsOneWidget);
+    expect(_recordedUnderline(tester).start, original.start);
+
+    await tester.pump(const Duration(milliseconds: 55));
+    final moving = _recordedUnderline(tester);
+    final eased = Curves.easeOutCubic.transform(55 / 220);
+    expect(moving.start.dx, closeTo(original.start.dx - step * eased, .01));
+    _expectUnderlineStyle(moving, original);
+    final movingBars = _recordedBars(tester);
+    expect(movingBars[5].color.a, greaterThan(.55));
+    expect(movingBars[5].color.a, lessThan(1));
+    expect(movingBars[6].color.a, greaterThan(.55));
+    expect(movingBars[6].color.a, lessThan(1));
+    final movingCredits = _recordedOutlines(tester);
+    expect(movingCredits[5].color.a, greaterThan(.75));
+    expect(movingCredits[5].color.a, lessThan(1));
+
+    await tester.pumpAndSettle();
+    final settled = _recordedUnderline(tester);
+    expect(settled.start.dx, closeTo(targetX, .01));
+    _expectUnderlineStyle(settled, original);
+    expect(_recordedBars(tester)[5].color.a, 1);
+    expect(_recordedBars(tester)[6].color.a, closeTo(.55, .001));
+  });
+
+  testWidgets('rapid taps retarget the underline from its current position',
+      (tester) async {
+    await _pump(tester, bills: _motionBills(), disableAnimations: false);
+    final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+    final bounds = tester.getRect(plot);
+    final original = _recordedUnderline(tester);
+    final bars = _recordedBars(tester);
+    final step = bars[1].shape.left - bars[0].shape.left;
+    final lastX = (original.start.dx + original.end.dx) / 2;
+    await tester
+        .tapAt(Offset(bounds.left + lastX - step * 6, bounds.center.dy));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 60));
+    final interrupted = _recordedUnderline(tester);
+
+    await tester
+        .tapAt(Offset(bounds.left + lastX - step * 2, bounds.center.dy));
+    await tester.pump();
+    expect(_recordedUnderline(tester).start, interrupted.start);
+    expect(find.text('2026-01-01'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 55));
+    final reversed = _recordedUnderline(tester);
+    expect(reversed.start.dx, greaterThan(interrupted.start.dx));
+    expect(reversed.start.dx, lessThan(original.start.dx - step * 2));
+    await tester.pumpAndSettle();
+    expect(_recordedUnderline(tester).start.dx,
+        closeTo(original.start.dx - step * 2, .01));
+    _expectUnderlineStyle(_recordedUnderline(tester), original);
+  });
+
+  testWidgets('dragging follows the finger without lag and snaps on release',
+      (tester) async {
+    await _pump(tester, bills: _motionBills(), disableAnimations: false);
+    final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+    final bounds = tester.getRect(plot);
+    final chart = find.byKey(const ValueKey('campus-card-spending-chart'));
+    final chartBounds = tester.getRect(chart);
+    final original = _recordedUnderline(tester);
+    final bars = _recordedBars(tester);
+    final step = bars[1].shape.left - bars[0].shape.left;
+    final firstX = (original.start.dx + original.end.dx) / 2 - step * 6;
+    final gesture = await tester
+        .startGesture(Offset(bounds.left + firstX, bounds.center.dy));
+    await gesture
+        .moveTo(Offset(bounds.left + firstX + step * 3.25, bounds.center.dy));
+    await tester.pump();
+    final dragging = _recordedUnderline(tester);
+    expect((dragging.start.dx + dragging.end.dx) / 2,
+        closeTo(firstX + step * 3.25, .01));
+    expect(find.text('2025-12-31'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(_recordedUnderline(tester).start, dragging.start);
+
+    await gesture
+        .moveTo(Offset(bounds.left + firstX + step * 2.25, bounds.center.dy));
+    await tester.pump();
+    final painter = tester.widget<CustomPaint>(plot).painter;
+    await gesture
+        .moveTo(Offset(bounds.left + firstX + step * 2.4, bounds.center.dy));
+    await tester.pump();
+    expect(tester.widget<CustomPaint>(plot).painter, same(painter),
+        reason:
+            'Moving inside a date should only repaint, not rebuild the chart');
+    final beforeRelease = _recordedUnderline(tester);
+    expect((beforeRelease.start.dx + beforeRelease.end.dx) / 2,
+        closeTo(firstX + step * 2.4, .01));
+    expect(find.text('2025-12-30'), findsOneWidget);
+    _expectUnderlineStyle(beforeRelease, original);
+
+    await gesture.up();
+    await tester.pump();
+    expect(_recordedUnderline(tester).start, beforeRelease.start);
+    await tester.pump(const Duration(milliseconds: 55));
+    expect(
+        _recordedUnderline(tester).start.dx, lessThan(beforeRelease.start.dx));
+    await tester.pumpAndSettle();
+    final settled = _recordedUnderline(tester);
+    expect((settled.start.dx + settled.end.dx) / 2,
+        closeTo(firstX + step * 2, .01));
+    _expectUnderlineStyle(settled, original);
+    expect(tester.getRect(plot), bounds);
+    expect(tester.getRect(chart), chartBounds);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final days in [7, 30]) {
+    testWidgets('dragging clamps and cancellation snaps in the $days-day view',
+        (tester) async {
+      await _pump(tester, bills: _motionBills(), disableAnimations: false);
+      if (days == 30) {
+        await tester
+            .tap(find.byKey(const ValueKey('campus-card-chart-range-30')));
+        await tester.pumpAndSettle();
+      }
+      final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+      final bounds = tester.getRect(plot);
+      final original = _recordedUnderline(tester);
+      final bars = _recordedBars(tester);
+      final step = bars[1].shape.left - bars[0].shape.left;
+      final firstX =
+          bars.first.shape.left + (original.end.dx - original.start.dx) / 2;
+      final gesture = await tester.startGesture(bounds.center);
+      await gesture.moveTo(Offset(bounds.left - 80, bounds.center.dy));
+      await tester.pump();
+      expect(_recordedUnderline(tester).start.dx,
+          closeTo(bars.first.shape.left, .01));
+      _expectUnderlineStyle(_recordedUnderline(tester), original);
+
+      await gesture.moveTo(Offset(bounds.right + 80, bounds.center.dy));
+      await tester.pump();
+      expect(_recordedUnderline(tester).start.dx,
+          closeTo(bars.last.shape.left, .01));
+      await gesture
+          .moveTo(Offset(bounds.left + firstX + step * 1.3, bounds.center.dy));
+      await tester.pump();
+      final beforeCancel = _recordedUnderline(tester);
+      expect(beforeCancel.start.dx,
+          closeTo(bars.first.shape.left + step * 1.3, .01));
+      await gesture.cancel();
+      await tester.pump();
+      expect(_recordedUnderline(tester).start, beforeCancel.start);
+      await tester.pumpAndSettle();
+      expect(_recordedUnderline(tester).start.dx,
+          closeTo(bars[1].shape.left, .01));
+      _expectUnderlineStyle(_recordedUnderline(tester), original);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+      'range changes retire motion without reusing old column positions',
+      (tester) async {
+    await _pump(tester, bills: _motionBills(), disableAnimations: false);
+    final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+    final bounds = tester.getRect(plot);
+    await tester.tapAt(Offset(bounds.left + 1, bounds.center.dy));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 55));
+    await tester.tap(find.byKey(const ValueKey('campus-card-chart-range-30')));
+    await tester.pump();
+    final thirtyDayLine = _recordedUnderline(tester);
+    final thirtyDayBars = _recordedBars(tester);
+    expect(thirtyDayBars, hasLength(30));
+    expect(thirtyDayLine.start.dx, closeTo(thirtyDayBars[23].shape.left, .01));
+    expect(find.byKey(const ValueKey('campus-card-chart-selected-date')),
+        findsNothing);
+    await tester.pumpAndSettle();
+    expect(_recordedUnderline(tester).start, thirtyDayLine.start);
+
+    await tester.tap(find.byKey(const ValueKey('campus-card-chart-range-7')));
+    await tester.pumpAndSettle();
+    expect(_recordedUnderline(tester).start.dx,
+        closeTo(_recordedBars(tester).first.shape.left, .01));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('refreshing the same snapshot does not restart selection motion',
+      (tester) async {
+    final bills = _motionBills();
+    await _pump(tester, bills: bills, disableAnimations: false);
+    final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+    final bounds = tester.getRect(plot);
+    final original = _recordedUnderline(tester);
+    final targetX = _recordedBars(tester).first.shape.left;
+    await tester.tapAt(Offset(bounds.left + 1, bounds.center.dy));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 55));
+    final moving = _recordedUnderline(tester);
+    final oldPainter = tester.widget<CustomPaint>(plot).painter!;
+    await _pump(tester, bills: bills, loading: true, disableAnimations: false);
+    expect(_recordedUnderline(tester).start, moving.start);
+    expect(tester.widget<CustomPaint>(plot).painter!.shouldRepaint(oldPainter),
+        isFalse);
+    await tester.pump(const Duration(milliseconds: 55));
+    expect(
+        _recordedUnderline(tester).start.dx,
+        closeTo(
+            original.start.dx +
+                (targetX - original.start.dx) *
+                    Curves.easeOutCubic.transform(.5),
+            .01));
+    await tester.pumpAndSettle();
+    expect(_recordedUnderline(tester).start.dx, closeTo(targetX, .01));
+  });
+
+  testWidgets(
+      'reduced motion snaps both ongoing and new selections immediately',
+      (tester) async {
+    final bills = _motionBills();
+    await _pump(tester, bills: bills, disableAnimations: false);
+    final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+    final bounds = tester.getRect(plot);
+    await tester.tapAt(Offset(bounds.left + 1, bounds.center.dy));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 55));
+    await _pump(tester, bills: bills, disableAnimations: true);
+    expect(_recordedUnderline(tester).start.dx,
+        closeTo(_recordedBars(tester).first.shape.left, .01));
+    expect(tester.hasRunningAnimations, isFalse);
+
+    await tester.tapAt(Offset(bounds.right - 1, bounds.center.dy));
+    await tester.pump();
+    expect(_recordedUnderline(tester).start.dx,
+        closeTo(_recordedBars(tester).last.shape.left, .01));
+    expect(tester.hasRunningAnimations, isFalse);
+  });
+
+  testWidgets('vertical scrolling does not reveal or animate a date selection',
+      (tester) async {
+    await _pump(tester, bills: _motionBills(), disableAnimations: false);
+    final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+    final bounds = tester.getRect(plot);
+    final original = _recordedUnderline(tester);
+    final gesture = await tester.startGesture(bounds.center);
+    await tester.pump(const Duration(milliseconds: 150));
+    await gesture.moveBy(const Offset(0, -80));
+    await tester.pump();
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('campus-card-chart-selected-date')),
+        findsNothing);
+    expect(_recordedUnderline(tester).start, original.start);
+  });
+
+  testWidgets('disposing a chart during selection motion cancels its ticker',
+      (tester) async {
+    await _pump(tester, bills: _motionBills(), disableAnimations: false);
+    final bounds =
+        tester.getRect(find.byKey(const ValueKey('campus-card-chart-plot')));
+    await tester.tapAt(Offset(bounds.left + 1, bounds.center.dy));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 55));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.hasRunningAnimations, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('screen readers can select a zero-spending day', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
@@ -529,6 +805,7 @@ Future<void> _pump(
   VoidCallback? onRetry,
   double textScale = 1,
   String? themeId,
+  bool disableAnimations = true,
 }) async {
   tester.view.physicalSize = const Size(320, 800);
   tester.view.devicePixelRatio = 1;
@@ -538,11 +815,13 @@ Future<void> _pump(
     theme: ShuYoThemes.byId(themeId ?? ShuYoThemes.defaultId).themeData(),
     builder: (context, child) => MediaQuery(
       data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(textScale), disableAnimations: true),
+          textScaler: TextScaler.linear(textScale),
+          disableAnimations: disableAnimations),
       child: child!,
     ),
     home: Scaffold(
         body: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       child: CampusCardSpendingChart(
         bills: bills,
@@ -602,4 +881,50 @@ List<({RRect shape, Color color, PaintingStyle style, double strokeWidth})>
                 (record.invocation.positionalArguments[1] as Paint).strokeWidth,
           ))
       .toList();
+}
+
+List<CampusCardBill> _motionBills() => [
+      for (var index = 0; index < 30; index++) ...[
+        _bill(_end.subtract(Duration(days: index)).toIso8601String(), 1),
+        _bill(_end.subtract(Duration(days: index)).toIso8601String(), -2),
+      ],
+    ];
+
+typedef _RecordedUnderline = ({
+  Offset start,
+  Offset end,
+  Color color,
+  double width,
+  StrokeCap cap,
+});
+
+_RecordedUnderline _recordedUnderline(WidgetTester tester) {
+  final plot = find.byKey(const ValueKey('campus-card-chart-plot'));
+  final painter = tester.widget<CustomPaint>(plot).painter!;
+  final canvas = TestRecordingCanvas();
+  painter.paint(canvas, tester.getSize(plot));
+  final line = canvas.invocations.singleWhere((record) =>
+      record.invocation.memberName == #drawLine &&
+      (record.invocation.positionalArguments[2] as Paint).strokeCap ==
+          StrokeCap.round);
+  final arguments = line.invocation.positionalArguments;
+  final paint = arguments[2] as Paint;
+  return (
+    start: arguments[0] as Offset,
+    end: arguments[1] as Offset,
+    color: paint.color,
+    width: paint.strokeWidth,
+    cap: paint.strokeCap,
+  );
+}
+
+void _expectUnderlineStyle(
+    _RecordedUnderline actual, _RecordedUnderline original) {
+  expect(actual.start.dy, original.start.dy);
+  expect(actual.end.dy, original.end.dy);
+  expect(actual.end.dx - actual.start.dx,
+      closeTo(original.end.dx - original.start.dx, .001));
+  expect(actual.color, original.color);
+  expect(actual.width, 2);
+  expect(actual.cap, StrokeCap.round);
 }

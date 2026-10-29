@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 
@@ -110,15 +111,52 @@ class CampusCardSpendingChart extends StatefulWidget {
       _CampusCardSpendingChartState();
 }
 
-class _CampusCardSpendingChartState extends State<CampusCardSpendingChart> {
+class _CampusCardSpendingChartState extends State<CampusCardSpendingChart>
+    with SingleTickerProviderStateMixin {
   int _days = 7;
   bool _showSelection = false;
+  bool _dragging = false;
+  late final AnimationController _selectionController;
+  late final ValueNotifier<double> _selectionPosition;
+  double _selectionFrom = 0;
+  double _selectionTo = 0;
   // Start on the latest day, including a genuine zero-spending day.
   late DateTime _selectedDate = DateUtils.dateOnly(widget.endDate);
   List<CampusCardBill>? _cachedBills;
   DateTime? _cachedEndDate;
   int? _cachedDays;
   List<CampusCardDailySpending>? _cachedData;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectionPosition = ValueNotifier(_days - 1.0);
+    _selectionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    )..addListener(() {
+        final progress =
+            Curves.easeOutCubic.transform(_selectionController.value);
+        _selectionPosition.value =
+            _selectionFrom + (_selectionTo - _selectionFrom) * progress;
+      });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context) &&
+        _selectionController.isAnimating) {
+      _moveSelection(_selectedIndex.toDouble(), animate: false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _selectionController.dispose();
+    _selectionPosition.dispose();
+    super.dispose();
+  }
 
   List<CampusCardDailySpending> get _data {
     if (_cachedData == null ||
@@ -144,6 +182,11 @@ class _CampusCardSpendingChartState extends State<CampusCardSpendingChart> {
       _selectedDate = DateUtils.dateOnly(widget.endDate);
     }
     _keepSelectionInRange();
+    if (!DateUtils.isSameDay(oldWidget.endDate, widget.endDate) ||
+        widget.bills == null ||
+        widget.error != null) {
+      _resetSelection();
+    }
   }
 
   void _keepSelectionInRange() {
@@ -155,12 +198,55 @@ class _CampusCardSpendingChartState extends State<CampusCardSpendingChart> {
     }
   }
 
-  void _select(DateTime date) {
+  int get _selectedIndex {
+    final data = _data;
+    final selected =
+        data.indexWhere((day) => DateUtils.isSameDay(day.date, _selectedDate));
+    return selected < 0 ? data.length - 1 : selected;
+  }
+
+  void _moveSelection(double position, {bool animate = true}) {
+    if (animate &&
+        !MediaQuery.disableAnimationsOf(context) &&
+        (_selectionPosition.value - position).abs() > .001) {
+      if (_selectionController.isAnimating && _selectionTo == position) return;
+      // Retarget from the painted position, even when the previous tap's
+      // animation has not finished yet.
+      _selectionController.stop();
+      _selectionFrom = _selectionPosition.value;
+      _selectionTo = position;
+      _selectionController.forward(from: 0);
+    } else {
+      _selectionController.stop();
+      _selectionPosition.value = position;
+    }
+  }
+
+  void _resetSelection() {
+    _dragging = false;
+    _moveSelection(_selectedIndex.toDouble(), animate: false);
+  }
+
+  void _select(DateTime date, {double? dragPosition}) {
+    final index =
+        _data.indexWhere((day) => DateUtils.isSameDay(day.date, date));
+    if (index < 0) return;
+    _dragging = dragPosition != null;
+    _moveSelection(dragPosition ?? index.toDouble(), animate: !_dragging);
     if (_showSelection && DateUtils.isSameDay(date, _selectedDate)) return;
     setState(() {
       _selectedDate = date;
       _showSelection = true;
     });
+  }
+
+  void _dragTo(double position) =>
+      _select(_data[position.round()].date, dragPosition: position);
+
+  void _finishDrag() {
+    if (!_dragging) return;
+    _dragging = false;
+    _moveSelection(_selectedIndex.toDouble());
   }
 
   Widget _legend(String label, Color color, {bool outlined = false}) => Wrap(
@@ -243,9 +329,7 @@ class _CampusCardSpendingChartState extends State<CampusCardSpendingChart> {
     final requiresLogin = error is CampusCardAuthRequiredException ||
         (error is CampusCardException && error.code == 'accountMismatch');
     final data = _data;
-    final selected =
-        data.indexWhere((day) => DateUtils.isSameDay(day.date, _selectedDate));
-    final selectedIndex = selected < 0 ? data.length - 1 : selected;
+    final selectedIndex = _selectedIndex;
     return Column(
       key: const ValueKey('campus-card-spending-chart'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,6 +368,7 @@ class _CampusCardSpendingChartState extends State<CampusCardSpendingChart> {
                         _days = days;
                         _keepSelectionInRange();
                         _showSelection = false;
+                        _resetSelection();
                       });
                     },
                     child: Text('$days天'),
@@ -389,6 +474,7 @@ class _CampusCardSpendingChartState extends State<CampusCardSpendingChart> {
                 final painter = _SpendingBarPainter(
                   data: data,
                   selectedIndex: selectedIndex,
+                  selectionPosition: _selectionPosition,
                   colors: colors,
                   labelStyle: ShuYoTextStyles.meta(
                           color: colors.textTertiary, size: 10.5)
@@ -404,15 +490,17 @@ class _CampusCardSpendingChartState extends State<CampusCardSpendingChart> {
                   RepaintBoundary(
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTapDown: (details) => _select(
+                      onTapUp: (details) => _select(
                           data[painter.indexAt(details.localPosition.dx, size)]
                               .date),
-                      onHorizontalDragStart: (details) => _select(
-                          data[painter.indexAt(details.localPosition.dx, size)]
-                              .date),
-                      onHorizontalDragUpdate: (details) => _select(
-                          data[painter.indexAt(details.localPosition.dx, size)]
-                              .date),
+                      // A drag follows the finger continuously instead of
+                      // restarting the tap animation at every date boundary.
+                      onHorizontalDragStart: (details) => _dragTo(
+                          painter.positionAt(details.localPosition.dx, size)),
+                      onHorizontalDragUpdate: (details) => _dragTo(
+                          painter.positionAt(details.localPosition.dx, size)),
+                      onHorizontalDragEnd: (_) => _finishDrag(),
+                      onHorizontalDragCancel: _finishDrag,
                       child: CustomPaint(
                         key: const ValueKey('campus-card-chart-plot'),
                         painter: painter,
@@ -441,13 +529,16 @@ class _SpendingBarPainter extends CustomPainter {
   _SpendingBarPainter(
       {required this.data,
       required this.selectedIndex,
+      required this.selectionPosition,
       required this.colors,
       required this.labelStyle,
       required this.textScaler,
-      required this.onSelect});
+      required this.onSelect})
+      : super(repaint: selectionPosition);
 
   final List<CampusCardDailySpending> data;
   final int selectedIndex;
+  final ValueListenable<double> selectionPosition;
   final ShuYoColors colors;
   final TextStyle labelStyle;
   final TextScaler textScaler;
@@ -502,18 +593,17 @@ class _SpendingBarPainter extends CustomPainter {
         math.max(top + 1, size.height - height - 10));
   }
 
-  int indexAt(double dx, Size size) {
+  double positionAt(double dx, Size size) {
     final plot = _plot(size);
-    return ((dx - plot.left) / plot.width * data.length)
-        .floor()
-        .clamp(0, data.length - 1)
-        .toInt();
+    return ((dx - plot.left) / plot.width * data.length - .5)
+        .clamp(0.0, data.length - 1.0)
+        .toDouble();
   }
 
-  Offset _point(int index, Rect plot, double ceiling) => Offset(
-        plot.left + plot.width * (index + 0.5) / data.length,
-        plot.bottom - plot.height * (data[index].amount / ceiling),
-      );
+  int indexAt(double dx, Size size) => positionAt(dx, size).round();
+
+  double _dayX(num index, Rect plot) =>
+      plot.left + plot.width * (index + .5) / data.length;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -536,7 +626,10 @@ class _SpendingBarPainter extends CustomPainter {
     final gap = math.min(3.0, groupWidth * 0.15);
     final barWidth = (groupWidth - gap) / 2;
     for (var index = 0; index < data.length; index++) {
-      final left = _point(index, plot, ceiling).dx - groupWidth / 2;
+      final left = _dayX(index, plot) - groupWidth / 2;
+      // Blend adjacent days as the underline passes between their centers.
+      final highlight =
+          (1 - (index - selectionPosition.value).abs()).clamp(0.0, 1.0);
       for (var series = 0; series < 2; series++) {
         final amount =
             series == 0 ? data[index].amount : data[index].creditAmount;
@@ -548,12 +641,9 @@ class _SpendingBarPainter extends CustomPainter {
         final bar = RRect.fromRectAndCorners(rect,
             topLeft: const Radius.circular(2),
             topRight: const Radius.circular(2));
-        final selected = index == selectedIndex;
         if (series == 0) {
-          canvas.drawRRect(
-              bar,
-              Paint()
-                ..color = selected ? color : color.withValues(alpha: 0.55));
+          canvas.drawRRect(bar,
+              Paint()..color = color.withValues(alpha: .55 + .45 * highlight));
         } else {
           // Keep the outline inside the original bar, even in the 30-day view.
           final strokeWidth = math.min(1.0, math.min(barWidth / 3, height / 3));
@@ -562,7 +652,7 @@ class _SpendingBarPainter extends CustomPainter {
             canvas.drawRRect(
                 bar.deflate(inset),
                 Paint()
-                  ..color = color.withValues(alpha: selected ? 1 : 0.75)
+                  ..color = color.withValues(alpha: .75 + .25 * highlight)
                   ..style = PaintingStyle.stroke
                   ..strokeWidth = strokeWidth);
           }
@@ -570,7 +660,7 @@ class _SpendingBarPainter extends CustomPainter {
       }
     }
     // An underline selects the whole day, including days with two zero values.
-    final selectedX = _point(selectedIndex, plot, ceiling).dx;
+    final selectedX = _dayX(selectionPosition.value, plot);
     canvas.drawLine(
         Offset(selectedX - groupWidth / 2, plot.bottom + 3),
         Offset(selectedX + groupWidth / 2, plot.bottom + 3),
@@ -582,7 +672,7 @@ class _SpendingBarPainter extends CustomPainter {
     Rect labelBounds(int index) {
       final day = data[index].date;
       final label = _text('${day.month}/${day.day}');
-      final x = (_point(index, plot, ceiling).dx - label.width / 2)
+      final x = (_dayX(index, plot) - label.width / 2)
           .clamp(0.0, math.max(0.0, size.width - label.width))
           .toDouble();
       return Rect.fromLTWH(x, plot.bottom + 8, label.width, label.height);
@@ -635,6 +725,7 @@ class _SpendingBarPainter extends CustomPainter {
   bool shouldRepaint(covariant _SpendingBarPainter oldDelegate) =>
       data != oldDelegate.data ||
       selectedIndex != oldDelegate.selectedIndex ||
+      selectionPosition != oldDelegate.selectionPosition ||
       colors != oldDelegate.colors ||
       labelStyle != oldDelegate.labelStyle ||
       textScaler != oldDelegate.textScaler;
