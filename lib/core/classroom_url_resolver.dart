@@ -8,10 +8,13 @@ class ClassroomUrlResolver {
   static const webVpnBaseUrl = 'https://$webVpnHost';
 
   static bool _usesWebVpn = false;
+  static int _revision = 0;
 
   static bool get usesWebVpn => _usesWebVpn;
+  static int get revision => _revision;
 
   static void configure({required bool useWebVpn}) {
+    if (_usesWebVpn != useWebVpn) _revision++;
     _usesWebVpn = useWebVpn;
   }
 
