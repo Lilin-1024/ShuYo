@@ -18,9 +18,6 @@ class WeComConstants {
   static const qrConnectBase =
       'https://open.work.weixin.qq.com/wwopen/sso/qrConnect';
 
-  /// 二维码图片地址。
-  static const qrImgBase = 'https://open.work.weixin.qq.com/wwopen/sso/qrImg';
-
   /// 扫码后企微客户端打开的确认页地址。
   static const confirmBase =
       'https://open.work.weixin.qq.com/wwopen/sso/confirm2';

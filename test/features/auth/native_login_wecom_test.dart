@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shuyo/core/wecom_constants.dart';
+import 'package:shuyo/data/services/academic_native_auth_service.dart';
 import 'package:shuyo/data/services/wecom_auth_service.dart';
 import 'package:shuyo/data/services/student_identity_service.dart';
 import 'package:shuyo/features/auth/native_login_page.dart';
@@ -198,5 +202,186 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.testTextInput.isVisible, isFalse);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('WeCom login shows loading on its own button and recovers',
+      (tester) async {
+    final session = Completer<WeComQrSession>();
+    var starts = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: NativeLoginPage(startWeComSession: () {
+        starts++;
+        return session.future;
+      }),
+    ));
+    await tester.pumpAndSettle();
+
+    final continueButton = find.widgetWithText(FilledButton, '继续');
+    final weComButton =
+        find.byWidgetPredicate((widget) => widget is OutlinedButton);
+    await tester.tap(find.text('使用企业微信登录'));
+    await tester.pump();
+
+    expect(find.text('继续'), findsOneWidget);
+    expect(tester.widget<FilledButton>(continueButton).onPressed, isNull);
+    expect(tester.widget<OutlinedButton>(weComButton).onPressed, isNull);
+    expect(
+      find.descendant(
+        of: weComButton,
+        matching: find.byType(CircularProgressIndicator),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: continueButton,
+        matching: find.byType(CircularProgressIndicator),
+      ),
+      findsNothing,
+    );
+
+    await tester.tap(weComButton, warnIfMissed: false);
+    await tester.tap(continueButton, warnIfMissed: false);
+    await tester.pump();
+    expect(starts, 1);
+
+    session.completeError(const WeComAuthException('test', '登录失败'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('登录失败'), findsOneWidget);
+    expect(find.text('使用企业微信登录'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
+    expect(tester.widget<OutlinedButton>(weComButton).onPressed, isNotNull);
+  });
+
+  testWidgets('credential login loads its own button and restores after error',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final result = Completer<AcademicLoginResult>();
+    var calls = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: NativeLoginPage(loginForTesting: ({
+        required username,
+        required password,
+      }) {
+        calls++;
+        return result.future;
+      }),
+    ));
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.first, 'test-user');
+    await tester.enterText(fields.last, 'test-password');
+    final continueButton = find.byType(FilledButton);
+    final weComButton = find.byType(OutlinedButton);
+    await tester.tap(find.text('继续'));
+    await tester.pump();
+    expect(calls, 1);
+    expect(tester.widget<FilledButton>(continueButton).onPressed, isNull);
+    expect(tester.widget<OutlinedButton>(weComButton).onPressed, isNull);
+    expect(
+        find.descendant(
+            of: continueButton,
+            matching: find.byType(CircularProgressIndicator)),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: weComButton, matching: find.byType(CircularProgressIndicator)),
+        findsNothing);
+    await tester.tap(continueButton, warnIfMissed: false);
+    await tester.tap(weComButton, warnIfMissed: false);
+    await tester.pump();
+    expect(calls, 1);
+    result.completeError(const AcademicNativeAuthException('test', '登录失败'));
+    await tester.pumpAndSettle();
+    expect(find.text('登录失败'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(tester.widget<FilledButton>(continueButton).onPressed, isNotNull);
+    expect(tester.widget<OutlinedButton>(weComButton).onPressed, isNotNull);
+  });
+
+  testWidgets(
+      'native verification loads the requested button and restores on errors',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final send = Completer<void>();
+    final verify = Completer<Uri>();
+    var sendCalls = 0;
+    var verifyCalls = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: NativeLoginPage(
+        loginForTesting: ({required username, required password}) async =>
+            const AcademicLoginResult(
+          challenge: AcademicLoginChallenge(methods: {
+            AcademicVerificationMethod.wecom: 'sample-user',
+          }),
+        ),
+        sendCodeForTesting: (method) {
+          expect(method, AcademicVerificationMethod.wecom);
+          sendCalls++;
+          return send.future;
+        },
+        verifyCodeForTesting: ({required method, required code}) {
+          expect(method, AcademicVerificationMethod.wecom);
+          expect(code, '123456');
+          verifyCalls++;
+          return verify.future;
+        },
+      ),
+    ));
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.first, 'sample-user');
+    await tester.enterText(fields.last, 'sample-password');
+    await tester.tap(find.text('继续'));
+    await tester.pumpAndSettle();
+
+    final sendButton = find.byType(TextButton);
+    final verifyButton = find.byType(FilledButton);
+    await tester.tap(find.text('发送验证码'));
+    await tester.pump();
+    expect(sendCalls, 1);
+    expect(
+        find.descendant(
+            of: sendButton, matching: find.byType(CircularProgressIndicator)),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: verifyButton, matching: find.byType(CircularProgressIndicator)),
+        findsNothing);
+    expect(tester.widget<TextButton>(sendButton).onPressed, isNull);
+    expect(tester.widget<FilledButton>(verifyButton).onPressed, isNull);
+    await tester.tap(sendButton, warnIfMissed: false);
+    await tester.tap(verifyButton, warnIfMissed: false);
+    expect(sendCalls, 1);
+    expect(verifyCalls, 0);
+    send.completeError(const AcademicNativeAuthException('test', '发码失败'));
+    await tester.pumpAndSettle();
+    expect(find.text('发码失败'), findsOneWidget);
+    expect(find.text('发送验证码'), findsOneWidget);
+    expect(tester.widget<TextButton>(sendButton).onPressed, isNotNull);
+    expect(tester.widget<FilledButton>(verifyButton).onPressed, isNotNull);
+
+    await tester.enterText(find.byType(TextFormField), '123456');
+    await tester.tap(find.text('完成验证'));
+    await tester.pump();
+    expect(verifyCalls, 1);
+    expect(
+        find.descendant(
+            of: verifyButton, matching: find.byType(CircularProgressIndicator)),
+        findsOneWidget);
+    expect(
+        find.descendant(
+            of: sendButton, matching: find.byType(CircularProgressIndicator)),
+        findsNothing);
+    expect(tester.widget<TextButton>(sendButton).onPressed, isNull);
+    expect(tester.widget<FilledButton>(verifyButton).onPressed, isNull);
+    await tester.tap(verifyButton, warnIfMissed: false);
+    expect(verifyCalls, 1);
+    verify.completeError(const AcademicNativeAuthException('test', '验证失败'));
+    await tester.pumpAndSettle();
+    expect(find.text('验证失败'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(tester.widget<TextButton>(sendButton).onPressed, isNotNull);
+    expect(tester.widget<FilledButton>(verifyButton).onPressed, isNotNull);
   });
 }
