@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shuyo/app/app_shell.dart';
 import 'package:shuyo/core/classroom_url_resolver.dart';
 import 'package:shuyo/data/services/client_settings_service.dart';
+import 'package:shuyo/data/services/session_cookie_jar.dart';
 import 'package:shuyo/data/services/unified_account_service.dart';
 import 'package:shuyo/features/home/empty_classroom_page.dart';
 import 'package:shuyo/features/onboarding/startup_onboarding.dart';
@@ -23,6 +24,7 @@ class _PendingAccount extends UnifiedAccountService {
 
 void main() {
   setUp(() {
+    SessionCookieJar.shared.resetForTesting();
     ClassroomUrlResolver.configure(useWebVpn: true);
     SharedPreferences.setMockInitialValues({
       'client.network.webvpn.enabled': true,
