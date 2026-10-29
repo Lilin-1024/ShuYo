@@ -44,6 +44,7 @@ class CampusCardService {
   }
 
   static const _host = 'eportal.shu.edu.cn';
+  static const _maxBillRangeDays = 90;
   static const _cardPath = '/api/Identity/SchoolCard/GetCardPersonInfo';
   static const _billsPath = '/api/Identity/SchoolCard/GetCardBillInfo';
   static const _loginPath = '/api/Identity/User/Login';
@@ -62,33 +63,83 @@ class CampusCardService {
   Future<CampusCardInfo> fetchCardInfo() => _withSession((session) async =>
       session.initialCard ?? await _readCard(session.token, session.studentId));
 
+  /// Progress contains immutable cumulative snapshots, including an empty
+  /// reset when a new session operation starts. Cancellation is checked at
+  /// request boundaries; partial progress is never a successful final result.
+  /// Empty ranges are queried but do not publish unchanged snapshots.
   Future<List<CampusCardBill>> fetchBills({
     required DateTime startDate,
     required DateTime endDate,
+    void Function(List<CampusCardBill>)? onProgress,
+    bool Function()? shouldCancel,
   }) async {
-    final start = DateTime(startDate.year, startDate.month, startDate.day);
-    final end = DateTime(endDate.year, endDate.month, endDate.day);
+    void checkCancelled() {
+      if (shouldCancel?.call() ?? false) {
+        throw const CampusCardException('cancelled', '消费记录查询已取消');
+      }
+    }
+
+    checkCancelled();
+    // These are calendar dates, not instants. UTC keeps day arithmetic safe
+    // across daylight-saving changes without changing the caller's date fields.
+    final start = DateTime.utc(startDate.year, startDate.month, startDate.day);
+    final end = DateTime.utc(endDate.year, endDate.month, endDate.day);
     if (start.isAfter(end)) {
       throw const CampusCardException('invalidDates', '开始日期不能晚于结束日期');
     }
     return _withSession((session) async {
-      final data = await _request('GET', _billsPath, query: {
-        'access_token': session.token,
-        'StartDate': _day(start),
-        'EndDate': _day(end),
-      });
-      await _requireAccount(session.studentId);
-      final bills = data['bills'];
-      if (bills is! List) throw _invalidResponse;
-      try {
-        return List.unmodifiable(bills.map((bill) {
-          if (bill is! Map<String, dynamic>) throw _invalidResponse;
-          return CampusCardBill.fromJson(bill);
-        }));
-      } on FormatException {
-        throw _invalidResponse;
+      checkCancelled();
+      // Keep results inside the operation so token recovery restarts the whole
+      // query without retaining records from the rejected session. Reset the
+      // visible snapshot before reporting records from a replacement session.
+      final result = <CampusCardBill>[];
+      onProgress?.call(List<CampusCardBill>.unmodifiable(result));
+      var rangeEnd = end;
+      while (!rangeEnd.isBefore(start)) {
+        checkCancelled();
+        // The portal accepts at most a 90-day difference. Use at most 90
+        // inclusive dates (a difference of 89) and never overlap the ranges.
+        // Query recent ranges first so a long history becomes useful promptly.
+        final limit = DateTime.utc(
+          rangeEnd.year,
+          rangeEnd.month,
+          rangeEnd.day - _maxBillRangeDays + 1,
+        );
+        final rangeStart = limit.isAfter(start) ? limit : start;
+        await _requireAccount(session.studentId);
+        checkCancelled();
+        final data = await _request('GET', _billsPath, query: {
+          'access_token': session.token,
+          'StartDate': _day(rangeStart),
+          'EndDate': _day(rangeEnd),
+        });
+        checkCancelled();
+        await _requireAccount(session.studentId);
+        checkCancelled();
+        final bills = data['bills'];
+        if (bills is! List) throw _invalidResponse;
+        try {
+          for (final bill in bills) {
+            if (bill is! Map<String, dynamic>) throw _invalidResponse;
+            result.add(CampusCardBill.fromJson(bill));
+          }
+        } on FormatException {
+          throw _invalidResponse;
+        }
+        if (bills.isNotEmpty) {
+          onProgress?.call(List<CampusCardBill>.unmodifiable(result));
+        }
+        checkCancelled();
+        rangeEnd = DateTime.utc(
+          rangeStart.year,
+          rangeStart.month,
+          rangeStart.day - 1,
+        );
       }
-    });
+      // The API has no transaction ID: identical records may be distinct
+      // transactions. Preserve every record and the per-range response order.
+      return List.unmodifiable(result);
+    }, checkCancelled: checkCancelled);
   }
 
   /// 授权码只消费一次，校验门户与校园卡身份后才保存业务凭证。
@@ -140,19 +191,28 @@ class CampusCardService {
     return _CardSession(token, userId, initialCard: card);
   }
 
-  Future<T> _withSession<T>(Future<T> Function(_CardSession) operation) async {
+  Future<T> _withSession<T>(
+    Future<T> Function(_CardSession) operation, {
+    void Function()? checkCancelled,
+  }) async {
+    checkCancelled?.call();
     final studentId = await _accounts.loadStudentId();
+    checkCancelled?.call();
     if (studentId == null) throw const CampusCardAuthRequiredException();
     Future<T> run(_CardSession session) async {
+      checkCancelled?.call();
       if (session.studentId != studentId) throw _accountMismatch;
       await _requireAccount(studentId);
+      checkCancelled?.call();
       return operation(session);
     }
 
     try {
       return await run(await _session());
     } on _CampusCardTokenExpiredException catch (error) {
+      checkCancelled?.call();
       await _requireAccount(studentId);
+      checkCancelled?.call();
       // Retry once; failures of the replacement session reach the caller.
       return run(await _session(rejectedToken: error.token));
     }
