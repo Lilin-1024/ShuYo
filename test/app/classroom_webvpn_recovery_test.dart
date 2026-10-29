@@ -34,35 +34,11 @@ void main() {
       (tester) async {
     final controller = StartupOnboardingController();
     final account = _PendingAccount();
-    await tester.pumpWidget(MaterialApp(
-      home: AppShell(
-        initialWebVpnEnabled: true,
-        selectedThemeId: 'default',
-        followSystemTheme: false,
-        onThemeChanged: (_) async {},
-        onFollowSystemThemeChanged: (_) async {},
-        academicLoginSignal: 0,
-        initialHasAcademicSession: false,
-        initialAcademicStudentId: null,
-        onboardingController: controller,
-        unifiedAccountService: account,
-      ),
-    ));
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('空教室'), 180);
-    await tester.tap(find.text('空教室'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
-    // No stored token: opening the page starts automatic recovery. Keep
-    // that recovery pending while the user turns WebVPN off.
-    for (var frame = 0; frame < 10 && account.recoveries == 0; frame++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-    final page = tester.widget<EmptyClassroomPage>(
-      find.byType(EmptyClassroomPage),
+    final page = await _openClassroomDuringRecovery(
+      tester,
+      controller: controller,
+      account: account,
     );
-
-    expect(account.recoveries, 1);
     expect(await controller.setWebVpnEnabled(false), isTrue);
     account.recovery.complete(WebVpnRecoveryOutcome.recovered);
     await tester.pumpAndSettle();
@@ -80,4 +56,80 @@ void main() {
     await tester.pumpAndSettle();
     controller.dispose();
   });
+
+  for (final outcome in [
+    WebVpnRecoveryOutcome.alreadyValid,
+    WebVpnRecoveryOutcome.recovered,
+  ]) {
+    testWidgets(
+        'manual enable after leaving the classroom ignores a stale recovery: $outcome',
+        (tester) async {
+      final controller = StartupOnboardingController();
+      final account = _PendingAccount();
+      await _openClassroomDuringRecovery(
+        tester,
+        controller: controller,
+        account: account,
+      );
+      // The switch lives outside the classroom page. Its recovery keeps
+      // running in AppShell after the user leaves the page.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(EmptyClassroomPage), findsNothing);
+
+      expect(await controller.setWebVpnEnabled(false), isTrue);
+      expect(ClassroomUrlResolver.usesWebVpn, isFalse);
+      final enabling = controller.setWebVpnEnabled(true);
+      // A fresh feature operation may still share the in-flight login.
+      expect(account.recoveries, 1);
+      account.recovery.complete(outcome);
+      expect(await enabling, isTrue);
+      await tester.pumpAndSettle();
+
+      expect(controller.webVpnEnabled, isTrue);
+      expect(ClassroomUrlResolver.usesWebVpn, isTrue);
+      expect(
+        (await ClientSettingsService().loadNetworkSettings()).webVpnEnabled,
+        isTrue,
+      );
+      expect(account.recoveries, 1);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      controller.dispose();
+    });
+  }
+}
+
+Future<EmptyClassroomPage> _openClassroomDuringRecovery(
+  WidgetTester tester, {
+  required StartupOnboardingController controller,
+  required _PendingAccount account,
+}) async {
+  await tester.pumpWidget(MaterialApp(
+    home: AppShell(
+      initialWebVpnEnabled: true,
+      selectedThemeId: 'default',
+      followSystemTheme: false,
+      onThemeChanged: (_) async {},
+      onFollowSystemThemeChanged: (_) async {},
+      academicLoginSignal: 0,
+      initialHasAcademicSession: false,
+      initialAcademicStudentId: null,
+      onboardingController: controller,
+      unifiedAccountService: account,
+    ),
+  ));
+  await tester.pumpAndSettle();
+  await tester.scrollUntilVisible(find.text('空教室'), 180);
+  await tester.tap(find.text('空教室'));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+  // No stored token: opening the page starts automatic recovery. Keep
+  // that recovery pending while the user turns WebVPN off.
+  for (var frame = 0; frame < 10 && account.recoveries == 0; frame++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  expect(account.recoveries, 1);
+  return tester.widget<EmptyClassroomPage>(find.byType(EmptyClassroomPage));
 }

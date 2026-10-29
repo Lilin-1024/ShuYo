@@ -180,7 +180,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<CampusCardInfo>? _campusCardRefreshTask;
   Future<bool>? _campusLoginTask;
   Future<void>? _campusAccountExpiryTask;
-  Future<bool>? _webVpnFeatureRecoveryTask;
+  ({
+    Future<bool> operation,
+    int accessRevision,
+    bool enableWebVpn,
+  })? _webVpnFeatureRecoveryTask;
   bool _refreshingCampusCardFromHome = false;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
@@ -1429,17 +1433,28 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         enableWebVpn: enableWebVpn,
       );
     }
+    final accessRevision = ClassroomUrlResolver.revision;
     final pending = _webVpnFeatureRecoveryTask;
-    if (pending != null) return pending;
+    // A new manual enable must not inherit an automatic recovery's stale
+    // result after the user has changed the connection mode.
+    if (pending != null &&
+        pending.accessRevision == accessRevision &&
+        pending.enableWebVpn == enableWebVpn) {
+      return pending.operation;
+    }
     final operation = _attemptWebVpnRecovery(
       interactive: true,
       enableWebVpn: enableWebVpn,
     );
-    _webVpnFeatureRecoveryTask = operation;
+    _webVpnFeatureRecoveryTask = (
+      operation: operation,
+      accessRevision: accessRevision,
+      enableWebVpn: enableWebVpn,
+    );
     try {
       return await operation;
     } finally {
-      if (identical(_webVpnFeatureRecoveryTask, operation)) {
+      if (identical(_webVpnFeatureRecoveryTask?.operation, operation)) {
         _webVpnFeatureRecoveryTask = null;
       }
     }
