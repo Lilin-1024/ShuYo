@@ -16,16 +16,12 @@ import 'webvpn_device_id.dart';
 class WeComQrSession {
   const WeComQrSession({
     required this.key,
-    required this.qrImageUrl,
     required this.confirmUrl,
     required this.wxWorkSchemeUrl,
   });
 
   /// 企微扫码会话标识，用于长轮询与确认页地址。
   final String key;
-
-  /// 二维码图片地址（可直接作为 Image.network 的源）。
-  final String qrImageUrl;
 
   /// 扫码后企微内置浏览器打开的确认页地址。
   final String confirmUrl;
@@ -256,7 +252,6 @@ class WeComAuthService {
     final confirmUrl = '${WeComConstants.confirmBase}?k=$key&notretry=yes';
     return WeComQrSession(
       key: key,
-      qrImageUrl: '${WeComConstants.qrImgBase}?key=$key',
       confirmUrl: confirmUrl,
       wxWorkSchemeUrl:
           '${WeComConstants.schemeJumpBase}${Uri.encodeComponent(confirmUrl)}',
