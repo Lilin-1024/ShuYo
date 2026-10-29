@@ -199,16 +199,17 @@ void main() {
     expect(find.text('余额 ¥100.00'), findsOneWidget);
   });
 
-  testWidgets('history defaults to one year and offers an unlimited option',
+  testWidgets('history defaults to one week and only offers bounded ranges',
       (tester) async {
     final service = _HistoryService();
     await _pumpPage(tester, service);
     final request = service.requests.single;
     final today = request.range.end;
     expect(DateUtils.isSameDay(today, DateTime.now()), isTrue);
-    expect(request.range.start, _monthsAgo(today, 12));
+    expect(
+        request.range.start, DateTime(today.year, today.month, today.day - 6));
     expect(find.textContaining(' 至 '), findsNothing);
-    expect(find.byTooltip('消费时间：近一年'), findsOneWidget);
+    expect(find.byTooltip('消费时间：近一周'), findsOneWidget);
     expect(_appBarProgress(), findsOneWidget);
     _expectProgressAboveTabs(tester);
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -216,17 +217,15 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('campus-card-time-filter')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
-    expect(find.byKey(const ValueKey('campus-card-time-all')), findsOneWidget);
-    expect(find.text('时间不限'), findsOneWidget);
-    expect(
-      tester
-          .widget<ListTile>(
-            find.byKey(const ValueKey('campus-card-time-year')),
-          )
-          .selected,
-      isTrue,
-    );
-    await tester.tap(find.byKey(const ValueKey('campus-card-time-year')));
+    expect(find.byKey(const ValueKey('campus-card-time-all')), findsNothing);
+    expect(find.text('时间不限'), findsNothing);
+    expect(find.byType(ListTile), findsNWidgets(4));
+    for (final preset in ['week', 'month', 'year', 'custom']) {
+      final option = find.byKey(ValueKey('campus-card-time-$preset'));
+      expect(option, findsOneWidget);
+      expect(tester.widget<ListTile>(option).selected, preset == 'week');
+    }
+    await tester.tap(find.byKey(const ValueKey('campus-card-time-week')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
     expect(service.requests, hasLength(1));
@@ -243,170 +242,16 @@ void main() {
     expect(_appBarProgress(), findsNothing);
   });
 
-  testWidgets('unlimited history loads the next window on scroll',
+  testWidgets('scrolling to the end does not query older history',
       (tester) async {
     final service = _HistoryService();
     await _pumpPage(tester, service, viewport: const Size(402, 600));
-    final initial = service.requests.single;
-    final today = initial.range.end;
-    initial.complete(const [_debit]);
-    await tester.pumpAndSettle();
-
-    await _chooseTime(tester, 'all');
-    expect(find.byTooltip('消费时间：时间不限'), findsOneWidget);
-    final first = service.requests.last;
-    expect(first, isNot(same(initial)));
-    expect(first.range.start, _monthsAgo(today, 12));
-    expect(first.range.end, today);
-    expect(_appBarProgress(), findsOneWidget);
-    final firstBills = [
+    final request = service.requests.single;
+    final today = request.range.end;
+    request.complete([
       for (var index = 0; index < 30; index++)
         CampusCardBill(
-          name: '首批记录 $index',
-          payTime: DateTime(today.year, today.month, today.day, 12)
-              .subtract(Duration(minutes: index))
-              .toString(),
-          amount: 1,
-        ),
-    ];
-    first.complete(firstBills);
-    await tester.pumpAndSettle();
-    expect(find.text('首批记录 0'), findsOneWidget);
-    expect(service.requests, hasLength(2));
-    expect(_appBarProgress(), findsNothing);
-
-    await tester.scrollUntilVisible(
-      find.text('首批记录 29'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pump();
-    expect(service.requests, hasLength(3));
-    final next = service.requests.last;
-    expect(next.range.end, first.range.start.subtract(const Duration(days: 1)));
-    expect(_appBarProgress(), findsOneWidget);
-    expect(find.text('首批记录 29'), findsOneWidget);
-
-    const older = CampusCardBill(
-      name: '更早的消费',
-      payTime: '2020-01-01 12:00:00',
-      amount: 2,
-    );
-    next.complete(const [older]);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(_appBarProgress(), findsNothing);
-    expect(find.text('首批记录 29'), findsOneWidget);
-    expect(find.text('共 31 条'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets(
-      'empty unlimited windows can continue and failures retry the same window',
-      (tester) async {
-    final service = _HistoryService();
-    await _pumpPage(tester, service);
-    service.requests.single.complete(const []);
-    await tester.pumpAndSettle();
-    await _chooseTime(tester, 'all');
-    final first = service.requests.last;
-    first.complete(const []);
-    await tester.pumpAndSettle();
-
-    final older = find.byKey(const ValueKey('campus-card-history-load-older'));
-    expect(older, findsOneWidget);
-    await tester.tap(older);
-    await tester.pump();
-    final failed = service.requests.last;
-    expect(
-        failed.range.end, first.range.start.subtract(const Duration(days: 1)));
-    expect(_appBarProgress(), findsOneWidget);
-    failed.result.completeError(const CampusCardException('network', '测试网络错误'));
-    await tester.pumpAndSettle();
-    expect(find.text('测试网络错误'), findsOneWidget);
-    expect(_appBarProgress(), findsNothing);
-
-    await tester.tap(find.byKey(const ValueKey('campus-card-history-retry')));
-    await tester.pump();
-    final retry = service.requests.last;
-    expect(retry.range, failed.range);
-    final lastEmpty = await _completeThreeEmptyWindows(tester, service, retry);
-    expect(older, findsOneWidget);
-    expect(find.text('测试网络错误'), findsNothing);
-
-    await tester.tap(older);
-    await tester.pump();
-    final pending = service.requests.last;
-    expect(pending.range.end,
-        lastEmpty.range.start.subtract(const Duration(days: 1)));
-    await _chooseTime(tester, 'week');
-    expect(pending.isCancelled, isTrue);
-    final week = service.requests.last;
-    pending.report(const [_stale]);
-    pending.complete(const [_stale]);
-    week.complete(const [_current]);
-    await tester.pumpAndSettle();
-    expect(find.text(_stale.name), findsNothing);
-    expect(find.text(_current.name), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets(
-      'failed scanning resumes the failed window without duplicating partial rows',
-      (tester) async {
-    final service = _HistoryService();
-    await _pumpPage(tester, service);
-    service.requests.single.complete(const []);
-    await tester.pumpAndSettle();
-    await _chooseTime(tester, 'all');
-    service.requests.last.complete(const []);
-    await tester.pumpAndSettle();
-    await tester
-        .tap(find.byKey(const ValueKey('campus-card-history-load-older')));
-    await tester.pump();
-
-    final firstEmpty = service.requests.last;
-    firstEmpty.complete(const []);
-    await tester.pump();
-    final failed = service.requests.last;
-    expect(failed, isNot(same(firstEmpty)));
-    failed.report(const [_stale]);
-    await tester.pump();
-    expect(find.text(_stale.name), findsOneWidget);
-    failed.result.completeError(const CampusCardException('network', '扫描失败'));
-    await tester.pumpAndSettle();
-    expect(find.text('扫描失败'), findsOneWidget);
-    final retryButton = find.byKey(const ValueKey('campus-card-history-retry'));
-    await tester.ensureVisible(retryButton);
-    await tester.pump();
-    await tester.tap(retryButton);
-    await tester.pump();
-    final retried = service.requests.last;
-    expect(retried.range, failed.range);
-    retried.report(const [_stale]);
-    await tester.pump();
-    expect(find.text(_stale.name), findsOneWidget);
-    retried.complete(const [_stale]);
-    await tester.pumpAndSettle();
-    expect(find.text(_stale.name), findsOneWidget);
-    expect(find.text('扫描失败'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets(
-      'older window errors and empty results remain actionable at the list end',
-      (tester) async {
-    final service = _HistoryService();
-    await _pumpPage(tester, service, viewport: const Size(402, 600));
-    service.requests.single.complete(const []);
-    await tester.pumpAndSettle();
-    await _chooseTime(tester, 'all');
-    final first = service.requests.last;
-    final today = first.range.end;
-    first.complete([
-      for (var index = 0; index < 30; index++)
-        CampusCardBill(
-          name: '当前记录 $index',
+          name: '本周记录 $index',
           payTime: DateTime(today.year, today.month, today.day, 12)
               .subtract(Duration(minutes: index))
               .toString(),
@@ -415,48 +260,29 @@ void main() {
     ]);
     await tester.pumpAndSettle();
 
-    final scrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(find.text('当前记录 29'), 300,
-        scrollable: scrollable);
-    await tester.pump();
-    final failed = service.requests.last;
-    expect(failed, isNot(same(first)));
-    failed.result
-        .completeError(const CampusCardException('network', '较早记录加载失败'));
+    await tester.scrollUntilVisible(
+      find.text('本周记录 29'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
-
-    final retry = find.byKey(const ValueKey('campus-card-history-retry'));
-    await tester.scrollUntilVisible(retry, 100, scrollable: scrollable);
-    await tester.ensureVisible(retry);
-    await tester.pumpAndSettle();
-    expect(find.text('较早记录加载失败'), findsOneWidget);
-    expect(find.text('当前记录 29'), findsOneWidget);
-    expect(tester.getTopLeft(retry).dy,
-        greaterThan(tester.getTopLeft(find.text('当前记录 29')).dy));
-    await tester.tap(retry);
-    await tester.pump();
-    final retried = service.requests.last;
-    expect(retried.range, failed.range);
-    final lastEmpty =
-        await _completeThreeEmptyWindows(tester, service, retried);
-
-    final older = find.byKey(const ValueKey('campus-card-history-load-older'));
-    await tester.scrollUntilVisible(older, 100, scrollable: scrollable);
-    await tester.ensureVisible(older);
-    await tester.pumpAndSettle();
-    expect(older, findsOneWidget);
-    expect(find.text('当前记录 29'), findsOneWidget);
-    expect(tester.getTopLeft(older).dy,
-        greaterThan(tester.getTopLeft(find.text('当前记录 29')).dy));
-    await tester.tap(older);
-    await tester.pump();
-    final next = service.requests.last;
-    expect(next.range.end,
-        lastEmpty.range.start.subtract(const Duration(days: 1)));
-    expect(_appBarProgress(), findsOneWidget);
-    next.complete(const [_stale]);
-    await tester.pumpAndSettle();
+    expect(service.requests, hasLength(1));
+    expect(_appBarProgress(), findsNothing);
+    expect(find.text('继续查看更早记录'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('empty history offers date selection without loading older years',
+      (tester) async {
+    final service = _HistoryService();
+    await _pumpPage(tester, service);
+    service.requests.single.complete(const []);
+    await tester.pumpAndSettle();
+
+    expect(find.text('所选日期内暂无记录，可切换日期查询。'), findsOneWidget);
+    expect(find.text('继续查看更早记录'), findsNothing);
+    expect(service.requests, hasLength(1));
+    expect(_appBarProgress(), findsNothing);
   });
 
   testWidgets(
@@ -532,7 +358,7 @@ void main() {
     expect(service.requests, hasLength(1));
   });
 
-  testWidgets('week and month use calendar presets and custom cancel is inert',
+  testWidgets('calendar presets remain available and custom cancel is inert',
       (tester) async {
     final service = _HistoryService();
     await _pumpPage(tester, service);
@@ -547,10 +373,24 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, '取消'));
     await tester.pumpAndSettle();
     expect(service.requests, hasLength(1));
-    expect(find.byTooltip('消费时间：近一年'), findsOneWidget);
+    expect(find.byTooltip('消费时间：近一周'), findsOneWidget);
+
+    await _chooseTime(tester, 'month');
+    _expectProgressAboveTabs(tester);
+    expect(service.requests.last.range,
+        DateTimeRange(start: _monthsAgo(today, 1), end: today));
+    service.requests.last.complete(const []);
+    await tester.pumpAndSettle();
+    await _chooseTime(tester, 'month');
+    expect(service.requests, hasLength(2));
+
+    await _chooseTime(tester, 'year');
+    expect(service.requests.last.range,
+        DateTimeRange(start: _monthsAgo(today, 12), end: today));
+    service.requests.last.complete(const []);
+    await tester.pumpAndSettle();
 
     await _chooseTime(tester, 'week');
-    _expectProgressAboveTabs(tester);
     expect(
       service.requests.last.range,
       DateTimeRange(
@@ -561,19 +401,6 @@ void main() {
     service.requests.last.complete(const []);
     await tester.pumpAndSettle();
     await _chooseTime(tester, 'week');
-    expect(service.requests, hasLength(2));
-
-    await _chooseTime(tester, 'month');
-    expect(service.requests.last.range,
-        DateTimeRange(start: _monthsAgo(today, 1), end: today));
-    service.requests.last.complete(const []);
-    await tester.pumpAndSettle();
-
-    await _chooseTime(tester, 'year');
-    expect(service.requests.last.range,
-        DateTimeRange(start: _monthsAgo(today, 12), end: today));
-    service.requests.last.complete(const []);
-    await tester.pumpAndSettle();
     expect(service.requests, hasLength(4));
   });
 
@@ -586,7 +413,7 @@ void main() {
     await tester.pump();
     expect(find.text(_debit.name), findsOneWidget);
 
-    await _chooseTime(tester, 'week');
+    await _chooseTime(tester, 'month');
     final current = service.requests.last;
     expect(old.isCancelled, isTrue);
     expect(find.text(_debit.name), findsNothing);
@@ -859,7 +686,7 @@ void main() {
         });
     service.requests.single.complete(const []);
     await tester.pumpAndSettle();
-    await _chooseTime(tester, 'week');
+    await _chooseTime(tester, 'year');
     final stale = service.requests.last;
     stale.result
         .completeError(const CampusCardAuthRequiredException(ssoExpired: true));
@@ -1032,30 +859,6 @@ Finder _appBarProgress() => find.descendant(
       of: find.byType(AppBar),
       matching: find.byType(LinearProgressIndicator),
     );
-
-Future<_BillRequest> _completeThreeEmptyWindows(
-  WidgetTester tester,
-  _HistoryService service,
-  _BillRequest first,
-) async {
-  var current = first;
-  final initialCount = service.requests.length;
-  for (var index = 0; index < 3; index++) {
-    current.complete(const []);
-    if (index < 2) {
-      await tester.pump();
-      expect(_appBarProgress(), findsOneWidget);
-      expect(service.requests, hasLength(initialCount + index + 1));
-      final next = service.requests.last;
-      expect(next.range.end,
-          current.range.start.subtract(const Duration(days: 1)));
-      current = next;
-    }
-  }
-  await tester.pumpAndSettle();
-  expect(service.requests, hasLength(initialCount + 2));
-  return current;
-}
 
 void _expectProgressAboveTabs(WidgetTester tester) {
   final progress = tester.getRect(_appBarProgress());

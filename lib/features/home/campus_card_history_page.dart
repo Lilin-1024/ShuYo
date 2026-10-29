@@ -39,7 +39,7 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
   final _scrollController = ScrollController();
   late final TabController _tabController;
   late DateTimeRange _dateRange;
-  String _timePreset = 'year';
+  String _timePreset = 'week';
   int _tabIndex = 0;
   List<CampusCardBill>? _bills;
   late CampusCardInfo? _balanceCard = widget.initialCard;
@@ -53,11 +53,6 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
   })? _pendingBalanceSnapshot;
   DateTimeRange? _billsRange;
   DateTime? _billsQueryEnd;
-  DateTime? _nextOlderEnd;
-  List<CampusCardBill>? _olderBaseBills;
-  bool _olderError = false;
-  bool _olderWindowEmpty = false;
-  bool _pauseAutoLoad = false;
   Object? _error;
   String? _loginError;
   bool _loading = true;
@@ -72,7 +67,7 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
   @override
   void initState() {
     super.initState();
-    _dateRange = _presetRange('year');
+    _dateRange = _presetRange(_timePreset);
     _tabController = TabController(length: 3, vsync: this)
       ..addListener(_onTabChanged);
     unawaited(_refresh());
@@ -108,7 +103,6 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
   }
 
   String get _timeLabel => switch (_timePreset) {
-        'all' => '时间不限',
         'week' => '近一周',
         'month' => '近一月',
         'year' => '近一年',
@@ -189,11 +183,10 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
   Future<void> _loadBills() async {
     final revision = ++_billsRevision;
     final range = _dateRange;
-    final selectedQuery = _timePreset == 'all' ? _presetRange('year') : range;
     // Include newer transactions even when the selected end date is in the
     // past; they are needed to work backwards from today's balance.
     final queryRange = DateTimeRange(
-      start: selectedQuery.start,
+      start: range.start,
       end: DateUtils.dateOnly(DateTime.now()),
     );
     bool isCurrent() => mounted && revision == _billsRevision;
@@ -203,11 +196,6 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
       _loading = true;
       _error = null;
       _loginError = null;
-      _nextOlderEnd = null;
-      _olderBaseBills = null;
-      _olderError = false;
-      _olderWindowEmpty = false;
-      _pauseAutoLoad = false;
       _balanceSnapshotValid = false;
       _pendingBalanceSnapshot = null;
       if (_billsRange != range) _bills = null;
@@ -234,11 +222,6 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
       if (!isCurrent()) return;
       setState(() {
         _publishOrStageBills(sortCampusCardBills(bills), range, queryRange.end);
-        _olderWindowEmpty = bills.isEmpty;
-        if (_timePreset == 'all' && queryRange.start.isAfter(range.start)) {
-          _nextOlderEnd = DateTime(queryRange.start.year,
-              queryRange.start.month, queryRange.start.day - 1);
-        }
       });
       await balanceTask;
     } on Object catch (error) {
@@ -315,94 +298,6 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
     }
   }
 
-  Future<void> _loadOlderBills() async {
-    final end = _nextOlderEnd;
-    if (end == null || _loading || _loggingIn || _pullRefreshing) return;
-    final revision = ++_billsRevision;
-    final selectedRange = _dateRange;
-    bool isCurrent() => mounted && revision == _billsRevision;
-    final firstDate = selectedRange.start;
-    final base = _olderBaseBills ?? _bills ?? const <CampusCardBill>[];
-    setState(() {
-      _loading = true;
-      _error = null;
-      _olderError = false;
-      _olderBaseBills = base;
-      _pauseAutoLoad = false;
-    });
-    try {
-      var windowEnd = end;
-      var emptyWindowCount = 0;
-      // A gap in activity is not the end of the history. Continue through a
-      // few empty years, but bound each gesture so old accounts with no records
-      // cannot trigger hundreds of requests at once.
-      for (var emptyWindows = 0; emptyWindows < 3; emptyWindows++) {
-        final candidate =
-            DateTime(windowEnd.year, windowEnd.month, windowEnd.day - 364);
-        final start = candidate.isBefore(firstDate) ? firstDate : candidate;
-        var acceptingProgress = true;
-        final List<CampusCardBill> bills;
-        try {
-          bills = await _service.fetchBills(
-            startDate: start,
-            endDate: windowEnd,
-            shouldCancel: () => !isCurrent(),
-            onProgress: (progress) {
-              if (!isCurrent() || !acceptingProgress) return;
-              setState(
-                  () => _bills = sortCampusCardBills([...base, ...progress]));
-            },
-          );
-        } finally {
-          acceptingProgress = false;
-        }
-        if (!isCurrent()) return;
-        final nextEnd = start.isAfter(firstDate)
-            ? DateTime(start.year, start.month, start.day - 1)
-            : null;
-        setState(() {
-          _bills = sortCampusCardBills([...base, ...bills]);
-          _olderWindowEmpty = bills.isEmpty;
-          _nextOlderEnd = nextEnd;
-        });
-        if (bills.isNotEmpty || nextEnd == null) break;
-        emptyWindowCount++;
-        windowEnd = nextEnd;
-      }
-      if (isCurrent()) {
-        setState(() {
-          _olderBaseBills = null;
-          _pauseAutoLoad = emptyWindowCount == 3;
-        });
-      }
-    } on Object catch (error) {
-      if (!isCurrent()) return;
-      setState(() {
-        _error = error;
-        _olderError = true;
-        if (error is CampusCardException && error.code == 'accountMismatch') {
-          ++_refreshRevision;
-          ++_billsRevision;
-          ++_balanceRevision;
-          _supersedeRefresh();
-          _bills = null;
-          _billsRange = null;
-          _balanceCard = null;
-          _balanceTime = null;
-          _anchorLoading = false;
-          _balanceSnapshotValid = false;
-          _pendingBalanceSnapshot = null;
-          _nextOlderEnd = null;
-          _olderBaseBills = null;
-          _loading = false;
-        }
-      });
-      await _notifyAuthRequired(error);
-    } finally {
-      if (isCurrent()) setState(() => _loading = false);
-    }
-  }
-
   Future<bool> _login({bool refreshAfterLogin = true}) async {
     if (_loggingIn) return false;
     if (refreshAfterLogin) {
@@ -475,7 +370,6 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       children: [
                         for (final option in const [
-                          ('all', '时间不限'),
                           ('week', '近一周'),
                           ('month', '近一月'),
                           ('year', '近一年'),
@@ -517,11 +411,6 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
         firstDate: DateTime(1900),
         lastDate: DateUtils.dateOnly(DateTime.now()),
         initialRange: _dateRange,
-      );
-    } else if (preset == 'all') {
-      range = DateTimeRange(
-        start: DateTime(1900),
-        end: DateUtils.dateOnly(DateTime.now()),
       );
     } else {
       range = _presetRange(preset);
@@ -565,9 +454,7 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
                 ? null
                 : authRequired
                     ? () => _login()
-                    : _olderError
-                        ? _loadOlderBills
-                        : () => _refresh(interactive: true),
+                    : () => _refresh(interactive: true),
             icon: Icon(authRequired ? Icons.login : Icons.refresh),
             label: Text(_loggingIn
                 ? '正在登录…'
@@ -659,81 +546,33 @@ class _CampusCardHistoryPageState extends State<CampusCardHistoryPage>
               await _refresh(interactive: true, pullToRefresh: true);
             }
           },
-          child: NotificationListener<ScrollNotification>(
-            onNotification: (notification) {
-              final movedTowardEnd = notification is ScrollUpdateNotification &&
-                      (notification.scrollDelta ?? 0) > 0 ||
-                  notification is OverscrollNotification &&
-                      notification.overscroll > 0;
-              if (notification.depth == 0 &&
-                  movedTowardEnd &&
-                  notification.metrics.extentAfter < 200 &&
-                  _timePreset == 'all' &&
-                  !_pauseAutoLoad &&
-                  _error == null) {
-                unawaited(_loadOlderBills());
-              }
-              return false;
-            },
-            child: CustomScrollView(
-              key: const ValueKey('campus-card-history-scroll-view'),
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                if (_error != null && !_olderError ||
-                    !_loading &&
-                        _error == null &&
-                        bills.isEmpty &&
-                        (_timePreset != 'all' || _nextOlderEnd == null))
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    sliver: SliverList.list(children: [
-                      if (_error != null)
-                        _errorSection(_error!)
-                      else
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 28),
-                          child: Text('所选日期内暂无记录，可切换日期查询。',
-                              style: TextStyle(color: colors.textSecondary)),
-                        ),
-                    ]),
-                  ),
-                ...campusCardBillSlivers(bills,
-                    context: context,
-                    balances: balances,
-                    retainPreviousBalances: _anchorLoading ||
-                        !_balanceSnapshotValid ||
-                        _balanceCard == null),
-                if (_error != null && _olderError)
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    sliver: SliverToBoxAdapter(child: _errorSection(_error!)),
-                  )
-                else if (!_loading &&
-                    _error == null &&
-                    _timePreset == 'all' &&
-                    _nextOlderEnd != null &&
-                    (_olderWindowEmpty || bills.isEmpty))
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    sliver: SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          Text('还有更早的时间可查询。',
-                              style: TextStyle(color: colors.textSecondary)),
-                          TextButton(
-                            key: const ValueKey(
-                                'campus-card-history-load-older'),
-                            onPressed: _loadOlderBills,
-                            child: const Text('继续查看更早记录'),
-                          ),
-                        ],
+          child: CustomScrollView(
+            key: const ValueKey('campus-card-history-scroll-view'),
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              if (_error != null || (!_loading && bills.isEmpty))
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  sliver: SliverList.list(children: [
+                    if (_error != null)
+                      _errorSection(_error!)
+                    else
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        child: Text('所选日期内暂无记录，可切换日期查询。',
+                            style: TextStyle(color: colors.textSecondary)),
                       ),
-                    ),
-                  ),
-                const SliverToBoxAdapter(child: SizedBox(height: 28)),
-              ],
-            ),
+                  ]),
+                ),
+              ...campusCardBillSlivers(bills,
+                  context: context,
+                  balances: balances,
+                  retainPreviousBalances: _anchorLoading ||
+                      !_balanceSnapshotValid ||
+                      _balanceCard == null),
+              const SliverToBoxAdapter(child: SizedBox(height: 28)),
+            ],
           ),
         ),
       ),

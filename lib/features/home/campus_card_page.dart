@@ -84,7 +84,7 @@ class _CampusCardPageState extends State<CampusCardPage> {
     super.dispose();
   }
 
-  // Keep the home preview within the same default year as transaction history.
+  // The home preview always queries the past year.
   DateTimeRange get _queryRange {
     final today = DateUtils.dateOnly(DateTime.now());
     final first = DateTime(today.year - 1, today.month);

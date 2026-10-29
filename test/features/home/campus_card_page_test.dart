@@ -688,8 +688,10 @@ void main() {
     expect(service.cardRequestCount, 2);
     expect(service.chartRequests, hasLength(1));
     final historyRequest = service.requests.last;
+    final historyEnd = historyRequest.range.end;
     expect(historyRequest.range.start,
-        _calendarMonthsAgo(historyRequest.range.end, 12));
+        DateTime(historyEnd.year, historyEnd.month, historyEnd.day - 6));
+    expect(find.byTooltip('消费时间：近一周'), findsOneWidget);
     expect(
         find.byKey(const ValueKey('campus-card-time-filter')), findsOneWidget);
     historyRequest.complete(const [recharge, spend]);
