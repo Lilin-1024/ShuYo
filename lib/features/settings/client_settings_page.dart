@@ -27,6 +27,7 @@ import '../../shared/widgets/webvpn_toggle.dart';
 import 'client_feedback_page.dart';
 import 'contributors_page.dart';
 import 'privacy_data_page.dart';
+import 'third_party_licenses_page.dart';
 import '../onboarding/startup_onboarding.dart';
 
 class ClientSettingsPage extends StatelessWidget {
@@ -548,8 +549,6 @@ class _AboutClientPage extends StatefulWidget {
 
 class _AboutClientPageState extends State<_AboutClientPage> {
   static const _sourceUrl = 'https://github.com/shuosc/ShuYo';
-  static const _licenseUrl =
-      'https://github.com/shuosc/ShuYo/blob/main/LICENSE';
   static const _termsUrl = 'https://shuyo.work/doc/terms.html';
   static const _privacyUrl = 'https://shuyo.work/doc/privacy.html';
 
@@ -613,13 +612,13 @@ class _AboutClientPageState extends State<_AboutClientPage> {
             icon: Icons.code,
             title: '源代码',
             subtitle: 'GitHub · shuosc/ShuYo',
+            external: true,
             onTap: () => _openExternalUrl(_sourceUrl),
           ),
-          _AboutRow(
+          const _AboutRow(
             icon: Icons.balance_outlined,
             title: '开源许可',
             subtitle: 'GNU General Public License v3.0',
-            onTap: () => _openExternalUrl(_licenseUrl),
           ),
           _AboutRow(
             icon: Icons.inventory_2_outlined,
@@ -646,11 +645,13 @@ class _AboutClientPageState extends State<_AboutClientPage> {
           _AboutRow(
             icon: Icons.description_outlined,
             title: '使用条款',
+            external: true,
             onTap: () => _openExternalUrl(_termsUrl),
           ),
           _AboutRow(
             icon: Icons.privacy_tip_outlined,
             title: '隐私政策',
+            external: true,
             onTap: () => _openExternalUrl(_privacyUrl),
           ),
           if (!widget.isDemo) ...[
@@ -709,19 +710,8 @@ class _AboutClientPageState extends State<_AboutClientPage> {
   }
 
   void _showThirdPartyLicenses() {
-    showLicensePage(
-      context: context,
-      applicationName: ClientAppInfo.appName,
-      applicationVersion:
-          '${ClientAppInfo.version}（${ClientAppInfo.buildNumber}）',
-      applicationIcon: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.asset(
-          'assets/images/icon_light.png',
-          width: 48,
-          height: 48,
-        ),
-      ),
+    Navigator.of(context).push<void>(
+      shuyoRoute(builder: (_) => const ThirdPartyLicensesPage()),
     );
   }
 
@@ -804,9 +794,10 @@ class _AboutRow extends StatelessWidget {
   const _AboutRow({
     required this.icon,
     required this.title,
-    required this.onTap,
+    this.onTap,
     this.subtitle,
     this.trailing,
+    this.external = false,
   });
 
   final IconData icon;
@@ -814,15 +805,28 @@ class _AboutRow extends StatelessWidget {
   final String? subtitle;
   final VoidCallback? onTap;
   final Widget? trailing;
+  final bool external;
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.shuyoColors;
+    final subtitleColor = CustomBackgroundScope.maybeOf(context) != null
+        ? colors.textTertiary
+        : Color.lerp(colors.textSecondary, colors.textTertiary, 0.7);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 4),
       leading: Icon(icon),
       title: Text(title),
-      subtitle: subtitle == null ? null : Text(subtitle!),
-      trailing: trailing ?? const Icon(Icons.chevron_right),
+      subtitle: subtitle == null
+          ? null
+          : Text(subtitle!, style: TextStyle(color: subtitleColor)),
+      trailing: trailing ??
+          (onTap == null
+              ? null
+              : Icon(
+                  external ? Icons.open_in_new : Icons.chevron_right,
+                  size: external ? 18 : null,
+                )),
       onTap: onTap,
     );
   }
