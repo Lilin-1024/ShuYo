@@ -15,8 +15,8 @@ import 'rate_widgets.dart';
 Future<T?> _push<T>(BuildContext context, Widget page) =>
     Navigator.of(context).push<T>(shuyoRoute(builder: (_) => page));
 
-Future<void> openRateUnit(BuildContext context, CourseReviewRepository repo,
-        String unitId) =>
+Future<void> openRateUnit(
+        BuildContext context, CourseReviewRepository repo, String unitId) =>
     _push(context, RateUnitPage(repository: repo, unitId: unitId));
 
 Future<void> openRateCourse(
@@ -34,21 +34,21 @@ Future<void> openRateCourse(
       ),
     );
 
-Future<void> openRateTeacher(BuildContext context,
-        CourseReviewRepository repo, String teacherId) =>
+Future<void> openRateTeacher(
+        BuildContext context, CourseReviewRepository repo, String teacherId) =>
     _push(context, RateTeacherPage(repository: repo, teacherId: teacherId));
 
 Future<void> openRateSearch(BuildContext context, CourseReviewRepository repo,
         {String query = ''}) =>
     _push(context, RateSearchPage(repository: repo, initialQuery: query));
 
-Future<void> openRateRanking(BuildContext context,
-        CourseReviewRepository repo, String category, String title) =>
+Future<void> openRateRanking(BuildContext context, CourseReviewRepository repo,
+        String category, String title) =>
     _push(context,
         RateRankingPage(repository: repo, category: category, title: title));
 
-Future<void> openRateCollege(BuildContext context,
-        CourseReviewRepository repo, String college) =>
+Future<void> openRateCollege(
+        BuildContext context, CourseReviewRepository repo, String college) =>
     _push(context, RateCollegePage(repository: repo, college: college));
 
 Future<void> openRateProfile(

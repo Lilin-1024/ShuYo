@@ -72,7 +72,8 @@ class _RateProfilePageState extends State<RateProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除这条评价？'),
-        content: Text('「${item.unit.course.name} · ${item.unit.teacher.name}」的评价会被删除，统计会同步更新。删除后可以重新评价。'),
+        content: Text(
+            '「${item.unit.course.name} · ${item.unit.teacher.name}」的评价会被删除，统计会同步更新。删除后可以重新评价。'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -161,12 +162,13 @@ class _RateProfilePageState extends State<RateProfilePage> {
         )
       else
         RateListCard(children: [
-          for (final item in reviews.reviews) _ReviewTile(
-            item: item,
-            onOpen: () => openRateUnit(context, _repo, item.unit.id),
-            onEdit: () => _edit(item),
-            onDelete: () => _delete(item),
-          ),
+          for (final item in reviews.reviews)
+            _ReviewTile(
+              item: item,
+              onOpen: () => openRateUnit(context, _repo, item.unit.id),
+              onEdit: () => _edit(item),
+              onDelete: () => _delete(item),
+            ),
         ]),
     ];
   }

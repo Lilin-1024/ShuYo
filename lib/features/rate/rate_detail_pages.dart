@@ -30,8 +30,7 @@ class RateCoursePage extends StatefulWidget {
 class _RateCoursePageState extends State<RateCoursePage> {
   late Future<RateCourseDetail> _future = _load();
 
-  Future<RateCourseDetail> _load() =>
-      widget.repository.course(widget.courseId);
+  Future<RateCourseDetail> _load() => widget.repository.course(widget.courseId);
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +41,8 @@ class _RateCoursePageState extends State<RateCoursePage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 3));
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return RateLoadError(
@@ -131,7 +131,8 @@ class _RateTeacherPageState extends State<RateTeacherPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 3));
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return RateLoadError(
@@ -206,9 +207,9 @@ class _RateUnitPageState extends State<RateUnitPage> {
   Future<void> _load() async {
     if (_loading) return;
     setState(() => _loading = true);
-    final mine = _repo.myReview(widget.unitId).then<RateMyReview?>(
-        (value) => value,
-        onError: (Object _) => null);
+    final mine = _repo
+        .myReview(widget.unitId)
+        .then<RateMyReview?>((value) => value, onError: (Object _) => null);
     try {
       final detail = await _repo.unit(widget.unitId);
       final review = await mine;
@@ -329,7 +330,9 @@ class _UnitHeader extends StatelessWidget {
           if (unit.average == null)
             Text('暂无评价',
                 style: ShuYoTextStyles.title(
-                    color: colors.textTertiary, size: 17, weight: FontWeight.w400))
+                    color: colors.textTertiary,
+                    size: 17,
+                    weight: FontWeight.w400))
           else ...[
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -432,7 +435,8 @@ class _OptionStatRow extends StatelessWidget {
                         color: textColor, size: 13.5, weight: weight)),
               ),
               Text('${option.percent}%',
-                  style: ShuYoTextStyles.meta(color: textColor, weight: weight)),
+                  style:
+                      ShuYoTextStyles.meta(color: textColor, weight: weight)),
             ],
           ),
           const SizedBox(height: 5),
@@ -442,7 +446,8 @@ class _OptionStatRow extends StatelessWidget {
               height: 3,
               child: Stack(
                 children: [
-                  Positioned.fill(child: ColoredBox(color: colors.surfaceMuted)),
+                  Positioned.fill(
+                      child: ColoredBox(color: colors.surfaceMuted)),
                   FractionallySizedBox(
                     widthFactor: (option.percent / 100).clamp(0, 1).toDouble(),
                     child: ColoredBox(

@@ -70,7 +70,8 @@ class CourseReviewRepository {
   Future<RateSearchResult> search(String query) {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return Future.value(RateSearchResult.empty);
-    return _api.search(trimmed.length > 60 ? trimmed.substring(0, 60) : trimmed);
+    return _api
+        .search(trimmed.length > 60 ? trimmed.substring(0, 60) : trimmed);
   }
 
   Future<RateCourseDetail> course(String id) => _api.fetchCourse(id);

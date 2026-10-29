@@ -101,7 +101,8 @@ class RateScoreTrailing extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text('$count 份评价',
-            style: ShuYoTextStyles.meta(color: colors.textTertiary, size: 11.5)),
+            style:
+                ShuYoTextStyles.meta(color: colors.textTertiary, size: 11.5)),
       ],
     );
   }
@@ -192,7 +193,8 @@ class RateListCard extends StatelessWidget {
         children: [
           for (var i = 0; i < children.length; i++) ...[
             if (i > 0)
-              Divider(height: 1, thickness: 1, color: colors.border, indent: 14),
+              Divider(
+                  height: 1, thickness: 1, color: colors.border, indent: 14),
             children[i],
           ],
         ],
@@ -249,7 +251,8 @@ class RateSectionTitle extends StatelessWidget {
 }
 
 class RateMoreButton extends StatelessWidget {
-  const RateMoreButton({super.key, required this.onPressed, this.label = '查看全部'});
+  const RateMoreButton(
+      {super.key, required this.onPressed, this.label = '查看全部'});
 
   final VoidCallback onPressed;
   final String label;

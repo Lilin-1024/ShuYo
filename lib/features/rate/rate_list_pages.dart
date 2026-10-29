@@ -92,7 +92,8 @@ class _RateRankingPageState extends State<RateRankingPage> {
               height: 48,
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 children: [
                   for (final sub in ['', ..._subcategories])
                     Padding(
@@ -155,7 +156,8 @@ class _RateRankingPageState extends State<RateRankingPage> {
                   '${_items[i].teacher.displayName} · ${_items[i].course.id}',
               average: _items[i].average,
               count: _items[i].reviewCount,
-              onTap: () => openRateUnit(context, widget.repository, _items[i].id),
+              onTap: () =>
+                  openRateUnit(context, widget.repository, _items[i].id),
             ),
         ]),
         if (_loading)
@@ -203,7 +205,8 @@ class _RateCollegePageState extends State<RateCollegePage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 3));
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return RateLoadError(

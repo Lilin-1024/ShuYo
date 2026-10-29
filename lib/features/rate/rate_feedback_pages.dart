@@ -132,12 +132,13 @@ class _RateFeedbackListPageState extends State<RateFeedbackListPage> {
                       Text(ticket.targetText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style:
-                              ShuYoTextStyles.meta(color: colors.textSecondary)),
+                          style: ShuYoTextStyles.meta(
+                              color: colors.textSecondary)),
                     Text(ticket.content,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: ShuYoTextStyles.meta(color: colors.textTertiary)),
+                        style:
+                            ShuYoTextStyles.meta(color: colors.textTertiary)),
                     const SizedBox(height: 6),
                     Wrap(spacing: 8, children: [
                       _StatusTag(ticket: ticket),
@@ -257,7 +258,8 @@ class _RateFeedbackComposerPageState extends State<RateFeedbackComposerPage> {
         future: _config,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 3));
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return RateLoadError(
@@ -274,8 +276,8 @@ class _RateFeedbackComposerPageState extends State<RateFeedbackComposerPage> {
                     style: ShuYoTextStyles.meta(color: colors.textTertiary)),
                 const SizedBox(height: 4),
                 Text(_targetText,
-                    style: ShuYoTextStyles.bodyCompact(
-                        color: colors.textPrimary)),
+                    style:
+                        ShuYoTextStyles.bodyCompact(color: colors.textPrimary)),
                 const SizedBox(height: 16),
               ],
               Text('反馈类型',
@@ -410,7 +412,8 @@ class _RateFeedbackDetailPageState extends State<RateFeedbackDetailPage> {
                   if (ticket.targetText.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(ticket.targetText,
-                        style: ShuYoTextStyles.meta(color: colors.textSecondary)),
+                        style:
+                            ShuYoTextStyles.meta(color: colors.textSecondary)),
                   ],
                   const SizedBox(height: 6),
                   Text('提交于 ${TimeFormat.compact(ticket.createdAt)}',

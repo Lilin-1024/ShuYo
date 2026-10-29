@@ -671,9 +671,7 @@ class _TimeEditorState extends State<_TimeEditor> {
                                   dimension: 40,
                                   child: CircleAvatar(
                                     backgroundColor: selected.contains(week)
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .primary
+                                        ? Theme.of(context).colorScheme.primary
                                         : Colors.transparent,
                                     child: Text(
                                       '$week',

@@ -208,8 +208,7 @@ class RateQuestionStat {
         title: stringValue(json['title']),
         multiple: boolValue(json['multiple']),
         answered: intValue(json['answered']),
-        options:
-            _maps(json['options']).map(RateOptionStat.fromJson).toList(),
+        options: _maps(json['options']).map(RateOptionStat.fromJson).toList(),
       );
 }
 
@@ -410,8 +409,7 @@ class RateSearchResult {
     required this.teachers,
   });
 
-  static const empty =
-      RateSearchResult(units: [], courses: [], teachers: []);
+  static const empty = RateSearchResult(units: [], courses: [], teachers: []);
 
   final List<RateUnit> units;
   final List<RateCourseSummary> courses;
@@ -563,8 +561,7 @@ class RateMyReviews {
 
   factory RateMyReviews.fromJson(JsonMap json) => RateMyReviews(
         blocked: boolValue(json['blocked']),
-        reviews:
-            _maps(json['reviews']).map(RateMyReviewItem.fromJson).toList(),
+        reviews: _maps(json['reviews']).map(RateMyReviewItem.fromJson).toList(),
       );
 }
 

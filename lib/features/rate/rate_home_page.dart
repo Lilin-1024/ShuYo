@@ -200,8 +200,7 @@ class _RateHomePageState extends State<RateHomePage> {
         ? Duration.zero
         : const Duration(milliseconds: 240);
     final progress = _scheduleCollapsed ? 0.0 : 1.0;
-    final onToggle =
-        _savingScheduleCollapsed ? null : _toggleScheduleCollapsed;
+    final onToggle = _savingScheduleCollapsed ? null : _toggleScheduleCollapsed;
     return Column(
       children: [
         Semantics(
@@ -283,9 +282,8 @@ class _RateHomePageState extends State<RateHomePage> {
         await openRateSearch(context, _repo, query: result.query);
       case RateLookupStatus.none:
         await openRateSearch(context, _repo,
-            query: result.query.isEmpty
-                ? match.course.courseName
-                : result.query);
+            query:
+                result.query.isEmpty ? match.course.courseName : result.query);
     }
   }
 }
@@ -309,7 +307,8 @@ class _ScheduleGrid extends StatelessWidget {
             SizedBox(
               width: width,
               height: 104,
-              child: _ScheduleCourseCard(match: match, onTap: () => onTap(match)),
+              child:
+                  _ScheduleCourseCard(match: match, onTap: () => onTap(match)),
             ),
         ],
       );
@@ -643,7 +642,9 @@ class _HomeUnitCard extends StatelessWidget {
               Text(
                 rateScoreText(unit.average),
                 style: ShuYoTextStyles.title(
-                    color: colors.textPrimary, size: 18, weight: FontWeight.w500),
+                    color: colors.textPrimary,
+                    size: 18,
+                    weight: FontWeight.w500),
               ),
               const SizedBox(width: 6),
               RateStars(average: unit.average, size: 12),

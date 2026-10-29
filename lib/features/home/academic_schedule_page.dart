@@ -1784,8 +1784,9 @@ CourseSession _courseSessionFromDraft(
     credit: credit,
     note: draft.note,
     // A renamed course is no longer the synced teaching class.
-    teachingClassId:
-        base != null && base.courseName == courseName ? base.teachingClassId : '',
+    teachingClassId: base != null && base.courseName == courseName
+        ? base.teachingClassId
+        : '',
   );
 }
 

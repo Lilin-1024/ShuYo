@@ -28,8 +28,9 @@ class CourseReviewApiClient {
   Future<RateHome> fetchHome() async =>
       RateHome.fromJson(await _data('GET', '/api/v1/rate/home'));
 
-  Future<RateSearchResult> search(String query) async => RateSearchResult
-      .fromJson(await _data('GET', '/api/v1/rate/search', query: {'q': query}));
+  Future<RateSearchResult> search(String query) async =>
+      RateSearchResult.fromJson(
+          await _data('GET', '/api/v1/rate/search', query: {'q': query}));
 
   Future<RateCourseDetail> fetchCourse(String id) async =>
       RateCourseDetail.fromJson(

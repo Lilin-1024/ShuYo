@@ -50,11 +50,10 @@ class _RatePublishPageState extends State<RatePublishPage> {
               : snapshot.hasError || questions.isEmpty
                   ? RateLoadError(
                       error: snapshot.error,
-                      onRetry: () => setState(
-                          () => _config = widget.repository.config()))
+                      onRetry: () =>
+                          setState(() => _config = widget.repository.config()))
                   : _page(questions),
-          bottomNavigationBar:
-              questions.isEmpty ? null : _actions(questions),
+          bottomNavigationBar: questions.isEmpty ? null : _actions(questions),
         );
       },
     );
@@ -132,7 +131,8 @@ class _RatePublishPageState extends State<RatePublishPage> {
           RateOptionGrid(
             question: question,
             selected: _answers[question.key] ?? const [],
-            onChanged: (value) => setState(() => _answers[question.key] = value),
+            onChanged: (value) =>
+                setState(() => _answers[question.key] = value),
           ),
       ],
     );
@@ -329,7 +329,8 @@ class _RateEditReviewPageState extends State<RateEditReviewPage> {
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 3));
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 3));
           }
           if (snapshot.hasError) {
             return RateLoadError(
