@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -9,6 +10,33 @@ import 'package:shuyo/data/services/wecom_auth_service.dart';
 
 void main() {
   group('WeComAuthService', () {
+    test('scan timeout defaults to 90 seconds', () {
+      expect(WeComAuthService.scanTimeout, const Duration(seconds: 90));
+    });
+
+    test('scan deadline expires even when a request is still pending',
+        () async {
+      final client = _PendingHttpClient();
+      final service = WeComAuthService(httpClient: client);
+      addTearDown(() {
+        client.finishPendingRequest();
+        service.dispose();
+      });
+      final statuses = <WeComScanStatus>[];
+
+      final result = await service
+          .waitForScan(
+            'test-key',
+            timeout: const Duration(milliseconds: 50),
+            onStatusChanged: statuses.add,
+          )
+          .timeout(const Duration(seconds: 2));
+
+      expect(client.requestStarted, isTrue);
+      expect(result.status, WeComScanStatus.expired);
+      expect(statuses, [WeComScanStatus.expired]);
+    });
+
     test('OAuth redirect diagnostics never include authorization values', () {
       final callback = Uri.parse(
         'https://there.shu.edu.cn/login-oauth2?code=SECRET_CODE&state=SECRET_STATE',
@@ -159,4 +187,30 @@ void main() {
       expect(WeComOAuthTarget.academic.generateState, isTrue);
     });
   });
+}
+
+class _PendingHttpClient implements HttpClient {
+  final _request = Completer<HttpClientRequest>();
+  bool requestStarted = false;
+
+  @override
+  set connectionTimeout(Duration? value) {}
+
+  @override
+  Future<HttpClientRequest> getUrl(Uri url) {
+    requestStarted = true;
+    return _request.future;
+  }
+
+  void finishPendingRequest() {
+    if (!_request.isCompleted) {
+      _request.completeError(const HttpException('Request cancelled in test'));
+    }
+  }
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

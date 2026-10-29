@@ -16,6 +16,7 @@ import 'package:shuyo/data/services/academic_auth_service.dart';
 import 'package:shuyo/data/services/client_settings_service.dart';
 import 'package:shuyo/data/services/student_identity_service.dart';
 import 'package:shuyo/features/settings/client_settings_page.dart';
+import 'package:shuyo/features/settings/contributors_page.dart';
 import 'package:shuyo/features/settings/third_party_licenses_page.dart';
 import 'package:shuyo/shared/navigation/shuyo_route.dart';
 import 'package:shuyo/features/onboarding/startup_onboarding.dart';
@@ -510,22 +511,29 @@ void main() {
     expect(licenseRow.onTap, isNull);
     expect(licenseRow.trailing, isNull);
     expect(find.text('贡献者'), findsOneWidget);
-    for (final title in ['源代码', '贡献者']) {
+    expect(
+      find.descendant(
+        of: find.widgetWithText(ListTile, '源代码'),
+        matching: find.byIcon(Icons.open_in_new),
+      ),
+      findsOneWidget,
+    );
+    for (final title in ['第三方开源许可', '贡献者']) {
+      expect(
+        find.descendant(
+          of: find.widgetWithText(ListTile, title),
+          matching: find.byIcon(Icons.chevron_right),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.descendant(
           of: find.widgetWithText(ListTile, title),
           matching: find.byIcon(Icons.open_in_new),
         ),
-        findsOneWidget,
+        findsNothing,
       );
     }
-    expect(
-      find.descendant(
-        of: find.widgetWithText(ListTile, '第三方开源许可'),
-        matching: find.byIcon(Icons.chevron_right),
-      ),
-      findsOneWidget,
-    );
 
     await tester.scrollUntilVisible(find.text('检查更新'), 300);
     expect(find.text('权限说明'), findsOneWidget);
@@ -565,6 +573,17 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
     expect(find.text('关于ShuYo'), findsOneWidget);
+  });
+
+  testWidgets('about page opens the contributors page', (tester) async {
+    await _pumpSettings(tester);
+    await tester.tap(find.text('关于ShuYo'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('贡献者'), 200);
+    await tester.tap(find.text('贡献者'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ContributorsPage), findsOneWidget);
   });
 
   testWidgets('about page explains Android permissions', (tester) async {

@@ -116,6 +116,15 @@ class SessionCookieJar {
 
   Future<void> _ensureRestored() => _restoring ??= _restore();
 
+  /// Forgets the in-memory cookies and the cached restore so the next read
+  /// loads from storage again. Widget tests each run in their own fake-async
+  /// zone; a restore future cached by an earlier test never completes there.
+  @visibleForTesting
+  void resetForTesting() {
+    _cookies.clear();
+    _restoring = null;
+  }
+
   Future<void> _restore() async {
     String? raw;
     try {

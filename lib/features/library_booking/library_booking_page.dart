@@ -1277,10 +1277,25 @@ class _LibraryBookingPageState extends State<LibraryBookingPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_areaName(venue, area, areas: areas),
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 12),
-                  Text('开放时间：${_openingHours(area)}'),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          _areaName(venue, area, areas: areas),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _openingHours(area),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: context.shuyoColors.textTertiary,
+                            ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   _areaStats(area),
                 ],

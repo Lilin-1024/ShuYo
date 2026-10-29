@@ -50,6 +50,10 @@ class NativeLoginPage extends StatefulWidget {
     this.destination = NativeLoginDestination.academic,
     this.title,
     this.description,
+    @visibleForTesting this.startWeComSession,
+    @visibleForTesting this.loginForTesting,
+    @visibleForTesting this.sendCodeForTesting,
+    @visibleForTesting this.verifyCodeForTesting,
   }) : studentIdentityService = null;
 
   const NativeLoginPage.webVpn({
@@ -57,6 +61,10 @@ class NativeLoginPage extends StatefulWidget {
     this.title,
     this.description,
   })  : destination = NativeLoginDestination.webVpn,
+        startWeComSession = null,
+        loginForTesting = null,
+        sendCodeForTesting = null,
+        verifyCodeForTesting = null,
         studentIdentityService = null;
 
   const NativeLoginPage.there({
@@ -64,6 +72,10 @@ class NativeLoginPage extends StatefulWidget {
     this.title,
     this.description,
   })  : destination = NativeLoginDestination.there,
+        startWeComSession = null,
+        loginForTesting = null,
+        sendCodeForTesting = null,
+        verifyCodeForTesting = null,
         studentIdentityService = null;
 
   const NativeLoginPage.campusCard({
@@ -71,6 +83,10 @@ class NativeLoginPage extends StatefulWidget {
     this.title,
     this.description,
   })  : destination = NativeLoginDestination.campusCard,
+        startWeComSession = null,
+        loginForTesting = null,
+        sendCodeForTesting = null,
+        verifyCodeForTesting = null,
         studentIdentityService = null;
 
   const NativeLoginPage.dataDeletion({
@@ -78,12 +94,31 @@ class NativeLoginPage extends StatefulWidget {
     required this.studentIdentityService,
     this.title,
     this.description,
-  }) : destination = NativeLoginDestination.dataDeletion;
+  })  : destination = NativeLoginDestination.dataDeletion,
+        startWeComSession = null,
+        loginForTesting = null,
+        sendCodeForTesting = null,
+        verifyCodeForTesting = null;
 
   final NativeLoginDestination destination;
   final String? title;
   final String? description;
   final StudentIdentityService? studentIdentityService;
+  @visibleForTesting
+  final Future<WeComQrSession> Function()? startWeComSession;
+  @visibleForTesting
+  final Future<AcademicLoginResult> Function({
+    required String username,
+    required String password,
+  })? loginForTesting;
+  @visibleForTesting
+  final Future<void> Function(AcademicVerificationMethod method)?
+      sendCodeForTesting;
+  @visibleForTesting
+  final Future<Uri> Function({
+    required AcademicVerificationMethod method,
+    required String code,
+  })? verifyCodeForTesting;
 
   @override
   State<NativeLoginPage> createState() => _NativeLoginPageState();
@@ -111,6 +146,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
 
   int _step = 0;
   bool _busy = false;
+  bool _weComBusy = false;
+  bool _sendingCode = false;
+  bool _verifyingCode = false;
   bool _routeClosed = false;
   bool _passwordVisible = false;
   bool _studentIdError = false;
@@ -338,13 +376,21 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(50),
                         ),
-                        child: _buttonContent('继续'),
+                        child:
+                            _buttonContent('继续', loading: _busy && !_weComBusy),
                       ),
                       if (!dataDeletion) ...[
                         const SizedBox(height: 12),
                         OutlinedButton.icon(
                           onPressed: _busy ? null : _startWeComLogin,
-                          icon: const Icon(Icons.qr_code_scanner_outlined),
+                          icon: _weComBusy
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.qr_code_scanner_outlined),
                           label: const Text('使用企业微信登录'),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(50),
@@ -560,9 +606,16 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                                   ),
                                   splashFactory: NoSplash.splashFactory,
                                 ),
-                                child: Text(_countdown > 0
-                                    ? '重发 ${_countdown}s'
-                                    : '发送验证码'),
+                                child: _sendingCode
+                                    ? const SizedBox.square(
+                                        dimension: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Text(_countdown > 0
+                                        ? '重发 ${_countdown}s'
+                                        : '发送验证码'),
                               ),
                             ).copyWith(
                               hintText: '验证码',
@@ -580,7 +633,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(50),
                         ),
-                        child: _buttonContent('完成验证'),
+                        child: _buttonContent('完成验证', loading: _verifyingCode),
                       ),
                     ],
                   ),
@@ -593,9 +646,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     );
   }
 
-  Widget _buttonContent(String label) {
+  Widget _buttonContent(String label, {required bool loading}) {
     // 登录请求期间显示进度，避免按钮看起来没有响应。
-    if (!_busy) return Text(label);
+    if (!loading) return Text(label);
     return const SizedBox.square(
         dimension: 20, child: CircularProgressIndicator(strokeWidth: 2));
   }
@@ -633,7 +686,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
           return;
         }
       }
-      final result = await _authService.login(
+      final result = await (widget.loginForTesting ?? _authService.login)(
           username: _studentId.text.trim(), password: _password.text);
       if (!mounted) return;
       if (result.callbackUri != null) {
@@ -687,7 +740,10 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     if (!mounted) return;
     TextInput.finishAutofillContext(shouldSave: false);
     _password.clear();
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _weComBusy = true;
+    });
     try {
       if (widget.destination == NativeLoginDestination.there) {
         final client = ThereBookingClient();
@@ -697,9 +753,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
           client.dispose();
         }
       }
-      final session = await _weComAuthService.startQrSession();
+      final session = await (widget.startWeComSession?.call() ??
+          _weComAuthService.startQrSession());
       if (!mounted) return;
-      setState(() => _busy = false);
       final redeemed = await Navigator.of(context).push<WeComRedeemResult>(
         MaterialPageRoute(
           builder: (_) => ShuYoRouteSurface(
@@ -728,7 +784,12 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       }
       _showError('无法连接企业微信服务，请稍后再试');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _weComBusy = false;
+        });
+      }
     }
   }
 
@@ -744,9 +805,12 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
 
   Future<void> _sendCode() async {
     if (_busy || _countdown > 0) return;
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _sendingCode = true;
+    });
     try {
-      await _authService.sendCode(_method);
+      await (widget.sendCodeForTesting ?? _authService.sendCode)(_method);
       await _verificationDeliveryService.markSent(_method);
       if (!mounted) return;
       _startCountdown(VerificationDeliveryService.cooldown);
@@ -760,7 +824,12 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     } on Object {
       _showError('验证码发送失败，请稍后重试');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _sendingCode = false;
+        });
+      }
     }
   }
 
@@ -772,10 +841,13 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       _codeFocusNode.requestFocus();
       return;
     }
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _verifyingCode = true;
+    });
     try {
-      final callbackUri = await _authService.verifyCode(
-          method: _method, code: _code.text.trim());
+      final callbackUri = await (widget.verifyCodeForTesting ??
+          _authService.verifyCode)(method: _method, code: _code.text.trim());
       if (!mounted) return;
       await _completeLogin(callbackUri);
     } on AcademicNativeAuthException catch (error) {
@@ -783,7 +855,12 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     } on Object {
       _showError('验证失败，请检查网络后重试');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _verifyingCode = false;
+        });
+      }
     }
   }
 

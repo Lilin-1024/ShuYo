@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/wecom_constants.dart';
@@ -9,7 +10,7 @@ import '../../data/services/wecom_auth_service.dart';
 
 /// 企业微信扫码登录等待页。
 ///
-/// 展示二维码图片，并支持点击拉起企业微信确认页。在后台长轮询
+/// 在本地根据确认链接生成二维码，并支持点击拉起企业微信确认页。在后台长轮询
 /// 等待用户扫码确认，成功后返回换取到的 SSO 会话结果。
 class WeComScanPage extends StatefulWidget {
   const WeComScanPage({
@@ -49,15 +50,21 @@ class _WeComScanPageState extends State<WeComScanPage> {
 
   /// 后台长轮询，状态变化时刷新界面，成功后换取目标业务系统回调地址。
   Future<void> _waitForScan() async {
-    final result = await widget.authService.waitForScan(
-      widget.session.key,
-      isCancelled: () => _cancelled,
-      onStatusChanged: (status) {
-        if (mounted && status != _status) {
-          setState(() => _status = status);
-        }
-      },
-    );
+    final WeComScanResult result;
+    try {
+      result = await widget.authService.waitForScan(
+        widget.session.key,
+        isCancelled: () => _cancelled,
+        onStatusChanged: (status) {
+          if (mounted && status != _status) {
+            setState(() => _status = status);
+          }
+        },
+      );
+    } on Object {
+      if (mounted) _showError('无法连接企业微信服务，请稍后再试');
+      return;
+    }
     if (!mounted) return;
     if (!result.isSuccess) {
       _showError('二维码已过期或已取消，请重新尝试');
@@ -102,9 +109,15 @@ class _WeComScanPageState extends State<WeComScanPage> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    _showSnackBar(message);
     Navigator.of(context).pop();
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// 调用系统打开 wxwork:// scheme（或复制链接）。
@@ -120,18 +133,10 @@ class _WeComScanPageState extends State<WeComScanPage> {
         await Clipboard.setData(
           ClipboardData(text: widget.session.confirmUrl),
         );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('无法打开企业微信，已复制链接，请手动打开')),
-          );
-        }
+        _showSnackBar('无法打开企业微信，已复制链接，请手动打开');
       }
     } on Object {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('无法打开企业微信，请手动打开企业微信')),
-        );
-      }
+      _showSnackBar('无法打开企业微信，请手动打开企业微信');
     } finally {
       if (mounted) setState(() => _launchingLink = false);
     }
@@ -172,12 +177,12 @@ class _WeComScanPageState extends State<WeComScanPage> {
                   height: 220,
                   color: Colors.white,
                   padding: const EdgeInsets.all(8),
-                  child: Image.network(
-                    widget.session.qrImageUrl,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Center(
-                      child: Icon(Icons.broken_image_outlined, size: 48),
-                    ),
+                  // 校园网较差时上游二维码图片常常加载失败，改为本地生成。
+                  child: QrImageView(
+                    data: widget.session.confirmUrl,
+                    padding: EdgeInsets.zero,
+                    backgroundColor: Colors.white,
+                    semanticsLabel: '企业微信登录二维码',
                   ),
                 ),
               ),

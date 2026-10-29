@@ -180,7 +180,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   Future<CampusCardInfo>? _campusCardRefreshTask;
   Future<bool>? _campusLoginTask;
   Future<void>? _campusAccountExpiryTask;
-  Future<bool>? _webVpnFeatureRecoveryTask;
+  ({
+    Future<bool> operation,
+    int accessRevision,
+    bool enableWebVpn,
+  })? _webVpnFeatureRecoveryTask;
   bool _refreshingCampusCardFromHome = false;
   String _scheduleSummaryText = '正在读取课表...';
   String _announcementSummaryText = '正在读取通知公告...';
@@ -909,8 +913,10 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
           initialDate: widget.isDemo ? DateTime(2026, 9, 1) : null,
           onWebVpnRecoveryRequired: widget.isDemo
               ? null
-              : (interactive) =>
-                  _recoverWebVpnForFeature(interactive: interactive),
+              : (interactive) => _recoverWebVpnForFeature(
+                    interactive: interactive,
+                    enableWebVpn: false,
+                  ),
         ),
       ),
     );
@@ -1416,37 +1422,70 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<bool> _recoverWebVpnForFeature({bool interactive = true}) async {
-    if (!interactive) return _attemptWebVpnRecovery(interactive: false);
+  Future<bool> _recoverWebVpnForFeature({
+    bool interactive = true,
+    bool enableWebVpn = true,
+  }) async {
+    if (!enableWebVpn && !ClassroomUrlResolver.usesWebVpn) return false;
+    if (!interactive) {
+      return _attemptWebVpnRecovery(
+        interactive: false,
+        enableWebVpn: enableWebVpn,
+      );
+    }
+    final accessRevision = ClassroomUrlResolver.revision;
     final pending = _webVpnFeatureRecoveryTask;
-    if (pending != null) return pending;
-    final operation = _attemptWebVpnRecovery(interactive: true);
-    _webVpnFeatureRecoveryTask = operation;
+    // A new manual enable must not inherit an automatic recovery's stale
+    // result after the user has changed the connection mode.
+    if (pending != null &&
+        pending.accessRevision == accessRevision &&
+        pending.enableWebVpn == enableWebVpn) {
+      return pending.operation;
+    }
+    final operation = _attemptWebVpnRecovery(
+      interactive: true,
+      enableWebVpn: enableWebVpn,
+    );
+    _webVpnFeatureRecoveryTask = (
+      operation: operation,
+      accessRevision: accessRevision,
+      enableWebVpn: enableWebVpn,
+    );
     try {
       return await operation;
     } finally {
-      if (identical(_webVpnFeatureRecoveryTask, operation)) {
+      if (identical(_webVpnFeatureRecoveryTask?.operation, operation)) {
         _webVpnFeatureRecoveryTask = null;
       }
     }
   }
 
-  Future<bool> _attemptWebVpnRecovery({required bool interactive}) async {
-    if (widget.isDemo || !mounted) return false;
+  Future<bool> _attemptWebVpnRecovery({
+    required bool interactive,
+    required bool enableWebVpn,
+  }) async {
+    final accessRevision = ClassroomUrlResolver.revision;
+    bool canRecover() =>
+        mounted &&
+        accessRevision == ClassroomUrlResolver.revision &&
+        (enableWebVpn || ClassroomUrlResolver.usesWebVpn);
+    if (widget.isDemo || !canRecover()) return false;
     var outcome = await _recoverWebVpn();
-    if (!mounted) return false;
+    if (!canRecover()) return false;
     if (outcome == WebVpnRecoveryOutcome.needsAuthentication) {
       if (!await _handleCampusSsoExpired(interactive: interactive) ||
-          !mounted) {
+          !canRecover()) {
         return false;
       }
       outcome = await _recoverWebVpn();
-      if (!mounted) return false;
+      if (!canRecover()) return false;
     }
     switch (outcome) {
       case WebVpnRecoveryOutcome.alreadyValid:
       case WebVpnRecoveryOutcome.recovered:
-        await _setWebVpnEnabled(true);
+        // Automatic classroom recovery only repairs the existing session;
+        // it must not write the user's network preference back to true.
+        if (enableWebVpn) await _setWebVpnEnabled(true);
         return true;
       case WebVpnRecoveryOutcome.needsAuthentication:
         if (interactive) _showSnack('统一认证需要重新登录');

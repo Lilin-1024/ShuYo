@@ -247,16 +247,23 @@ class _EmptyClassroomPageState extends State<EmptyClassroomPage> {
   }
 
   Future<T> _withWebVpnRecovery<T>(Future<T> Function() operation) async {
+    final accessRevision = ClassroomUrlResolver.revision;
+    bool canRecover() =>
+        mounted &&
+        ClassroomUrlResolver.usesWebVpn &&
+        accessRevision == ClassroomUrlResolver.revision;
     try {
       return await operation();
     } on ClassroomWebVpnAuthException {
+      // A late failure must not undo a newer choice of network mode.
+      if (!canRecover()) rethrow;
       final recover = widget.onWebVpnRecoveryRequired;
       if (recover == null) {
         await widget.onWebVpnExpired?.call();
         rethrow;
       }
       final interactive = mounted && ModalRoute.of(context)?.isCurrent != false;
-      if (!await recover(interactive) || !mounted) rethrow;
+      if (!await recover(interactive) || !canRecover()) rethrow;
       // Reads can retry once. A second rejection reaches the existing error UI.
       return operation();
     }

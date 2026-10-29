@@ -25,6 +25,7 @@ import '../../shared/widgets/client_update_prompt.dart';
 import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/webvpn_toggle.dart';
 import 'client_feedback_page.dart';
+import 'contributors_page.dart';
 import 'privacy_data_page.dart';
 import 'third_party_licenses_page.dart';
 import '../onboarding/startup_onboarding.dart';
@@ -548,8 +549,6 @@ class _AboutClientPage extends StatefulWidget {
 
 class _AboutClientPageState extends State<_AboutClientPage> {
   static const _sourceUrl = 'https://github.com/shuosc/ShuYo';
-  static const _contributorsUrl =
-      'https://github.com/shuosc/ShuYo/graphs/contributors';
   static const _termsUrl = 'https://shuyo.work/doc/terms.html';
   static const _privacyUrl = 'https://shuyo.work/doc/privacy.html';
 
@@ -629,9 +628,10 @@ class _AboutClientPageState extends State<_AboutClientPage> {
           _AboutRow(
             icon: Icons.groups_outlined,
             title: '贡献者',
-            subtitle: '查看 GitHub Contributors',
-            external: true,
-            onTap: () => _openExternalUrl(_contributorsUrl),
+            subtitle: 'GitHub Contributors',
+            onTap: () => Navigator.of(context).push<void>(
+              shuyoRoute(builder: (_) => const ContributorsPage()),
+            ),
           ),
           const SizedBox(height: 18),
           const _AboutGroupTitle('隐私与声明'),
